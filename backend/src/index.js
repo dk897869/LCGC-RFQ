@@ -4,7 +4,7 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
-const morgan = require("morgan");
+// const morgan = require("morgan"); // Commented out - install if needed
 const multer = require("multer");
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
@@ -13,7 +13,7 @@ const crypto = require("crypto");
 
 const connectDB = require("./config/db");
 
-// Helper function to safely require routes - prevents crashes if files don't exist
+// Helper function to safely require routes
 const safeRequire = (routePath, defaultValue) => {
   try {
     return require(routePath);
@@ -26,21 +26,17 @@ const safeRequire = (routePath, defaultValue) => {
   }
 };
 
-// ROUTES - using safe require to prevent crashes
+// ROUTES
 const authRoutes = safeRequire("./routes/auth.routes");
 const dashboardRoutes = safeRequire("./routes/dashboard.routes");
 const requestRoutes = safeRequire("./routes/request.routes");
 const vendorRoutes = safeRequire("./routes/vendor.routes");
 const partRoutes = safeRequire("./routes/part.routes");
 const userRoutes = safeRequire("./routes/user.routes");
-
-// NPP PROCUREMENT ROUTES
 const paymentNppRoutes = safeRequire("./routes/paymentNpp.routes");
 const poNppRoutes = safeRequire("./routes/poNpp.routes");
 const prNppRoutes = safeRequire("./routes/prNpp.routes");
 const rfqRoutes = safeRequire("./routes/rfq.routes");
-
-// NEW API ROUTES
 const orderHistoryRoutes = safeRequire("./routes/orderHistory.routes");
 const reportRoutes = safeRequire("./routes/report.routes");
 const approvalRoutes = safeRequire("./routes/approval.routes");
@@ -48,7 +44,7 @@ const serialNumberRoutes = safeRequire("./routes/serialNumber.routes");
 
 const app = express();
 
-// ==================== FILE UPLOAD CONFIGURATION ====================
+// File upload configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, "uploads", "avatars");
@@ -66,7 +62,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -76,10 +72,10 @@ const upload = multer({
   }
 });
 
-// ==================== DATABASE CONNECTION ====================
+// Database connection
 connectDB();
 
-// ==================== CORS CONFIGURATION - FIXED FOR RENDER ====================
+// CORS Configuration
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
@@ -87,41 +83,31 @@ const allowedOrigins = [
   'http://localhost:10000',
   'https://lcgc-rfq.onrender.com',
   'https://lcgc-rfq-frontend.onrender.com',
-  'https://*.onrender.com',
   process.env.FRONTEND_URL,
   process.env.CLIENT_URL
 ].filter(Boolean);
 
-// CORS middleware - Most permissive for production
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, postman)
     if (!origin) return callback(null, true);
-    
-    // Allow any render.com subdomain
     if (origin && origin.includes('.onrender.com')) {
       return callback(null, true);
     }
-    
-    // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
-    // For debugging - log blocked origins but still allow (temporarily)
     console.log(`🌐 CORS request from: ${origin}`);
-    return callback(null, true); // Allow all for now
+    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin', 'Cookie'],
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
   preflightContinue: false,
   optionsSuccessStatus: 204,
   maxAge: 86400
 }));
 
-// Additional CORS headers for safety
+// Additional CORS headers
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {
@@ -131,26 +117,18 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin');
   
-  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
   next();
 });
 
-// ==================== SECURITY & LOGGING MIDDLEWARE ====================
+// Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "unsafe-none" },
-  contentSecurityPolicy: false // Disable CSP for easier debugging
+  contentSecurityPolicy: false
 }));
-
-// Logging middleware
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
@@ -159,13 +137,13 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Request logging (always on for debugging)
+// Custom logging middleware (replaces morgan)
 app.use((req, res, next) => {
   console.log(`📌 ${req.method} ${req.url} - Origin: ${req.headers.origin || 'unknown'}`);
   next();
 });
 
-// ==================== HELPER FUNCTION ====================
+// Helper function
 const generateToken = (user) => {
   return jwt.sign(
     { 
@@ -182,28 +160,23 @@ const generateToken = (user) => {
 // ==================== GOOGLE LOGIN API ====================
 app.post('/api/auth/google', async (req, res) => {
   console.log('📥 Google login endpoint hit');
-  console.log('Origin:', req.headers.origin);
   
   try {
     const { credential } = req.body;
     
     if (!credential) {
-      console.log('❌ No credential provided');
       return res.status(400).json({ success: false, message: 'Google credential is required' });
     }
     
-    // Decode the Google JWT token
     const decoded = jwt.decode(credential);
     
     if (!decoded || !decoded.email) {
-      console.log('❌ Invalid token structure');
       return res.status(400).json({ success: false, message: 'Invalid Google credential' });
     }
     
     const { email, name, picture, sub: googleId } = decoded;
     const User = require('./models/user.model');
     
-    // Find or create user
     let user = await User.findOne({ 
       $or: [{ googleId: googleId }, { email: email.toLowerCase() }] 
     });
@@ -232,18 +205,12 @@ app.post('/api/auth/google', async (req, res) => {
       user.googleId = googleId;
       if (picture && !user.profileImage) user.profileImage = picture;
       await user.save();
-    } else {
-      console.log('✅ Existing user found:', user.email);
     }
     
-    // Update last login
     user.lastLogin = new Date();
     await user.save();
     
-    // Generate token
     const token = generateToken(user);
-    
-    console.log('🎉 Google login successful for:', user.email);
     
     res.json({
       success: true,
@@ -269,76 +236,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// ==================== GOOGLE LOGIN WITH ID TOKEN ====================
-app.post('/api/auth/google-idtoken', async (req, res) => {
-  console.log('📥 Google ID token login endpoint hit');
-  
-  try {
-    const { idToken } = req.body;
-    
-    if (!idToken) {
-      return res.status(400).json({ success: false, message: 'Google ID token is required' });
-    }
-    
-    const decoded = jwt.decode(idToken);
-    
-    if (!decoded || !decoded.email) {
-      return res.status(400).json({ success: false, message: 'Invalid Google token' });
-    }
-    
-    const { email, name, picture, sub: googleId } = decoded;
-    const User = require('./models/user.model');
-    
-    let user = await User.findOne({ 
-      $or: [{ googleId: googleId }, { email: email.toLowerCase() }] 
-    });
-    
-    if (!user) {
-      const randomPassword = crypto.randomBytes(20).toString('hex');
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
-      
-      user = new User({
-        name: name || email.split('@')[0],
-        email: email.toLowerCase(),
-        googleId: googleId,
-        password: hashedPassword,
-        emailVerified: true,
-        role: 'User',
-        profileImage: picture || '',
-        rights: {}
-      });
-      
-      await user.save();
-    } else if (!user.googleId) {
-      user.googleId = googleId;
-      if (picture && !user.profileImage) user.profileImage = picture;
-      await user.save();
-    }
-    
-    const token = generateToken(user);
-    user.lastLogin = new Date();
-    await user.save();
-    
-    res.json({
-      success: true,
-      message: 'Google login successful',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        profileImage: user.profileImage || '',
-        rights: user.rights || {}
-      }
-    });
-  } catch (error) {
-    console.error('Google ID token login error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// ==================== HEALTH CHECK ROUTES ====================
+// ==================== HEALTH CHECK ====================
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -346,17 +244,12 @@ app.get('/api/health', (req, res) => {
     message: 'LCGC RFQ Server is running',
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
-    environment: process.env.NODE_ENV || 'production',
-    cors: 'enabled'
+    environment: process.env.NODE_ENV || 'production'
   });
 });
 
 app.get('/health', (req, res) => {
-  res.json({ 
-    success: true, 
-    status: 'ok', 
-    timestamp: new Date().toISOString() 
-  });
+  res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // ==================== AUTH PROFILE ENDPOINTS ====================
@@ -392,10 +285,6 @@ app.get('/api/auth/profile', async (req, res) => {
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
     
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
     res.json({ success: true, user: user });
   } catch (error) {
     res.status(401).json({ success: false, message: 'Invalid token' });
@@ -418,42 +307,7 @@ app.patch('/api/auth/profile', async (req, res) => {
       { new: true, runValidators: true }
     ).select('-password');
     
-    if (!updatedUser) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    res.json({ 
-      success: true, 
-      message: 'Profile updated successfully',
-      user: updatedUser 
-    });
-  } catch (error) {
-    console.error('Profile update error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.put('/api/auth/profile', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const User = require('./models/user.model');
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      decoded.id,
-      { $set: req.body },
-      { new: true, runValidators: true }
-    ).select('-password');
-    
-    res.json({ 
-      success: true, 
-      message: 'Profile updated successfully',
-      user: updatedUser 
-    });
+    res.json({ success: true, message: 'Profile updated successfully', user: updatedUser });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -474,8 +328,8 @@ app.post('/api/auth/change-password', async (req, res) => {
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const User = require('./models/user.model');
-    
     const user = await User.findById(decoded.id);
+    
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -497,17 +351,12 @@ app.post('/api/auth/change-password', async (req, res) => {
 app.post('/api/auth/upload-avatar', upload.single('avatar'), async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-    
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    if (!token || !req.file) {
+      return res.status(401).json({ success: false, message: 'No token or file provided' });
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const User = require('./models/user.model');
-    
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
     
     const updatedUser = await User.findByIdAndUpdate(
@@ -516,15 +365,8 @@ app.post('/api/auth/upload-avatar', upload.single('avatar'), async (req, res) =>
       { new: true }
     ).select('-password');
     
-    res.json({ 
-      success: true, 
-      message: 'Avatar uploaded successfully',
-      profileImage: avatarUrl,
-      avatar: avatarUrl,
-      user: updatedUser
-    });
+    res.json({ success: true, message: 'Avatar uploaded successfully', profileImage: avatarUrl, user: updatedUser });
   } catch (error) {
-    console.error('Upload error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -545,11 +387,7 @@ app.delete('/api/auth/avatar', async (req, res) => {
       { new: true }
     ).select('-password');
     
-    res.json({ 
-      success: true, 
-      message: 'Avatar removed successfully',
-      user: updatedUser
-    });
+    res.json({ success: true, message: 'Avatar removed successfully', user: updatedUser });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -572,101 +410,37 @@ app.use("/api/part", partRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/ep-approval', requestRoutes);
 
-// Optional routes
-const otpRoutes = safeRequire("./routes/otp.routes");
-app.use("/api/otp", otpRoutes);
-
-// User rights route
-try {
-  const userRightRoutes = require("./routes/userRight.routes");
-  app.use("/api/user-rights", userRightRoutes);
-  console.log("✅ userRight.routes loaded successfully");
-} catch (error) {
-  console.warn("⚠️ userRight.routes not found - skipping");
-}
-
-// ==================== ROOT ENDPOINT ====================
+// Root endpoint
 app.get("/", (req, res) => {
   res.json({
     success: true,
     message: "LCGC RFQ API Running Successfully 🚀",
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development",
-    cors: "enabled",
-    availableApis: {
-      auth: "/api/auth",
-      googleLogin: "/api/auth/google",
-      health: "/api/health",
-      dashboard: "/api/dashboard",
-      epApproval: "/api/ep-approval",
-      request: "/api/request",
-      vendor: "/api/vendor",
-      part: "/api/part",
-      rfq: "/api/rfq",
-      prNpp: "/api/pr-npp",
-      poNpp: "/api/po-npp",
-      paymentNpp: "/api/payment-npp"
-    }
+    environment: process.env.NODE_ENV || "development"
   });
 });
 
-// ==================== 404 HANDLER ====================
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.method} ${req.url} not found`,
-    hint: 'Available routes: GET /api/health | POST /api/auth/login | POST /api/auth/google | GET /api/auth/me | GET /api/request | GET /api/ep-approval | GET /api/dashboard | GET /health | PATCH /api/auth/profile | POST /api/auth/change-password | POST /api/auth/upload-avatar | DELETE /api/auth/avatar | POST /api/pr-npp | POST /api/po-npp | POST /api/payment-npp'
+    message: `Route ${req.method} ${req.url} not found`
   });
 });
 
-// ==================== GLOBAL ERROR HANDLER ====================
+// Global error handler
 app.use((err, req, res, next) => {
   console.error("🔥 Server Error:", err.message);
-  if (process.env.NODE_ENV !== "production") {
-    console.error("Stack:", err.stack);
-  }
-
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal Server Error",
-    ...(process.env.NODE_ENV !== "production" && { stack: err.stack })
+    message: err.message || "Internal Server Error"
   });
 });
 
-// ==================== START SERVER ====================
+// Start server
 const PORT = process.env.PORT || 5000;
-
-const server = app.listen(PORT, () => {
-  console.log(`\n🚀 ========================================`);
-  console.log(`🚀 SERVER RUNNING SUCCESSFULLY`);
-  console.log(`🚀 ========================================`);
-  console.log(`📍 Local:       http://localhost:${PORT}`);
-  console.log(`📍 Health:      http://localhost:${PORT}/api/health`);
-  console.log(`📍 API Base:     http://localhost:${PORT}/api`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔐 CORS:        Enabled for all origins`);
-  console.log(`\n✅ Available Endpoints:`);
-  console.log(`   POST   /api/auth/login`);
-  console.log(`   POST   /api/auth/google (GOOGLE LOGIN)`);
-  console.log(`   POST   /api/auth/google-idtoken`);
-  console.log(`   GET    /api/auth/me`);
-  console.log(`   GET    /api/auth/profile`);
-  console.log(`   PATCH  /api/auth/profile`);
-  console.log(`   POST   /api/auth/change-password`);
-  console.log(`   POST   /api/auth/upload-avatar`);
-  console.log(`   DELETE /api/auth/avatar`);
-  console.log(`   GET    /api/health`);
-  console.log(`\n📡 CORS enabled for: ${allowedOrigins.join(', ')}`);
-  console.log(`\n✨ Ready to accept requests!\n`);
+app.listen(PORT, () => {
+  console.log(`\n🚀 Server running on port ${PORT}`);
+  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
+  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
-});
-
-module.exports = app;

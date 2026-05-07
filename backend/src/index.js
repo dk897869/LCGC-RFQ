@@ -50,7 +50,7 @@ const app = express();
 // Configure multer for avatar uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, "..", "uploads", "avatars");
+    const uploadDir = path.join(__dirname, "uploads", "avatars");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -78,21 +78,44 @@ const upload = multer({
 /* ================= DATABASE CONNECTION ================= */
 connectDB();
 
-/* ================= MIDDLEWARE ================= */
-app.use(helmet());
+/* ================= CORS CONFIGURATION - FIXED ================= */
+const allowedOrigins = [
+  'http://localhost:4200',
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'https://lcgc-rfq.onrender.com',
+  'https://lcgc-rfq-frontend.onrender.com',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: "*",
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.warn(`⚠️ Blocked CORS request from: ${origin}`);
+      return callback(null, false);
+    }
+    return callback(null, true);
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
   credentials: true,
   maxAge: 86400
+}));
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "unsafe-none" }
 }));
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+// Static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// Logging middleware
 if (process.env.NODE_ENV !== "production") {
   app.use((req, res, next) => {
     console.log(`📌 ${req.method} ${req.url}`);
@@ -109,10 +132,10 @@ const generateToken = (user) => {
   );
 };
 
-/* ================= GOOGLE LOGIN API ================= */
+/* ================= GOOGLE LOGIN API - FIXED ================= */
 app.post('/api/auth/google', async (req, res) => {
   console.log('📥 Google login endpoint hit');
-  console.log('Request body:', req.body);
+  console.log('Origin:', req.headers.origin);
   
   try {
     const { credential } = req.body;
@@ -161,13 +184,17 @@ app.post('/api/auth/google', async (req, res) => {
       console.log('✅ New user created:', user.email);
       
       // Send welcome email (don't await to avoid blocking)
-      const { sendMail } = require('./services/mail.service');
-      sendMail({
-        to: user.email,
-        subject: 'Welcome to LCGC System!',
-        type: 'welcome',
-        data: { name: user.name }
-      }).catch(err => console.log('Welcome email error:', err.message));
+      try {
+        const { sendMail } = require('./services/mail.service');
+        sendMail({
+          to: user.email,
+          subject: 'Welcome to LCGC System!',
+          type: 'welcome',
+          data: { name: user.name }
+        }).catch(err => console.log('Welcome email error:', err.message));
+      } catch (err) {
+        console.log('Email service not configured');
+      }
       
     } else if (!user.googleId) {
       console.log('🔗 Linking Google account to existing user');
@@ -187,6 +214,10 @@ app.post('/api/auth/google', async (req, res) => {
     const token = generateToken(user);
     
     console.log('🎉 Google login successful for:', user.email);
+    
+    // Set CORS headers for response
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
     
     res.json({
       success: true,
@@ -223,7 +254,6 @@ app.post('/api/auth/google-idtoken', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Google ID token is required' });
     }
     
-    // For now, decode the token (in production, verify with Google)
     const decoded = jwt.decode(idToken);
     
     if (!decoded || !decoded.email) {
@@ -303,6 +333,27 @@ app.get('/health', (req, res) => {
 });
 
 /* ================= AUTH ENDPOINTS ================= */
+
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const User = require('./models/user.model');
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({ success: true, user: user });
+  } catch (error) {
+    res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+});
 
 app.get('/api/auth/profile', async (req, res) => {
   try {
@@ -478,120 +529,6 @@ app.delete('/api/auth/avatar', async (req, res) => {
   }
 });
 
-app.post('/api/auth/remove-avatar', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const User = require('./models/user.model');
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      decoded.id,
-      { $set: { avatar: '', profileImage: '' } },
-      { new: true }
-    ).select('-password');
-    
-    res.json({ 
-      success: true, 
-      message: 'Avatar removed successfully',
-      user: updatedUser
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.post('/api/auth/update-profile', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const User = require('./models/user.model');
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      decoded.id,
-      { $set: req.body },
-      { new: true, runValidators: true }
-    ).select('-password');
-    
-    res.json({ 
-      success: true, 
-      message: 'Profile updated successfully',
-      user: updatedUser 
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.patch('/api/auth/password', async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const User = require('./models/user.model');
-    
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Current password is incorrect' });
-    }
-    
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-    
-    res.json({ success: true, message: 'Password changed successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.put('/api/auth/password', async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const User = require('./models/user.model');
-    
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Current password is incorrect' });
-    }
-    
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-    
-    res.json({ success: true, message: 'Password changed successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
 /* ================= ROUTES ================= */
 
 app.use("/api/auth", authRoutes);
@@ -605,22 +542,21 @@ app.use("/api/pr-npp", prNppRoutes);
 app.use("/api/po-npp", poNppRoutes);
 app.use("/api/payment-npp", paymentNppRoutes);
 
-// ✅ NEW API ROUTES - will work if files exist, otherwise return 501
+// ✅ NEW API ROUTES
 app.use("/api/order-history", orderHistoryRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/approvals", approvalRoutes);
 app.use("/api/serial-number", serialNumberRoutes);
 
-// Optional route - safe require
+// Optional routes
 const otpRoutes = safeRequire("./routes/otp.routes");
 app.use("/api/otp", otpRoutes);
 
 app.use("/api/part", partRoutes);
 app.use("/api/users", userRoutes);
-
 app.use('/api/ep-approval', requestRoutes);
 
-// User rights route - safe require
+// User rights route
 try {
   const userRightRoutes = require("./routes/userRight.routes");
   app.use("/api/user-rights", userRightRoutes);
@@ -646,11 +582,7 @@ app.get("/", (req, res) => {
       rfq: "/api/rfq",
       prNpp: "/api/pr-npp",
       poNpp: "/api/po-npp",
-      paymentNpp: "/api/payment-npp",
-      orderHistory: "/api/order-history",
-      reports: "/api/reports",
-      approvals: "/api/approvals",
-      serialNumber: "/api/serial-number"
+      paymentNpp: "/api/payment-npp"
     }
   });
 });
@@ -660,7 +592,7 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Route ${req.method} ${req.url} not found`,
-    hint: 'Available routes: GET /api/health | POST /api/auth/login | POST /api/auth/google | GET /api/auth/me | GET /api/request | GET /api/ep-approval | GET /api/dashboard | GET /health | PATCH /api/auth/profile | POST /api/auth/change-password | POST /api/auth/upload-avatar | DELETE /api/auth/avatar | POST /api/pr-npp | POST /api/po-npp | POST /api/payment-npp | GET /api/order-history | GET /api/reports/generate | GET /api/serial-number/rfq'
+    hint: 'Available routes: GET /api/health | POST /api/auth/login | POST /api/auth/google | GET /api/auth/me | GET /api/request | GET /api/ep-approval | GET /api/dashboard | GET /health | PATCH /api/auth/profile | POST /api/auth/change-password | POST /api/auth/upload-avatar | DELETE /api/auth/avatar'
   });
 });
 
@@ -694,18 +626,7 @@ app.listen(PORT, () => {
   console.log(`   - POST   /api/auth/change-password`);
   console.log(`   - POST   /api/auth/upload-avatar`);
   console.log(`   - DELETE /api/auth/avatar`);
-  console.log(`✅ EP Approval: http://localhost:${PORT}/api/ep-approval`);
-  console.log(`✅ Requests: http://localhost:${PORT}/api/request`);
-  console.log(`✅ NPP PROCUREMENT APIs:`);
-  console.log(`   - PR NPP     : http://localhost:${PORT}/api/pr-npp`);
-  console.log(`   - PO NPP     : http://localhost:${PORT}/api/po-npp`);
-  console.log(`   - Payment NPP: http://localhost:${PORT}/api/payment-npp`);
-  console.log(`✅ NEW APIs:`);
-  console.log(`   - Order History : http://localhost:${PORT}/api/order-history`);
-  console.log(`   - Reports       : http://localhost:${PORT}/api/reports/generate`);
-  console.log(`   - Approvals     : http://localhost:${PORT}/api/approvals`);
-  console.log(`   - Serial Number : http://localhost:${PORT}/api/serial-number/rfq`);
-  console.log(`📡 CORS enabled for all origins`);
+  console.log(`📡 CORS enabled for frontend origins`);
   console.log(`🛡️  Security headers enabled (Helmet)`);
 });
 

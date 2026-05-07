@@ -61,7 +61,209 @@ const saveOTP = async (email, mobile, otp, type) => {
     expiresAt: new Date(Date.now() + 10 * 60 * 1000)
   });
 };
+// ==================== SEND MOBILE OTP (Updated) ====================
 
+exports.sendMobileOTP = async (req, res) => {
+  try {
+    const { mobile, type = 'registration' } = req.body;
+    
+    console.log('📱 Send Mobile OTP request:', { mobile, type });
+    
+    if (!mobile) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mobile number is required' 
+      });
+    }
+    
+    // Clean mobile number (remove any non-digit characters)
+    const cleanMobile = mobile.replace(/\D/g, '');
+    
+    // For registration, check if mobile already exists
+    if (type === 'registration') {
+      const existingUser = await User.findOne({ 
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      });
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Mobile number already registered' 
+        });
+      }
+    }
+    
+    // Send OTP via Twilio
+    const result = await sendSmsOtp(mobile);
+    
+    if (!result.success) {
+      console.error('Twilio SMS error:', result.error);
+      return res.status(500).json({ 
+        success: false, 
+        message: result.error || 'Failed to send SMS. Please check Twilio configuration.',
+        details: process.env.NODE_ENV === 'development' ? result : undefined
+      });
+    }
+    
+    // Store OTP reference in database
+    const otp = generateOTP(); // Generate a 6-digit OTP
+    await saveOTP(null, cleanMobile, otp, type);
+    
+    console.log(`✅ Mobile OTP sent to ${mobile}: ${otp} (development only)`);
+    
+    res.json({
+      success: true,
+      message: `OTP sent successfully to ${mobile}`,
+      method: 'mobile',
+      devOTP: process.env.NODE_ENV === 'development' ? otp : undefined,
+      twilioStatus: result.status
+    });
+    
+  } catch (error) {
+    console.error('Send Mobile OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== VERIFY MOBILE OTP ====================
+
+exports.verifyMobileOTP = async (req, res) => {
+  try {
+    const { mobile, otp, type = 'registration' } = req.body;
+    
+    console.log('🔐 Verify Mobile OTP:', { mobile, otp, type });
+    
+    if (!mobile || !otp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mobile number and OTP are required' 
+      });
+    }
+    
+    const cleanMobile = mobile.replace(/\D/g, '');
+    
+    // Find OTP record
+    const otpRecord = await OTP.findOne({
+      mobile: cleanMobile,
+      otp: otp,
+      type: type
+    });
+    
+    if (!otpRecord) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid OTP' 
+      });
+    }
+    
+    // Check if OTP is expired
+    if (new Date() > otpRecord.expiresAt) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'OTP has expired. Please request a new one.' 
+      });
+    }
+    
+    // Delete used OTP
+    await OTP.deleteOne({ _id: otpRecord._id });
+    
+    res.json({
+      success: true,
+      message: 'Mobile OTP verified successfully',
+      verified: true
+    });
+    
+  } catch (error) {
+    console.error('Verify Mobile OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== UPDATE REGISTRATION TO SUPPORT MOBILE ====================
+
+exports.register = async (req, res) => {
+  try {
+    const { 
+      name, email, password, role, contactNo, department, 
+      organization, dateOfBirth, mobileVerified = false 
+    } = req.body;
+
+    console.log("📤 Register request:", { name, email, role, contactNo, mobileVerified });
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Name, email and password are required" 
+      });
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email already registered" 
+      });
+    }
+
+    // Check if mobile already exists (if provided)
+    if (contactNo) {
+      const cleanMobile = contactNo.replace(/\D/g, '');
+      const existingMobile = await User.findOne({ 
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      });
+      if (existingMobile) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Mobile number already registered" 
+        });
+      }
+    }
+
+    const user = new User({
+      name: name.trim(),
+      email: email.toLowerCase(),
+      password: password,
+      role: role || "User",
+      department: department || 'Purchase',
+      contactNo: contactNo || '',
+      organization: organization || 'Radiant Appliances',
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      mobileVerified: mobileVerified, // Track if mobile is verified
+      emailVerified: false,
+      rights: {}
+    });
+
+    await user.save();
+
+    const token = generateToken(user);
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        profileImage: user.profileImage || '',
+        workspaces: user.workspaces || [],
+        dateOfBirth: user.dateOfBirth,
+        mobileVerified: user.mobileVerified,
+        emailVerified: user.emailVerified,
+        rights: user.rights || {}
+      }
+    });
+
+  } catch (error) {
+    console.error("Register error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 // ==================== EMAIL FUNCTIONS ====================
 
 const sendEmailWithResend = async (to, subject, html, text, ccList = []) => {
@@ -373,6 +575,9 @@ exports.verifyOTP = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ==================== SOCIAL LOGIN CALLBACK ====================
+
 exports.socialLoginCallback = async (req, res) => {
   try {
     const { provider, profile } = req.body;
@@ -693,38 +898,6 @@ exports.uploadProfilePhoto = async (req, res) => {
   }
 };
 
-// ==================== CLEAR AVATAR ====================
-
-exports.clearAvatar = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id || req.user._id);
-    if (user) {
-      user.profileImage = '';
-      user.avatar = '';
-      await user.save();
-    }
-    res.json({ 
-      success: true, 
-      message: 'Avatar removed successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profileImage: '',
-        role: user.role,
-        department: user.department,
-        contactNo: user.contactNo,
-        organization: user.organization,
-        workspaces: user.workspaces || [],
-        dateOfBirth: user.dateOfBirth,
-        rights: user.rights || {},
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 // ==================== REFRESH USER SESSION ====================
 
 exports.refreshUserSession = async (req, res) => {
@@ -936,6 +1109,74 @@ exports.resetPasswordWithToken = async (req, res) => {
   }
 };
 
+// ==================== EMAIL VERIFICATION ====================
+
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Verification token required' });
+    }
+    
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpire: { $gt: new Date() }
+    });
+    
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+    
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpire = undefined;
+    await user.save();
+    
+    res.json({ success: true, message: 'Email verified successfully' });
+  } catch (error) {
+    console.error('Verify email error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email required' });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    if (user.emailVerified) {
+      return res.status(400).json({ success: false, message: 'Email already verified' });
+    }
+    
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+    user.emailVerificationExpire = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+    
+    const base = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:4200';
+    const verificationLink = `${base}/verify-email?token=${verificationToken}`;
+    
+    await sendMail({
+      to: user.email,
+      subject: 'Verify Your Email',
+      html: `<p>Hello ${user.name},</p><p>Please verify your email by clicking: <a href="${verificationLink}">Verify Email</a></p>`,
+    });
+    
+    res.json({ success: true, message: 'Verification email sent' });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ==================== SMS OTP ====================
 
 exports.sendSmsOTP = async (req, res) => {
@@ -976,6 +1217,39 @@ exports.sendSmsOTP = async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
+  }
+};
+
+// ==================== CLEAR AVATAR ====================
+
+exports.clearAvatar = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id || req.user._id);
+    if (user) {
+      user.profileImage = '';
+      user.avatar = '';
+      await user.save();
+    }
+    res.json({ 
+      success: true, 
+      message: 'Avatar removed successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: '',
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        workspaces: user.workspaces || [],
+        dateOfBirth: user.dateOfBirth,
+        rights: user.rights || {},
+      }
+    });
+  } catch (error) {
+    console.error('Clear avatar error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -1257,39 +1531,7 @@ exports.getEPRequestStats = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-// ==================== CLEAR AVATAR ====================
 
-exports.clearAvatar = async (req, res) => {
-  try {
-    const User = require('../models/user.model');
-    const user = await User.findById(req.user.id || req.user._id);
-    if (user) {
-      user.profileImage = '';
-      user.avatar = '';
-      await user.save();
-    }
-    res.json({ 
-      success: true, 
-      message: 'Avatar removed successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profileImage: '',
-        role: user.role,
-        department: user.department,
-        contactNo: user.contactNo,
-        organization: user.organization,
-        workspaces: user.workspaces || [],
-        dateOfBirth: user.dateOfBirth,
-        rights: user.rights || {},
-      }
-    });
-  } catch (error) {
-    console.error('Clear avatar error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
 exports.sendEPRequestEmail = async (req, res) => {
   try {
     const { toEmails, ccEmails, epData } = req.body;

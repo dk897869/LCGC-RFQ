@@ -385,8 +385,32 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/send-otp', authController.sendEmailOTP);
 router.post('/verify-otp', authController.verifyOTP);
-router.post('/send-registration-otp', authController.sendRegistrationOTP);
-router.post('/verify-registration-otp', authController.verifyRegistrationOTP);
+// Mobile OTP Routes
+router.post('/send-mobile-otp', (req, res, next) => {
+  console.log('📍 /send-mobile-otp route hit');
+  console.log('📦 Request body:', req.body);
+  next();
+}, authController.sendMobileOTP);
+
+router.post('/verify-mobile-otp', (req, res, next) => {
+  console.log('📍 /verify-mobile-otp route hit');
+  console.log('📦 Request body:', req.body);
+  next();
+}, authController.verifyMobileOTP);
+
+// Registration OTP Routes
+router.post('/send-registration-otp', (req, res, next) => {
+  console.log('📍 /send-registration-otp route hit');
+  console.log('📦 Request body:', req.body);
+  next();
+}, authController.sendRegistrationOTP);
+
+router.post('/verify-registration-otp', (req, res, next) => {
+  console.log('📍 /verify-registration-otp route hit');
+  console.log('📦 Request body:', req.body);
+  next();
+}, authController.verifyRegistrationOTP);
+
 router.post('/forgot-password', authController.sendForgotPasswordOTP);
 router.post('/resend-forgot-password', authController.resendForgotPasswordOTP);
 router.post('/reset-password', authController.verifyOTPAndResetPassword);
@@ -398,6 +422,9 @@ router.post('/verify-sms-otp', authController.verifyOTP);
 // Email verification routes
 router.get('/verify-email', authController.verifyEmail);
 router.post('/resend-verification', authController.resendVerificationEmail);
+
+// Social login callback
+router.post('/social-callback', authController.socialLoginCallback);
 
 // ==================== PROTECTED ROUTES (Require Auth) ====================
 router.use(authMiddleware);
@@ -419,67 +446,8 @@ router.post('/upload-avatar', upload.single('avatar'), authController.uploadProf
 router.post('/upload-profile-photo', upload.single('profileImage'), authController.uploadProfilePhoto);
 
 // Clear avatar route
-router.delete('/avatar', async (req, res) => {
-  try {
-    const User = require('../models/user.model');
-    const user = await User.findById(req.user.id || req.user._id);
-    if (user) {
-      user.profileImage = '';
-      user.avatar = '';
-      await user.save();
-    }
-    res.json({ 
-      success: true, 
-      message: 'Avatar removed successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profileImage: '',
-        role: user.role,
-        department: user.department,
-        contactNo: user.contactNo,
-        organization: user.organization,
-        workspaces: user.workspaces || [],
-        dateOfBirth: user.dateOfBirth,
-        rights: user.rights || {},
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.delete('/profile-photo', async (req, res) => {
-  try {
-    const User = require('../models/user.model');
-    const user = await User.findById(req.user.id || req.user._id);
-    if (user) {
-      user.profileImage = '';
-      user.avatar = '';
-      await user.save();
-    }
-    res.json({ 
-      success: true, 
-      message: 'Profile photo removed successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profileImage: '',
-        role: user.role,
-        department: user.department,
-        contactNo: user.contactNo,
-        organization: user.organization,
-        workspaces: user.workspaces || [],
-        dateOfBirth: user.dateOfBirth,
-        rights: user.rights || {},
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+router.delete('/avatar', authController.clearAvatar);
+router.delete('/profile-photo', authController.clearAvatar);
 
 // EP Request routes
 router.post('/ep-requests', authController.createEPRequest);

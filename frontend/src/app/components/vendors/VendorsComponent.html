@@ -1,0 +1,125 @@
+<div class="ep-page-wrapper">
+  <div class="global-toast" *ngIf="toastMessage" [ngClass]="toastType === 'error' ? 'toast-error' : toastType === 'success' ? 'toast-success' : 'toast-info'">
+    <span class="toast-msg">{{ toastMessage }}</span>
+    <button type="button" class="toast-close" (click)="toastMessage = ''">×</button>
+  </div>
+
+  <div class="ep-sidebar">
+    <div class="sidebar-brand">Dashboard</div>
+    <div class="sidebar-section-label">Master Data</div>
+    <div class="sidebar-menu">
+      <div class="sidebar-item active">
+        <span class="sidebar-dot"></span> Vendors
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-main">
+    <div class="ep-topbar">
+      <div class="topbar-title">
+        <h2>Vendors <span class="topbar-sub">› List</span></h2>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" class="refresh-btn" (click)="loadVendors()" [disabled]="isLoading">Refresh</button>
+        <button type="button" class="create-btn" (click)="openCreateModal()">+ Add New Vendor</button>
+      </div>
+    </div>
+
+    <div class="section-filters" style="margin-bottom:12px;">
+      <span class="stat-badge">Total: {{ vendors.length }}</span>
+      <span class="stat-badge">Active: {{ activeCount }}</span>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading vendors...</p>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading">
+      <div class="table-header-row">
+        <h3>Vendor directory</h3>
+      </div>
+      <table class="ep-table" *ngIf="vendors.length > 0">
+        <thead>
+          <tr>
+            <th>Vendor</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Company</th>
+            <th>GST</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let vendor of vendors; let index = index">
+            <td>
+              <strong>{{ vendor.name }}</strong>
+              <span class="sub-text">#{{ index + 1 }}</span>
+            </td>
+            <td><a [href]="'mailto:' + vendor.email" class="email-link">{{ vendor.email || '—' }}</a></td>
+            <td>{{ vendor.phone || '—' }}</td>
+            <td>{{ vendor.company || '—' }}</td>
+            <td>{{ vendor.gstNumber || '—' }}</td>
+            <td><span class="status-badge" [class.approved]="vendor.status === 'Active'" [class.rejected]="vendor.status !== 'Active'">{{ vendor.status || 'Active' }}</span></td>
+            <td class="actions">
+              <button type="button" class="btn-icon edit-btn" (click)="openEditModal(vendor)">Edit</button>
+              <button type="button" class="btn-icon delete-btn" (click)="deleteVendor(vendor)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="vendors.length === 0" class="no-data"><h3>No vendors found.</h3></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="vendors-modal" (click)="$event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3>{{ isEditing ? 'Edit Vendor' : 'Add New Vendor' }}</h3>
+      <button type="button" (click)="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <label class="field">
+          <span>Vendor Name *</span>
+          <input [(ngModel)]="formData.name" type="text" placeholder="Enter vendor name">
+        </label>
+        <label class="field">
+          <span>Email *</span>
+          <input [(ngModel)]="formData.email" type="email" placeholder="vendor@company.com">
+        </label>
+        <label class="field">
+          <span>Phone</span>
+          <input [(ngModel)]="formData.phone" type="text" placeholder="Contact number">
+        </label>
+        <label class="field">
+          <span>Company</span>
+          <input [(ngModel)]="formData.company" type="text" placeholder="Company name">
+        </label>
+        <label class="field">
+          <span>GST Number</span>
+          <input [(ngModel)]="formData.gstNumber" type="text" placeholder="GSTIN">
+        </label>
+        <label class="field">
+          <span>Status</span>
+          <select [(ngModel)]="formData.status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </label>
+        <label class="field full">
+          <span>Address</span>
+          <input [(ngModel)]="formData.address" type="text" placeholder="Business address">
+        </label>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button type="button" class="btn-cancel-modal" (click)="closeModal()">Cancel</button>
+      <button type="button" class="btn-submit-modal" (click)="submitVendor()" [disabled]="formSubmitting">
+        {{ formSubmitting ? (isEditing ? 'Saving...' : 'Adding...') : (isEditing ? 'Save Vendor' : 'Add Vendor') }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,495 @@
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const jwt = require('jsonwebtoken');
+const authController = require('../controllers/auth.controller');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { sendMail } = require('../services/mail.service');
+
+// Configure multer for profile photo uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../../uploads/profiles');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'profile-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images are allowed'), false);
+    }
+  }
+});
+
+// ==================== AUTHENTICATION MIDDLEWARE ====================
+const authMiddleware = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+};
+
+// ==================== HELPER FUNCTIONS ====================
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id, email: user.email, role: user.role, rights: user.rights || {} },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES || "7d" }
+  );
+};
+
+// ==================== GOOGLE LOGIN ROUTE ====================
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    console.log('📥 Google login request received');
+    
+    if (!credential) {
+      return res.status(400).json({ success: false, message: 'Google credential is required' });
+    }
+    
+    // Decode Google JWT token (client-side verification)
+    const decoded = jwt.decode(credential);
+    
+    console.log('📝 Decoded Google token:', decoded ? { email: decoded.email, name: decoded.name } : 'null');
+    
+    if (!decoded || !decoded.email) {
+      return res.status(400).json({ success: false, message: 'Invalid Google credential' });
+    }
+    
+    const { email, name, picture, sub: googleId } = decoded;
+    const User = require('../models/user.model');
+    
+    let user = await User.findOne({ $or: [{ googleId: googleId }, { email: email.toLowerCase() }] });
+    
+    if (!user) {
+      console.log('👤 Creating new user from Google login');
+      // Create new user
+      const randomPassword = crypto.randomBytes(20).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      
+      user = new User({
+        name: name || email.split('@')[0],
+        email: email.toLowerCase(),
+        googleId: googleId,
+        password: hashedPassword,
+        emailVerified: true,
+        role: 'User',
+        profileImage: picture || '',
+        rights: {},
+        isActive: true
+      });
+      
+      await user.save();
+      console.log('✅ New user created:', user.email);
+      
+      // Send welcome email
+      await sendMail({
+        to: user.email,
+        subject: 'Welcome to LCGC System!',
+        type: 'welcome',
+        data: { name: user.name }
+      }).catch(err => console.log('Welcome email error:', err.message));
+    } else if (!user.googleId) {
+      console.log('🔗 Linking Google account to existing user');
+      // Link Google account to existing user
+      user.googleId = googleId;
+      if (picture && !user.profileImage) user.profileImage = picture;
+      await user.save();
+    } else {
+      console.log('✅ Existing user found:', user.email);
+    }
+    
+    const token = generateToken(user);
+    await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
+    
+    console.log('🎉 Google login successful for:', user.email);
+    
+    res.json({
+      success: true,
+      message: 'Google login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        profileImage: user.profileImage || '',
+        emailVerified: user.emailVerified,
+        rights: user.rights || {}
+      }
+    });
+  } catch (error) {
+    console.error('❌ Google login error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== GOOGLE LOGIN WITH ID TOKEN ====================
+router.post('/google-idtoken', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    
+    console.log('📥 Google ID token login request received');
+    
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: 'Google ID token is required' });
+    }
+    
+    // Verify token with Google
+    const fetch = require('node-fetch');
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    const payload = await response.json();
+    
+    if (!payload.email) {
+      return res.status(400).json({ success: false, message: 'Invalid Google token' });
+    }
+    
+    const { email, name, picture, sub: googleId } = payload;
+    const User = require('../models/user.model');
+    
+    let user = await User.findOne({ $or: [{ googleId: googleId }, { email: email.toLowerCase() }] });
+    
+    if (!user) {
+      const randomPassword = crypto.randomBytes(20).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      
+      user = new User({
+        name: name || email.split('@')[0],
+        email: email.toLowerCase(),
+        googleId: googleId,
+        password: hashedPassword,
+        emailVerified: true,
+        role: 'User',
+        profileImage: picture || '',
+        rights: {}
+      });
+      
+      await user.save();
+      
+      await sendMail({
+        to: user.email,
+        subject: 'Welcome to LCGC System!',
+        type: 'welcome',
+        data: { name: user.name }
+      }).catch(err => console.log('Welcome email error:', err.message));
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      if (picture && !user.profileImage) user.profileImage = picture;
+      await user.save();
+    }
+    
+    const token = generateToken(user);
+    await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
+    
+    res.json({
+      success: true,
+      message: 'Google login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        profileImage: user.profileImage || '',
+        emailVerified: user.emailVerified,
+        rights: user.rights || {}
+      }
+    });
+  } catch (error) {
+    console.error('Google ID token login error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== FACEBOOK LOGIN ====================
+router.post('/facebook', async (req, res) => {
+  try {
+    const { accessToken, userID } = req.body;
+    
+    if (!accessToken || !userID) {
+      return res.status(400).json({ success: false, message: 'Facebook access token and user ID are required' });
+    }
+    
+    const fetch = require('node-fetch');
+    const fbResponse = await fetch(`https://graph.facebook.com/v18.0/${userID}?fields=id,name,email,picture&access_token=${accessToken}`);
+    const fbData = await fbResponse.json();
+    
+    if (!fbData.email) {
+      return res.status(400).json({ success: false, message: 'Facebook email not available' });
+    }
+    
+    const { email, name, picture, id: facebookId } = fbData;
+    const User = require('../models/user.model');
+    
+    let user = await User.findOne({ $or: [{ facebookId: facebookId }, { email: email.toLowerCase() }] });
+    
+    if (!user) {
+      const randomPassword = crypto.randomBytes(20).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      
+      user = new User({
+        name: name || email.split('@')[0],
+        email: email.toLowerCase(),
+        facebookId: facebookId,
+        password: hashedPassword,
+        emailVerified: true,
+        role: 'User',
+        profileImage: picture?.data?.url || '',
+        rights: {}
+      });
+      
+      await user.save();
+      
+      await sendMail({
+        to: user.email,
+        subject: 'Welcome to LCGC System!',
+        type: 'welcome',
+        data: { name: user.name }
+      }).catch(err => console.log('Welcome email error:', err.message));
+    } else if (!user.facebookId) {
+      user.facebookId = facebookId;
+      if (picture?.data?.url && !user.profileImage) user.profileImage = picture.data.url;
+      await user.save();
+    }
+    
+    const token = generateToken(user);
+    await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
+    
+    res.json({
+      success: true,
+      message: 'Facebook login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        profileImage: user.profileImage || '',
+        emailVerified: user.emailVerified,
+        rights: user.rights || {}
+      }
+    });
+  } catch (error) {
+    console.error('Facebook login error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== TWITTER LOGIN ROUTES ====================
+router.get('/twitter/request-token', async (req, res) => {
+  try {
+    const OAuth = require('oauth-1.0a');
+    const crypto = require('crypto');
+    
+    const oauth = OAuth({
+      consumer: {
+        key: process.env.TWITTER_API_KEY || 'dummy_key',
+        secret: process.env.TWITTER_API_SECRET || 'dummy_secret'
+      },
+      signature_method: 'HMAC-SHA1',
+      hash_function(base_string, key) {
+        return crypto.createHmac('sha1', key).update(base_string).digest('base64');
+      }
+    });
+    
+    const requestData = {
+      url: 'https://api.twitter.com/oauth/request_token',
+      method: 'POST',
+      data: { oauth_callback: process.env.TWITTER_CALLBACK_URL || 'http://localhost:4200/auth/twitter/callback' }
+    };
+    
+    const fetch = require('node-fetch');
+    const response = await fetch(requestData.url, {
+      method: requestData.method,
+      headers: oauth.toHeader(oauth.authorize(requestData))
+    });
+    
+    const responseText = await response.text();
+    const params = new URLSearchParams(responseText);
+    const oauthToken = params.get('oauth_token');
+    const oauthTokenSecret = params.get('oauth_token_secret');
+    
+    if (!oauthToken) {
+      return res.status(400).json({ success: false, message: 'Failed to get Twitter request token' });
+    }
+    
+    const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauthToken}`;
+    
+    res.json({
+      success: true,
+      oauthToken,
+      oauthTokenSecret,
+      authUrl
+    });
+  } catch (error) {
+    console.error('Twitter request token error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/twitter', async (req, res) => {
+  try {
+    const { oauthToken, oauthVerifier } = req.body;
+    
+    if (!oauthToken || !oauthVerifier) {
+      return res.status(400).json({ success: false, message: 'Twitter OAuth token and verifier are required' });
+    }
+    
+    // For now, return a message that Twitter login needs configuration
+    res.json({
+      success: false,
+      message: 'Twitter login not fully configured. Please set up Twitter API credentials.'
+    });
+  } catch (error) {
+    console.error('Twitter login error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== PUBLIC ROUTES ====================
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/send-otp', authController.sendEmailOTP);
+router.post('/verify-otp', authController.verifyOTP);
+router.post('/send-registration-otp', authController.sendRegistrationOTP);
+router.post('/verify-registration-otp', authController.verifyRegistrationOTP);
+router.post('/forgot-password', authController.sendForgotPasswordOTP);
+router.post('/resend-forgot-password', authController.resendForgotPasswordOTP);
+router.post('/reset-password', authController.verifyOTPAndResetPassword);
+router.post('/send-reset-link', authController.sendForgotPasswordLink);
+router.post('/reset-password-with-token', authController.resetPasswordWithToken);
+router.post('/send-sms-otp', authController.sendSmsOTP);
+router.post('/verify-sms-otp', authController.verifyOTP);
+
+// Email verification routes
+router.get('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', authController.resendVerificationEmail);
+
+// ==================== PROTECTED ROUTES (Require Auth) ====================
+router.use(authMiddleware);
+
+// User profile routes
+router.get('/me', authController.getMe);
+router.get('/profile', authController.getMe);
+router.patch('/profile', authController.updateProfile);
+router.put('/profile', authController.updateProfile);
+router.post('/update-profile', authController.updateProfile);
+router.post('/change-password', authController.changePassword);
+router.patch('/change-password', authController.changePassword);
+router.post('/refresh-session', authController.refreshUserSession);
+router.get('/departments', authController.getDepartments);
+router.get('/managers', authController.getManagers);
+
+// Profile photo routes
+router.post('/upload-avatar', upload.single('avatar'), authController.uploadProfilePhoto);
+router.post('/upload-profile-photo', upload.single('profileImage'), authController.uploadProfilePhoto);
+
+// Clear avatar route
+router.delete('/avatar', async (req, res) => {
+  try {
+    const User = require('../models/user.model');
+    const user = await User.findById(req.user.id || req.user._id);
+    if (user) {
+      user.profileImage = '';
+      user.avatar = '';
+      await user.save();
+    }
+    res.json({ 
+      success: true, 
+      message: 'Avatar removed successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: '',
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        workspaces: user.workspaces || [],
+        dateOfBirth: user.dateOfBirth,
+        rights: user.rights || {},
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.delete('/profile-photo', async (req, res) => {
+  try {
+    const User = require('../models/user.model');
+    const user = await User.findById(req.user.id || req.user._id);
+    if (user) {
+      user.profileImage = '';
+      user.avatar = '';
+      await user.save();
+    }
+    res.json({ 
+      success: true, 
+      message: 'Profile photo removed successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: '',
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        workspaces: user.workspaces || [],
+        dateOfBirth: user.dateOfBirth,
+        rights: user.rights || {},
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// EP Request routes
+router.post('/ep-requests', authController.createEPRequest);
+router.get('/ep-requests', authController.getAllEPRequests);
+router.get('/ep-requests/:id', authController.getEPRequestById);
+router.put('/ep-requests/:id', authController.updateEPRequest);
+router.delete('/ep-requests/:id', authController.deleteEPRequest);
+router.patch('/ep-requests/:id/approve', authController.approveEPRequest);
+router.patch('/ep-requests/:id/reject', authController.rejectEPRequest);
+router.get('/ep-requests-stats', authController.getEPRequestStats);
+router.post('/ep-requests-send-email', authController.sendEPRequestEmail);
+
+module.exports = router;

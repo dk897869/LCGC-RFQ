@@ -1,0 +1,131 @@
+<div class="ep-page-wrapper">
+  <div class="global-toast" *ngIf="toastMessage" [ngClass]="toastType === 'error' ? 'toast-error' : toastType === 'success' ? 'toast-success' : 'toast-info'">
+    <span class="toast-msg">{{ toastMessage }}</span>
+    <button type="button" class="toast-close" (click)="toastMessage = ''">×</button>
+  </div>
+
+  <div class="ep-sidebar">
+    <div class="sidebar-brand">Dashboard</div>
+    <div class="sidebar-section-label">Master Data</div>
+    <div class="sidebar-menu">
+      <div class="sidebar-item active">
+        <span class="sidebar-dot"></span> Parts
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-main">
+    <div class="ep-topbar">
+      <div class="topbar-title">
+        <h2>Parts <span class="topbar-sub">› List</span></h2>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" class="refresh-btn" (click)="loadParts()" [disabled]="isLoading">Refresh</button>
+        <button type="button" class="create-btn" (click)="openCreateModal()">+ Add New Part</button>
+      </div>
+    </div>
+
+    <div class="section-filters" style="margin-bottom:12px;">
+      <span class="stat-badge">Total: {{ parts.length }}</span>
+      <span class="stat-badge">Active: {{ activeCount }}</span>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading parts...</p>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading">
+      <div class="table-header-row">
+        <h3>Parts inventory</h3>
+      </div>
+      <table class="ep-table" *ngIf="parts.length > 0">
+        <thead>
+          <tr>
+            <th>Part code</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Location</th>
+            <th>Qty</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let part of parts; let index = index">
+            <td>
+              <strong>{{ part.partCode || part.partNumber }}</strong>
+              <span class="sub-text">#{{ index + 1 }}</span>
+            </td>
+            <td class="title-cell" [title]="part.description">
+              {{ part.description || '—' }}
+              <span class="sub-text">Mfr: {{ part.manufacturer || '—' }}</span>
+            </td>
+            <td class="amount">&#8377;{{ part.price | number }}</td>
+            <td>{{ part.location || '—' }}</td>
+            <td>{{ part.quantity }}</td>
+            <td>{{ part.category || '—' }}</td>
+            <td><span class="status-badge" [class.approved]="part.status === 'Active'" [class.rejected]="part.status !== 'Active'">{{ part.status || 'Active' }}</span></td>
+            <td class="actions">
+              <button type="button" class="btn-icon edit-btn" (click)="openEditModal(part)">Edit</button>
+              <button type="button" class="btn-icon delete-btn" (click)="deletePart(part)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="parts.length === 0" class="no-data"><h3>No parts found.</h3></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="parts-modal" (click)="$event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3>{{ isEditing ? 'Edit Part' : 'Add New Part' }}</h3>
+      <button type="button" (click)="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <label class="field">
+          <span>Part Code *</span>
+          <input [(ngModel)]="formData.partCode" type="text" placeholder="e.g. PPLM-001">
+        </label>
+        <label class="field">
+          <span>Part Number</span>
+          <input [(ngModel)]="formData.partNumber" type="text" placeholder="Optional">
+        </label>
+        <label class="field full">
+          <span>Description *</span>
+          <textarea [(ngModel)]="formData.description" rows="3" placeholder="Describe the part..."></textarea>
+        </label>
+        <label class="field">
+          <span>Price (INR)</span>
+          <input [(ngModel)]="formData.price" type="number" placeholder="0">
+        </label>
+        <label class="field">
+          <span>Quantity</span>
+          <input [(ngModel)]="formData.quantity" type="number" placeholder="0">
+        </label>
+        <label class="field">
+          <span>Location</span>
+          <input [(ngModel)]="formData.location" type="text" placeholder="Warehouse">
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <input [(ngModel)]="formData.category" type="text" placeholder="Category">
+        </label>
+        <label class="field full">
+          <span>Manufacturer</span>
+          <input [(ngModel)]="formData.manufacturer" type="text" placeholder="Manufacturer name">
+        </label>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button type="button" class="btn-cancel-modal" (click)="closeModal()">Cancel</button>
+      <button type="button" class="btn-submit-modal" (click)="submitPart()" [disabled]="formSubmitting">
+        {{ formSubmitting ? (isEditing ? 'Saving...' : 'Adding...') : (isEditing ? 'Save Part' : 'Add Part') }}
+      </button>
+    </div>
+  </div>
+</div>

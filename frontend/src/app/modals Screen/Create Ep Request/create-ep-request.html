@@ -1,0 +1,245 @@
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="create-ep-modal" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="modal-header">
+      <h2>📝 Create EP Approval Request</h2>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      
+      <!-- Toast -->
+      <div class="global-toast" *ngIf="toast" [ngClass]="'toast-' + toast.type">
+        <span class="toast-icon">{{ toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️' }}</span>
+        <span class="toast-msg">{{ toast.message }}</span>
+        <button class="toast-close" (click)="closeToast()">×</button>
+      </div>
+      
+      <!-- Requester Information Section -->
+      <div class="form-section">
+        <div class="section-title">
+          <span class="section-icon">👤</span>
+          Requester Information
+        </div>
+        <div class="info-card">
+          <div class="info-grid">
+            <div class="info-field">
+              <label>Name *</label>
+              <input type="text" [(ngModel)]="formData.requesterName" placeholder="Enter name">
+            </div>
+            <div class="info-field">
+              <label>Department *</label>
+              <select [(ngModel)]="formData.department">
+                <option *ngFor="let d of departmentOptions" [value]="d">{{ d }}</option>
+              </select>
+            </div>
+            <div class="info-field">
+              <label>Email ID *</label>
+              <input type="email" [(ngModel)]="formData.emailId" placeholder="email@company.com">
+            </div>
+            <div class="info-field">
+              <label>Request Date</label>
+              <input type="date" [(ngModel)]="formData.requestDate">
+            </div>
+            <div class="info-field">
+              <label>Contact No.</label>
+              <input type="text" [(ngModel)]="formData.contactNo" placeholder="Phone number">
+            </div>
+            <div class="info-field">
+              <label>Organization</label>
+              <input type="text" [(ngModel)]="formData.organization" placeholder="Organization name">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Activity Overview Section -->
+      <div class="form-section">
+        <div class="section-title">
+          <span class="section-icon">🎯</span>
+          Activity Overview
+        </div>
+        <div class="info-card">
+          <div class="form-grid">
+            <div class="form-field full-width">
+              <label>TITLE OF ACTIVITY *</label>
+              <input type="text" [(ngModel)]="formData.titleOfActivity" placeholder="Enter title of the activity">
+            </div>
+            <div class="form-field">
+              <label>VENDOR / SUPPLIER *</label>
+              <input type="text" [(ngModel)]="formData.vendor" placeholder="Enter vendor name">
+            </div>
+            <div class="form-field">
+              <label>AMOUNT / COST (₹) *</label>
+              <input type="number" [(ngModel)]="formData.amount" placeholder="Enter amount" min="0" step="1000">
+            </div>
+            <div class="form-field">
+              <label>PRIORITY LEVEL</label>
+              <select [(ngModel)]="formData.priority">
+                <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
+              </select>
+            </div>
+            <div class="form-field full-width">
+              <label>DESCRIPTION</label>
+              <textarea [(ngModel)]="formData.description" rows="3" placeholder="State the objective..."></textarea>
+            </div>
+            <div class="form-field full-width">
+              <label>OBJECTIVE</label>
+              <textarea [(ngModel)]="formData.objective" rows="2" placeholder="Business objective..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Attachments Section -->
+      <div class="form-section">
+        <div class="section-title">
+          <span class="section-icon">📎</span>
+          Attachments (Documents / Images)
+        </div>
+        <div class="attachments-table-wrapper">
+          <table class="attachments-table">
+            <thead>
+              <tr>
+                <th>S. No.</th>
+                <th>Attachment *</th>
+                <th>File Size</th>
+                <th>Upload File</th>
+                <th>Preview</th>
+                <th>Remark</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let att of attachments; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <input type="text" [(ngModel)]="att.name" placeholder="Attachment name" class="attachment-name">
+                </td>
+                <td class="file-size">{{ att.fileSize || '—' }}</td>
+                <td>
+                  <input type="file" [attr.data-attachment-id]="att.id" (change)="onFileSelected(att, $event)" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                </td>
+                <td class="preview-cell">
+                  <div *ngIf="att.preview" class="file-preview">
+                    <span *ngIf="att.preview.startsWith('data:image')">
+                      <img [src]="att.preview" class="preview-image" alt="Preview">
+                    </span>
+                    <span *ngIf="!att.preview.startsWith('data:image')" class="file-icon">{{ att.preview }}</span>
+                  </div>
+                  <span *ngIf="!att.preview" class="no-preview">No preview</span>
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="att.remark" placeholder="Remark" class="remark-input">
+                </td>
+                <td>
+                  <button *ngIf="att.file" type="button" class="remove-attach-btn" (click)="removeAttachment(att)">🗑️</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="attachment-note">
+          📌 Upload images, PDFs, or documents (max 5MB each)
+        </div>
+      </div>
+      
+      <!-- Approval Chain Section -->
+      <div class="form-section">
+        <div class="section-title">
+          <span class="section-icon">👥</span>
+          Approval Chain
+          <button type="button" class="add-approver-btn" (click)="addApprover()">+ Add Approver</button>
+        </div>
+        <div class="approval-table-wrapper">
+          <table class="approval-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Line</th>
+                <th>Manager Name *</th>
+                <th>Designation *</th>
+                <th>Email *</th>
+                <th>Status</th>
+                <th>Date/Time</th>
+                <th>Remarks</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let approver of approvers; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <select [(ngModel)]="approver.line" class="line-select">
+                    <option value="Parallel">Parallel</option>
+                    <option value="Sequential">Sequential</option>
+                  </select>
+                </td>
+                <td>
+                  <select [(ngModel)]="approver.managerName" (ngModelChange)="onManagerChange(approver, $event)" class="manager-select">
+                    <option value="">Select Manager</option>
+                    <option *ngFor="let m of managerOptions" [value]="m.name">{{ m.name }} ({{ m.designation }})</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.designation" placeholder="Designation" class="designation-input">
+                </td>
+                <td>
+                  <input type="email" [(ngModel)]="approver.email" placeholder="Email" class="email-input">
+                </td>
+                <td>
+                  <span class="status-badge" [class.approved]="approver.status === 'approved'" [class.rejected]="approver.status === 'rejected'" [class.pending]="approver.status === 'pending'">
+                    {{ approver.status }}
+                  </span>
+                </td>
+                <td class="date-time-cell">
+                  {{ approver.dateTime || '—' }}
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks" class="remarks-input">
+                </td>
+                <td>
+                  <button *ngIf="approvers.length > 1" type="button" class="remove-row-btn" (click)="removeApprover(i)">×</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- CC Recipients Section -->
+      <div class="form-section">
+        <div class="section-title">
+          <span class="section-icon">📧</span>
+          CC Recipients
+        </div>
+        <div class="cc-container">
+          <div class="cc-input-group">
+            <input type="email" [(ngModel)]="ccInput" placeholder="Enter email address" class="cc-input">
+            <button type="button" class="add-cc-btn" (click)="addCc()">+ Add</button>
+          </div>
+          <div class="cc-chips" *ngIf="ccList.length">
+            <span class="cc-chip" *ngFor="let cc of ccList; let i = index">
+              {{ cc }}
+              <button type="button" (click)="removeCc(i)">×</button>
+            </span>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Footer Actions -->
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
+      <button type="button" class="btn-excel" (click)="downloadExcel()">📊 Download Excel</button>
+      <button type="button" class="btn-preview" (click)="previewPDF()">👁️ Preview PDF</button>
+      <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="isSubmitting">
+        <span class="btn-spin" *ngIf="isSubmitting"></span>
+        {{ isSubmitting ? 'Creating...' : 'Create Request' }}
+      </button>
+    </div>
+    
+  </div>
+</div>

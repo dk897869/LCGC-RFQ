@@ -1,0 +1,56 @@
+<div class="payment-shell">
+  <aside class="payment-sidebar">
+    <div class="sidebar-title">Payment</div>
+    <button
+      *ngFor="let menu of paymentMenus"
+      class="payment-menu-item"
+      [class.active]="activePaymentMenu === menu.id"
+      (click)="setPaymentMenu(menu.id)">
+      {{ menu.label }}
+    </button>
+  </aside>
+
+  <main class="payment-main">
+    <div class="payment-header">
+      <h2>{{ activePaymentLabel }}</h2>
+    </div>
+
+    <section class="payment-card" *ngIf="activePaymentMenu === 'payment-advice'">
+      <h3>Payment Advice Form</h3>
+      <div class="form-grid">
+        <label>Employee Name<input type="text" placeholder="Employee name"></label>
+        <label>Application Date<input type="date"></label>
+        <label>Payment To<input type="text" placeholder="Vendor / employee"></label>
+        <label>Expense Amount<input type="number" placeholder="0"></label>
+        <label class="wide">Purpose<textarea rows="3" placeholder="Payment purpose"></textarea></label>
+      </div>
+      <div class="actions"><button>Save Draft</button><button class="primary">Submit Payment</button></div>
+    </section>
+
+    <section class="payment-card" *ngIf="activePaymentMenu === 'wcc'">
+      <h3>Work Completion Certificate</h3>
+      <div class="form-grid">
+        <label>Requester Name<input type="text"></label>
+        <label>Vendor Name<input type="text"></label>
+        <label>PO / WO No.<input type="text"></label>
+        <label class="wide">Work Description<textarea rows="4"></textarea></label>
+      </div>
+      <div class="actions"><button>Save Draft</button><button class="primary">Submit WCC</button></div>
+    </section>
+
+    <section class="payment-card" *ngIf="activePaymentMenu === 'payment-approval'">
+      <h3>Payment Approval</h3>
+      <p>Payment approval requests will appear here.</p>
+    </section>
+
+    <section class="payment-card" *ngIf="activePaymentMenu === 'payment-status'">
+      <h3>Payment Status</h3>
+      <p>Submitted payment and WCC status will appear here.</p>
+    </section>
+
+    <section class="payment-card" *ngIf="activePaymentMenu === 'payment-drafts'">
+      <h3>Saved Payment Drafts</h3>
+      <p>Saved payment form data can be selected and submitted later.</p>
+    </section>
+  </main>
+</div>

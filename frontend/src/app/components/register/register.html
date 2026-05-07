@@ -1,0 +1,199 @@
+<!-- Toast Stack -->
+<div class="toast-stack">
+  <div *ngFor="let toast of toasts" class="toast-item" [ngClass]="'toast-' + toast.type">
+    <span class="ti">{{ toast.icon }}</span>
+    <span class="tm">{{ toast.message }}</span>
+    <button class="tx" (click)="dismissToast(toast.id)">×</button>
+  </div>
+</div>
+
+<div class="register-page">
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="lp-inner">
+      <div class="brand">
+        <div class="brand-mark">LC</div>
+        <div class="brand-text">
+          <span class="brand-name">LCGC</span>
+          <span class="brand-sub">Resolute Group</span>
+        </div>
+      </div>
+
+      <div class="hero-text">
+        <h1>Join the<br><em>Platform.</em></h1>
+        <p>Create your account and start managing procurement, approvals, and vendors — all in one place.</p>
+      </div>
+
+      <div class="feature-pills">
+        <div class="pill">🚀 Quick Setup</div>
+        <div class="pill">🔐 Secure Access</div>
+        <div class="pill">💼 Enterprise Ready</div>
+        <div class="pill">🎂 Birthday Surprises</div>
+      </div>
+
+      <div class="lp-decoration">
+        <div class="deco-circle c1"></div>
+        <div class="deco-circle c2"></div>
+        <div class="deco-circle c3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="form-card">
+      <div class="form-top">
+        <h2>Create Account</h2>
+        <p>Join LCGC Resolute Group today</p>
+      </div>
+
+      <!-- Method Toggle -->
+      <div class="method-toggle">
+        <button class="mt-btn" [class.active]="registerMethod === 'email'" (click)="setRegisterMethod('email')">
+          <span>📧</span> Email
+        </button>
+        <button class="mt-btn" [class.active]="registerMethod === 'mobile'" (click)="setRegisterMethod('mobile')">
+          <span>📱</span> Mobile OTP
+        </button>
+        <div class="mt-slider" [class.right]="registerMethod === 'mobile'"></div>
+      </div>
+
+      <div class="register-form">
+        <!-- Full Name -->
+        <div class="field">
+          <label>Full Name <span class="req">*</span></label>
+          <div class="field-wrap">
+            <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" [(ngModel)]="fullName" name="fullName" placeholder="Enter your full name">
+          </div>
+        </div>
+
+        <!-- Date of Birth -->
+        <div class="field">
+          <label>Date of Birth <span class="req">*</span></label>
+          <div class="field-wrap">
+            <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <input type="date" [(ngModel)]="dateOfBirth" name="dob" [max]="currentDate">
+          </div>
+          <small class="hint">🎉 We'll celebrate your birthday!</small>
+        </div>
+
+        <!-- Email -->
+        <div class="field" *ngIf="registerMethod === 'email'">
+          <label>Email Address <span class="req">*</span></label>
+          <div class="field-wrap">
+            <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" [(ngModel)]="email" name="email" placeholder="you@company.com">
+          </div>
+        </div>
+
+        <!-- Mobile -->
+        <div class="field" *ngIf="registerMethod === 'mobile'">
+          <label>Mobile Number <span class="req">*</span></label>
+          <div class="field-wrap mobile-wrap">
+            <span class="prefix">+91</span>
+            <input type="tel" [(ngModel)]="mobileNumber" name="mobile" placeholder="10-digit number" maxlength="10">
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="field">
+          <label>Password <span class="req">*</span></label>
+          <div class="field-wrap">
+            <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" placeholder="Minimum 6 characters">
+            <button type="button" class="eye-btn" (click)="togglePassword()">
+              <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <div class="strength-bar" *ngIf="password">
+            <div class="strength-fill" [style.width.%]="getPasswordStrength().pct" [style.background]="getPasswordStrength().color"></div>
+          </div>
+          <small class="strength-label" *ngIf="password" [style.color]="getPasswordStrength().color">{{ getPasswordStrength().label }}</small>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="field">
+          <label>Confirm Password <span class="req">*</span></label>
+          <div class="field-wrap" [class.has-error]="!passwordsMatch() && confirmPassword">
+            <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <input [type]="showConfirmPassword ? 'text' : 'password'" [(ngModel)]="confirmPassword" name="confirmPw" placeholder="Re-enter password">
+            <button type="button" class="eye-btn" (click)="toggleConfirmPassword()">
+              <svg *ngIf="!showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg *ngIf="showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <small class="mismatch" *ngIf="!passwordsMatch() && confirmPassword">⚠️ Passwords do not match</small>
+        </div>
+
+        <!-- Role -->
+        <div class="field">
+          <label>Role</label>
+          <div class="role-grid">
+            <button type="button" *ngFor="let role of roles"
+                    class="role-card"
+                    [class.selected]="selectedRole === role.value"
+                    (click)="selectedRole = role.value">
+              <span class="role-icon">{{ role.icon }}</span>
+              <span class="role-label">{{ role.label }}</span>
+              <span class="role-desc">{{ role.desc }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <label class="check-label">
+          <input type="checkbox" [(ngModel)]="agreeTerms" name="terms">
+          <span class="check-box"></span>
+          <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
+        </label>
+
+        <!-- Submit -->
+        <button class="submit-btn" (click)="onEmailRegister()" [disabled]="isLoading || !isFormValid()">
+          <span class="btn-spinner" *ngIf="isLoading"></span>
+          <span *ngIf="!isLoading">Create Account →</span>
+          <span *ngIf="isLoading">Sending OTP...</span>
+        </button>
+      </div>
+
+      <div class="divider"><span>Already have an account?</span></div>
+      <a routerLink="/login" class="login-btn">Sign in instead</a>
+      <p class="verify-note">We'll send a verification link to your email after registration</p>
+    </div>
+  </div>
+</div>
+
+<!-- OTP Modal -->
+<div class="overlay" *ngIf="showOTPModal" (click)="closeOTPModal()">
+  <div class="otp-modal" (click)="$event.stopPropagation()">
+    <div class="otp-header">
+      <div class="otp-header-icon">📧</div>
+      <div>
+        <h3>Verify Your Email</h3>
+        <p>Code sent to {{ registrationData?.email }}</p>
+      </div>
+      <button class="otp-close" (click)="closeOTPModal()">×</button>
+    </div>
+    <div class="otp-body">
+      <div class="otp-alert success" *ngIf="otpSuccess">✅ {{ otpSuccess }}</div>
+      <div class="otp-alert error" *ngIf="otpError">❌ {{ otpError }}</div>
+
+      <label class="otp-label">Enter 6-digit OTP</label>
+      <input class="otp-input" type="text" [(ngModel)]="otpCode" maxlength="6"
+             placeholder="• • • • • •" inputmode="numeric" (keyup.enter)="verifyOTPAndRegister()">
+      <div class="otp-hint">{{ otpCode.length }}/6 digits</div>
+
+      <div class="otp-timer" *ngIf="!canResendOTP">⏱ Resend in <strong>{{ formatTimer(otpTimer) }}</strong></div>
+      <button class="resend-btn" *ngIf="canResendOTP" (click)="resendOTP()" [disabled]="otpLoading">🔄 Resend OTP</button>
+
+      <div class="otp-actions">
+        <button class="btn-ghost" (click)="closeOTPModal()" [disabled]="otpLoading">Cancel</button>
+        <button class="btn-solid" (click)="verifyOTPAndRegister()" [disabled]="otpLoading || otpCode.length !== 6">
+          <span class="btn-spinner sm" *ngIf="otpLoading"></span>
+          <span>{{ otpLoading ? 'Verifying...' : 'Verify & Register' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

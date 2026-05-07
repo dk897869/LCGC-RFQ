@@ -1,0 +1,63 @@
+<div class="user-rights-page">
+  <div class="page-header">
+    <div>
+      <h1>User Rights</h1>
+      <p class="sub-copy">{{ currentUserName }} | {{ currentUserEmail }}</p>
+    </div>
+    <div class="header-actions">
+      <button class="add-btn" (click)="loadUserRights()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="access-banner" *ngIf="accessNotice">
+    <strong>Access Approved</strong>
+    <span>{{ accessNotice }}</span>
+  </div>
+
+  <div class="loading-box" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading rights and request status...</p>
+  </div>
+
+  <div class="table-container" *ngIf="!isLoading">
+    <table class="rights-table">
+      <thead>
+        <tr>
+          <th>User Rights</th>
+          <th>Code</th>
+          <th>View</th>
+          <th>Creation/Edit</th>
+          <th>Approval</th>
+          <th>Action</th>
+          <th>Status</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let right of userRights; trackBy: trackByModule">
+          <td>
+            <div class="right-title">{{ right.userRight }}</div>
+            <div class="right-reason" *ngIf="right.reason">{{ right.reason }}</div>
+          </td>
+          <td><strong>{{ right.code }}</strong></td>
+          <td><span class="status-dot" [class.active]="right.view">✓</span></td>
+          <td><span class="status-dot" [class.active]="right.creationEdit">✓</span></td>
+          <td><span class="status-dot" [class.active]="right.approval">✓</span></td>
+          <td>
+            <button *ngIf="right.canRequest" class="request-btn" (click)="requestAccess(right)">{{ right.action }}</button>
+            <span *ngIf="!right.canRequest" class="action-label" [class.granted]="right.status === 'Approved'">{{ right.action }}</span>
+          </td>
+          <td>
+            <span class="status-badge"
+              [class.approved]="right.status === 'Approved'"
+              [class.rejected]="right.status === 'Rejected'"
+              [class.pending]="right.status === 'In-process'">
+              {{ right.status }}
+            </span>
+          </td>
+          <td>{{ right.updatedAt ? (right.updatedAt | date:'dd MMM yy, h:mm a') : '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

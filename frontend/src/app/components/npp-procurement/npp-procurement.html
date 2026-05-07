@@ -1,0 +1,1151 @@
+<div class="ep-page-wrapper">
+  
+  <!-- Toast Notification -->
+  <div class="global-toast" *ngIf="toast" [ngClass]="'toast-' + toast.type">
+    <span class="toast-icon">{{ toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️' }}</span>
+    <span class="toast-msg">{{ toast.message }}</span>
+    <button class="toast-close" (click)="closeToast()">×</button>
+  </div>
+  
+  <!-- Sidebar -->
+  <div class="ep-sidebar">
+    <div class="sidebar-brand">📋 LCGC</div>
+    <div class="sidebar-section-label">NPP PROCUREMENT</div>
+    <div class="sidebar-menu">
+      <div class="sidebar-item workflow-item" *ngFor="let step of workflowSteps" [class.active]="activeWorkflowStep === step.id" (click)="setWorkflowStep(step.id)">
+        <span class="sidebar-dot"></span> {{ step.label }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="ep-main">
+    
+    <!-- Header -->
+    <div class="ep-topbar">
+      <div class="topbar-title">
+        <h2>NPP Procurement (NON-BOM) <span class="topbar-sub">› {{ getActiveWorkflowLabel() }}</span></h2>
+      </div>
+      <div class="topbar-actions">
+        <button class="refresh-btn" (click)="loadRequests()" [disabled]="isLoading">🔄 Refresh</button>
+        <button class="create-btn" (click)="openCreateModal()">+ Create NPP Request</button>
+        <button class="history-btn" (click)="openOrderHistoryModal()">📜 Order History</button>
+        <button class="reports-btn" (click)="openReportsModal()">📊 Reports</button>
+        <button class="vendor-request-btn" (click)="openRequestToVendorModal()">📧 Request to Vendor</button>
+      </div>
+    </div>
+    
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading NPP requests...</p>
+    </div>
+
+    <!-- Process Tabs -->
+    <div class="process-tabs">
+      <button class="process-tab" [class.active]="activeProcessTab === 'cash-purchase'" (click)="setProcessTab('cash-purchase')">💰 Cash Purchase-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'new-vendor'" (click)="setProcessTab('new-vendor')">🏢 New Vendor Approval-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'rfq-vendor'" (click)="setProcessTab('rfq-vendor')">📋 Request for Quotation-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'rfq-npp'" (click)="setProcessTab('rfq-npp')">📋 Requisition RFQ-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'vendor-list'" (click)="setProcessTab('vendor-list')">📋 Vendor List-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'employee-detail'" (click)="setProcessTab('employee-detail')">👥 Employee Detail</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'item-master'" (click)="setProcessTab('item-master')">🔧 Item Master List-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'quotation-comparison'" (click)="setProcessTab('quotation-comparison')">📊 Quotation Cost Comparison</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'pr-request-npp'" (click)="setProcessTab('pr-request-npp')">📄 PR Request-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'po-npp'" (click)="setProcessTab('po-npp')">📦 PO-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'payment-advise'" (click)="setProcessTab('payment-advise')">💰 PAYMENT ADVISE</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'wcc-npp'" (click)="setProcessTab('wcc-npp')">📝 WCC-NPP</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'rfq-status'" (click)="setProcessTab('rfq-status')">📊 RFQ Status</button>
+      <button class="process-tab" [class.active]="activeProcessTab === 'approval-status'" (click)="setProcessTab('approval-status')">✅ Approval Status</button>
+    </div>
+
+    <!-- RFQ Serial Number Display -->
+    <div class="serial-display" *ngIf="activeProcessTab === 'rfq-npp'">
+      <span class="serial-label">RFQ Serial Number:</span>
+      <span class="serial-value" [class.submitted]="rfqIsSubmitted">{{ rfqGeneratedSerialNo }}</span>
+      <span class="serial-status" *ngIf="rfqIsSubmitted">✓ Submitted</span>
+      <span class="serial-status draft" *ngIf="!rfqIsSubmitted">📝 Draft</span>
+    </div>
+
+    <!-- ==================== CASH PURCHASE FORM ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'cash-purchase'">
+      <div class="excel-form-header">
+        <span class="excel-badge procurement">NPP PROCUREMENT</span>
+        <span class="excel-badge cash">Cash Purchase-NPP</span>
+      </div>
+      <table class="excel-table requester-table">
+        <tbody>
+          <tr>
+            <td class="label-cell" rowspan="3">Requester<br>Information</td>
+            <td class="field-label">Name</td>
+            <td><input class="excel-input" [(ngModel)]="cashPurchaseForm.requesterName" /></td>
+            <td class="field-label">Request Date</td>
+            <td><input class="excel-input" type="date" [(ngModel)]="cashPurchaseForm.requestDate" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Department</td>
+            <td><input class="excel-input" [(ngModel)]="cashPurchaseForm.department" /></td>
+            <td class="field-label">Contact No.</td>
+            <td><input class="excel-input" [(ngModel)]="cashPurchaseForm.contactNo" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Email ID</td>
+            <td><input class="excel-input" [(ngModel)]="cashPurchaseForm.emailId" /></td>
+            <td class="field-label">Organization</td>
+            <td><input class="excel-input" [(ngModel)]="cashPurchaseForm.organization" /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="form-section">
+        <label>Cost Center</label>
+        <input class="excel-input" [(ngModel)]="cashPurchaseCostCenter" placeholder="Cost Center" />
+      </div>
+      <div class="form-section">
+        <label>Directorate</label>
+        <input class="excel-input" [(ngModel)]="cashPurchaseForm.titleOfActivity" placeholder="Directorate" />
+      </div>
+      <div class="form-section">
+        <label>Purpose</label>
+        <textarea class="excel-textarea" rows="2" [(ngModel)]="cashPurchaseForm.purposeAndObjective" placeholder="Purpose of cash purchase"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-submit-form" (click)="submitCashPurchaseSheet()" [disabled]="isSubmitting">✅ Submit Cash Purchase</button>
+      </div>
+    </div>
+
+    <!-- ==================== NEW VENDOR FORM ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'new-vendor'">
+      <div class="excel-form-header">
+        <span class="excel-badge procurement">NPP PROCUREMENT</span>
+        <span class="excel-badge vendor">New Vendor Approval-NPP</span>
+      </div>
+      <table class="excel-table requester-table">
+        <tbody>
+          <tr>
+            <td class="label-cell" rowspan="3">Requester<br>Information</td>
+            <td class="field-label">Name</td>
+            <td><input class="excel-input" [(ngModel)]="newVendorForm.requesterName" /></td>
+            <td class="field-label">Request Date</td>
+            <td><input class="excel-input" type="date" [(ngModel)]="newVendorForm.requestDate" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Department</td>
+            <td><input class="excel-input" [(ngModel)]="newVendorForm.department" /></td>
+            <td class="field-label">Contact No.</td>
+            <td><input class="excel-input" [(ngModel)]="newVendorForm.contactNo" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Email ID</td>
+            <td><input class="excel-input" [(ngModel)]="newVendorForm.emailId" /></td>
+            <td class="field-label">Organization</td>
+            <td><input class="excel-input" [(ngModel)]="newVendorForm.organization" /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="form-section">
+        <input class="excel-input" [(ngModel)]="newVendorForm.titleOfActivity" readonly placeholder="Approval For: New Vendor registration" />
+      </div>
+      <div class="items-table-wrap">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Vendor Code</th>
+              <th>Supplier Name</th>
+              <th>GST No</th>
+              <th>PAN No</th>
+              <th>MSME</th>
+              <th>Bank Account No</th>
+              <th>Name</th>
+              <th>Contact No</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Location</th>
+              <th>Payment Term</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of newVendorDetails; let i=index">
+              <td><input class="excel-input sm" [(ngModel)]="v.vendorCode" placeholder="Code"></td>
+              <td><input class="excel-input" [(ngModel)]="v.supplierName" placeholder="Name"></td>
+              <td><input class="excel-input sm" [(ngModel)]="v.gstNo" placeholder="GST"></td>
+              <td><input class="excel-input sm" [(ngModel)]="v.panNo" placeholder="PAN"></td>
+              <td><input class="excel-input sm" [(ngModel)]="v.msme" placeholder="MSME"></td>
+              <td><input class="excel-input" [(ngModel)]="v.bankAccountNo" placeholder="Bank A/c"></td>
+              <td><input class="excel-input" [(ngModel)]="v.name" placeholder="Name"></td>
+              <td><input class="excel-input sm" [(ngModel)]="v.contactNo" placeholder="Contact"></td>
+              <td><input class="excel-input" [(ngModel)]="v.email" placeholder="Email"></td>
+              <td><input class="excel-input" [(ngModel)]="v.address" placeholder="Address"></td>
+              <td><input class="excel-input sm" [(ngModel)]="v.location" placeholder="Location"></td>
+              <td><input class="excel-input" [(ngModel)]="v.paymentTerm" placeholder="Term"></td>
+              <td><button class="row-del-btn" (click)="removeNewVendorDetail(i)" *ngIf="newVendorDetails.length>1">×</button></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="13"><button class="add-row-btn" (click)="addNewVendorDetail()">+ Add Vendor</button></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button class="btn-submit-form" (click)="submitNewVendorSheet()" [disabled]="isSubmitting">✅ Submit New Vendor Approval</button>
+      </div>
+    </div>
+
+    <!-- ==================== RFQ VENDOR FORM ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'rfq-vendor'">
+      <div class="excel-form-header">
+        <span class="excel-badge procurement">NPP PROCUREMENT</span>
+        <span class="excel-badge rfq-vendor">Request for Quotation-NPP</span>
+      </div>
+      <table class="excel-table requester-table">
+        <tbody>
+          <tr>
+            <td class="label-cell" rowspan="3">Requester<br>Information</td>
+            <td class="field-label">Name</td>
+            <td><input class="excel-input" [(ngModel)]="rfqVendorForm.requesterName" /></td>
+            <td class="field-label">Request Date</td>
+            <td><input class="excel-input" type="date" [(ngModel)]="rfqVendorForm.requestDate" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Department</td>
+            <td><input class="excel-input" [(ngModel)]="rfqVendorForm.department" /></td>
+            <td class="field-label">Contact No.</td>
+            <td><input class="excel-input" [(ngModel)]="rfqVendorForm.contactNo" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Email ID</td>
+            <td><input class="excel-input" [(ngModel)]="rfqVendorForm.emailId" /></td>
+            <td class="field-label">Organization</td>
+            <td><input class="excel-input" [(ngModel)]="rfqVendorForm.organization" /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="rfq-title-row">
+        <div class="rfq-title-field"><label>Title of Activity *</label><input class="excel-input" [(ngModel)]="rfqVendorForm.titleOfActivity" placeholder="Title"></div>
+        <div class="rfq-priority-field"><label>Priority</label><select class="excel-input" [(ngModel)]="rfqVendorForm.priority"><option value="H">H</option><option value="M">M</option><option value="L">L</option></select></div>
+      </div>
+      <div class="items-table-wrap">
+        <div class="tools-row">
+          <button class="excel-btn" (click)="downloadExcelTemplate()">📎 Download Format</button>
+          <label class="excel-btn file-label">📂 Import Excel<input type="file" accept=".xlsx,.xls,.csv" (change)="onExcelFileSelected($event)" hidden></label>
+        </div>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>RFQ No</th>
+              <th>Description</th>
+              <th>UOM</th>
+              <th>Qty</th>
+              <th>Make</th>
+              <th>Alternative</th>
+              <th>Currency</th>
+              <th>Unit Cost</th>
+              <th>Value</th>
+              <th>Remark</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of rfqVendorItems; let i=index">
+              <td><input class="excel-input sm" [(ngModel)]="item.rfqNo" placeholder="RFQ No"></td>
+              <td><input class="excel-input" [(ngModel)]="item.description" placeholder="Description"></td>
+              <td><input class="excel-input sm" [(ngModel)]="item.uom" placeholder="UOM"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.quantity" (ngModelChange)="calcRfqVendorValue(item)"></td>
+              <td><input class="excel-input" [(ngModel)]="item.make" placeholder="Make"></td>
+              <td><input class="excel-input" [(ngModel)]="item.alternative" placeholder="Alternative"></td>
+              <td><select class="excel-input sm" [(ngModel)]="item.currency"><option>INR</option><option>USD</option></select></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.unitCost" (ngModelChange)="calcRfqVendorValue(item)"></td>
+              <td class="value-cell">{{item.value | number}}</td>
+              <td><input class="excel-input" [(ngModel)]="item.remark" placeholder="Remark"></td>
+              <td><button class="row-del-btn" (click)="removeRfqVendorItem(i)" *ngIf="rfqVendorItems.length>1">×</button></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="8" class="total-label">Total Value</td>
+              <td class="value-cell">{{getRfqVendorTotal() | number}}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="11"><button class="add-row-btn" (click)="addRfqVendorItem()">+ Add Row</button></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="form-section">
+        <label>Purpose & Objective</label>
+        <textarea class="excel-textarea" rows="3" [(ngModel)]="rfqVendorForm.purposeAndObjective" placeholder="Purpose"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-submit-form" (click)="submitRfqVendorSheet()" [disabled]="isSubmitting">✅ Submit Request for Quotation</button>
+      </div>
+    </div>
+
+    <!-- ==================== REQUISITION RFQ-NPP FORM ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'rfq-npp'">
+      <div class="excel-form-header">
+        <span class="excel-badge procurement">NPP PROCUREMENT</span>
+        <span class="excel-badge requisition">Requisition RFQ-NPP</span>
+        <div class="header-actions">
+          <button class="icon-btn" (click)="loadRfqDraft()" title="Load Draft">📂</button>
+          <button class="icon-btn" (click)="downloadExcelTemplate()" title="Download Template">📥</button>
+        </div>
+      </div>
+      <table class="excel-table requester-table">
+        <tbody>
+          <tr>
+            <td class="label-cell" rowspan="3">Requester<br>Information</td>
+            <td class="field-label">Name</td>
+            <td><input class="excel-input" [(ngModel)]="rfqNppForm.requesterName" /></td>
+            <td class="field-label">Request Date</td>
+            <td><input class="excel-input" type="date" [(ngModel)]="rfqNppForm.requestDate" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Department</td>
+            <td><input class="excel-input" [(ngModel)]="rfqNppForm.department" /></td>
+            <td class="field-label">Contact No.</td>
+            <td><input class="excel-input" [(ngModel)]="rfqNppForm.contactNo" /></td>
+          </tr>
+          <tr>
+            <td class="field-label">Email ID</td>
+            <td><input class="excel-input" [(ngModel)]="rfqNppForm.emailId" /></td>
+            <td class="field-label">Organization</td>
+            <td><input class="excel-input" [(ngModel)]="rfqNppForm.organization" /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="rfq-title-row">
+        <div class="rfq-title-field"><label>Title of Activity *</label><input class="excel-input" [(ngModel)]="rfqNppForm.titleOfActivity" placeholder="Title"></div>
+        <div class="rfq-priority-field"><label>Priority</label><select class="excel-input" [(ngModel)]="rfqNppForm.priority"><option value="H">H</option><option value="M">M</option><option value="L">L</option></select></div>
+      </div>
+      <div class="items-table-wrap">
+        <div class="tools-row">
+          <button class="excel-btn" (click)="downloadExcelTemplate()">📎 Download Format</button>
+          <label class="excel-btn file-label">📂 Import Excel<input type="file" accept=".xlsx,.xls,.csv" (change)="onExcelFileSelected($event)" hidden></label>
+          <button class="excel-btn" (click)="exportCurrentRfqExcel()">📤 Export Excel</button>
+          <span class="import-name" *ngIf="importFileName">{{importFileName}}</span>
+        </div>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Item Description</th>
+              <th>UOM</th>
+              <th>Qty</th>
+              <th>Make</th>
+              <th>Alternative</th>
+              <th>Picture &amp; Vendor Ref</th>
+              <th>Remark</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of rfqItems; let i=index">
+              <td><input class="excel-input" [(ngModel)]="item.description" placeholder="Description"></td>
+              <td><select class="excel-input sm" [(ngModel)]="item.uom"><option>Pcs</option><option>Kg</option><option>Ltr</option><option>Mtr</option></select></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.quantity"></td>
+              <td><input class="excel-input" [(ngModel)]="item.make" placeholder="Make"></td>
+              <td><input class="excel-input" [(ngModel)]="item.alternative" placeholder="Alternative"></td>
+              <td>
+                <div class="picture-cell">
+                  <input type="file" accept="image/*" [id]="'pic'+i" (change)="onPictureSelected(item, $event)" hidden>
+<button class="photo-btn" (click)="triggerFileUpload(i)">📷 Upload</button>                  <div class="picture-preview" *ngIf="item.picturePreview" (click)="viewPicture(item.picturePreview)">
+                    <img [src]="item.picturePreview" class="thumb">
+                    <span>🔍</span>
+                  </div>
+                  <input class="excel-input" [(ngModel)]="item.vendorRef" placeholder="Vendor ref">
+                </div>
+              </td>
+              <td><input class="excel-input" [(ngModel)]="item.remark" placeholder="Remark"></td>
+              <td><button class="row-del-btn" (click)="removeRfqItem(i)" *ngIf="rfqItems.length>1">×</button></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="8"><button class="add-row-btn" (click)="addRfqItem()">+ Add Row</button></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="form-section">
+        <label>Purpose & Objective</label>
+        <textarea class="excel-textarea" rows="3" [(ngModel)]="rfqNppForm.purposeAndObjective" placeholder="Purpose"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-preview-pdf" (click)="previewRfqNpp()">👁️ Preview</button>
+        <button class="btn-save-draft-form" (click)="saveRfqDraft()">💾 Save Draft</button>
+        <button class="btn-submit-form" (click)="submitRfqNppSheet()" [disabled]="isSubmitting">{{isSubmitting ? 'Submitting...' : '✅ Submit Requisition'}}</button>
+      </div>
+    </div>
+
+    <!-- ==================== VENDOR LIST ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'vendor-list'">
+      <div class="excel-form-header"><span class="excel-badge">Vendor List-NPP</span></div>
+      <div class="filter-row">
+        <input class="filter-input" [(ngModel)]="vendorFilterCode" placeholder="Filter by Code">
+        <input class="filter-input" [(ngModel)]="vendorFilterName" placeholder="Filter by Name">
+        <input class="filter-input" [(ngModel)]="vendorFilterEmail" placeholder="Filter by Email">
+        <input class="filter-input" [(ngModel)]="vendorFilterPhone" placeholder="Filter by Phone">
+        <button class="add-row-btn" (click)="addVendorRow()">+ Add Vendor</button>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Vendor Code</th>
+              <th>Vendor Name</th>
+              <th>Email ID</th>
+              <th>Phone No</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of getFilteredVendors()">
+              <td><input type="checkbox" [(ngModel)]="v.select"></td>
+              <td><input class="excel-input" [(ngModel)]="v.code"></td>
+              <td><input class="excel-input" [(ngModel)]="v.name"></td>
+              <td><input class="excel-input" [(ngModel)]="v.emailId"></td>
+              <td><input class="excel-input" [(ngModel)]="v.phoneNo"></td>
+              <td><select [(ngModel)]="v.status"><option>Active</option><option>Inactive</option></select></td>
+              <td><button class="save-btn" (click)="saveVendorRow(v)">Save</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== EMPLOYEE DETAIL ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'employee-detail'">
+      <div class="excel-form-header"><span class="excel-badge">Employee Detail</span></div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>ID</th>
+              <th>Email Address</th>
+              <th>Password</th>
+              <th>Designation</th>
+              <th>Department</th>
+              <th>Contact No</th>
+              <th>Date of Birth</th>
+              <th>Organization</th>
+              <th>Reporting Head</th>
+              <th>Reporting Designation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of employeeList">
+              <td>{{e.fullName}}</td>
+              <td>{{e.id}}</td>
+              <td>{{e.emailAddress}}</td>
+              <td>{{e.password}}</td>
+              <td>{{e.designation}}</td>
+              <td>{{e.department}}</td>
+              <td>{{e.contactNo}}</td>
+              <td>{{e.dateOfBirth}}</td>
+              <td>{{e.organization}}</td>
+              <td>{{e.reportingHead}}</td>
+              <td>{{e.reportingDesignation}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== ITEM MASTER ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'item-master'">
+      <div class="excel-form-header"><span class="excel-badge">Item Master List-NPP</span></div>
+      <div class="filter-row">
+        <input class="filter-input" [(ngModel)]="itemFilterPartCode" placeholder="Filter by Part Code">
+        <input class="filter-input" [(ngModel)]="itemFilterVendor" placeholder="Filter by Vendor">
+        <input class="filter-input" [(ngModel)]="itemFilterCmdt" placeholder="Filter by CMDT">
+        <button class="add-row-btn" (click)="addItemMasterRow()">+ Add Item</button>
+      </div>
+      <div class="selection-display" *ngIf="itemSelectedDesc">Selected: {{itemSelectedDesc}}</div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>CMDT</th>
+              <th>Part Code</th>
+              <th>Part Description</th>
+              <th>Supplier</th>
+              <th>Location</th>
+              <th>Price</th>
+              <th>UIT</th>
+              <th>SOB</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let i of getFilteredItems()">
+              <td><input type="checkbox" [(ngModel)]="i.select" (change)="selectItem(i)"></td>
+              <td><input class="excel-input" [(ngModel)]="i.cmdt"></td>
+              <td><input class="excel-input" [(ngModel)]="i.partCode"></td>
+              <td><input class="excel-input" [(ngModel)]="i.partDesc"></td>
+              <td><input class="excel-input" [(ngModel)]="i.supplier"></td>
+              <td><input class="excel-input" [(ngModel)]="i.location"></td>
+              <td><input class="excel-input" type="number" [(ngModel)]="i.price"></td>
+              <td><input class="excel-input" [(ngModel)]="i.uit"></td>
+              <td><input class="excel-input" [(ngModel)]="i.sob"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== QUOTATION COMPARISON ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'quotation-comparison'">
+      <div class="excel-form-header"><span class="excel-badge">Quotation Cost Comparison</span></div>
+      <div class="quotation-suppliers">
+        <div class="supplier-box"><strong>Supplier 1:</strong><input [(ngModel)]="quotSupplier1Name"></div>
+        <div class="supplier-box"><strong>Supplier 2:</strong><input [(ngModel)]="quotSupplier2Name"></div>
+        <div class="supplier-box"><strong>Supplier 3:</strong><input [(ngModel)]="quotSupplier3Name"></div>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>RFQ No</th>
+              <th>Part Code</th>
+              <th>Part Description</th>
+              <th>Specification</th>
+              <th>UOM</th>
+              <th>Qty</th>
+              <th colspan="2">{{quotSupplier1Name}}</th>
+              <th colspan="2">{{quotSupplier2Name}}</th>
+              <th colspan="2">{{quotSupplier3Name}}</th>
+              <th></th>
+            </tr>
+            <tr>
+              <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+              <th>Price</th><th>Amount</th>
+              <th>Price</th><th>Amount</th>
+              <th>Price</th><th>Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let q of quotationItems; let i=index">
+              <td>{{i+1}}</td>
+              <td><input class="excel-input" [(ngModel)]="q.rfqNo"></td>
+              <td><input class="excel-input" [(ngModel)]="q.partCode"></td>
+              <td><input class="excel-input" [(ngModel)]="q.partDescription"></td>
+              <td><input class="excel-input" [(ngModel)]="q.specification"></td>
+              <td><input class="excel-input sm" [(ngModel)]="q.uom"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="q.qty" (ngModelChange)="calcQuotAmounts(q)"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="q.supplier1Price" (ngModelChange)="calcQuotAmounts(q)"></td>
+              <td class="value-cell">{{q.supplier1Amount | number}}</td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="q.supplier2Price" (ngModelChange)="calcQuotAmounts(q)"></td>
+              <td class="value-cell">{{q.supplier2Amount | number}}</td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="q.supplier3Price" (ngModelChange)="calcQuotAmounts(q)"></td>
+              <td class="value-cell">{{q.supplier3Amount | number}}</td>
+              <td><button class="row-del-btn" (click)="removeQuotationItem(i)" *ngIf="quotationItems.length>1">×</button></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="7" class="total-label">Total</td>
+              <td colspan="2" class="value-cell">{{getQuotTotals().t1 | number}}</td>
+              <td colspan="2" class="value-cell">{{getQuotTotals().t2 | number}}</td>
+              <td colspan="2" class="value-cell">{{getQuotTotals().t3 | number}}</td>
+              <td></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="14"><button class="add-row-btn" (click)="addQuotationItem()">+ Add Row</button></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="terms-section">
+        <div class="terms-box"><h4>Terms 1</h4><div>GST: <input [(ngModel)]="quotTerms1.gst"></div><div>Transport: <input [(ngModel)]="quotTerms1.transport"></div><div>Payment: <input [(ngModel)]="quotTerms1.paymentTerms"></div></div>
+        <div class="terms-box"><h4>Terms 2</h4><div>GST: <input [(ngModel)]="quotTerms2.gst"></div><div>Transport: <input [(ngModel)]="quotTerms2.transport"></div><div>Payment: <input [(ngModel)]="quotTerms2.paymentTerms"></div></div>
+        <div class="terms-box"><h4>Terms 3</h4><div>GST: <input [(ngModel)]="quotTerms3.gst"></div><div>Transport: <input [(ngModel)]="quotTerms3.transport"></div><div>Payment: <input [(ngModel)]="quotTerms3.paymentTerms"></div></div>
+      </div>
+      <div class="recommendation">
+        <label>Recommendation</label>
+        <textarea rows="3" [(ngModel)]="quotRecommendation"></textarea>
+      </div>
+    </div>
+
+    <!-- ==================== PR REQUEST-NPP FORM ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'pr-request-npp'">
+      <div class="excel-form-header"><span class="excel-badge">PR Request-NPP</span><div class="header-actions"><button class="icon-btn" (click)="loadPrDraft()">📂</button></div></div>
+      <table class="excel-table requester-table">
+        <tbody>
+          <tr>
+            <td class="label-cell" rowspan="3">Requester<br>Information</td>
+            <td class="field-label">Name</td>
+            <td><input class="excel-input" [(ngModel)]="prRequestForm.requesterName"></td>
+            <td class="field-label">Request Date</td>
+            <td><input class="excel-input" type="date" [(ngModel)]="prRequestForm.requestDate"></td>
+           </tr>
+          <tr>
+            <td class="field-label">Department</td>
+            <td><input class="excel-input" [(ngModel)]="prRequestForm.department"></td>
+            <td class="field-label">Contact No.</td>
+            <td><input class="excel-input" [(ngModel)]="prRequestForm.contactNo"></td>
+           </tr>
+          <tr>
+            <td class="field-label">Email ID</td>
+            <td><input class="excel-input" [(ngModel)]="prRequestForm.emailId"></td>
+            <td class="field-label">Organization</td>
+            <td><input class="excel-input" [(ngModel)]="prRequestForm.organization"></td>
+           </tr>
+        </tbody>
+      </table>
+      <div class="rfq-title-row">
+        <div class="rfq-title-field"><label>Title of Activity</label><input class="excel-input" [(ngModel)]="prRequestForm.titleOfActivity"></div>
+        <div class="rfq-priority-field"><label>Priority</label><select class="excel-input" [(ngModel)]="prRequestForm.priority"><option value="H">H</option><option value="M">M</option><option value="L">L</option></select></div>
+      </div>
+      <div class="items-table-wrap">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Cost Center</th>
+              <th>Supplier Name</th>
+              <th>RFQ No</th>
+              <th>Part Code</th>
+              <th>Part Description</th>
+              <th>Specification</th>
+              <th>CMDT</th>
+              <th>UOM</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of prItems; let i=index">
+              <td><input class="excel-input sm" [(ngModel)]="item.costCenter"></td>
+              <td><input class="excel-input" [(ngModel)]="item.supplierName"></td>
+              <td><input class="excel-input sm" [(ngModel)]="item.rfqNo"></td>
+              <td><input class="excel-input sm" [(ngModel)]="item.partCode"></td>
+              <td><input class="excel-input" [(ngModel)]="item.partDescription"></td>
+              <td><input class="excel-input" [(ngModel)]="item.specification"></td>
+              <td><input class="excel-input sm" [(ngModel)]="item.cmdt"></td>
+              <td><input class="excel-input sm" [(ngModel)]="item.uom"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.qty"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.unitPrice"></td>
+              <td class="value-cell">{{item.qty * item.unitPrice | number}}</td>
+              <td><button class="row-del-btn" (click)="removePrItem(i)" *ngIf="prItems.length>1">×</button></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="10" class="total-label">Total Value</td>
+              <td class="value-cell">{{getPrTotal() | number}}</td>
+              <td></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="12"><button class="add-row-btn" (click)="addPrItem()">+ Add Row</button></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="form-section">
+        <label>Purpose & Objective</label>
+        <textarea class="excel-textarea" rows="3" [(ngModel)]="prRequestForm.purposeAndObjective"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-save-draft-form" (click)="savePrDraft()">💾 Save Draft</button>
+        <button class="btn-submit-form" (click)="submitPrRequestSheet()" [disabled]="isSubmitting">{{isSubmitting ? 'Submitting...' : '✅ Submit PR Request'}}</button>
+      </div>
+    </div>
+
+    <!-- ==================== PO-NPP FORM ==================== -->
+    <div class="excel-form-card po-form-card" *ngIf="activeProcessTab === 'po-npp'">
+      <div class="po-company-header">
+        <div class="po-logo-section">
+          <div class="po-logo">🏭</div>
+          <div>
+            <div class="po-company-name">RADIANT APPLIANCES AND ELECTRONICS PVT. LTD.</div>
+            <div class="po-company-addr">Maheswaram Mandal, Rannigal Village, Rangareddy, Hyderabad – 501359</div>
+          </div>
+        </div>
+        <div class="po-title-box">PURCHASE ORDER</div>
+      </div>
+      <div class="po-details-grid">
+        <div class="po-left-section">
+          <div class="form-section"><label>Vendor Code</label><input class="excel-input" [(ngModel)]="poNppForm.vendorCode"></div>
+          <div class="form-section"><label>Vendor Name</label><input class="excel-input" [(ngModel)]="poNppForm.vendorName" placeholder="M/s. Vendor Name"></div>
+          <div class="form-section"><label>Vendor Address</label><textarea class="excel-input" rows="2" [(ngModel)]="poNppForm.vendorAddress"></textarea></div>
+          <div class="form-section"><label>Vendor GST</label><input class="excel-input" [(ngModel)]="poNppForm.vendorGst"></div>
+          <div class="form-section"><label>Vendor Contact</label><input class="excel-input" [(ngModel)]="poNppForm.vendorContact"></div>
+          <div class="form-section"><label>Vendor Email</label><input class="excel-input" [(ngModel)]="poNppForm.vendorEmail"></div>
+        </div>
+        <div class="po-right-section">
+          <div class="form-section"><label>Order No.</label><input class="excel-input" [(ngModel)]="poNppForm.orderNo"></div>
+          <div class="form-section"><label>Order Date</label><input class="excel-input" type="date" [(ngModel)]="poNppForm.orderDate"></div>
+          <div class="form-section"><label>Quot Ref.</label><input class="excel-input" [(ngModel)]="poNppForm.quotRef"></div>
+          <div class="form-section"><label>PR No.</label><input class="excel-input" [(ngModel)]="poNppForm.prNo"></div>
+          <div class="form-section"><label>PR Date</label><input class="excel-input" type="date" [(ngModel)]="poNppForm.prDate"></div>
+          <div class="form-section"><label>Purchaser</label><input class="excel-input" [(ngModel)]="poNppForm.purchaser"></div>
+          <div class="form-section"><label>Purchaser Mobile</label><input class="excel-input" [(ngModel)]="poNppForm.purchaserMobile"></div>
+        </div>
+      </div>
+      <div class="po-address-row">
+        <div class="po-address-box">
+          <div class="po-addr-title">BILLING ADDRESS</div>
+          <textarea class="excel-input full" rows="3" [(ngModel)]="poNppForm.billingAddress"></textarea>
+          <div>GST No.: <input class="excel-input inline" [(ngModel)]="poNppForm.billingGst"></div>
+        </div>
+        <div class="po-address-box">
+          <div class="po-addr-title">SHIPPING ADDRESS</div>
+          <textarea class="excel-input full" rows="3" [(ngModel)]="poNppForm.shippingAddress"></textarea>
+          <div>GST No.: <input class="excel-input inline" [(ngModel)]="poNppForm.shippingGst"></div>
+        </div>
+      </div>
+      <div class="po-intro-text">
+        Dear Sir / Madam,<br>
+        We are pleased to place a Purchase Order for the following Material as per the Terms &amp; Conditions stipulated below.
+      </div>
+      <div class="items-table-wrap">
+        <table class="po-items-table">
+          <thead>
+            <tr>
+              <th>S.No.</th>
+              <th>Part Code</th>
+              <th>Part Description</th>
+              <th>Specification</th>
+              <th>HSN Code</th>
+              <th>UOM</th>
+              <th>QTY</th>
+              <th>Unit Price</th>
+              <th>CGST %</th>
+              <th>SGST %</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of poItems; let i=index">
+              <td class="center">{{i+1}}</td>
+              <td><input class="excel-input sm" [(ngModel)]="item.partCode"></td>
+              <td><input class="excel-input" [(ngModel)]="item.partDescription"></td>
+              <td><input class="excel-input" [(ngModel)]="item.specification"></td>
+              <td><input class="excel-input sm" [(ngModel)]="item.hsnCode"></td>
+              <td><input class="excel-input sm" [(ngModel)]="item.uom"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.qty"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.unitPrice"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.cgst"></td>
+              <td><input class="excel-input sm" type="number" [(ngModel)]="item.sgst"></td>
+              <td class="value-cell">{{getPoTotal(item) | number}}</td>
+              <td><button class="row-del-btn" (click)="removePoItem(i)" *ngIf="poItems.length>1">×</button></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="10" class="total-label">Grand Total:</td>
+              <td class="value-cell">{{getPoGrandTotal() | number}}</td>
+              <td></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="12"><button class="add-row-btn" (click)="addPoItem()">+ Add Row</button></td> </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button class="btn-save-draft-form" (click)="savePoDraft()">💾 Save Draft</button>
+        <button class="btn-submit-form" (click)="submitPoNppSheet()" [disabled]="isSubmitting">{{isSubmitting ? 'Submitting...' : '✅ Submit PO-NPP'}}</button>
+      </div>
+    </div>
+
+    <!-- ==================== PAYMENT ADVISE FORM ==================== -->
+    <div class="excel-form-card payment-form-card" *ngIf="activeProcessTab === 'payment-advise'">
+      <div class="payment-form-title">PAYMENT ADVICE FORM</div>
+      <table class="excel-table payment-header-table">
+        <tbody>
+          <tr><td class="field-label">EMPLOYEE NAME</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.requesterName"></td>
+              <td class="field-label">APPLICATION DATE</td><td><input class="excel-input" type="date" [(ngModel)]="paymentAdviseForm.requestDate"></td></tr>
+          <tr><td class="field-label">DESIGNATION</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.designation"></td>
+              <td class="field-label">PAYMENT DUE TO</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.paymentDueTo"></td></tr>
+          <tr><td class="field-label">DEPARTMENT</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.department"></td>
+              <td class="field-label">LEVEL:</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.level"></td></tr>
+          <tr><td class="field-label">PAYMENT TO</td><td colspan="3"><input class="excel-input full" [(ngModel)]="paymentAdviseForm.paymentTo" placeholder="M/s. ACCURATE PACKAGING SOLUTIONS"></td></tr>
+          <tr><td class="field-label">PURPOSE</td><td colspan="3"><input class="excel-input full" [(ngModel)]="paymentAdviseForm.purposeAndObjective" placeholder="For semi-automatic machine part replacement..."></td></tr>
+          <tr><td class="field-label">EXPENSE TYPE</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.expenseType"></td>
+              <td class="field-label">EXPENSE AMOUNT</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.expenseAmount" placeholder="Rs. 3,593/-"></td></tr>
+          <tr><td class="field-label">BALANCE FOR PAYMENT</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.balanceForPayment"></td>
+              <td class="field-label">DEDUCTION</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.deduction"></td></tr>
+          <tr><td class="field-label">BANK DETAILS</td><td colspan="3"><input class="excel-input full" [(ngModel)]="paymentAdviseForm.bankDetails" placeholder="As Per The Records"></td></tr>
+          <tr><td class="field-label">REMARKS</td><td colspan="3"><input class="excel-input full" [(ngModel)]="paymentAdviseForm.remarks" placeholder="100% Payment Against Invoice"></td></tr>
+          <tr><td class="field-label">SAP NAME</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.sapName"></td>
+              <td class="field-label">SAP CODE</td><td><input class="excel-input" [(ngModel)]="paymentAdviseForm.sapCode"></td></tr>
+        </tbody>
+      </table>
+      <div class="form-actions">
+        <button class="btn-save-draft-form" (click)="savePaymentDraft()">💾 Save Draft</button>
+        <button class="btn-submit-form" (click)="submitPaymentAdviseSheet()" [disabled]="isSubmitting">{{isSubmitting ? 'Submitting...' : '✅ Submit Payment Advise'}}</button>
+      </div>
+    </div>
+
+    <!-- ==================== WCC-NPP FORM ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'wcc-npp'">
+      <div class="excel-form-header"><span class="excel-badge">WCC-NPP</span></div>
+      <div class="wcc-form-grid">
+        <div class="wcc-field"><label>Requester Name</label><input class="excel-input" [(ngModel)]="wccForm.requesterName"></div>
+        <div class="wcc-field"><label>Requester Dept.</label><input class="excel-input" [(ngModel)]="wccForm.requesterDept"></div>
+        <div class="wcc-field"><label>Vendor Name</label><input class="excel-input" [(ngModel)]="wccForm.vendorName"></div>
+        <div class="wcc-field"><label>PO/WO No.</label><input class="excel-input" [(ngModel)]="wccForm.poWoNo"></div>
+        <div class="wcc-field"><label>Work Completion Date</label><input class="excel-input" type="date" [(ngModel)]="wccForm.workCompletionDate"></div>
+      </div>
+      <div class="wcc-field"><label>Work Description</label><textarea class="excel-textarea" rows="2" [(ngModel)]="wccForm.workDescription"></textarea></div>
+      <div class="wcc-field"><label>Nature of Work</label><select [(ngModel)]="wccForm.natureOfWork"><option *ngFor="let n of wccNatureOptions">{{n}}</option></select></div>
+      <div class="wcc-field"><label>Brief Detail of Work & Scope</label><textarea class="excel-textarea" rows="2" [(ngModel)]="wccForm.briefDetail"></textarea></div>
+      <div class="wcc-field"><label>Quality Notes</label><textarea class="excel-textarea" rows="2" [(ngModel)]="wccForm.qualityNotes"></textarea></div>
+      <div class="form-actions">
+        <button class="btn-submit-form" (click)="submitWccSheet()" [disabled]="isSubmitting">{{isSubmitting ? 'Submitting...' : '✅ Submit WCC'}}</button>
+      </div>
+    </div>
+
+    <!-- ==================== RFQ STATUS & APPROVAL STATUS ==================== -->
+    <div class="excel-form-card" *ngIf="activeProcessTab === 'rfq-status' || activeProcessTab === 'approval-status'">
+      <div class="excel-form-header"><span class="excel-badge">{{activeProcessTab === 'rfq-status' ? 'RFQ / PR / PO Status' : 'Approval Status'}}</span></div>
+      <div class="search-bar-wrap">
+        <input class="search-bar" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search...">
+      </div>
+      <div class="section-filters">
+        <button class="filter-btn" [class.active]="activeFilter === 'All'" (click)="setFilter('All')">All ({{countByStatus('All')}})</button>
+        <button class="filter-btn approved-btn" [class.active]="activeFilter === 'Approved'" (click)="setFilter('Approved')">Approved ({{countByStatus('Approved')}})</button>
+        <button class="filter-btn rejected-btn" [class.active]="activeFilter === 'Rejected'" (click)="setFilter('Rejected')">Rejected ({{countByStatus('Rejected')}})</button>
+        <button class="filter-btn pending-btn" [class.active]="activeFilter === 'Pending'" (click)="setFilter('Pending')">Pending ({{countByStatus('Pending')}})</button>
+        <button class="filter-btn inprocess-btn" [class.active]="activeFilter === 'In Process'" (click)="setFilter('In Process')">In Process ({{countByStatus('In Process')}})</button>
+      </div>
+      <div class="table-container">
+        <table class="ep-table">
+          <thead>
+            <tr>
+              <th>Serial No</th>
+              <th>Title</th>
+              <th>Requester</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let req of filteredRequests">
+              <td><span class="serial-badge">{{req.uniqueSerialNo || '—'}}</span></td>
+              <td><strong>{{req.title}}</strong></td>
+              <td>{{req.requester}}<br><span class="sub-text">{{req.email}}</span></td>
+              <td>{{req.department}}</td>
+              <td><span class="status-badge" [ngClass]="getStatusClass(req.status)">{{req.status}}</span></td>
+              <td>{{formatDate(req.requestDate)}}</td>
+              <td class="actions">
+                <button class="btn-icon view-btn" (click)="viewRequest(req)">👁️ View</button>
+                <button *ngIf="req.status === 'Pending'" class="btn-icon approve-btn" (click)="openApprovalModal(req, 'approve')">✅</button>
+                <button *ngIf="req.status === 'Pending'" class="btn-icon reject-btn" (click)="openApprovalModal(req, 'reject')">❌</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Search and Filters for main list -->
+    <div class="search-bar-wrap">
+      <input class="search-bar" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search by title, requester, department...">
+    </div>
+    
+    <div class="section-filters">
+      <button class="filter-btn" [class.active]="activeFilter === 'All'" (click)="setFilter('All')">📋 All ({{countByStatus('All')}})</button>
+      <button class="filter-btn approved-btn" [class.active]="activeFilter === 'Approved'" (click)="setFilter('Approved')">✅ Approved ({{countByStatus('Approved')}})</button>
+      <button class="filter-btn rejected-btn" [class.active]="activeFilter === 'Rejected'" (click)="setFilter('Rejected')">❌ Rejected ({{countByStatus('Rejected')}})</button>
+      <button class="filter-btn pending-btn" [class.active]="activeFilter === 'Pending'" (click)="setFilter('Pending')">⏳ Pending ({{countByStatus('Pending')}})</button>
+      <button class="filter-btn inprocess-btn" [class.active]="activeFilter === 'In Process'" (click)="setFilter('In Process')">🔄 In Process ({{countByStatus('In Process')}})</button>
+    </div>
+
+    <div class="table-container">
+      <div class="table-header-row">
+        <h3>NPP Requests</h3>
+        <span class="stat-badge">Total: {{filteredRequests.length}}</span>
+      </div>
+      <ng-container *ngIf="filteredRequests.length > 0; else noData">
+        <table class="ep-table">
+          <thead>
+            <tr>
+              <th>Serial No</th>
+              <th>Title</th>
+              <th>Requester</th>
+              <th>Department</th>
+              <th>Amount</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let req of filteredRequests">
+              <td class="serial-cell"><span class="serial-badge">{{req.uniqueSerialNo || '—'}}</span></td>
+              <td class="title-cell"><strong>{{req.title}}</strong></td>
+              <td>{{req.requester}}<br><span class="sub-text">{{req.email}}</span></td>
+              <td>{{req.department}}</td>
+              <td class="amount">{{formatAmount(req.amount)}}</td>
+              <td><span class="priority-badge" [ngClass]="getPriorityClass(req.priority)">{{req.priority}}</span></td>
+              <td><span class="status-badge" [ngClass]="getStatusClass(req.status)">{{req.status}}</span></td>
+              <td class="date-cell">{{formatDate(req.requestDate)}}</td>
+              <td class="actions">
+                <button class="btn-icon view-btn" (click)="viewRequest(req)">👁️ View</button>
+                <button *ngIf="req.status === 'Pending'" class="btn-icon approve-btn" (click)="openApprovalModal(req, 'approve')">✅</button>
+                <button *ngIf="req.status === 'Pending'" class="btn-icon reject-btn" (click)="openApprovalModal(req, 'reject')">❌</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </ng-container>
+      <ng-template #noData>
+        <div class="no-data">
+          <div class="no-data-icon">📋</div>
+          <h3>No NPP requests found</h3>
+          <button class="create-first-btn" (click)="openCreateModal()">+ Create NPP Request</button>
+        </div>
+      </ng-template>
+    </div>
+
+  </div>
+</div>
+
+<!-- ORDER HISTORY MODAL -->
+<div class="modal-overlay" *ngIf="showOrderHistoryModal" (click)="closeOrderHistoryModal()">
+  <div class="modal-card large-modal" (click)="$event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3>📜 Order History</h3>
+      <button (click)="closeOrderHistoryModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="history-search">
+        <input type="text" class="search-input" [(ngModel)]="orderHistorySearchTerm" (input)="filterOrderHistory()" placeholder="Search by serial no or title...">
+        <input type="date" class="date-input" [(ngModel)]="orderHistoryDateFilter" (change)="filterOrderHistory()" placeholder="Filter by date">
+      </div>
+      <div class="history-list">
+        <div class="history-item" *ngFor="let item of filteredOrderHistory" (click)="viewOrderDetail(item)">
+          <div class="history-serial">{{item.uniqueSerialNo}}</div>
+          <div class="history-info">
+            <span class="history-type" [ngClass]="'type-'+item.type">{{item.type|uppercase}}</span>
+            <span class="history-title">{{item.title}}</span>
+            <span class="history-date">{{item.submittedDate | date:'medium'}}</span>
+          </div>
+          <div class="history-status" [ngClass]="item.status === 'Approved' ? 'approved' : item.status === 'Rejected' ? 'rejected' : 'pending'">{{item.status}}</div>
+        </div>
+        <div *ngIf="filteredOrderHistory.length===0" class="empty-history">No order history found</div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" (click)="closeOrderHistoryModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORTS MODAL -->
+<div class="modal-overlay" *ngIf="showReportsModal" (click)="closeReportsModal()">
+  <div class="modal-card large-modal" (click)="$event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3>📊 Reports</h3>
+      <button (click)="closeReportsModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="report-filters">
+        <div class="filter-group">
+          <label>From Date:</label>
+          <input type="date" [(ngModel)]="reportDateFrom" (change)="generateReports()">
+        </div>
+        <div class="filter-group">
+          <label>To Date:</label>
+          <input type="date" [(ngModel)]="reportDateTo" (change)="generateReports()">
+        </div>
+        <div class="filter-group">
+          <label>Report Type:</label>
+          <select [(ngModel)]="reportType" (change)="generateReports()">
+            <option value="all">All Types</option>
+            <option value="rfq">RFQ Only</option>
+            <option value="pr">PR Only</option>
+            <option value="po">PO Only</option>
+            <option value="payment">Payment Only</option>
+          </select>
+        </div>
+        <button class="export-btn" (click)="exportReportToCSV()">📎 Export CSV</button>
+      </div>
+      <div class="report-summary">
+        <div class="summary-card">
+          <h4>Total Requests</h4>
+          <div class="summary-value">{{reportSummary.byStatus?.total || 0}}</div>
+        </div>
+        <div class="summary-card approved">
+          <h4>Approved</h4>
+          <div class="summary-value">{{reportSummary.byStatus?.approved || 0}}</div>
+        </div>
+        <div class="summary-card rejected">
+          <h4>Rejected</h4>
+          <div class="summary-value">{{reportSummary.byStatus?.rejected || 0}}</div>
+        </div>
+        <div class="summary-card pending">
+          <h4>Pending</h4>
+          <div class="summary-value">{{reportSummary.byStatus?.pending || 0}}</div>
+        </div>
+      </div>
+      <table class="report-table">
+        <thead>
+          <tr><th>Type</th><th>Total</th><th>Approved</th><th>Rejected</th><th>Pending</th><th>Approval Rate</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of reportData">
+            <td><strong>{{d.type}}</strong></td>
+            <td>{{d.total}}</td>
+            <td class="approved-cell">{{d.approved}}</td>
+            <td class="rejected-cell">{{d.rejected}}</td>
+            <td class="pending-cell">{{d.pending}}</td>
+            <td>{{d.total ? ((d.approved/d.total)*100).toFixed(1) : 0}}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" (click)="closeReportsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- REQUEST TO VENDOR MODAL -->
+<div class="modal-overlay" *ngIf="showRequestToVendorModal" (click)="closeRequestToVendorModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3>📧 Request to Vendor (Prefill from Approved RFQ)</h3>
+      <button (click)="closeRequestToVendorModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Enter Approved RFQ Serial Number:</label>
+        <div class="rfq-search-row">
+          <input type="text" class="form-control" [(ngModel)]="requestToVendorRfqSerialNo" placeholder="e.g., RFQ-20260428-1234">
+          <button class="btn-primary" (click)="fetchRfqDataForVendor()">🔍 Fetch Data</button>
+        </div>
+        <p class="help-text">Enter the RFQ serial number of an approved request. All data will be auto-filled in PO form.</p>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" (click)="closeRequestToVendorModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3>📝 Create NPP Procurement Request</h3>
+      <button (click)="closeCreateModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg-field fg-full">
+          <label>Title of Activity *</label>
+          <input type="text" [(ngModel)]="formData.title" placeholder="Enter title">
+        </div>
+        <div class="fg-field">
+          <label>Requester *</label>
+          <input type="text" [(ngModel)]="formData.requester" placeholder="Your name">
+        </div>
+        <div class="fg-field">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="formData.email" placeholder="email@company.com">
+        </div>
+        <div class="fg-field">
+          <label>Department</label>
+          <select [(ngModel)]="formData.department">
+            <option *ngFor="let d of departmentOptions" [value]="d">{{ d }}</option>
+          </select>
+        </div>
+        <div class="fg-field">
+          <label>Contact No.</label>
+          <input type="text" [(ngModel)]="formData.contactNo" placeholder="Phone number">
+        </div>
+        <div class="fg-field">
+          <label>Organization</label>
+          <input type="text" [(ngModel)]="formData.organization" placeholder="Organization">
+        </div>
+        <div class="fg-field">
+          <label>Vendor</label>
+          <input type="text" [(ngModel)]="formData.vendor" placeholder="Vendor name">
+        </div>
+        <div class="fg-field">
+          <label>Amount (INR)</label>
+          <input type="number" [(ngModel)]="formData.amount" placeholder="0">
+        </div>
+        <div class="fg-field">
+          <label>Priority</label>
+          <select [(ngModel)]="formData.priority">
+            <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+        <div class="fg-field">
+          <label>Request Date</label>
+          <input type="date" [(ngModel)]="formData.requestDate">
+        </div>
+        <div class="fg-field fg-full">
+          <label>Description</label>
+          <textarea [(ngModel)]="formData.description" rows="3" placeholder="Describe the procurement need..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" (click)="closeCreateModal()">Cancel</button>
+      <button class="btn-submit" (click)="submitRequest()" [disabled]="isSubmitting">
+        <span class="btn-spin" *ngIf="isSubmitting"></span>
+        {{ isSubmitting ? 'Creating...' : 'Create Request' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-overlay" *ngIf="showViewModal" (click)="closeViewModal()">
+  <div class="modal-card view-modal" (click)="$event.stopPropagation()">
+    <div class="modal-hdr">
+      <h3>📄 NPP Request Details</h3>
+      <button (click)="closeViewModal()">×</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedRequest">
+      <div class="detail-grid">
+        <div class="detail-item"><label>Serial No:</label><span>{{ selectedRequest.uniqueSerialNo || '—' }}</span></div>
+        <div class="detail-item"><label>Title:</label><span>{{ selectedRequest.title }}</span></div>
+        <div class="detail-item"><label>Requester:</label><span>{{ selectedRequest.requester }}</span></div>
+        <div class="detail-item"><label>Email:</label><span>{{ selectedRequest.email || '—' }}</span></div>
+        <div class="detail-item"><label>Department:</label><span>{{ selectedRequest.department }}</span></div>
+        <div class="detail-item"><label>Vendor:</label><span>{{ selectedRequest.vendor || '—' }}</span></div>
+        <div class="detail-item"><label>Amount:</label><span class="amount">{{ formatAmount(selectedRequest.amount) }}</span></div>
+        <div class="detail-item"><label>Priority:</label><span class="priority-badge" [ngClass]="getPriorityClass(selectedRequest.priority)">{{ selectedRequest.priority }}</span></div>
+        <div class="detail-item full-width"><label>Description:</label><p>{{ selectedRequest.description || '—' }}</p></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" (click)="closeViewModal()">Close</button>
+      <button *ngIf="selectedRequest?.status === 'Pending'" class="btn-approve" (click)="openApprovalModal(selectedRequest!, 'approve')">Approve</button>
+      <button *ngIf="selectedRequest?.status === 'Pending'" class="btn-reject" (click)="openApprovalModal(selectedRequest!, 'reject')">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPROVAL MODAL -->
+<div class="modal-overlay" *ngIf="showApprovalModal" (click)="closeApprovalModal()">
+  <div class="modal-card approval-modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-hdr" [ngClass]="approvalAction === 'approve' ? 'approve-header' : 'reject-header'">
+      <h3>{{ approvalAction === 'approve' ? '✅ Approve Request' : '❌ Reject Request' }}</h3>
+      <button (click)="closeApprovalModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="request-summary" *ngIf="selectedRequest">
+        <p><strong>Title:</strong> {{ selectedRequest.title }}</p>
+        <p><strong>Requester:</strong> {{ selectedRequest.requester }}</p>
+        <p><strong>Amount:</strong> {{ formatAmount(selectedRequest.amount) }}</p>
+      </div>
+      <div class="form-group">
+        <label>Remarks *</label>
+        <textarea [(ngModel)]="approvalRemarks" rows="4" placeholder="Please provide your remarks..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" (click)="closeApprovalModal()">Cancel</button>
+      <button class="btn-submit" [class.btn-approve]="approvalAction === 'approve'" [class.btn-reject]="approvalAction === 'reject'" (click)="submitApproval()" [disabled]="isSubmitting">
+        {{ approvalAction === 'approve' ? 'Approve' : 'Reject' }}
+      </button>
+    </div>
+  </div>
+</div>

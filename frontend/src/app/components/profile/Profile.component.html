@@ -1,0 +1,168 @@
+<!-- Toast Stack -->
+<div class="profile-toasts">
+  <div *ngFor="let t of toasts" class="p-toast" [ngClass]="'p-toast-' + t.type">
+    <span>{{ t.type === 'success' ? '✅' : t.type === 'error' ? '❌' : 'ℹ️' }}</span>
+    {{ t.message }}
+  </div>
+</div>
+
+<!-- Modal Overlay -->
+<div class="profile-overlay" (click)="onClose()">
+  <div class="profile-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="pm-header">
+      <h2>Account Settings</h2>
+      <button class="pm-close" (click)="onClose()">×</button>
+    </div>
+
+    <!-- Avatar Section -->
+    <div class="pm-avatar-section">
+      <div class="pm-avatar-wrap">
+        <!-- ✅ FIX: Use getCurrentAvatarSrc() which handles server paths + base64 -->
+        <div class="pm-avatar"
+             [style.backgroundImage]="getCurrentAvatarSrc() ? 'url(' + getCurrentAvatarSrc() + ')' : 'none'">
+          <span *ngIf="!getCurrentAvatarSrc()">{{ getInitials() }}</span>
+        </div>
+        <button class="pm-avatar-edit" (click)="triggerAvatarUpload()" title="Upload photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
+        <input id="avatarInput" type="file" accept="image/*" style="display:none" (change)="onAvatarSelected($event)">
+      </div>
+
+      <div class="pm-avatar-info">
+        <h3>{{ user.name || 'User' }}</h3>
+        <span class="pm-role-tag">{{ user.role || 'User' }}</span>
+        <p>{{ user.email || '' }}</p>
+        <div class="pm-meta-tags">
+          <span class="meta-tag admin"   *ngIf="isAdmin">Admin Workspace</span>
+          <span class="meta-tag manager" *ngIf="isManager">Manager Controls</span>
+          <span class="meta-tag">{{ user.department || 'General' }}</span>
+        </div>
+        <div class="pm-avatar-actions">
+          <button class="btn-upload-sm" (click)="triggerAvatarUpload()">📷 Upload Photo</button>
+          <button class="btn-remove-sm" (click)="removeAvatar()" *ngIf="getCurrentAvatarSrc()">Remove</button>
+        </div>
+        <p class="avatar-hint" *ngIf="avatarFile">
+          📎 {{ avatarFile.name }} ready to upload
+        </p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="pm-tabs">
+      <button class="pm-tab" [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        Edit Profile
+      </button>
+      <button class="pm-tab" [class.active]="activeTab === 'password'" (click)="activeTab = 'password'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Reset Password
+      </button>
+    </div>
+
+    <!-- Edit Profile Tab -->
+    <div class="pm-body" *ngIf="activeTab === 'profile'">
+      <div class="pm-role-note" [class.admin-note]="isAdmin" [class.user-note]="!isAdmin">
+        <strong>{{ isAdmin ? '👑 Admin profile' : isManager ? '📊 Manager profile' : '👤 User profile' }}</strong>
+        <span>{{ isAdmin ? 'Admin details are shown with access-management context.' : 'Your details auto-fill requests and approval workflows.' }}</span>
+      </div>
+      <div class="pm-grid">
+        <div class="pm-field">
+          <label>Full Name</label>
+          <input type="text" [(ngModel)]="profileForm.name" placeholder="Your full name">
+        </div>
+        <div class="pm-field">
+          <label>Email Address</label>
+          <input type="email" [(ngModel)]="profileForm.email" placeholder="you@company.com">
+        </div>
+        <div class="pm-field">
+          <label>Contact Number</label>
+          <input type="tel" [(ngModel)]="profileForm.contactNo" placeholder="Mobile number">
+        </div>
+        <div class="pm-field">
+          <label>Department</label>
+          <input type="text" [(ngModel)]="profileForm.department" placeholder="e.g. Purchase, IT">
+        </div>
+        <div class="pm-field">
+          <label>Organization</label>
+          <input type="text" [(ngModel)]="profileForm.organization" placeholder="Organization name">
+        </div>
+        <div class="pm-field">
+          <label>Date of Birth</label>
+          <input type="date" [(ngModel)]="profileForm.dateOfBirth">
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Password Tab -->
+    <div class="pm-body" *ngIf="activeTab === 'password'">
+      <div class="pm-pw-form">
+        <div class="pm-field">
+          <label>Current Password</label>
+          <div class="pw-wrap">
+            <input [type]="showCurrentPw ? 'text' : 'password'"
+                   [(ngModel)]="passwordForm.currentPassword"
+                   placeholder="Enter current password">
+            <button type="button" class="pw-toggle" (click)="showCurrentPw = !showCurrentPw">
+              {{ showCurrentPw ? '🙈' : '👁️' }}
+            </button>
+          </div>
+        </div>
+        <div class="pm-field">
+          <label>New Password</label>
+          <div class="pw-wrap">
+            <input [type]="showNewPw ? 'text' : 'password'"
+                   [(ngModel)]="passwordForm.newPassword"
+                   placeholder="Minimum 6 characters">
+            <button type="button" class="pw-toggle" (click)="showNewPw = !showNewPw">
+              {{ showNewPw ? '🙈' : '👁️' }}
+            </button>
+          </div>
+          <div class="strength-bar" *ngIf="passwordForm.newPassword">
+            <div class="strength-fill"
+                 [style.width.%]="getPasswordStrength().pct"
+                 [style.background]="getPasswordStrength().color"></div>
+          </div>
+          <small class="strength-lbl" *ngIf="passwordForm.newPassword" [style.color]="getPasswordStrength().color">
+            {{ getPasswordStrength().label }}
+          </small>
+        </div>
+        <div class="pm-field">
+          <label>Confirm New Password</label>
+          <div class="pw-wrap" [class.mismatch]="passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword">
+            <input [type]="showConfirmPw ? 'text' : 'password'"
+                   [(ngModel)]="passwordForm.confirmPassword"
+                   placeholder="Re-enter new password">
+            <button type="button" class="pw-toggle" (click)="showConfirmPw = !showConfirmPw">
+              {{ showConfirmPw ? '🙈' : '👁️' }}
+            </button>
+          </div>
+          <small class="mismatch-txt" *ngIf="passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword">
+            ⚠️ Passwords do not match
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="pm-footer">
+      <button class="btn-cancel" (click)="onClose()">Cancel</button>
+      <button class="btn-save"
+              (click)="activeTab === 'profile' ? updateProfile() : resetPassword()"
+              [disabled]="isLoading">
+        <span class="btn-spin" *ngIf="isLoading"></span>
+        <span *ngIf="!isLoading">{{ activeTab === 'profile' ? 'Save Changes' : 'Update Password' }}</span>
+        <span *ngIf="isLoading">Saving...</span>
+      </button>
+    </div>
+
+  </div>
+</div>

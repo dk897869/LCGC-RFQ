@@ -101,85 +101,49 @@ const uploadAvatar = multer({
 // Database connection
 connectDB();
 
-// ==================== CORS CONFIGURATION - COMPLETE FIX ====================
+// ==================== CORS CONFIGURATION ====================
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
   'http://localhost:5000',
   'http://localhost:10000',
   'https://lcgc-rfq.onrender.com',
-  'https://lcgc-rfq-frontend.onrender.com',
-  process.env.FRONTEND_URL,
-  process.env.CLIENT_URL
-].filter(Boolean);
+  'https://lcgc-rfq-frontend.onrender.com'
+];
 
-// Main CORS middleware - MUST be before any routes
-app.use(cors({
+const corsOptions = {
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, postman)
     if (!origin) return callback(null, true);
-    
-    // Allow any render.com subdomain
-    if (origin && origin.includes('.onrender.com')) {
-      return callback(null, true);
-    }
-    
-    // Check against allowed origins
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    console.log(`🌐 CORS request from: ${origin}`);
+    if (origin.includes('.onrender.com')) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (process.env.NODE_ENV === 'development') return callback(null, true);
+    console.log(`⚠️ CORS request from: ${origin}`);
     return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'Accept', 
-    'X-Requested-With', 
-    'Origin',
-    'Cookie',
-    'Cache-Control',
-    'multipart/form-data'
-  ],
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin', 'Cookie', 'Cache-Control', 'multipart/form-data'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With', 'Set-Cookie'],
   maxAge: 86400
-}));
+};
 
-// Handle preflight requests - SAFE VERSION
+app.use(cors(corsOptions));
+
+// Handle OPTIONS preflight manually
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin;
+    if (origin && (allowedOrigins.includes(origin) || origin.includes('.onrender.com') || process.env.NODE_ENV === 'development')) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control');
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400');
-    return res.status(204).end();
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cookie');
+    res.status(204).end();
+    return;
   }
   next();
 });
-
-// Additional CORS headers for all responses
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control');
-  res.header('Access-Control-Expose-Headers', 'Content-Length, X-Requested-With');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-  next();
-});
-
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },

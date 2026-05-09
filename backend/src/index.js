@@ -10,6 +10,7 @@ const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const axios = require("axios"); // Add for Fast2SMS
 
 const connectDB = require("./config/db");
 
@@ -63,14 +64,18 @@ const serialNumberRoutes = safeRequire("./routes/serialNumber.routes");
 
 const app = express();
 
-// File upload configuration
-const storage = multer.diskStorage({
+// ==================== MULTER CONFIGURATION FOR AVATAR (DEFINED FIRST) ====================
+// ==================== MULTER CONFIGURATION FOR AVATAR ====================
+// Ensure upload directories exist
+const avatarUploadDir = path.join(__dirname, "uploads", "avatars");
+if (!fs.existsSync(avatarUploadDir)) {
+  fs.mkdirSync(avatarUploadDir, { recursive: true });
+}
+
+// Avatar storage configuration
+const avatarStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, "uploads", "avatars");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
+    cb(null, avatarUploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -79,18 +84,111 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+// Configure multer to accept multiple field names
+const uploadAvatar = multer({ 
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    // Accept common field names
+    const allowedFields = ['avatar', 'profileImage', 'photo', 'image', 'file'];
+    if (allowedFields.includes(file.fieldname) && file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only images are allowed'), false);
+      cb(new Error(`Only images are allowed. Received field: ${file.fieldname}`), false);
     }
   }
 });
 
+// ==================== AVATAR UPLOAD ROUTE ====================
+app.post('/api/auth/upload-avatar', (req, res) => {
+  console.log('📍 /api/auth/upload-avatar route hit');
+  console.log('📌 Headers:', req.headers);
+  console.log('📌 Content-Type:', req.headers['content-type']);
+  
+  // First check if token exists
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    console.log('❌ No token provided');
+    return res.status(401).json({ 
+      success: false, 
+      message: 'No token provided. Please login first.' 
+    });
+  }
+  
+  // Process upload
+  uploadAvatar.any()(req, res, async (err) => {
+    if (err) {
+      console.error('❌ Upload error:', err);
+      return res.status(400).json({ 
+        success: false, 
+        message: err.message 
+      });
+    }
+    
+    try {
+      // Get uploaded file
+      const uploadedFile = req.files && req.files[0];
+      
+      if (!uploadedFile) {
+        console.log('❌ No file found in request');
+        console.log('📌 req.files:', req.files);
+        console.log('📌 req.body:', req.body);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No image file uploaded. Please select an image file.' 
+        });
+      }
+      
+      console.log('✅ File received:', {
+        fieldname: uploadedFile.fieldname,
+        originalname: uploadedFile.originalname,
+        mimetype: uploadedFile.mimetype,
+        size: uploadedFile.size
+      });
+      
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      const User = require('./models/user.model');
+      
+      const avatarUrl = `/uploads/avatars/${uploadedFile.filename}`;
+      
+      const updatedUser = await User.findByIdAndUpdate(
+        decoded.id,
+        { 
+          $set: { 
+            avatar: avatarUrl, 
+            profileImage: avatarUrl,
+            photo: avatarUrl
+          } 
+        },
+        { new: true }
+      ).select('-password');
+      
+      res.json({
+        success: true,
+        message: 'Avatar uploaded successfully',
+        profileImage: avatarUrl,
+        avatar: avatarUrl,
+        user: updatedUser
+      });
+      
+    } catch (error) {
+      console.error('❌ Avatar upload error:', error);
+      
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid token. Please login again.' 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || 'Failed to upload avatar' 
+      });
+    }
+  });
+});
 // Database connection
 connectDB();
 
@@ -175,6 +273,96 @@ const generateToken = (user) => {
     { expiresIn: process.env.JWT_EXPIRES || "7d" }
   );
 };
+
+// ==================== FAST2SMS SERVICE ====================
+const FAST2SMS_API_KEY = 'xWX9L0fUhYl1cg5vw7NFnRjs3kAp2GqybiHTrzSmBIDJt4Kud8yDa6epRdYAtxPjvIriZohgm1cOfE35';
+
+const sendSmsViaFast2SMS = async (mobileNumber, otp) => {
+  try {
+    let cleanNumber = mobileNumber.replace(/\D/g, '');
+    if (cleanNumber.startsWith('91')) cleanNumber = cleanNumber.substring(2);
+    if (cleanNumber.startsWith('0')) cleanNumber = cleanNumber.substring(1);
+    
+    if (cleanNumber.length !== 10) {
+      return { success: false, error: 'Invalid mobile number' };
+    }
+    
+    const response = await axios({
+      method: 'GET',
+      url: 'https://www.fast2sms.com/dev/bulkV2',
+      params: {
+        authorization: FAST2SMS_API_KEY,
+        route: 'q',
+        message: `${otp} is your OTP for LCGC RFQ. Valid for 10 minutes.`,
+        numbers: cleanNumber,
+        flash: 0
+      },
+      timeout: 10000
+    });
+    
+    if (response.data && response.data.return === true) {
+      return { success: true };
+    } else {
+      return { success: false, error: response.data?.message || 'SMS failed' };
+    }
+  } catch (error) {
+    console.error('Fast2SMS Error:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==================== AVATAR UPLOAD ROUTE ====================
+app.post('/api/auth/upload-avatar', uploadAvatar.single('avatar'), async (req, res) => {
+  console.log('📍 /api/auth/upload-avatar route hit');
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded' 
+      });
+    }
+    
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'No token provided' 
+      });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const User = require('./models/user.model');
+    
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      decoded.id,
+      { 
+        $set: { 
+          avatar: avatarUrl, 
+          profileImage: avatarUrl 
+        } 
+      },
+      { new: true }
+    ).select('-password');
+    
+    res.json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      profileImage: avatarUrl,
+      avatar: avatarUrl,
+      user: updatedUser
+    });
+    
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+});
 
 // ==================== GOOGLE LOGIN API ====================
 app.post('/api/auth/google', async (req, res) => {
@@ -269,6 +457,159 @@ app.get('/api/health', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ==================== DIRECT MOBILE OTP ROUTES WITH FAST2SMS ====================
+
+// Send Mobile OTP
+app.post('/api/auth/send-mobile-otp', async (req, res) => {
+  console.log('📍 DIRECT /send-mobile-otp route hit');
+  console.log('📦 Request body:', req.body);
+  
+  try {
+    const { mobile, type = 'registration' } = req.body;
+    
+    if (!mobile) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mobile number is required' 
+      });
+    }
+    
+    let cleanMobile = mobile.replace(/\D/g, '');
+    if (cleanMobile.startsWith('91')) cleanMobile = cleanMobile.substring(2);
+    if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
+    
+    if (cleanMobile.length !== 10) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please enter a valid 10-digit mobile number' 
+      });
+    }
+    
+    const User = require('./models/user.model');
+    const OTP = require('./models/otp.model');
+    
+    // For registration, check if mobile already exists
+    if (type === 'registration') {
+      const existingUser = await User.findOne({ 
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      });
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Mobile number already registered' 
+        });
+      }
+    }
+    
+    // For login, check if mobile exists
+    if (type === 'login') {
+      const existingUser = await User.findOne({ 
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      });
+      if (!existingUser) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Mobile number not registered' 
+        });
+      }
+    }
+    
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`🔐 OTP for ${cleanMobile}: ${otp}`);
+    
+    // Save OTP to database
+    await OTP.deleteMany({ mobile: cleanMobile, type: type });
+    await OTP.create({
+      mobile: cleanMobile,
+      otp: otp,
+      type: type,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
+    
+    // Try to send SMS via Fast2SMS
+    const smsResult = await sendSmsViaFast2SMS(cleanMobile, otp);
+    
+    if (smsResult.success) {
+      res.json({
+        success: true,
+        message: `OTP sent successfully to ${mobile}`,
+        method: 'mobile',
+        provider: 'fast2sms'
+      });
+    } else {
+      // Still return success with dev OTP for testing
+      res.json({
+        success: true,
+        message: `OTP generated. SMS delivery issue: ${smsResult.error || 'Unknown error'}`,
+        method: 'mobile',
+        devOTP: otp,
+        note: 'Use this OTP for testing'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Send Mobile OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Verify Mobile OTP
+app.post('/api/auth/verify-mobile-otp', async (req, res) => {
+  console.log('📍 DIRECT /verify-mobile-otp route hit');
+  console.log('📦 Request body:', req.body);
+  
+  try {
+    const { mobile, otp, type = 'registration' } = req.body;
+    
+    if (!mobile || !otp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mobile number and OTP are required' 
+      });
+    }
+    
+    let cleanMobile = mobile.replace(/\D/g, '');
+    if (cleanMobile.startsWith('91')) cleanMobile = cleanMobile.substring(2);
+    if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
+    
+    const OTP = require('./models/otp.model');
+    
+    const otpRecord = await OTP.findOne({
+      mobile: cleanMobile,
+      otp: otp,
+      type: type
+    });
+    
+    if (!otpRecord) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid OTP' 
+      });
+    }
+    
+    if (new Date() > otpRecord.expiresAt) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'OTP has expired' 
+      });
+    }
+    
+    await OTP.deleteOne({ _id: otpRecord._id });
+    
+    res.json({
+      success: true,
+      message: 'OTP verified successfully',
+      verified: true
+    });
+    
+  } catch (error) {
+    console.error('Verify Mobile OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 // ==================== PASSWORD RESET ROUTES ====================
@@ -478,29 +819,6 @@ app.post('/api/auth/change-password', async (req, res) => {
   }
 });
 
-app.post('/api/auth/upload-avatar', upload.single('avatar'), async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token || !req.file) {
-      return res.status(401).json({ success: false, message: 'No token or file provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const User = require('./models/user.model');
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      decoded.id,
-      { $set: { avatar: avatarUrl, profileImage: avatarUrl } },
-      { new: true }
-    ).select('-password');
-    
-    res.json({ success: true, message: 'Avatar uploaded successfully', profileImage: avatarUrl, user: updatedUser });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
 app.delete('/api/auth/avatar', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -524,7 +842,6 @@ app.delete('/api/auth/avatar', async (req, res) => {
 });
 
 // ==================== NPP CONTROLLER ====================
-// Import NPP controller (will be created)
 let nppController;
 try {
   nppController = require('./controllers/npp.controller');
@@ -599,16 +916,16 @@ app.get("/", (req, res) => {
       auth: {
         register: "POST /api/auth/register",
         login: "POST /api/auth/login",
+        sendMobileOTP: "POST /api/auth/send-mobile-otp",
+        verifyMobileOTP: "POST /api/auth/verify-mobile-otp",
         forgotPasswordLink: "POST /api/auth/forgot-password-link",
         resetPasswordWithToken: "POST /api/auth/reset-password-with-token",
         checkResetToken: "GET /api/auth/check-reset-token",
-        googleLogin: "POST /api/auth/google"
+        googleLogin: "POST /api/auth/google",
+        uploadAvatar: "POST /api/auth/upload-avatar",
+        deleteAvatar: "DELETE /api/auth/avatar"
       },
       npp: {
-        cashPurchase: "POST /api/npp/cash-purchase",
-        newVendor: "POST /api/npp/new-vendor",
-        rfqVendor: "POST /api/npp/rfq-vendor",
-        rfqRequisition: "POST /api/npp/rfq-requisition",
         getAllRequests: "GET /api/npp/requests",
         getStats: "GET /api/npp/stats",
         approve: "PATCH /api/npp/request/:id/approve",
@@ -641,12 +958,10 @@ app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ NPP APIs available at: http://localhost:${PORT}/api/npp`);
-  console.log(`✅ Password Reset APIs:`);
-  console.log(`   - POST   /api/auth/forgot-password-link`);
-  console.log(`   - POST   /api/auth/reset-password-with-token`);
-  console.log(`   - GET    /api/auth/check-reset-token`);
-  console.log(`   - POST   /api/auth/google`);
+  console.log(`✅ Avatar upload: POST /api/auth/upload-avatar`);
+  console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
+  console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
+  console.log(`✅ Google Login: POST /api/auth/google`);
 });
 
 module.exports = app;

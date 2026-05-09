@@ -1926,49 +1926,98 @@ exports.resendVerificationEmail = async (req, res) => {
   }
 };
 
-// ==================== SMS OTP ====================
+// ==================== CHECK RESET TOKEN ====================
+exports.checkResetToken = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const User = require('../models/user.model');
+    
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Token required' });
+    }
+    
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+    
+    res.json({ success: true, message: 'Token is valid', email: user.email });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
+// ==================== SEND SMS OTP ====================
 exports.sendSmsOTP = async (req, res) => {
   try {
     const { mobile, type = 'login' } = req.body;
+    
+    console.log('📱 Send SMS OTP request:', { mobile, type });
+    
     if (!mobile) {
-      return res.status(400).json({ success: false, message: 'Mobile number is required' });
-    }
-    if (type === 'login' || type === 'reset') {
-      const cleanMobile = mobile.replace(/\D/g, '');
-      const user = await User.findOne({
-        $or: [
-          { contactNo: { $regex: cleanMobile + '$', $options: 'i' } },
-          { phone: { $regex: cleanMobile + '$', $options: 'i' } },
-        ],
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mobile number is required' 
       });
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'Mobile number not registered' });
+    }
+    
+    const cleanMobile = mobile.replace(/\D/g, '');
+    
+    if (type === 'login') {
+      const User = require('../models/user.model');
+      const existingUser = await User.findOne({ 
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      });
+      if (!existingUser) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Mobile number not registered' 
+        });
       }
     }
-    const result = await sendSmsOtp(mobile);
-    if (!result.success) {
-      return res.status(500).json({ success: false, message: result.error || 'Failed to send SMS' });
+    
+    const otp = generateOTP();
+    console.log(`🔐 SMS OTP for ${mobile}: ${otp}`);
+    
+    await saveOTP(null, cleanMobile, otp, type);
+    
+    if (process.env.NODE_ENV === 'development') {
+      return res.json({
+        success: true,
+        message: `OTP sent to ${mobile}`,
+        method: 'mobile',
+        devOTP: otp,
+        twilioStatus: 'development'
+      });
     }
-    await OTP.deleteMany({ mobile: mobile, type: type });
-    await OTP.create({
-      mobile: mobile,
-      otp: 'twilio_verify',
-      type: type,
-      referenceSid: result.sid,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    });
+    
+    const { sendSmsOtp } = require('../services/twilio.service');
+    const result = await sendSmsOtp(mobile);
+    
+    if (!result.success) {
+      return res.status(500).json({ 
+        success: false, 
+        message: result.error || 'Failed to send SMS' 
+      });
+    }
+    
     res.json({
       success: true,
       message: `OTP sent to ${mobile}`,
       method: 'mobile',
-      status: result.status,
+      status: result.status
     });
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
+    
+  } catch (error) {
+    console.error('Send SMS OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
-
 // ==================== CLEAR AVATAR ====================
 
 exports.clearAvatar = async (req, res) => {

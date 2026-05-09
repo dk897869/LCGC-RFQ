@@ -416,40 +416,215 @@ router.post('/login', authController.login);
 router.post('/send-otp', authController.sendEmailOTP);
 router.post('/verify-otp', authController.verifyOTP);
 
-// Mobile OTP Routes
-router.post('/send-mobile-otp', (req, res, next) => {
-  console.log('📍 /send-mobile-otp route hit');
+// ==================== DIRECT MOBILE OTP ROUTES (Fast2SMS) ====================
+
+// Send Mobile OTP using Fast2SMS
+app.post('/api/auth/send-mobile-otp', async (req, res) => {
+  console.log('📍 DIRECT /send-mobile-otp route hit');
   console.log('📦 Request body:', req.body);
-  next();
-}, authController.sendMobileOTP);
+  
+  try {
+    const { mobile, type = 'registration' } = req.body;
+    
+    if (!mobile) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mobile number is required' 
+      });
+    }
+    
+    // Clean mobile number - remove any non-digit characters
+    let cleanMobile = mobile.replace(/\D/g, '');
+    
+    // Remove leading zero if present
+    if (cleanMobile.startsWith('0')) {
+      cleanMobile = cleanMobile.substring(1);
+    }
+    
+    // Ensure it's a 10-digit number (remove country code if present)
+    if (cleanMobile.length === 12 && cleanMobile.startsWith('91')) {
+      cleanMobile = cleanMobile.substring(2);
+    }
+    
+    // Validate 10-digit Indian mobile number
+    if (cleanMobile.length !== 10) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please enter a valid 10-digit mobile number' 
+      });
+    }
+    
+    console.log(`📱 Sending OTP to: ${cleanMobile}`);
+    
+    const User = require('./models/user.model');
+    const OTP = require('./models/otp.model');
+    
+    // For registration, check if mobile already exists
+    if (type === 'registration') {
+      const existingUser = await User.findOne({ 
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      });
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Mobile number already registered' 
+        });
+      }
+    }
+    
+    // For login, check if mobile exists
+    if (type === 'login') {
+      const existingUser = await User.findOne({ 
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      });
+      if (!existingUser) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Mobile number not registered' 
+        });
+      }
+    }
+    
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`🔐 OTP for ${cleanMobile}: ${otp}`);
+    
+    // Save OTP to database
+    await OTP.deleteMany({ mobile: cleanMobile, type: type });
+    await OTP.create({
+      mobile: cleanMobile,
+      otp: otp,
+      type: type,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
+    
+    // Send SMS via Fast2SMS
+    const axios = require('axios');
+    const FAST2SMS_API_KEY = process.env.FAST2SMS_API_KEY;
+    const FAST2SMS_SENDER_ID = process.env.FAST2SMS_SENDER_ID || 'TXTIND';
+    const FAST2SMS_ROUTE = process.env.FAST2SMS_ROUTE || 'v3';
+    
+    let smsSent = false;
+    let smsError = null;
+    
+    try {
+      const response = await axios.post('https://www.fast2sms.com/dev/bulkV2', {
+        route: FAST2SMS_ROUTE,
+        sender_id: FAST2SMS_SENDER_ID,
+        message: `Your verification code is: ${otp}. This code will expire in 10 minutes. - LCGC RFQ`,
+        language: 'english',
+        flash: 0,
+        numbers: cleanMobile
+      }, {
+        headers: {
+          'authorization': FAST2SMS_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10 second timeout
+      });
+      
+      if (response.data && response.data.return) {
+        if (response.data.return === true || response.data.status === 'success') {
+          smsSent = true;
+          console.log('✅ Fast2SMS OTP sent successfully:', response.data);
+        } else {
+          smsError = response.data.message || 'Failed to send SMS';
+          console.error('❌ Fast2SMS error:', response.data);
+        }
+      } else {
+        smsError = 'Invalid response from SMS provider';
+      }
+      
+    } catch (smsErr) {
+      console.error('❌ Fast2SMS request failed:', smsErr.message);
+      smsError = smsErr.message;
+      
+      if (smsErr.response) {
+        console.error('Fast2SMS response:', smsErr.response.data);
+      }
+    }
+    
+    // Return response
+    if (smsSent) {
+      res.json({
+        success: true,
+        message: `OTP sent successfully to ${mobile}`,
+        method: 'mobile',
+        provider: 'fast2sms'
+      });
+    } else {
+      // Fallback - return OTP for development/testing
+      res.json({
+        success: true,
+        message: `OTP generated. In production, SMS would be sent.`,
+        method: 'mobile',
+        devOTP: process.env.NODE_ENV === 'development' ? otp : undefined,
+        smsError: smsError,
+        note: 'Check server logs for OTP in development mode'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Send Mobile OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
-router.post('/verify-mobile-otp', (req, res, next) => {
-  console.log('📍 /verify-mobile-otp route hit');
+// Verify Mobile OTP
+app.post('/api/auth/verify-mobile-otp', async (req, res) => {
+  console.log('📍 DIRECT /verify-mobile-otp route hit');
   console.log('📦 Request body:', req.body);
-  next();
-}, authController.verifyMobileOTP);
-
-// Registration OTP Routes
-router.post('/send-registration-otp', (req, res, next) => {
-  console.log('📍 /send-registration-otp route hit');
-  console.log('📦 Request body:', req.body);
-  next();
-}, authController.sendRegistrationOTP);
-
-router.post('/verify-registration-otp', (req, res, next) => {
-  console.log('📍 /verify-registration-otp route hit');
-  console.log('📦 Request body:', req.body);
-  next();
-}, authController.verifyRegistrationOTP);
-
-router.post('/forgot-password', authController.sendForgotPasswordOTP);
-router.post('/resend-forgot-password', authController.resendForgotPasswordOTP);
-router.post('/reset-password', authController.verifyOTPAndResetPassword);
-router.post('/send-reset-link', authController.sendForgotPasswordLink);
-router.post('/reset-password-with-token', authController.resetPasswordWithToken);
-router.post('/send-sms-otp', authController.sendSmsOTP);
-router.post('/verify-sms-otp', authController.verifyOTP);
-
+  
+  try {
+    const { mobile, otp, type = 'registration' } = req.body;
+    
+    if (!mobile || !otp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Mobile number and OTP are required' 
+      });
+    }
+    
+    let cleanMobile = mobile.replace(/\D/g, '');
+    if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
+    if (cleanMobile.length === 12 && cleanMobile.startsWith('91')) cleanMobile = cleanMobile.substring(2);
+    
+    const OTP = require('./models/otp.model');
+    
+    const otpRecord = await OTP.findOne({
+      mobile: cleanMobile,
+      otp: otp,
+      type: type
+    });
+    
+    if (!otpRecord) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid OTP' 
+      });
+    }
+    
+    if (new Date() > otpRecord.expiresAt) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'OTP has expired. Please request a new one.' 
+      });
+    }
+    
+    await OTP.deleteOne({ _id: otpRecord._id });
+    
+    res.json({
+      success: true,
+      message: 'OTP verified successfully',
+      verified: true
+    });
+    
+  } catch (error) {
+    console.error('Verify Mobile OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 // Email verification routes
 router.get('/verify-email', authController.verifyEmail);
 router.post('/resend-verification', authController.resendVerificationEmail);

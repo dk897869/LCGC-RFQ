@@ -13,10 +13,29 @@ const crypto = require("crypto");
 
 const connectDB = require("./config/db");
 
+// ==================== DEFINE AUTH MIDDLEWARE FIRST ====================
+const authMiddleware = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+};
+
 // Helper function to safely require routes
 const safeRequire = (routePath, defaultValue) => {
   try {
-    return require(routePath);
+    const module = require(routePath);
+    if (typeof module === 'function') {
+      return module;
+    }
+    return module;
   } catch (err) {
     console.warn(`⚠️ Could not load ${routePath}: ${err.message}`);
     return defaultValue || ((req, res) => res.status(501).json({ 
@@ -252,6 +271,117 @@ app.get('/health', (req, res) => {
   res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ==================== PASSWORD RESET ROUTES ====================
+
+// Send password reset link to email
+app.post('/api/auth/forgot-password-link', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const User = require('./models/user.model');
+    const { sendMail } = require('./services/mail.service');
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
+    }
+    
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+    
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>Password Reset</title></head>
+      <body style="font-family: Arial, sans-serif;">
+        <h2>Password Reset Request</h2>
+        <p>Hello ${user.name},</p>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetUrl}">${resetUrl}</a>
+        <p>This link expires in 1 hour.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      </body>
+      </html>
+    `;
+    
+    await sendMail({ to: user.email, subject: 'Password Reset Request', html });
+    res.json({ success: true, message: 'Password reset link sent to your email' });
+  } catch (error) {
+    console.error('Forgot password link error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Reset password with token
+app.post('/api/auth/reset-password-with-token', async (req, res) => {
+  try {
+    const { token, newPassword, confirmPassword } = req.body;
+    const User = require('./models/user.model');
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Token and new password required' });
+    }
+    
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+    
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+    
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+    
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Check reset token validity
+app.get('/api/auth/check-reset-token', async (req, res) => {
+  try {
+    const { token } = req.query;
+    const User = require('./models/user.model');
+    
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Token required' });
+    }
+    
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+    
+    res.json({ success: true, message: 'Token is valid', email: user.email });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ==================== AUTH PROFILE ENDPOINTS ====================
 app.get('/api/auth/me', async (req, res) => {
   try {
@@ -339,7 +469,7 @@ app.post('/api/auth/change-password', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Current password is incorrect' });
     }
     
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword;
     await user.save();
     
     res.json({ success: true, message: 'Password changed successfully' });
@@ -393,6 +523,54 @@ app.delete('/api/auth/avatar', async (req, res) => {
   }
 });
 
+// ==================== NPP CONTROLLER ====================
+// Import NPP controller (will be created)
+let nppController;
+try {
+  nppController = require('./controllers/npp.controller');
+  console.log('✅ NPP Controller loaded');
+} catch (err) {
+  console.warn('⚠️ NPP Controller not found, creating fallback');
+  nppController = {
+    createNppRequest: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    getAllNppRequests: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    getNppStats: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    getNppRequestById: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    getNppRequestBySerialNo: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    updateNppRequest: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    deleteNppRequest: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    approveNppRequest: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    rejectNppRequest: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
+    sendNppRequestEmail: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' })
+  };
+}
+
+// ==================== NPP DIRECT API ROUTES ====================
+app.post('/api/npp/cash-purchase', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/new-vendor', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/rfq-vendor', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/rfq-requisition', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/vendor-list', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/employee-detail', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/item-master', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/quotation-comparison', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/pr-request', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/po-npp', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/payment-advise', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/wcc-npp', authMiddleware, nppController.createNppRequest);
+
+app.get('/api/npp/requests', authMiddleware, nppController.getAllNppRequests);
+app.get('/api/npp/stats', authMiddleware, nppController.getNppStats);
+app.get('/api/npp/request/:id', authMiddleware, nppController.getNppRequestById);
+app.get('/api/npp/serial/:serialNo', authMiddleware, nppController.getNppRequestBySerialNo);
+
+app.put('/api/npp/request/:id', authMiddleware, nppController.updateNppRequest);
+app.delete('/api/npp/request/:id', authMiddleware, nppController.deleteNppRequest);
+
+app.patch('/api/npp/request/:id/approve', authMiddleware, nppController.approveNppRequest);
+app.patch('/api/npp/request/:id/reject', authMiddleware, nppController.rejectNppRequest);
+app.post('/api/npp/request/:id/send-email', authMiddleware, nppController.sendNppRequestEmail);
+
 // ==================== API ROUTES ====================
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
@@ -416,7 +594,27 @@ app.get("/", (req, res) => {
     success: true,
     message: "LCGC RFQ API Running Successfully 🚀",
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development"
+    environment: process.env.NODE_ENV || "development",
+    availableApis: {
+      auth: {
+        register: "POST /api/auth/register",
+        login: "POST /api/auth/login",
+        forgotPasswordLink: "POST /api/auth/forgot-password-link",
+        resetPasswordWithToken: "POST /api/auth/reset-password-with-token",
+        checkResetToken: "GET /api/auth/check-reset-token",
+        googleLogin: "POST /api/auth/google"
+      },
+      npp: {
+        cashPurchase: "POST /api/npp/cash-purchase",
+        newVendor: "POST /api/npp/new-vendor",
+        rfqVendor: "POST /api/npp/rfq-vendor",
+        rfqRequisition: "POST /api/npp/rfq-requisition",
+        getAllRequests: "GET /api/npp/requests",
+        getStats: "GET /api/npp/stats",
+        approve: "PATCH /api/npp/request/:id/approve",
+        reject: "PATCH /api/npp/request/:id/reject"
+      }
+    }
   });
 });
 
@@ -443,4 +641,12 @@ app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ NPP APIs available at: http://localhost:${PORT}/api/npp`);
+  console.log(`✅ Password Reset APIs:`);
+  console.log(`   - POST   /api/auth/forgot-password-link`);
+  console.log(`   - POST   /api/auth/reset-password-with-token`);
+  console.log(`   - GET    /api/auth/check-reset-token`);
+  console.log(`   - POST   /api/auth/google`);
 });
+
+module.exports = app;

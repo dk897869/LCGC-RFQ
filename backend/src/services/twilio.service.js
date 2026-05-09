@@ -1,224 +1,192 @@
 // services/twilio.service.js
 const twilio = require('twilio');
 
-// Twilio configuration with proper defaults and error handling
-const accountSid = process.env.TWILIO_ACCOUNT_SID || 'AC63450241f366aa28dffce878beh5dcbc';
-const authToken = process.env.TWILIO_AUTH_TOKEN || 'e696629ee6ae8b15486f43f4f4337626';
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || null; // Don't default to invalid number
+// Twilio configuration
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+const yourPersonalNumber = process.env.YOUR_PERSONAL_NUMBER || '+916239785524';
 
-// Log configuration status (without exposing full credentials)
-console.log('📱 Twilio Configuration Status:', {
-  hasAccountSid: !!accountSid && accountSid !== 'AC63450241f366aa28dffce878beh5dcbc',
-  hasAuthToken: !!authToken && authToken !== 'e696629ee6ae8b15486f43f4f4337626',
-  hasPhoneNumber: !!twilioPhoneNumber && twilioPhoneNumber !== '6239785524',
-  isConfigured: !!(accountSid && authToken && twilioPhoneNumber && 
-                   accountSid !== 'AC63450241f366aa28dffce878beh5dcbc' &&
-                   twilioPhoneNumber !== '+916239785524')
-});
+const isDevelopment = process.env.NODE_ENV === 'development';
+const useRealSms = process.env.USE_REAL_SMS === 'true';
 
-// Initialize Twilio client only if credentials are provided
+console.log('📱 ========================================');
+console.log('📱 TWILIO CONFIGURATION');
+console.log('📱 ========================================');
+console.log(`✅ Account SID: ${accountSid ? 'Present' : 'Missing'}`);
+console.log(`✅ Auth Token: ${authToken ? 'Present' : 'Missing'}`);
+console.log(`✅ Twilio Number: ${twilioPhoneNumber || 'Not set'}`);
+console.log(`📱 Your Number (receiver): ${yourPersonalNumber}`);
+console.log(`🌍 Environment: ${isDevelopment ? 'Development' : 'Production'}`);
+console.log(`📤 Real SMS: ${useRealSms ? 'ENABLED' : 'Disabled'}`);
+console.log('📱 ========================================\n');
+
+// Initialize Twilio client
 let client = null;
-try {
-  if (accountSid && authToken && accountSid !== 'AC63450241f366aa28dffce878beh5dcbc') {
+if (accountSid && authToken) {
+  try {
     client = twilio(accountSid, authToken);
-    console.log('✅ Twilio client initialized');
-  } else {
-    console.log('⚠️ Twilio client not initialized - using development mode');
+    console.log('✅ Twilio client initialized successfully\n');
+  } catch (err) {
+    console.error('❌ Twilio init error:', err.message);
   }
-} catch (error) {
-  console.error('❌ Failed to initialize Twilio client:', error.message);
+} else {
+  console.warn('⚠️ Twilio credentials missing. SMS will not work.\n');
 }
 
-// Development mode flag
-const isDevelopment = process.env.NODE_ENV === 'development';
-const useRealSms = process.env.USE_REAL_SMS === 'true' && !isDevelopment;
-
 /**
- * Send SMS OTP - Optimized for speed
- * @param {string} mobileNumber - Mobile number with or without country code
- * @returns {Promise<Object>} - Result object with success status and OTP
+ * Send SMS OTP - Fully working version
+ * @param {string} mobileNumber - Phone number to send OTP to (your personal number)
+ * @returns {Promise<Object>} - Result object
  */
 const sendSmsOtp = async (mobileNumber) => {
   const startTime = Date.now();
   
   try {
-    // Validate mobile number
-    if (!mobileNumber || mobileNumber.trim() === '') {
-      return {
-        success: false,
-        error: 'Mobile number is required',
-        retry: false
-      };
-    }
-    
-    // Clean and format mobile number
-    let cleanNumber = mobileNumber.replace(/\D/g, '');
-    
-    // Remove leading zero if present
-    if (cleanNumber.startsWith('0')) {
-      cleanNumber = cleanNumber.substring(1);
-    }
-    
-    // Add country code if not present (default to +91 for India)
-    let formattedNumber = cleanNumber;
-    if (!mobileNumber.startsWith('+')) {
-      if (cleanNumber.length === 10) {
-        formattedNumber = '+91' + cleanNumber;
-      } else if (cleanNumber.length === 12 && cleanNumber.startsWith('91')) {
-        formattedNumber = '+' + cleanNumber;
-      } else if (cleanNumber.length > 10) {
-        formattedNumber = '+' + cleanNumber;
-      } else {
-        formattedNumber = '+91' + cleanNumber;
-      }
-    } else {
-      formattedNumber = mobileNumber;
-    }
-    
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    console.log(`📱 Sending SMS OTP to ${formattedNumber}: ${otp}`);
+    // Clean and format the recipient's mobile number (your personal number)
+    let recipientNumber = mobileNumber.replace(/\D/g, '');
     
-    // DEVELOPMENT MODE - Fast response (no actual SMS)
-    if (isDevelopment && !useRealSms) {
-      console.log('⚠️ DEVELOPMENT MODE: OTP sent via console only (no actual SMS)');
-      
-      // Simulate network delay (100-200ms for realistic testing)
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const duration = Date.now() - startTime;
-      console.log(`✅ Development mode - OTP: ${otp} (sent in ${duration}ms)`);
+    // Format Indian number with +91
+    if (recipientNumber.length === 10) {
+      recipientNumber = '+91' + recipientNumber;
+    } else if (recipientNumber.length === 12 && recipientNumber.startsWith('91')) {
+      recipientNumber = '+' + recipientNumber;
+    } else if (!recipientNumber.startsWith('+')) {
+      recipientNumber = '+91' + recipientNumber;
+    }
+    
+    console.log(`📱 Sending OTP to: ${recipientNumber}`);
+    console.log(`🔐 OTP Code: ${otp}`);
+    
+    // DEVELOPMENT MODE - No real SMS
+    if (isDevelopment || !useRealSms) {
+      console.log('⚠️ DEVELOPMENT MODE: No SMS sent (check console for OTP)');
+      console.log(`📱 [DEV] OTP for ${recipientNumber}: ${otp}\n`);
       
       return {
         success: true,
         status: 'development',
         otp: otp,
-        sid: `DEV_${Date.now()}`,
-        message: 'Development mode - OTP sent via console',
-        duration: duration
+        message: 'Development mode - Check server logs for OTP',
+        isDevMode: true
       };
     }
     
-    // Check if Twilio is configured properly
+    // PRODUCTION MODE - Send real SMS
     if (!client) {
-      console.error('❌ Twilio client not initialized. Please check your credentials.');
+      console.error('❌ Twilio client not initialized');
       return {
         success: false,
-        error: 'SMS service not configured. Please contact support.',
-        retry: false,
-        fallback: true,
-        otp: isDevelopment ? otp : null
+        error: 'SMS service not configured. Please check Twilio credentials.',
+        otp: otp // Return OTP for fallback
       };
     }
     
-    if (!twilioPhoneNumber || twilioPhoneNumber === '+916239785524') {
-      console.error('❌ Twilio phone number not configured');
+    if (!twilioPhoneNumber || twilioPhoneNumber === '+1234567890') {
+      console.error('❌ Invalid Twilio phone number:', twilioPhoneNumber);
       return {
         success: false,
-        error: 'SMS service not configured. Please set TWILIO_PHONE_NUMBER.',
-        retry: false,
-        fallback: true,
-        otp: isDevelopment ? otp : null
+        error: 'Twilio phone number not configured. Please buy a number from Twilio Console.',
+        otp: otp
       };
     }
     
-    // PRODUCTION MODE - Send actual SMS with timeout
-    try {
-      // Create message promise with timeout
-      const messagePromise = client.messages.create({
-        body: `Your verification code is: ${otp}. This code will expire in 10 minutes.`,
-        from: twilioPhoneNumber,
-        to: formattedNumber
-      });
-      
-      // Race between SMS sending and timeout (5 seconds)
-      const message = await Promise.race([
-        messagePromise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('SMS timeout after 5 seconds')), 5000)
-        )
-      ]);
-      
-      const duration = Date.now() - startTime;
-      console.log(`✅ SMS sent successfully in ${duration}ms:`, message.sid);
-      
-      return {
-        success: true,
-        status: 'sent',
-        sid: message.sid,
-        otp: otp,
-        message: 'OTP sent successfully',
-        duration: duration
-      };
-      
-    } catch (timeoutError) {
-      console.error('❌ SMS timeout:', timeoutError.message);
-      return {
-        success: false,
-        error: 'SMS service timeout. Please try again.',
-        retry: true,
-        duration: Date.now() - startTime
-      };
-    }
+    console.log(`📤 Sending REAL SMS from: ${twilioPhoneNumber} to: ${recipientNumber}`);
+    
+    // Send SMS with timeout
+    const messagePromise = client.messages.create({
+      body: `Your verification code is: ${otp}. This code will expire in 10 minutes. - LCGC RFQ`,
+      from: twilioPhoneNumber,
+      to: recipientNumber
+    });
+    
+    // Race with timeout (10 seconds)
+    const message = await Promise.race([
+      messagePromise,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SMS timeout after 10 seconds')), 10000)
+      )
+    ]);
+    
+    const duration = Date.now() - startTime;
+    console.log(`✅ SMS sent successfully in ${duration}ms!`);
+    console.log(`📨 Message SID: ${message.sid}\n`);
+    
+    return {
+      success: true,
+      status: 'sent',
+      sid: message.sid,
+      otp: otp,
+      duration: duration,
+      message: 'OTP sent successfully to your mobile number'
+    };
     
   } catch (error) {
-    console.error('❌ Twilio SMS Error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`❌ SMS failed after ${duration}ms:`);
+    console.error(`Error: ${error.message}`);
     
     // Handle specific Twilio errors
     if (error.code === 21609) {
+      console.error(`
+⚠️ TRIAL ACCOUNT RESTRICTION:
+   You can only send SMS to VERIFIED numbers.
+   
+   To fix this:
+   1. Go to: https://console.twilio.com/us1/account/phone-numbers/verified
+   2. Click "Add a new Caller ID"
+   3. Enter your number: ${yourPersonalNumber}
+   4. Verify with the code Twilio sends
+   5. Wait 5 minutes for verification
+      `);
+      
       return {
         success: false,
-        error: 'Trial account restriction: Please add your number as a verified caller ID in Twilio Console.',
-        retry: false,
-        details: 'https://console.twilio.com/us1/account/phone-numbers/verified'
+        error: 'Trial account: Please verify your number in Twilio Console first',
+        needsVerification: true,
+        verificationUrl: 'https://console.twilio.com/us1/account/phone-numbers/verified',
+        otp: otp // Return OTP for testing
       };
     }
     
     if (error.code === 21211) {
+      console.error('❌ Invalid phone number format');
       return {
         success: false,
-        error: 'Invalid phone number format. Please check the number and try again.',
-        retry: false
+        error: 'Invalid phone number format. Please use 10-digit number.',
+        otp: otp
       };
     }
     
-    if (error.code === 21408) {
-      return {
-        success: false,
-        error: 'Permission error: Unable to send SMS to this number.',
-        retry: false
-      };
-    }
-    
-    // Generic error
     return {
       success: false,
-      error: error.message || 'Failed to send SMS. Please try again.',
-      retry: true,
-      duration: Date.now() - startTime
+      error: error.message || 'Failed to send SMS',
+      otp: otp
     };
   }
 };
 
 /**
- * Verify SMS OTP - Fast verification
+ * Verify SMS OTP
  * @param {string} mobileNumber - Mobile number
  * @param {string} otp - OTP to verify
  * @returns {Promise<Object>} - Verification result
  */
 const verifySmsOtp = async (mobileNumber, otp) => {
-  // This function is just a wrapper - actual verification happens in database
-  // Fast response (no external API call)
-  return {
-    success: true,
-    isValid: true
+  // Verification happens in database
+  // This function is just a wrapper
+  return { 
+    success: true, 
+    isValid: true,
+    message: 'OTP verification handled by database'
   };
 };
 
 /**
  * Test Twilio connection
- * @returns {Promise<Object>} - Connection test result
  */
 const testTwilioConnection = async () => {
   if (!client) {
@@ -230,24 +198,18 @@ const testTwilioConnection = async () => {
   }
   
   try {
-    // Test by fetching account info (fast operation)
-    const account = await Promise.race([
-      client.api.accounts(accountSid).fetch(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout')), 3000)
-      )
-    ]);
-    
+    const account = await client.api.accounts(accountSid).fetch();
     return {
       success: true,
       message: 'Twilio connection successful',
+      accountName: account.friendlyName,
       accountStatus: account.status,
       configured: true
     };
   } catch (error) {
     return {
       success: false,
-      message: `Twilio connection failed: ${error.message}`,
+      message: `Connection failed: ${error.message}`,
       configured: true
     };
   }

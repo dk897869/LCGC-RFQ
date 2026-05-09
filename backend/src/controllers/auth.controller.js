@@ -178,7 +178,756 @@ exports.verifyMobileOTP = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// ==================== NPP PROCUREMENT APIs ====================
 
+const NPPRequest = require("../models/nppRequest.model");
+
+// Helper function to generate serial number
+const generateNppSerialNumber = (type) => {
+  const prefix = {
+    'cash-purchase': 'CP',
+    'new-vendor': 'NV',
+    'rfq-vendor': 'RFQV',
+    'rfq-requisition': 'RFQ',
+    'pr-request': 'PR',
+    'po-npp': 'PO',
+    'payment-advise': 'PAY',
+    'wcc-npp': 'WCC',
+    'vendor-list': 'VL',
+    'employee-detail': 'EMP',
+    'item-master': 'IM',
+    'quotation-comparison': 'QC'
+  }[type] || 'NPP';
+  
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `${prefix}-${year}${month}${day}-${random}`;
+};
+
+// Helper to send email with PDF to stakeholders
+const sendNppEmailWithPdf = async (request, subject, message) => {
+  try {
+    const recipients = request.stakeholders?.map(s => s.email) || [];
+    const ccList = request.ccList || [];
+    
+    if (recipients.length === 0) return;
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>${subject}</title></head>
+      <body style="font-family: Arial, sans-serif;">
+        <h2>${subject}</h2>
+        <p><strong>Request Type:</strong> ${request.type}</p>
+        <p><strong>Serial No:</strong> ${request.uniqueSerialNo}</p>
+        <p><strong>Title:</strong> ${request.titleOfActivity}</p>
+        <p><strong>Requester:</strong> ${request.requesterName}</p>
+        <p><strong>Department:</strong> ${request.department}</p>
+        <p><strong>Status:</strong> ${request.status}</p>
+        <p><strong>Message:</strong> ${message}</p>
+        <hr>
+        <p>Please login to the system to review and take action.</p>
+      </body>
+      </html>
+    `;
+    
+    for (const recipient of recipients) {
+      await sendMail({
+        to: recipient,
+        cc: ccList,
+        subject: subject,
+        html: emailHtml,
+        text: message
+      });
+    }
+  } catch (error) {
+    console.error('Send NPP email error:', error);
+  }
+};
+
+// ==================== CREATE NPP REQUEST ====================
+exports.createNppRequest = async (req, res) => {
+  try {
+    const { type, ...requestData } = req.body;
+    
+    if (!type) {
+      return res.status(400).json({ success: false, message: "Request type is required" });
+    }
+    
+    const serialNo = generateNppSerialNumber(type);
+    
+    const nppRequest = new NPPRequest({
+      type,
+      uniqueSerialNo: serialNo,
+      status: 'Pending',
+      requesterName: requestData.requesterName || req.user?.name,
+      department: requestData.department,
+      emailId: requestData.emailId || req.user?.email,
+      requestDate: requestData.requestDate || new Date(),
+      contactNo: requestData.contactNo,
+      organization: requestData.organization,
+      titleOfActivity: requestData.titleOfActivity,
+      priority: requestData.priority || 'M',
+      purposeAndObjective: requestData.purposeAndObjective,
+      stakeholders: requestData.stakeholders || [],
+      ccList: requestData.ccList || [],
+      createdBy: req.user?.id,
+      ...requestData
+    });
+    
+    await nppRequest.save();
+    
+    // Send email notifications
+    await sendNppEmailWithPdf(nppRequest, `New ${type} Request - ${serialNo}`, `A new request has been created and is pending your approval.`);
+    
+    res.status(201).json({
+      success: true,
+      message: `${type} request created successfully`,
+      data: nppRequest,
+      serialNo: serialNo
+    });
+    
+  } catch (error) {
+    console.error('Create NPP request error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== GET ALL NPP REQUESTS ====================
+exports.getAllNppRequests = async (req, res) => {
+  try {
+    const { type, status, department, startDate, endDate } = req.query;
+    let filter = {};
+    
+    if (type) filter.type = type;
+    if (status) filter.status = status;
+    if (department) filter.department = department;
+    if (startDate || endDate) {
+      filter.requestDate = {};
+      if (startDate) filter.requestDate.$gte = new Date(startDate);
+      if (endDate) filter.requestDate.$lte = new Date(endDate);
+    }
+    
+    const requests = await NPPRequest.find(filter).sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      count: requests.length,
+      data: requests
+    });
+    
+  } catch (error) {
+    console.error('Get NPP requests error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== GET NPP REQUEST BY ID ====================
+exports.getNppRequestById = async (req, res) => {
+  try {
+    const request = await NPPRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+    res.json({ success: true, data: request });
+  } catch (error) {
+    console.error('Get NPP request error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== GET NPP REQUEST BY SERIAL NO ====================
+exports.getNppRequestBySerialNo = async (req, res) => {
+  try {
+    const request = await NPPRequest.findOne({ uniqueSerialNo: req.params.serialNo });
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+    res.json({ success: true, data: request });
+  } catch (error) {
+    console.error('Get NPP request by serial error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== UPDATE NPP REQUEST ====================
+exports.updateNppRequest = async (req, res) => {
+  try {
+    const request = await NPPRequest.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+    
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+    
+    res.json({
+      success: true,
+      message: "Request updated successfully",
+      data: request
+    });
+    
+  } catch (error) {
+    console.error('Update NPP request error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== DELETE NPP REQUEST ====================
+exports.deleteNppRequest = async (req, res) => {
+  try {
+    const request = await NPPRequest.findByIdAndDelete(req.params.id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+    res.json({ success: true, message: "Request deleted successfully" });
+  } catch (error) {
+    console.error('Delete NPP request error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== APPROVE NPP REQUEST ====================
+exports.approveNppRequest = async (req, res) => {
+  try {
+    const { comments = '' } = req.body;
+    const actor = req.user;
+    const request = await NPPRequest.findById(req.params.id);
+    
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+    
+    if (['Approved', 'Rejected'].includes(request.status)) {
+      return res.status(400).json({ success: false, message: "Request already finalized" });
+    }
+    
+    // Update stakeholders
+    if (request.stakeholders && request.stakeholders.length > 0) {
+      const currentStakeholder = request.stakeholders.find(s => s.email === actor.email);
+      if (currentStakeholder) {
+        currentStakeholder.status = 'Approved';
+        currentStakeholder.remarks = comments;
+        currentStakeholder.dateTime = new Date();
+      }
+    }
+    
+    request.status = 'Approved';
+    request.approvedBy = actor.name || actor.email;
+    request.approvedAt = new Date();
+    request.approvalComments = comments;
+    await request.save();
+    
+    // Send email notification
+    await sendNppEmailWithPdf(request, `Request Approved - ${request.uniqueSerialNo}`, `Your request has been approved by ${actor.name || actor.email}. Comments: ${comments}`);
+    
+    res.json({
+      success: true,
+      message: "Request approved successfully",
+      data: request
+    });
+    
+  } catch (error) {
+    console.error('Approve NPP request error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== REJECT NPP REQUEST ====================
+exports.rejectNppRequest = async (req, res) => {
+  try {
+    const { comments = '' } = req.body;
+    const actor = req.user;
+    const request = await NPPRequest.findById(req.params.id);
+    
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+    
+    if (['Approved', 'Rejected'].includes(request.status)) {
+      return res.status(400).json({ success: false, message: "Request already finalized" });
+    }
+    
+    // Update stakeholders
+    if (request.stakeholders && request.stakeholders.length > 0) {
+      const currentStakeholder = request.stakeholders.find(s => s.email === actor.email);
+      if (currentStakeholder) {
+        currentStakeholder.status = 'Rejected';
+        currentStakeholder.remarks = comments;
+        currentStakeholder.dateTime = new Date();
+      }
+    }
+    
+    request.status = 'Rejected';
+    request.rejectedBy = actor.name || actor.email;
+    request.rejectedAt = new Date();
+    request.rejectionReason = comments;
+    await request.save();
+    
+    // Send email notification
+    await sendNppEmailWithPdf(request, `Request Rejected - ${request.uniqueSerialNo}`, `Your request has been rejected by ${actor.name || actor.email}. Reason: ${comments}`);
+    
+    res.json({
+      success: true,
+      message: "Request rejected",
+      data: request
+    });
+    
+  } catch (error) {
+    console.error('Reject NPP request error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== GET NPP STATS ====================
+exports.getNppStats = async (req, res) => {
+  try {
+    const total = await NPPRequest.countDocuments();
+    const pending = await NPPRequest.countDocuments({ status: 'Pending' });
+    const approved = await NPPRequest.countDocuments({ status: 'Approved' });
+    const rejected = await NPPRequest.countDocuments({ status: 'Rejected' });
+    const inProcess = await NPPRequest.countDocuments({ status: 'In-Process' });
+    
+    const byType = await NPPRequest.aggregate([
+      { $group: { _id: '$type', count: { $sum: 1 } } }
+    ]);
+    
+    res.json({
+      success: true,
+      stats: { total, pending, approved, rejected, inProcess },
+      byType
+    });
+    
+  } catch (error) {
+    console.error('Get NPP stats error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+// ==================== FORGOT PASSWORD WITH LINK ====================
+
+/**
+ * Send password reset link to user's email
+ * POST /api/auth/forgot-password-link
+ */
+exports.sendForgotPasswordLink = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email address is required' 
+      });
+    }
+    
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      // For security, don't reveal that email doesn't exist
+      return res.json({ 
+        success: true, 
+        message: 'If your email is registered, you will receive a password reset link.' 
+      });
+    }
+    
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Hash token and save to database
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+    user.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+    
+    await user.save({ validateBeforeSave: false });
+    
+    // Create reset URL
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    
+    // Email HTML template
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset Request</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+          .header { background: linear-gradient(135deg, #0f2a5e 0%, #1e4a8a 100%); padding: 30px; text-align: center; }
+          .header h1 { color: white; margin: 0; font-size: 28px; }
+          .header p { color: rgba(255,255,255,0.9); margin: 8px 0 0; }
+          .content { padding: 30px; }
+          .button { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #0f2a5e, #1e4a8a); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+          .warning { background: #fef3c7; padding: 12px; border-radius: 8px; font-size: 12px; color: #92400e; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>LCGC RFQ</h1>
+            <p>Resolute Group</p>
+          </div>
+          <div class="content">
+            <h2 style="color: #0f2a5e;">Password Reset Request</h2>
+            <p>Hello <strong>${user.name}</strong>,</p>
+            <p>We received a request to reset your password. Click the button below to create a new password:</p>
+            <div style="text-align: center;">
+              <a href="${resetUrl}" class="button" style="color: white;">Reset Password</a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="background: #f1f5f9; padding: 10px; border-radius: 6px; word-break: break-all; font-size: 12px;">${resetUrl}</p>
+            <div class="warning">
+              <strong>⚠️ Important:</strong> This link will expire in 1 hour. If you didn't request this, please ignore this email.
+            </div>
+          </div>
+          <div class="footer">
+            <p>This is an automated message, please do not reply.</p>
+            <p>&copy; ${new Date().getFullYear()} LCGC RFQ. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const text = `Password Reset Request\n\nClick the link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`;
+    
+    // Send email
+    const mailResult = await sendMail({
+      to: user.email,
+      subject: 'Password Reset Request - LCGC RFQ',
+      html: html,
+      text: text
+    });
+    
+    if (!mailResult || mailResult.success === false) {
+      return res.status(502).json({
+        success: false,
+        message: mailResult?.error || 'Email could not be sent. Please try again later.'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Password reset link sent to your email. Please check your inbox.'
+    });
+    
+  } catch (error) {
+    console.error('Forgot password link error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== RESET PASSWORD WITH TOKEN ====================
+
+/**
+ * Reset password using token from email link
+ * POST /api/auth/reset-password-with-token
+ */
+exports.resetPasswordWithToken = async (req, res) => {
+  try {
+    const { token, newPassword, confirmPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token and new password are required' 
+      });
+    }
+    
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Passwords do not match' 
+      });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters' 
+      });
+    }
+    
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+    
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid or expired reset token. Please request a new password reset.' 
+      });
+    }
+    
+    // Update password
+    user.password = newPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpire = null;
+    await user.save();
+    
+    // Send confirmation email
+    const confirmationHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Password Changed Successfully</title>
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f6f9; }
+          .container { max-width: 500px; margin: 50px auto; background: white; border-radius: 10px; padding: 30px; text-align: center; }
+          .success-icon { font-size: 64px; color: #10b981; }
+          .button { display: inline-block; padding: 12px 30px; background: #0f2a5e; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="success-icon">✅</div>
+          <h2>Password Changed Successfully!</h2>
+          <p>Your password has been reset. You can now log in with your new password.</p>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:4200'}/login" class="button">Go to Login</a>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    await sendMail({
+      to: user.email,
+      subject: 'Password Changed Successfully - LCGC RFQ',
+      html: confirmationHtml,
+      text: 'Your password has been changed successfully. If you did not perform this action, please contact support immediately.'
+    }).catch(err => console.log('Confirmation email error:', err.message));
+    
+    res.json({
+      success: true,
+      message: 'Password reset successfully! You can now log in with your new password.'
+    });
+    
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== REQUEST PASSWORD RESET OTP (Alternative) ====================
+
+/**
+ * Send OTP to email for password reset
+ * POST /api/auth/forgot-password-otp
+ */
+exports.sendForgotPasswordOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email address is required' 
+      });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.json({ 
+        success: true, 
+        message: 'If your email is registered, you will receive an OTP.' 
+      });
+    }
+    
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Save OTP to database
+    user.resetPasswordOTP = otp;
+    user.resetPasswordOTPExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save({ validateBeforeSave: false });
+    
+    // Email HTML with OTP
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Password Reset OTP</title>
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f6f9; }
+          .container { max-width: 500px; margin: 50px auto; background: white; border-radius: 10px; padding: 30px; text-align: center; }
+          .otp-code { font-size: 32px; font-weight: bold; letter-spacing: 5px; background: #f0f4f8; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: monospace; }
+          .warning { font-size: 12px; color: #666; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>🔐 Password Reset OTP</h2>
+          <p>Hello <strong>${user.name}</strong>,</p>
+          <p>Your OTP for password reset is:</p>
+          <div class="otp-code">${otp}</div>
+          <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+          <div class="warning">If you didn't request this, please ignore this email.</div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const mailResult = await sendMail({
+      to: user.email,
+      subject: 'Password Reset OTP - LCGC RFQ',
+      html: html,
+      text: `Your OTP for password reset is: ${otp}. Valid for 10 minutes.`
+    });
+    
+    if (!mailResult || mailResult.success === false) {
+      return res.status(502).json({
+        success: false,
+        message: mailResult?.error || 'Email could not be sent.'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'OTP sent to your email address.',
+      devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
+    });
+    
+  } catch (error) {
+    console.error('Forgot password OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== VERIFY OTP AND RESET PASSWORD ====================
+
+/**
+ * Verify OTP and reset password
+ * POST /api/auth/verify-otp-reset-password
+ */
+exports.verifyOTPAndResetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword, confirmPassword } = req.body;
+    
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email, OTP and new password are required' 
+      });
+    }
+    
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Passwords do not match' 
+      });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters' 
+      });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    // Check OTP
+    if (user.resetPasswordOTP !== otp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid OTP' 
+      });
+    }
+    
+    if (user.resetPasswordOTPExpire < Date.now()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'OTP has expired. Please request a new one.' 
+      });
+    }
+    
+    // Update password
+    user.password = newPassword;
+    user.resetPasswordOTP = null;
+    user.resetPasswordOTPExpire = null;
+    await user.save();
+    
+    res.json({
+      success: true,
+      message: 'Password reset successfully! You can now log in.'
+    });
+    
+  } catch (error) {
+    console.error('Verify OTP reset password error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== CHECK RESET TOKEN VALIDITY ====================
+
+/**
+ * Check if reset token is valid
+ * GET /api/auth/check-reset-token?token=xxxx
+ */
+exports.checkResetToken = async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token is required' 
+      });
+    }
+    
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+    
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid or expired token' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Token is valid',
+      email: user.email
+    });
+    
+  } catch (error) {
+    console.error('Check reset token error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 // ==================== UPDATE REGISTRATION TO SUPPORT MOBILE ====================
 
 exports.register = async (req, res) => {

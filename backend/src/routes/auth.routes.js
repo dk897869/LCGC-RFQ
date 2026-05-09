@@ -380,11 +380,42 @@ router.post('/twitter', async (req, res) => {
   }
 });
 
+// ==================== NPP PROCUREMENT ROUTES ====================
+// Create NPP requests by type
+router.post('/npp/cash-purchase', authMiddleware, authController.createNppRequest);
+router.post('/npp/new-vendor', authMiddleware, authController.createNppRequest);
+router.post('/npp/rfq-vendor', authMiddleware, authController.createNppRequest);
+router.post('/npp/rfq-requisition', authMiddleware, authController.createNppRequest);
+router.post('/npp/vendor-list', authMiddleware, authController.createNppRequest);
+router.post('/npp/employee-detail', authMiddleware, authController.createNppRequest);
+router.post('/npp/item-master', authMiddleware, authController.createNppRequest);
+router.post('/npp/quotation-comparison', authMiddleware, authController.createNppRequest);
+router.post('/npp/pr-request', authMiddleware, authController.createNppRequest);
+router.post('/npp/po-npp', authMiddleware, authController.createNppRequest);
+router.post('/npp/payment-advise', authMiddleware, authController.createNppRequest);
+router.post('/npp/wcc-npp', authMiddleware, authController.createNppRequest);
+
+// Get all NPP requests with filters
+router.get('/npp/requests', authMiddleware, authController.getAllNppRequests);
+router.get('/npp/stats', authMiddleware, authController.getNppStats);
+router.get('/npp/request/:id', authMiddleware, authController.getNppRequestById);
+router.get('/npp/serial/:serialNo', authMiddleware, authController.getNppRequestBySerialNo);
+
+// Update and delete
+router.put('/npp/request/:id', authMiddleware, authController.updateNppRequest);
+router.delete('/npp/request/:id', authMiddleware, authController.deleteNppRequest);
+
+// Approve/Reject
+router.patch('/npp/request/:id/approve', authMiddleware, authController.approveNppRequest);
+router.patch('/npp/request/:id/reject', authMiddleware, authController.rejectNppRequest);
+router.post('/npp/request/:id/send-email', authMiddleware, authController.sendNppRequestEmail);
+
 // ==================== PUBLIC ROUTES ====================
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/send-otp', authController.sendEmailOTP);
 router.post('/verify-otp', authController.verifyOTP);
+
 // Mobile OTP Routes
 router.post('/send-mobile-otp', (req, res, next) => {
   console.log('📍 /send-mobile-otp route hit');
@@ -448,7 +479,21 @@ router.post('/upload-profile-photo', upload.single('profileImage'), authControll
 // Clear avatar route
 router.delete('/avatar', authController.clearAvatar);
 router.delete('/profile-photo', authController.clearAvatar);
+// ==================== FORGOT / RESET PASSWORD ROUTES ====================
 
+// Password reset with link (email)
+router.post('/forgot-password-link', authController.sendForgotPasswordLink);
+router.post('/reset-password-with-token', authController.resetPasswordWithToken);
+router.get('/check-reset-token', authController.checkResetToken);
+
+// Password reset with OTP (alternative)
+router.post('/forgot-password-otp', authController.sendForgotPasswordOTP);
+router.post('/verify-otp-reset-password', authController.verifyOTPAndResetPassword);
+
+// Legacy routes (keep for compatibility)
+router.post('/forgot-password', authController.sendForgotPasswordOTP);
+router.post('/reset-password', authController.verifyOTPAndResetPassword);
+router.post('/send-reset-link', authController.sendForgotPasswordLink);
 // EP Request routes
 router.post('/ep-requests', authController.createEPRequest);
 router.get('/ep-requests', authController.getAllEPRequests);
@@ -460,4 +505,5 @@ router.patch('/ep-requests/:id/reject', authController.rejectEPRequest);
 router.get('/ep-requests-stats', authController.getEPRequestStats);
 router.post('/ep-requests-send-email', authController.sendEPRequestEmail);
 
+// ==================== EXPORT ROUTER ====================
 module.exports = router;

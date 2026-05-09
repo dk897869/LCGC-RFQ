@@ -66,4 +66,25 @@ rfqSchema.index({ emailId: 1 });
 rfqSchema.index({ status: 1 });
 rfqSchema.index({ createdAt: -1 });
 
+// Virtual for formatted priority
+rfqSchema.virtual('priorityFormatted').get(function() {
+  const map = { 'H': 'High', 'M': 'Medium', 'L': 'Low' };
+  return map[this.priority] || 'Medium';
+});
+
+// Virtual for formatted status
+rfqSchema.virtual('statusFormatted').get(function() {
+  const map = { 
+    'Pending': 'Pending', 
+    'Approved': 'Approved', 
+    'Rejected': 'Rejected', 
+    'In-Process': 'In Process' 
+  };
+  return map[this.status] || this.status;
+});
+
+// Enable virtuals in JSON
+rfqSchema.set('toJSON', { virtuals: true });
+rfqSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('RFQ', rfqSchema);

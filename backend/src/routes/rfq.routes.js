@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middlewares/auth');
+const authMiddleware = require('../middlewares/auth.middleware');
 
 const {
   getAllRFQs,
@@ -8,25 +8,25 @@ const {
   getRFQById,
   updateRFQ,
   deleteRFQ,
-  approveRFQ,      // ✅ Added
-  rejectRFQ,       // ✅ Added
+  approveRFQ,
+  rejectRFQ,
   getVendors,
   getDepartments,
 } = require('../controllers/Rfq.controller');
 
-// Public routes (if any)
+// Public routes
 router.get('/departments', getDepartments);
 router.get('/vendors', getVendors);
 
-// Protected routes
-router.get('/', verifyToken, getAllRFQs);
-router.post('/', verifyToken, createRFQ);
-router.get('/:id', verifyToken, getRFQById);
-router.put('/:id', verifyToken, updateRFQ);
-router.delete('/:id', verifyToken, deleteRFQ);
+// Protected routes (require authentication)
+router.get('/', authMiddleware, getAllRFQs);
+router.post('/', authMiddleware, createRFQ);
+router.get('/:id', authMiddleware, getRFQById);
+router.put('/:id', authMiddleware, updateRFQ);
+router.delete('/:id', authMiddleware, deleteRFQ);
 
-// ✅ ADD THESE APPROVE/REJECT ROUTES
-router.patch('/:id/approve', verifyToken, approveRFQ);
-router.patch('/:id/reject', verifyToken, rejectRFQ);
+// Approval routes
+router.patch('/:id/approve', authMiddleware, approveRFQ);
+router.patch('/:id/reject', authMiddleware, rejectRFQ);
 
 module.exports = router;

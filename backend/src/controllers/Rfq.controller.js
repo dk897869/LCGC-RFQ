@@ -1,6 +1,5 @@
 const RFQ = require('../models/Rfq');
 const { sendMail } = require('../services/mail.service');
-const { generateBeautifulPDF } = require('../services/pdf.service');
 
 // Generate unique serial number
 const generateSerialNumber = () => {
@@ -15,38 +14,25 @@ const generateSerialNumber = () => {
   return `RFQ-${year}${month}${day}${hours}${minutes}${seconds}-${random}`;
 };
 
-// Send RFQ Created Email with PDF
+// Send RFQ Created Email
 const sendRFQCreatedEmail = async (rfqData) => {
   const subject = `📋 New RFQ Created: ${rfqData.titleOfActivity} (${rfqData.uniqueSerialNo})`;
   
   console.log(`📧 Sending RFQ creation email to: ${rfqData.emailId}`);
   console.log(`📧 CC recipients: ${rfqData.ccTo?.join(', ') || 'None'}`);
   
-  // Generate PDF
-  let pdfBuffer = null;
-  try {
-    pdfBuffer = await generateBeautifulPDF(rfqData);
-    console.log('📄 PDF generated successfully');
-  } catch (pdfErr) {
-    console.error('PDF generation error:', pdfErr.message);
-  }
-  
   // Send to requester with CC
-  const attachments = pdfBuffer ? [{
-    filename: `RFQ_${rfqData.uniqueSerialNo}.pdf`,
-    content: pdfBuffer.toString('base64'),
-    contentType: 'application/pdf'
-  }] : [];
-  
   await sendMail({
     to: rfqData.emailId,
     cc: rfqData.ccTo || [],
     subject: subject,
-    rfqData: rfqData,
-    action: 'created',
-    actor: null,
-    nextApprover: rfqData.stakeholders?.[0] || null,
-    attachments: attachments
+    html: `
+      <h2>RFQ Created Successfully</h2>
+      <p><strong>Serial Number:</strong> ${rfqData.uniqueSerialNo}</p>
+      <p><strong>Title:</strong> ${rfqData.titleOfActivity}</p>
+      <p><strong>Status:</strong> Pending Approval</p>
+      <p>Your RFQ has been submitted for approval. You will be notified once it is processed.</p>
+    `
   });
   
   // Send to all stakeholders (approvers)
@@ -56,11 +42,13 @@ const sendRFQCreatedEmail = async (rfqData) => {
         await sendMail({
           to: approver.email,
           subject: `🔔 Approval Required: ${rfqData.titleOfActivity} (${rfqData.uniqueSerialNo})`,
-          rfqData: rfqData,
-          action: 'approval_needed',
-          actor: { name: rfqData.requesterName },
-          nextApprover: null,
-          attachments: attachments
+          html: `
+            <h2>RFQ Approval Required</h2>
+            <p><strong>Requester:</strong> ${rfqData.requesterName}</p>
+            <p><strong>Title:</strong> ${rfqData.titleOfActivity}</p>
+            <p><strong>Serial Number:</strong> ${rfqData.uniqueSerialNo}</p>
+            <p>Please login to review and approve this RFQ.</p>
+          `
         });
         console.log(`📧 Approval request sent to: ${approver.email}`);
       }
@@ -161,7 +149,8 @@ const createRFQ = async (req, res) => {
         email: s.email || '',
         designation: s.designation || '',
         status: 'Pending',
-        remarks: s.remarks || ''
+        remarks: s.remarks || '',
+        dateTime: null
       })).filter(s => s.email);
     }
 
@@ -183,7 +172,8 @@ const createRFQ = async (req, res) => {
       items: processedItems,
       stakeholders: processedStakeholders,
       ccTo: ccTo || [],
-      status: 'Pending'
+      status: 'Pending',
+      createdBy: req.user?.id
     };
 
     const newRFQ = new RFQ(rfqData);
@@ -192,7 +182,7 @@ const createRFQ = async (req, res) => {
     console.log("✅ RFQ saved successfully:", savedRFQ._id);
     console.log(`📋 RFQ Serial Number: ${savedRFQ.uniqueSerialNo}`);
 
-    // Send emails with PDF attachment
+    // Send emails
     try {
       await sendRFQCreatedEmail(savedRFQ);
       console.log("📧 RFQ creation emails sent successfully");
@@ -246,7 +236,7 @@ const updateRFQ = async (req, res) => {
   try {
     const rfq = await RFQ.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { ...req.body, updatedAt: new Date() },
       { new: true, runValidators: true }
     );
     
@@ -318,32 +308,23 @@ const approveRFQ = async (req, res) => {
     }
     rfq.approvedAt = new Date();
     rfq.approvedBy = userName;
+    rfq.updatedAt = new Date();
     
     await rfq.save();
     
-    // Send approval email with PDF
-    let pdfBuffer = null;
-    try {
-      pdfBuffer = await generateBeautifulPDF(rfq);
-    } catch (pdfErr) {
-      console.error('PDF generation error:', pdfErr.message);
-    }
-    
-    const attachments = pdfBuffer ? [{
-      filename: `RFQ_${rfq.uniqueSerialNo}.pdf`,
-      content: pdfBuffer.toString('base64'),
-      contentType: 'application/pdf'
-    }] : [];
-    
+    // Send approval email
     await sendMail({
       to: rfq.emailId,
       cc: rfq.ccTo || [],
       subject: `✅ RFQ Approved: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
-      rfqData: rfq,
-      action: 'approved',
-      actor: { name: userName, remarks: comments },
-      nextApprover: null,
-      attachments: attachments
+      html: `
+        <h2>RFQ Approved</h2>
+        <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
+        <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
+        <p><strong>Status:</strong> Approved</p>
+        <p><strong>Approved By:</strong> ${userName}</p>
+        ${comments ? `<p><strong>Comments:</strong> ${comments}</p>` : ''}
+      `
     });
     
     res.status(200).json({
@@ -382,32 +363,23 @@ const rejectRFQ = async (req, res) => {
     }
     rfq.rejectedAt = new Date();
     rfq.rejectedBy = userName;
+    rfq.updatedAt = new Date();
     
     await rfq.save();
     
-    // Send rejection email with PDF
-    let pdfBuffer = null;
-    try {
-      pdfBuffer = await generateBeautifulPDF(rfq);
-    } catch (pdfErr) {
-      console.error('PDF generation error:', pdfErr.message);
-    }
-    
-    const attachments = pdfBuffer ? [{
-      filename: `RFQ_${rfq.uniqueSerialNo}.pdf`,
-      content: pdfBuffer.toString('base64'),
-      contentType: 'application/pdf'
-    }] : [];
-    
+    // Send rejection email
     await sendMail({
       to: rfq.emailId,
       cc: rfq.ccTo || [],
       subject: `❌ RFQ Rejected: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
-      rfqData: rfq,
-      action: 'rejected',
-      actor: { name: userName, remarks: comments },
-      nextApprover: null,
-      attachments: attachments
+      html: `
+        <h2>RFQ Rejected</h2>
+        <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
+        <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
+        <p><strong>Status:</strong> Rejected</p>
+        <p><strong>Rejected By:</strong> ${userName}</p>
+        ${comments ? `<p><strong>Reason:</strong> ${comments}</p>` : ''}
+      `
     });
     
     res.status(200).json({
@@ -442,7 +414,8 @@ const getDepartments = (req, res) => {
   res.status(200).json({
     success: true,
     departments: [
-      'Purchase', 'Production', 'Quality', 'Logistics', 'Maintenance', 'HR', 'Stores', 'IT', 'Finance', 'R&D', 'Operations', 'Sales'
+      'Purchase', 'Production', 'Quality', 'Logistics', 'Maintenance', 
+      'HR', 'Stores', 'IT', 'Finance', 'R&D', 'Operations', 'Sales'
     ]
   });
 };

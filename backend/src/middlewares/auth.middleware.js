@@ -1,4 +1,3 @@
-// middleware/auth.middleware.js
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = async (req, res, next) => {
@@ -7,7 +6,7 @@ const authMiddleware = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mysecretkey123');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     req.user = decoded;
     next();
   } catch (error) {

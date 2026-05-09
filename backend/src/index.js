@@ -64,7 +64,6 @@ const serialNumberRoutes = safeRequire("./routes/serialNumber.routes");
 
 const app = express();
 
-// ==================== MULTER CONFIGURATION FOR AVATAR (DEFINED FIRST) ====================
 // ==================== MULTER CONFIGURATION FOR AVATAR ====================
 // Ensure upload directories exist
 const avatarUploadDir = path.join(__dirname, "uploads", "avatars");
@@ -99,100 +98,10 @@ const uploadAvatar = multer({
   }
 });
 
-// ==================== AVATAR UPLOAD ROUTE ====================
-app.post('/api/auth/upload-avatar', (req, res) => {
-  console.log('📍 /api/auth/upload-avatar route hit');
-  console.log('📌 Headers:', req.headers);
-  console.log('📌 Content-Type:', req.headers['content-type']);
-  
-  // First check if token exists
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    console.log('❌ No token provided');
-    return res.status(401).json({ 
-      success: false, 
-      message: 'No token provided. Please login first.' 
-    });
-  }
-  
-  // Process upload
-  uploadAvatar.any()(req, res, async (err) => {
-    if (err) {
-      console.error('❌ Upload error:', err);
-      return res.status(400).json({ 
-        success: false, 
-        message: err.message 
-      });
-    }
-    
-    try {
-      // Get uploaded file
-      const uploadedFile = req.files && req.files[0];
-      
-      if (!uploadedFile) {
-        console.log('❌ No file found in request');
-        console.log('📌 req.files:', req.files);
-        console.log('📌 req.body:', req.body);
-        return res.status(400).json({ 
-          success: false, 
-          message: 'No image file uploaded. Please select an image file.' 
-        });
-      }
-      
-      console.log('✅ File received:', {
-        fieldname: uploadedFile.fieldname,
-        originalname: uploadedFile.originalname,
-        mimetype: uploadedFile.mimetype,
-        size: uploadedFile.size
-      });
-      
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-      const User = require('./models/user.model');
-      
-      const avatarUrl = `/uploads/avatars/${uploadedFile.filename}`;
-      
-      const updatedUser = await User.findByIdAndUpdate(
-        decoded.id,
-        { 
-          $set: { 
-            avatar: avatarUrl, 
-            profileImage: avatarUrl,
-            photo: avatarUrl
-          } 
-        },
-        { new: true }
-      ).select('-password');
-      
-      res.json({
-        success: true,
-        message: 'Avatar uploaded successfully',
-        profileImage: avatarUrl,
-        avatar: avatarUrl,
-        user: updatedUser
-      });
-      
-    } catch (error) {
-      console.error('❌ Avatar upload error:', error);
-      
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Invalid token. Please login again.' 
-        });
-      }
-      
-      res.status(500).json({ 
-        success: false, 
-        message: error.message || 'Failed to upload avatar' 
-      });
-    }
-  });
-});
 // Database connection
 connectDB();
 
-// CORS Configuration
+// ==================== CORS CONFIGURATION - COMPLETE FIX ====================
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
@@ -204,27 +113,57 @@ const allowedOrigins = [
   process.env.CLIENT_URL
 ].filter(Boolean);
 
+// Main CORS middleware - MUST be before any routes
 app.use(cors({
   origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, postman)
     if (!origin) return callback(null, true);
+    
+    // Allow any render.com subdomain
     if (origin && origin.includes('.onrender.com')) {
       return callback(null, true);
     }
+    
+    // Check against allowed origins
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+    
     console.log(`🌐 CORS request from: ${origin}`);
     return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin', 'Cookie'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Accept', 
+    'X-Requested-With', 
+    'Origin',
+    'Cookie',
+    'Cache-Control',
+    'multipart/form-data'
+  ],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
   preflightContinue: false,
   optionsSuccessStatus: 204,
   maxAge: 86400
 }));
 
-// Additional CORS headers
+// Handle preflight requests - SAFE VERSION
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control');
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+    return res.status(204).end();
+  }
+  next();
+});
+
+// Additional CORS headers for all responses
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {
@@ -232,7 +171,8 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Credentials', 'true');
   }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control');
+  res.header('Access-Control-Expose-Headers', 'Content-Length, X-Requested-With');
   
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -312,56 +252,88 @@ const sendSmsViaFast2SMS = async (mobileNumber, otp) => {
 };
 
 // ==================== AVATAR UPLOAD ROUTE ====================
-app.post('/api/auth/upload-avatar', uploadAvatar.single('avatar'), async (req, res) => {
+app.post('/api/auth/upload-avatar', (req, res) => {
   console.log('📍 /api/auth/upload-avatar route hit');
   
-  try {
-    if (!req.file) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No file uploaded' 
-      });
-    }
-    
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'No token provided' 
-      });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const User = require('./models/user.model');
-    
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      decoded.id,
-      { 
-        $set: { 
-          avatar: avatarUrl, 
-          profileImage: avatarUrl 
-        } 
-      },
-      { new: true }
-    ).select('-password');
-    
-    res.json({
-      success: true,
-      message: 'Avatar uploaded successfully',
-      profileImage: avatarUrl,
-      avatar: avatarUrl,
-      user: updatedUser
-    });
-    
-  } catch (error) {
-    console.error('Avatar upload error:', error);
-    res.status(500).json({ 
+  // First check if token exists
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ 
       success: false, 
-      message: error.message 
+      message: 'No token provided. Please login first.' 
     });
   }
+  
+  // Process upload
+  uploadAvatar.any()(req, res, async (err) => {
+    if (err) {
+      console.error('❌ Upload error:', err);
+      return res.status(400).json({ 
+        success: false, 
+        message: err.message 
+      });
+    }
+    
+    try {
+      // Get uploaded file
+      const uploadedFile = req.files && req.files[0];
+      
+      if (!uploadedFile) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No image file uploaded. Please select an image file.' 
+        });
+      }
+      
+      console.log('✅ File received:', {
+        fieldname: uploadedFile.fieldname,
+        originalname: uploadedFile.originalname,
+        mimetype: uploadedFile.mimetype,
+        size: uploadedFile.size
+      });
+      
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      const User = require('./models/user.model');
+      
+      const avatarUrl = `/uploads/avatars/${uploadedFile.filename}`;
+      
+      const updatedUser = await User.findByIdAndUpdate(
+        decoded.id,
+        { 
+          $set: { 
+            avatar: avatarUrl, 
+            profileImage: avatarUrl,
+            photo: avatarUrl
+          } 
+        },
+        { new: true }
+      ).select('-password');
+      
+      res.json({
+        success: true,
+        message: 'Avatar uploaded successfully',
+        profileImage: avatarUrl,
+        avatar: avatarUrl,
+        user: updatedUser
+      });
+      
+    } catch (error) {
+      console.error('❌ Avatar upload error:', error);
+      
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Invalid token. Please login again.' 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || 'Failed to upload avatar' 
+      });
+    }
+  });
 });
 
 // ==================== GOOGLE LOGIN API ====================

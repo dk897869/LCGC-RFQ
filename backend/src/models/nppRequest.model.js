@@ -1,29 +1,38 @@
 const mongoose = require('mongoose');
 
 const nppRequestSchema = new mongoose.Schema({
-  type: {
-    type: String,
-    enum: ['cash-purchase', 'new-vendor', 'rfq-vendor', 'rfq-requisition', 
-           'vendor-list', 'employee-detail', 'item-master', 'quotation-comparison',
-           'pr-request', 'po-npp', 'payment-advise', 'wcc-npp'],
-    required: true
-  },
-  uniqueSerialNo: { type: String, unique: true, required: true },
+  type: { type: String, required: true },
+  uniqueSerialNo: { type: String, unique: true },
   status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In-Process'], default: 'Pending' },
-  
-  // Requester Information
-  requesterName: { type: String, required: true },
-  department: { type: String, required: true },
-  emailId: { type: String, required: true },
+  requesterName: { type: String },
+  department: { type: String },
+  emailId: { type: String },
   requestDate: { type: Date, default: Date.now },
   contactNo: { type: String },
   organization: { type: String },
   titleOfActivity: { type: String },
-  priority: { type: String, enum: ['H', 'M', 'L'], default: 'M' },
+  priority: { type: String },
   purposeAndObjective: { type: String },
+  stakeholders: [{
+    line: String,
+    managerName: String,
+    email: String,
+    designation: String,
+    status: { type: String, default: 'Pending' },
+    remarks: String
+  }],
+  ccList: [{ type: String }],
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+  approvedBy: String,
+  approvedAt: Date,
+  approvalComments: String,
+  rejectedBy: String,
+  rejectedAt: Date,
+  rejectionReason: String,
   
-  // Cash Purchase specific
-  costCenter: { type: String },
+  // Cash Purchase
   cashPurchaseItems: [{
     itemDescription: String,
     purpose: String,
@@ -31,7 +40,7 @@ const nppRequestSchema = new mongoose.Schema({
     billInvoiceCopy: String
   }],
   
-  // New Vendor specific
+  // New Vendor
   vendorDetails: [{
     vendorCode: String,
     supplierName: String,
@@ -47,7 +56,7 @@ const nppRequestSchema = new mongoose.Schema({
     paymentTerm: String
   }],
   
-  // RFQ Vendor specific
+  // RFQ Vendor
   rfqVendorItems: [{
     rfqNo: String,
     description: String,
@@ -61,7 +70,7 @@ const nppRequestSchema = new mongoose.Schema({
     remark: String
   }],
   
-  // RFQ Requisition specific
+  // RFQ Requisition
   rfqItems: [{
     description: String,
     uom: String,
@@ -69,39 +78,29 @@ const nppRequestSchema = new mongoose.Schema({
     make: String,
     alternative: String,
     vendorRef: String,
-    remark: String,
-    pictureUrl: String
+    remark: String
   }],
   
-  // Vendor List specific
+  // Vendor List
   vendorList: [{
     vendorCode: String,
     vendorName: String,
     emailId: String,
     phoneNo: String,
-    status: String,
-    gst: String,
-    msme: String,
-    address: String,
-    location: String
+    status: String
   }],
   
-  // Employee Detail specific
+  // Employee Detail
   employeeDetails: [{
     fullName: String,
     employeeId: String,
     emailAddress: String,
-    password: String,
     designation: String,
     department: String,
-    contactNo: String,
-    dateOfBirth: Date,
-    organization: String,
-    reportingHead: String,
-    reportingDesignation: String
+    contactNo: String
   }],
   
-  // Item Master specific
+  // Item Master
   itemMasterList: [{
     cmdt: String,
     partCode: String,
@@ -113,7 +112,7 @@ const nppRequestSchema = new mongoose.Schema({
     sob: String
   }],
   
-  // Quotation Comparison specific
+  // Quotation Comparison
   quotationItems: [{
     rfqNo: String,
     partCode: String,
@@ -128,19 +127,8 @@ const nppRequestSchema = new mongoose.Schema({
     supplier3Price: Number,
     supplier3Amount: Number
   }],
-  supplierNames: {
-    supplier1Name: String,
-    supplier2Name: String,
-    supplier3Name: String
-  },
-  quotationTerms: {
-    terms1: { gst: String, transport: String, paymentTerms: String, leadTime: String },
-    terms2: { gst: String, transport: String, paymentTerms: String, leadTime: String },
-    terms3: { gst: String, transport: String, paymentTerms: String, leadTime: String }
-  },
-  recommendation: { type: String },
   
-  // PR Request specific
+  // PR Request
   prItems: [{
     costCenter: String,
     supplierName: String,
@@ -155,49 +143,21 @@ const nppRequestSchema = new mongoose.Schema({
     totalValue: Number
   }],
   
-  // PO NPP specific
+  // PO NPP
   poItems: [{
     partCode: String,
     partDescription: String,
     specification: String,
     hsnCode: String,
-    instalment: String,
     uom: String,
-    pcsCarton: Number,
     qty: Number,
     unitPrice: Number,
     cgst: Number,
     sgst: Number,
     igst: Number
   }],
-  poVendorDetails: {
-    vendorCode: String,
-    vendorName: String,
-    vendorAddress: String,
-    vendorGst: String,
-    vendorContact: String,
-    vendorEmail: String
-  },
-  poOrderDetails: {
-    orderNo: String,
-    orderDate: Date,
-    quotRef: String,
-    prNo: String,
-    prDate: Date,
-    purchaser: String,
-    purchaserMobile: String
-  },
-  poAddressDetails: {
-    billingAddress: String,
-    billingGst: String,
-    shippingAddress: String,
-    shippingGst: String
-  },
-  poTerms: [{ text: String }],
-  poFinanceRows: [{ text: String }],
-  poDeliverySchedule: [{ text: String }],
   
-  // Payment Advise specific
+  // Payment Advise
   paymentInvoices: [{
     invoiceNo: String,
     invoiceDate: Date,
@@ -205,26 +165,19 @@ const nppRequestSchema = new mongoose.Schema({
   }],
   paymentDetails: {
     paymentDueTo: String,
-    level: String,
     paymentTo: String,
     expenseType: String,
     expenseAmount: String,
-    balanceForPayment: String,
-    deduction: String,
-    bankDetails: String,
-    sapName: String,
-    sapCode: String
+    bankDetails: String
   },
   
-  // WCC NPP specific
+  // WCC NPP
   wccDetails: {
-    picNameDept: String,
     vendorName: String,
     poWoNo: String,
     workCompletionDate: Date,
     workDescription: String,
     natureOfWork: String,
-    briefDetail: String,
     qualityNotes: String
   },
   wccEvaluationRows: [{
@@ -234,37 +187,7 @@ const nppRequestSchema = new mongoose.Schema({
     na: Boolean,
     score: Number,
     remark: String
-  }],
-  
-  // Common fields
-  stakeholders: [{
-    line: { type: String, enum: ['Parallel', 'Sequential'] },
-    managerName: String,
-    email: String,
-    designation: String,
-    status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In-Process'], default: 'Pending' },
-    dateTime: Date,
-    remarks: String
-  }],
-  ccList: [{ type: String }],
-  attachments: [{
-    name: String,
-    fileSize: String,
-    remark: String,
-    fileUrl: String
-  }],
-  
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-  
-  // Approval fields
-  approvedBy: String,
-  approvedAt: Date,
-  rejectedBy: String,
-  rejectedAt: Date,
-  approvalComments: String,
-  rejectionReason: String
+  }]
 });
 
 module.exports = mongoose.model('NPPRequest', nppRequestSchema);

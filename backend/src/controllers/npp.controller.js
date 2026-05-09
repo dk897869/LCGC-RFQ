@@ -1,3 +1,4 @@
+// controllers/npp.controller.js
 const NPPRequest = require('../models/nppRequest.model');
 const { sendMail } = require('../services/mail.service');
 
@@ -44,6 +45,7 @@ const sendNppEmail = async (request, subject, message) => {
         <p><strong>Serial No:</strong> ${request.uniqueSerialNo}</p>
         <p><strong>Title:</strong> ${request.titleOfActivity}</p>
         <p><strong>Requester:</strong> ${request.requesterName}</p>
+        <p><strong>Department:</strong> ${request.department}</p>
         <p><strong>Status:</strong> ${request.status}</p>
         <p><strong>Message:</strong> ${message}</p>
         <hr>
@@ -93,7 +95,29 @@ exports.createNppRequest = async (req, res) => {
       stakeholders: requestData.stakeholders || [],
       ccList: requestData.ccList || [],
       createdBy: req.user?.id,
-      ...requestData
+      cashPurchaseItems: requestData.cashPurchaseItems,
+      vendorDetails: requestData.vendorDetails,
+      rfqVendorItems: requestData.rfqVendorItems,
+      rfqItems: requestData.rfqItems,
+      vendorList: requestData.vendorList,
+      employeeDetails: requestData.employeeDetails,
+      itemMasterList: requestData.itemMasterList,
+      quotationItems: requestData.quotationItems,
+      supplierNames: requestData.supplierNames,
+      quotationTerms: requestData.quotationTerms,
+      recommendation: requestData.recommendation,
+      prItems: requestData.prItems,
+      poItems: requestData.poItems,
+      poVendorDetails: requestData.poVendorDetails,
+      poOrderDetails: requestData.poOrderDetails,
+      poAddressDetails: requestData.poAddressDetails,
+      poTerms: requestData.poTerms,
+      poFinanceRows: requestData.poFinanceRows,
+      poDeliverySchedule: requestData.poDeliverySchedule,
+      paymentInvoices: requestData.paymentInvoices,
+      paymentDetails: requestData.paymentDetails,
+      wccDetails: requestData.wccDetails,
+      wccEvaluationRows: requestData.wccEvaluationRows
     });
     
     await nppRequest.save();
@@ -225,23 +249,12 @@ exports.approveNppRequest = async (req, res) => {
       return res.status(400).json({ success: false, message: "Request already finalized" });
     }
     
-    // Update stakeholders
-    if (request.stakeholders && request.stakeholders.length > 0) {
-      const currentStakeholder = request.stakeholders.find(s => s.email === actor.email);
-      if (currentStakeholder) {
-        currentStakeholder.status = 'Approved';
-        currentStakeholder.remarks = comments;
-        currentStakeholder.dateTime = new Date();
-      }
-    }
-    
     request.status = 'Approved';
     request.approvedBy = actor.name || actor.email;
     request.approvedAt = new Date();
     request.approvalComments = comments;
     await request.save();
     
-    // Send email notification
     await sendNppEmail(request, `Request Approved - ${request.uniqueSerialNo}`, `Your request has been approved by ${actor.name || actor.email}. Comments: ${comments}`);
     
     res.json({
@@ -271,23 +284,12 @@ exports.rejectNppRequest = async (req, res) => {
       return res.status(400).json({ success: false, message: "Request already finalized" });
     }
     
-    // Update stakeholders
-    if (request.stakeholders && request.stakeholders.length > 0) {
-      const currentStakeholder = request.stakeholders.find(s => s.email === actor.email);
-      if (currentStakeholder) {
-        currentStakeholder.status = 'Rejected';
-        currentStakeholder.remarks = comments;
-        currentStakeholder.dateTime = new Date();
-      }
-    }
-    
     request.status = 'Rejected';
     request.rejectedBy = actor.name || actor.email;
     request.rejectedAt = new Date();
     request.rejectionReason = comments;
     await request.save();
     
-    // Send email notification
     await sendNppEmail(request, `Request Rejected - ${request.uniqueSerialNo}`, `Your request has been rejected by ${actor.name || actor.email}. Reason: ${comments}`);
     
     res.json({

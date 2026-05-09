@@ -834,7 +834,7 @@ try {
   };
 }
 
-// ==================== NPP DIRECT API ROUTES ====================
+// Cash Purchase
 app.post('/api/npp/cash-purchase', authMiddleware, nppController.createNppRequest);
 app.post('/api/npp/new-vendor', authMiddleware, nppController.createNppRequest);
 app.post('/api/npp/rfq-vendor', authMiddleware, nppController.createNppRequest);
@@ -848,18 +848,22 @@ app.post('/api/npp/po-npp', authMiddleware, nppController.createNppRequest);
 app.post('/api/npp/payment-advise', authMiddleware, nppController.createNppRequest);
 app.post('/api/npp/wcc-npp', authMiddleware, nppController.createNppRequest);
 
+// Get all NPP requests
 app.get('/api/npp/requests', authMiddleware, nppController.getAllNppRequests);
 app.get('/api/npp/stats', authMiddleware, nppController.getNppStats);
 app.get('/api/npp/request/:id', authMiddleware, nppController.getNppRequestById);
 app.get('/api/npp/serial/:serialNo', authMiddleware, nppController.getNppRequestBySerialNo);
 
+// Update and delete
 app.put('/api/npp/request/:id', authMiddleware, nppController.updateNppRequest);
 app.delete('/api/npp/request/:id', authMiddleware, nppController.deleteNppRequest);
 
+// Approve/Reject
 app.patch('/api/npp/request/:id/approve', authMiddleware, nppController.approveNppRequest);
 app.patch('/api/npp/request/:id/reject', authMiddleware, nppController.rejectNppRequest);
 app.post('/api/npp/request/:id/send-email', authMiddleware, nppController.sendNppRequestEmail);
 
+console.log('✅ NPP Procurement routes loaded');
 // ==================== API ROUTES ====================
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);

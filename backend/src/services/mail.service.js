@@ -429,6 +429,168 @@ function getEPEmailHTML(data, action) {
 </html>`;
 }
 
+// Cash Purchase Email Template
+function getCashPurchaseEmailHTML(data, action) {
+  const title = data.titleOfActivity || 'Cash Purchase Request';
+  const requester = data.requesterName || 'User';
+  const department = data.department || '—';
+  const costCenter = data.costCenter || '—';
+  const serialNo = data.uniqueSerialNo || '';
+  const amount = data.amount || 0;
+  
+  const headerIcon = action === 'created' ? '💰' : action === 'approved' ? '✅' : action === 'rejected' ? '❌' : '⚠️';
+  const headerTitle = action === 'created' ? 'New Cash Purchase Request' : action === 'approved' ? 'Cash Purchase Approved' : action === 'rejected' ? 'Cash Purchase Rejected' : 'Action Required';
+  
+  const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:4200';
+  const approveUrl = `${baseUrl}/dashboard`;
+  
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>LCGC - ${escapeHtml(title)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; padding: 40px 20px; margin: 0; }
+    .container { max-width: 650px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #0f2a5e, #1e4a8a); padding: 40px; text-align: center; }
+    .header-icon { font-size: 48px; }
+    .header h1 { color: white; font-size: 28px; margin: 16px 0 8px; }
+    .header p { color: rgba(255,255,255,0.9); margin: 0; }
+    .content { padding: 40px; }
+    .section { margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .section-title { background: #f8fafc; padding: 12px 20px; font-weight: 700; color: #0f2a5e; border-bottom: 1px solid #e2e8f0; }
+    .section-body { padding: 20px; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .info-item label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; }
+    .info-item span { font-size: 14px; color: #0f172a; font-weight: 500; }
+    .amount-box { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px; }
+    .amount-value { font-size: 32px; font-weight: 800; color: #1e40af; }
+    .serial-badge { display: inline-block; background: #eef2ff; color: #3730a3; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .btn { display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #0f2a5e, #1e4a8a); color: white; text-decoration: none; border-radius: 40px; font-weight: 600; margin-top: 16px; }
+    .footer { background: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+    @media (max-width: 600px) { .content { padding: 24px; } .info-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">${headerIcon}</div>
+      <h1>${headerTitle}</h1>
+      <p>Cash Purchase Request ${action === 'created' ? 'Submitted' : action === 'approved' ? 'Approved' : 'Action Required'}</p>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="section-title">💰 Cash Purchase Information</div>
+        <div class="section-body">
+          <div class="info-grid">
+            <div class="info-item"><label>Serial Number</label><span class="serial-badge">${escapeHtml(serialNo)}</span></div>
+            <div class="info-item"><label>Status</label><span>${data.status || 'Pending'}</span></div>
+            <div class="info-item"><label>Title</label><span>${escapeHtml(title)}</span></div>
+            <div class="info-item"><label>Cost Center</label><span>${escapeHtml(costCenter)}</span></div>
+            <div class="info-item"><label>Requester</label><span>${escapeHtml(requester)}</span></div>
+            <div class="info-item"><label>Department</label><span>${escapeHtml(department)}</span></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="amount-box">
+        <div class="amount-value">₹${Number(amount).toLocaleString('en-IN')}</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Cash Purchase Amount</div>
+      </div>
+      
+      <div style="text-align: center;">
+        <a href="${approveUrl}" class="btn">🔍 View in Dashboard</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>This is an automated message from LCGC System</p>
+      <p>© ${new Date().getFullYear()} LCGC. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+// New Vendor Email Template
+function getNewVendorEmailHTML(data, action) {
+  const title = data.titleOfActivity || 'New Vendor Registration';
+  const requester = data.requesterName || 'User';
+  const department = data.department || '—';
+  const vendorName = data.vendorDetails?.[0]?.supplierName || '—';
+  const vendorCode = data.vendorDetails?.[0]?.vendorCode || '—';
+  const serialNo = data.uniqueSerialNo || '';
+  
+  const headerIcon = action === 'created' ? '🏢' : action === 'approved' ? '✅' : action === 'rejected' ? '❌' : '⚠️';
+  const headerTitle = action === 'created' ? 'New Vendor Registration Request' : action === 'approved' ? 'Vendor Registration Approved' : action === 'rejected' ? 'Vendor Registration Rejected' : 'Action Required';
+  
+  const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:4200';
+  const approveUrl = `${baseUrl}/dashboard`;
+  
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>LCGC - ${escapeHtml(title)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; padding: 40px 20px; margin: 0; }
+    .container { max-width: 650px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #0f2a5e, #1e4a8a); padding: 40px; text-align: center; }
+    .header-icon { font-size: 48px; }
+    .header h1 { color: white; font-size: 28px; margin: 16px 0 8px; }
+    .header p { color: rgba(255,255,255,0.9); margin: 0; }
+    .content { padding: 40px; }
+    .section { margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .section-title { background: #f8fafc; padding: 12px 20px; font-weight: 700; color: #0f2a5e; border-bottom: 1px solid #e2e8f0; }
+    .section-body { padding: 20px; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .info-item label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; }
+    .info-item span { font-size: 14px; color: #0f172a; font-weight: 500; }
+    .vendor-details { background: #f8fafc; padding: 16px; border-radius: 12px; margin: 16px 0; }
+    .serial-badge { display: inline-block; background: #eef2ff; color: #3730a3; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .btn { display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #0f2a5e, #1e4a8a); color: white; text-decoration: none; border-radius: 40px; font-weight: 600; margin-top: 16px; }
+    .footer { background: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+    @media (max-width: 600px) { .content { padding: 24px; } .info-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">${headerIcon}</div>
+      <h1>${headerTitle}</h1>
+      <p>Vendor Registration ${action === 'created' ? 'Submitted' : action === 'approved' ? 'Approved' : 'Action Required'}</p>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="section-title">🏢 Vendor Registration Information</div>
+        <div class="section-body">
+          <div class="info-grid">
+            <div class="info-item"><label>Serial Number</label><span class="serial-badge">${escapeHtml(serialNo)}</span></div>
+            <div class="info-item"><label>Status</label><span>${data.status || 'Pending'}</span></div>
+            <div class="info-item"><label>Requester</label><span>${escapeHtml(requester)}</span></div>
+            <div class="info-item"><label>Department</label><span>${escapeHtml(department)}</span></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="vendor-details">
+        <strong>Vendor Details:</strong>
+        <div><strong>Vendor Name:</strong> ${escapeHtml(vendorName)}</div>
+        <div><strong>Vendor Code:</strong> ${escapeHtml(vendorCode)}</div>
+      </div>
+      
+      <div style="text-align: center;">
+        <a href="${approveUrl}" class="btn">🔍 View in Dashboard</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>This is an automated message from LCGC System</p>
+      <p>© ${new Date().getFullYear()} LCGC. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 // PR NPP Email Template
 function getPRNppEmailHTML(data, action) {
   const title = data.titleOfActivity || 'PR Request';
@@ -658,7 +820,7 @@ function getPaymentNppEmailHTML(data, action) {
   const amount = data.amount || Number(data.expenseAmount) || 0;
   const serialNo = data.uniqueSerialNo || '';
   
-  const headerIcon = action === 'created' ? '📋' : action === 'approved' ? '✅' : action === 'rejected' ? '❌' : '⚠️';
+  const headerIcon = action === 'created' ? '💰' : action === 'approved' ? '✅' : action === 'rejected' ? '❌' : '⚠️';
   const headerTitle = action === 'created' ? 'New Payment Advice Created' : action === 'approved' ? 'Payment Advice Approved' : action === 'rejected' ? 'Payment Advice Rejected' : 'Action Required';
   
   const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:4200';
@@ -742,6 +904,90 @@ function getPaymentNppEmailHTML(data, action) {
         </div>
       </div>
       ` : ''}
+      
+      <div style="text-align: center;">
+        <a href="${approveUrl}" class="btn">🔍 View in Dashboard</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>This is an automated message from LCGC System</p>
+      <p>© ${new Date().getFullYear()} LCGC. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+// WCC NPP Email Template
+function getWccNppEmailHTML(data, action) {
+  const title = data.titleOfActivity || 'Work Completion Certificate';
+  const requester = data.requesterName || 'User';
+  const department = data.department || '—';
+  const vendorName = data.wccDetails?.vendorName || '—';
+  const poWoNo = data.wccDetails?.poWoNo || '—';
+  const serialNo = data.uniqueSerialNo || '';
+  const totalScore = (data.wccEvaluationRows || []).reduce((sum, row) => sum + (row.score || 0), 0);
+  const overallRating = totalScore >= 4 ? 'Excellent' : totalScore >= 3 ? 'Good' : totalScore >= 2 ? 'Satisfactory' : totalScore >= 1 ? 'Needs Improvement' : 'Poor';
+  
+  const headerIcon = action === 'created' ? '📋' : action === 'approved' ? '✅' : action === 'rejected' ? '❌' : '⚠️';
+  const headerTitle = action === 'created' ? 'New WCC Request Created' : action === 'approved' ? 'WCC Approved' : action === 'rejected' ? 'WCC Rejected' : 'Action Required';
+  
+  const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:4200';
+  const approveUrl = `${baseUrl}/dashboard`;
+  
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>LCGC - ${escapeHtml(title)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; padding: 40px 20px; margin: 0; }
+    .container { max-width: 650px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #0f2a5e, #1e4a8a); padding: 40px; text-align: center; }
+    .header-icon { font-size: 48px; }
+    .header h1 { color: white; font-size: 28px; margin: 16px 0 8px; }
+    .header p { color: rgba(255,255,255,0.9); margin: 0; }
+    .content { padding: 40px; }
+    .section { margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .section-title { background: #f8fafc; padding: 12px 20px; font-weight: 700; color: #0f2a5e; border-bottom: 1px solid #e2e8f0; }
+    .section-body { padding: 20px; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .info-item label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; }
+    .info-item span { font-size: 14px; color: #0f172a; font-weight: 500; }
+    .score-box { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px; }
+    .score-value { font-size: 32px; font-weight: 800; color: #1e40af; }
+    .serial-badge { display: inline-block; background: #eef2ff; color: #3730a3; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .btn { display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #0f2a5e, #1e4a8a); color: white; text-decoration: none; border-radius: 40px; font-weight: 600; margin-top: 16px; }
+    .footer { background: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+    @media (max-width: 600px) { .content { padding: 24px; } .info-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">${headerIcon}</div>
+      <h1>${headerTitle}</h1>
+      <p>Work Completion Certificate ${action === 'created' ? 'Submitted' : action === 'approved' ? 'Approved' : 'Action Required'}</p>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="section-title">📋 WCC Information</div>
+        <div class="section-body">
+          <div class="info-grid">
+            <div class="info-item"><label>Serial Number</label><span class="serial-badge">${escapeHtml(serialNo)}</span></div>
+            <div class="info-item"><label>Status</label><span>${data.status || 'Pending'}</span></div>
+            <div class="info-item"><label>Vendor Name</label><span>${escapeHtml(vendorName)}</span></div>
+            <div class="info-item"><label>PO/WO No.</label><span>${escapeHtml(poWoNo)}</span></div>
+            <div class="info-item"><label>Requester</label><span>${escapeHtml(requester)}</span></div>
+            <div class="info-item"><label>Department</label><span>${escapeHtml(department)}</span></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="score-box">
+        <div class="score-value">${totalScore.toFixed(1)} / 5.0</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Overall Rating: ${overallRating}</div>
+      </div>
       
       <div style="text-align: center;">
         <a href="${approveUrl}" class="btn">🔍 View in Dashboard</a>
@@ -840,12 +1086,18 @@ async function sendMail(opts) {
       finalHtml = getRFQEmailHTML(data, action || 'created');
     } else if (type === 'ep') {
       finalHtml = getEPEmailHTML(data, action || 'created');
+    } else if (type === 'cash-purchase') {
+      finalHtml = getCashPurchaseEmailHTML(data, action || 'created');
+    } else if (type === 'new-vendor') {
+      finalHtml = getNewVendorEmailHTML(data, action || 'created');
     } else if (type === 'pr') {
       finalHtml = getPRNppEmailHTML(data, action || 'created');
     } else if (type === 'po') {
       finalHtml = getPONppEmailHTML(data, action || 'created');
     } else if (type === 'payment') {
       finalHtml = getPaymentNppEmailHTML(data, action || 'created');
+    } else if (type === 'wcc') {
+      finalHtml = getWccNppEmailHTML(data, action || 'created');
     } else if (type === 'approval') {
       finalHtml = getApprovalEmailHTML(data, data.requestType || 'request', action || 'Approved', comments);
     }
@@ -938,8 +1190,11 @@ module.exports = {
   getWelcomeEmailHTML,
   getRFQEmailHTML, 
   getEPEmailHTML,
+  getCashPurchaseEmailHTML,
+  getNewVendorEmailHTML,
   getPRNppEmailHTML,
   getPONppEmailHTML,
   getPaymentNppEmailHTML,
+  getWccNppEmailHTML,
   getApprovalEmailHTML
 };

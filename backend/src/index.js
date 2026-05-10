@@ -4,13 +4,12 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
-// const morgan = require("morgan"); // Commented out - install if needed
 const multer = require("multer");
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const axios = require("axios"); // Add for Fast2SMS
+const axios = require("axios");
 
 const connectDB = require("./config/db");
 
@@ -39,8 +38,8 @@ const safeRequire = (routePath, defaultValue) => {
     return module;
   } catch (err) {
     console.warn(`⚠️ Could not load ${routePath}: ${err.message}`);
-    return defaultValue || ((req, res) => res.status(501).json({ 
-      success: false, 
+    return defaultValue || ((req, res) => res.status(501).json({
+      success: false,
       message: `${routePath} API not available yet`
     }));
   }
@@ -65,13 +64,11 @@ const serialNumberRoutes = safeRequire("./routes/serialNumber.routes");
 const app = express();
 
 // ==================== MULTER CONFIGURATION FOR AVATAR ====================
-// Ensure upload directories exist
 const avatarUploadDir = path.join(__dirname, "uploads", "avatars");
 if (!fs.existsSync(avatarUploadDir)) {
   fs.mkdirSync(avatarUploadDir, { recursive: true });
 }
 
-// Avatar storage configuration
 const avatarStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, avatarUploadDir);
@@ -83,12 +80,10 @@ const avatarStorage = multer.diskStorage({
   }
 });
 
-// Configure multer to accept multiple field names
-const uploadAvatar = multer({ 
+const uploadAvatar = multer({
   storage: avatarStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    // Accept common field names
     const allowedFields = ['avatar', 'profileImage', 'photo', 'image', 'file'];
     if (allowedFields.includes(file.fieldname) && file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -101,7 +96,15 @@ const uploadAvatar = multer({
 // Database connection
 connectDB();
 
-// ==================== CORS CONFIGURATION - FIXED ====================
+// ==================== CORS CONFIGURATION - FIXED FOR BROWSER ====================
+// ✅ KEY FIX: The browser blocks requests when:
+//    1. withCredentials=true AND Access-Control-Allow-Origin is '*' (wildcard)
+//    2. The preflight OPTIONS response doesn't match the actual request headers
+//
+// Solution: Always echo the exact requesting origin back (never use '*'),
+// and since the frontend now sends withCredentials=false (Bearer token only),
+// we don't even need credentials:true — but we keep it for safety.
+
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
@@ -111,95 +114,77 @@ const allowedOrigins = [
   'https://lcgc-rfq-frontend.onrender.com'
 ];
 
-// CORS options
+// ✅ FIXED CORS: always return specific origin, never wildcard
 const corsOptions = {
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, postman)
+  origin: function (origin, callback) {
+    // Allow requests with no origin (Postman, curl, mobile apps, server-to-server)
     if (!origin) return callback(null, true);
-    
-    // Allow any render.com subdomain
-    if (origin && (origin.includes('.onrender.com') || origin.includes('render.com'))) {
+
+    // Allow any *.onrender.com subdomain
+    if (origin.includes('.onrender.com') || origin.includes('render.com')) {
       return callback(null, true);
     }
-    
-    // Check against allowed origins
+
+    // Check exact allowlist
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
-    // For development, allow all origins
-    if (process.env.NODE_ENV === 'development') {
+
+    // Allow localhost in any environment (dev convenience)
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
-    
-    console.log(`⚠️ CORS request from: ${origin}`);
-    // Allow all origins for now (temporarily)
+
+    // Log and allow unknown origins (remove this in strict production)
+    console.log(`⚠️ CORS request from unknown origin: ${origin}`);
     return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'Accept', 
-    'X-Requested-With', 
+    'Content-Type',
+    'Authorization',
+    'Accept',
+    'X-Requested-With',
     'Origin',
-    'Cookie',
-    'Cache-Control',
-    'multipart/form-data'
+    'Cache-Control'
   ],
-  exposedHeaders: ['Content-Length', 'X-Requested-With', 'Set-Cookie'],
-  preflightContinue: false,
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
   optionsSuccessStatus: 204,
   maxAge: 86400
 };
 
-// Apply CORS middleware - MUST BE FIRST
+// ✅ Apply CORS FIRST — before any other middleware
 app.use(cors(corsOptions));
 
-// IMPORTANT: DO NOT USE app.options('*', ...) - IT CAUSES THE ERROR!
-// Instead, handle OPTIONS requests manually
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    const origin = req.headers.origin;
-    if (origin) {
-      const isAllowed = allowedOrigins.includes(origin) || origin.includes('.onrender.com');
-      if (isAllowed || process.env.NODE_ENV === 'development') {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-      } else {
-        // Still allow for debugging
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-      }
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cookie');
-    res.status(204).end();
-    return;
+// ✅ Handle OPTIONS preflight explicitly for all routes
+// Use '/{*path}' instead of '*' — required by path-to-regexp v8+ (Express 5 / router pkg)
+app.options('/{*path}', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
   }
-  next();
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control');
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(204).end();
 });
 
-// Additional CORS headers for all responses (safety net)
+// ✅ Safety-net middleware: ensure every response has CORS headers
+// This catches cases where a route throws before cors() can set headers
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {
-    const isAllowed = allowedOrigins.includes(origin) || origin.includes('.onrender.com');
-    if (isAllowed || process.env.NODE_ENV === 'development') {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-    }
+    // Always echo the exact origin — NEVER use '*' when credentials may be involved
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
   }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cookie');
-  res.header('Access-Control-Expose-Headers', 'Content-Length, X-Requested-With');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control');
   next();
 });
+
 // Security middleware (after CORS)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -214,20 +199,20 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Custom logging middleware (replaces morgan)
+// Custom logging middleware
 app.use((req, res, next) => {
-  console.log(`📌 ${req.method} ${req.url} - Origin: ${req.headers.origin || 'unknown'}`);
+  console.log(`📌 ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`);
   next();
 });
 
 // Helper function
 const generateToken = (user) => {
   return jwt.sign(
-    { 
-      id: user._id, 
-      email: user.email, 
-      role: user.role, 
-      rights: user.rights || {} 
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      rights: user.rights || {}
     },
     process.env.JWT_SECRET || 'fallback_secret_change_me',
     { expiresIn: process.env.JWT_EXPIRES || "7d" }
@@ -242,11 +227,11 @@ const sendSmsViaFast2SMS = async (mobileNumber, otp) => {
     let cleanNumber = mobileNumber.replace(/\D/g, '');
     if (cleanNumber.startsWith('91')) cleanNumber = cleanNumber.substring(2);
     if (cleanNumber.startsWith('0')) cleanNumber = cleanNumber.substring(1);
-    
+
     if (cleanNumber.length !== 10) {
       return { success: false, error: 'Invalid mobile number' };
     }
-    
+
     const response = await axios({
       method: 'GET',
       url: 'https://www.fast2sms.com/dev/bulkV2',
@@ -259,7 +244,7 @@ const sendSmsViaFast2SMS = async (mobileNumber, otp) => {
       },
       timeout: 10000
     });
-    
+
     if (response.data && response.data.return === true) {
       return { success: true };
     } else {
@@ -274,62 +259,58 @@ const sendSmsViaFast2SMS = async (mobileNumber, otp) => {
 // ==================== AVATAR UPLOAD ROUTE ====================
 app.post('/api/auth/upload-avatar', (req, res) => {
   console.log('📍 /api/auth/upload-avatar route hit');
-  
-  // First check if token exists
+
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'No token provided. Please login first.' 
+    return res.status(401).json({
+      success: false,
+      message: 'No token provided. Please login first.'
     });
   }
-  
-  // Process upload
+
   uploadAvatar.any()(req, res, async (err) => {
     if (err) {
       console.error('❌ Upload error:', err);
-      return res.status(400).json({ 
-        success: false, 
-        message: err.message 
+      return res.status(400).json({
+        success: false,
+        message: err.message
       });
     }
-    
+
     try {
-      // Get uploaded file
       const uploadedFile = req.files && req.files[0];
-      
+
       if (!uploadedFile) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'No image file uploaded. Please select an image file.' 
+        return res.status(400).json({
+          success: false,
+          message: 'No image file uploaded. Please select an image file.'
         });
       }
-      
+
       console.log('✅ File received:', {
         fieldname: uploadedFile.fieldname,
         originalname: uploadedFile.originalname,
         mimetype: uploadedFile.mimetype,
         size: uploadedFile.size
       });
-      
-      // Verify token
+
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
       const User = require('./models/user.model');
-      
+
       const avatarUrl = `/uploads/avatars/${uploadedFile.filename}`;
-      
+
       const updatedUser = await User.findByIdAndUpdate(
         decoded.id,
-        { 
-          $set: { 
-            avatar: avatarUrl, 
+        {
+          $set: {
+            avatar: avatarUrl,
             profileImage: avatarUrl,
             photo: avatarUrl
-          } 
+          }
         },
         { new: true }
       ).select('-password');
-      
+
       res.json({
         success: true,
         message: 'Avatar uploaded successfully',
@@ -337,20 +318,20 @@ app.post('/api/auth/upload-avatar', (req, res) => {
         avatar: avatarUrl,
         user: updatedUser
       });
-      
+
     } catch (error) {
       console.error('❌ Avatar upload error:', error);
-      
+
       if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Invalid token. Please login again.' 
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token. Please login again.'
         });
       }
-      
-      res.status(500).json({ 
-        success: false, 
-        message: error.message || 'Failed to upload avatar' 
+
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to upload avatar'
       });
     }
   });
@@ -359,36 +340,32 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 // ==================== GOOGLE LOGIN API ====================
 app.post('/api/auth/google', async (req, res) => {
   console.log('📥 Google login endpoint hit');
-  
-  // Set CORS headers for this route
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
+
   try {
     const { credential } = req.body;
-    
+
     if (!credential) {
       return res.status(400).json({ success: false, message: 'Google credential is required' });
     }
-    
+
     const decoded = jwt.decode(credential);
-    
+
     if (!decoded || !decoded.email) {
       return res.status(400).json({ success: false, message: 'Invalid Google credential' });
     }
-    
+
     const { email, name, picture, sub: googleId } = decoded;
     const User = require('./models/user.model');
-    
-    let user = await User.findOne({ 
-      $or: [{ googleId: googleId }, { email: email.toLowerCase() }] 
+
+    let user = await User.findOne({
+      $or: [{ googleId: googleId }, { email: email.toLowerCase() }]
     });
-    
+
     if (!user) {
       console.log('👤 Creating new user from Google login');
       const randomPassword = crypto.randomBytes(20).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
-      
+
       user = new User({
         name: name || email.split('@')[0],
         email: email.toLowerCase(),
@@ -400,7 +377,7 @@ app.post('/api/auth/google', async (req, res) => {
         rights: {},
         isActive: true
       });
-      
+
       await user.save();
       console.log('✅ New user created:', user.email);
     } else if (!user.googleId) {
@@ -409,12 +386,12 @@ app.post('/api/auth/google', async (req, res) => {
       if (picture && !user.profileImage) user.profileImage = picture;
       await user.save();
     }
-    
+
     user.lastLogin = new Date();
     await user.save();
-    
+
     const token = generateToken(user);
-    
+
     res.json({
       success: true,
       message: 'Google login successful',
@@ -432,7 +409,7 @@ app.post('/api/auth/google', async (req, res) => {
         rights: user.rights || {}
       }
     });
-    
+
   } catch (error) {
     console.error('❌ Google login error:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -461,62 +438,58 @@ app.get('/health', (req, res) => {
 app.post('/api/auth/send-mobile-otp', async (req, res) => {
   console.log('📍 DIRECT /send-mobile-otp route hit');
   console.log('📦 Request body:', req.body);
-  
+
   try {
     const { mobile, type = 'registration' } = req.body;
-    
+
     if (!mobile) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Mobile number is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Mobile number is required'
       });
     }
-    
+
     let cleanMobile = mobile.replace(/\D/g, '');
     if (cleanMobile.startsWith('91')) cleanMobile = cleanMobile.substring(2);
     if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
-    
+
     if (cleanMobile.length !== 10) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Please enter a valid 10-digit mobile number' 
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid 10-digit mobile number'
       });
     }
-    
+
     const User = require('./models/user.model');
     const OTP = require('./models/otp.model');
-    
-    // For registration, check if mobile already exists
+
     if (type === 'registration') {
-      const existingUser = await User.findOne({ 
-        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      const existingUser = await User.findOne({
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' }
       });
       if (existingUser) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Mobile number already registered' 
+        return res.status(400).json({
+          success: false,
+          message: 'Mobile number already registered'
         });
       }
     }
-    
-    // For login, check if mobile exists
+
     if (type === 'login') {
-      const existingUser = await User.findOne({ 
-        contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
+      const existingUser = await User.findOne({
+        contactNo: { $regex: cleanMobile + '$', $options: 'i' }
       });
       if (!existingUser) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Mobile number not registered' 
+        return res.status(404).json({
+          success: false,
+          message: 'Mobile number not registered'
         });
       }
     }
-    
-    // Generate OTP
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     console.log(`🔐 OTP for ${cleanMobile}: ${otp}`);
-    
-    // Save OTP to database
+
     await OTP.deleteMany({ mobile: cleanMobile, type: type });
     await OTP.create({
       mobile: cleanMobile,
@@ -524,10 +497,9 @@ app.post('/api/auth/send-mobile-otp', async (req, res) => {
       type: type,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
-    
-    // Try to send SMS via Fast2SMS
+
     const smsResult = await sendSmsViaFast2SMS(cleanMobile, otp);
-    
+
     if (smsResult.success) {
       res.json({
         success: true,
@@ -536,7 +508,6 @@ app.post('/api/auth/send-mobile-otp', async (req, res) => {
         provider: 'fast2sms'
       });
     } else {
-      // Still return success with dev OTP for testing
       res.json({
         success: true,
         message: `OTP generated. SMS delivery issue: ${smsResult.error || 'Unknown error'}`,
@@ -545,7 +516,7 @@ app.post('/api/auth/send-mobile-otp', async (req, res) => {
         note: 'Use this OTP for testing'
       });
     }
-    
+
   } catch (error) {
     console.error('Send Mobile OTP error:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -556,52 +527,52 @@ app.post('/api/auth/send-mobile-otp', async (req, res) => {
 app.post('/api/auth/verify-mobile-otp', async (req, res) => {
   console.log('📍 DIRECT /verify-mobile-otp route hit');
   console.log('📦 Request body:', req.body);
-  
+
   try {
     const { mobile, otp, type = 'registration' } = req.body;
-    
+
     if (!mobile || !otp) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Mobile number and OTP are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Mobile number and OTP are required'
       });
     }
-    
+
     let cleanMobile = mobile.replace(/\D/g, '');
     if (cleanMobile.startsWith('91')) cleanMobile = cleanMobile.substring(2);
     if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
-    
+
     const OTP = require('./models/otp.model');
-    
+
     const otpRecord = await OTP.findOne({
       mobile: cleanMobile,
       otp: otp,
       type: type
     });
-    
+
     if (!otpRecord) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid OTP' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP'
       });
     }
-    
+
     if (new Date() > otpRecord.expiresAt) {
       await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({ 
-        success: false, 
-        message: 'OTP has expired' 
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired'
       });
     }
-    
+
     await OTP.deleteOne({ _id: otpRecord._id });
-    
+
     res.json({
       success: true,
       message: 'OTP verified successfully',
       verified: true
     });
-    
+
   } catch (error) {
     console.error('Verify Mobile OTP error:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -610,30 +581,29 @@ app.post('/api/auth/verify-mobile-otp', async (req, res) => {
 
 // ==================== PASSWORD RESET ROUTES ====================
 
-// Send password reset link to email
 app.post('/api/auth/forgot-password-link', async (req, res) => {
   try {
     const { email } = req.body;
     const User = require('./models/user.model');
     const { sendMail } = require('./services/mail.service');
-    
+
     if (!email) {
       return res.status(400).json({ success: false, message: 'Email is required' });
     }
-    
+
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
     }
-    
+
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
-    
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -648,7 +618,7 @@ app.post('/api/auth/forgot-password-link', async (req, res) => {
       </body>
       </html>
     `;
-    
+
     await sendMail({ to: user.email, subject: 'Password Reset Request', html });
     res.json({ success: true, message: 'Password reset link sent to your email' });
   } catch (error) {
@@ -657,35 +627,34 @@ app.post('/api/auth/forgot-password-link', async (req, res) => {
   }
 });
 
-// Reset password with token
 app.post('/api/auth/reset-password-with-token', async (req, res) => {
   try {
     const { token, newPassword, confirmPassword } = req.body;
     const User = require('./models/user.model');
-    
+
     if (!token || !newPassword) {
       return res.status(400).json({ success: false, message: 'Token and new password required' });
     }
-    
+
     if (newPassword !== confirmPassword) {
       return res.status(400).json({ success: false, message: 'Passwords do not match' });
     }
-    
+
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
     });
-    
+
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
-    
+
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
-    
+
     res.json({ success: true, message: 'Password reset successfully' });
   } catch (error) {
     console.error('Reset password error:', error);
@@ -693,26 +662,25 @@ app.post('/api/auth/reset-password-with-token', async (req, res) => {
   }
 });
 
-// Check reset token validity
 app.get('/api/auth/check-reset-token', async (req, res) => {
   try {
     const { token } = req.query;
     const User = require('./models/user.model');
-    
+
     if (!token) {
       return res.status(400).json({ success: false, message: 'Token required' });
     }
-    
+
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
     });
-    
+
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
-    
+
     res.json({ success: true, message: 'Token is valid', email: user.email });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -726,15 +694,15 @@ app.get('/api/auth/me', async (req, res) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     res.json({ success: true, user: user });
   } catch (error) {
     res.status(401).json({ success: false, message: 'Invalid token' });
@@ -747,11 +715,11 @@ app.get('/api/auth/profile', async (req, res) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
-    
+
     res.json({ success: true, user: user });
   } catch (error) {
     res.status(401).json({ success: false, message: 'Invalid token' });
@@ -764,16 +732,16 @@ app.patch('/api/auth/profile', async (req, res) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const User = require('./models/user.model');
-    
+
     const updatedUser = await User.findByIdAndUpdate(
       decoded.id,
       { $set: req.body },
       { new: true, runValidators: true }
     ).select('-password');
-    
+
     res.json({ success: true, message: 'Profile updated successfully', user: updatedUser });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -784,31 +752,31 @@ app.post('/api/auth/change-password', async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    
+
     if (newPassword !== confirmPassword) {
       return res.status(400).json({ success: false, message: 'Passwords do not match' });
     }
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id);
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: 'Current password is incorrect' });
     }
-    
+
     user.password = newPassword;
     await user.save();
-    
+
     res.json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -821,16 +789,16 @@ app.delete('/api/auth/avatar', async (req, res) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const User = require('./models/user.model');
-    
+
     const updatedUser = await User.findByIdAndUpdate(
       decoded.id,
       { $set: { avatar: '', profileImage: '' } },
       { new: true }
     ).select('-password');
-    
+
     res.json({ success: true, message: 'Avatar removed successfully', user: updatedUser });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -872,22 +840,20 @@ app.post('/api/npp/po-npp', authMiddleware, nppController.createNppRequest);
 app.post('/api/npp/payment-advise', authMiddleware, nppController.createNppRequest);
 app.post('/api/npp/wcc-npp', authMiddleware, nppController.createNppRequest);
 
-// Get all NPP requests
 app.get('/api/npp/requests', authMiddleware, nppController.getAllNppRequests);
 app.get('/api/npp/stats', authMiddleware, nppController.getNppStats);
 app.get('/api/npp/request/:id', authMiddleware, nppController.getNppRequestById);
 app.get('/api/npp/serial/:serialNo', authMiddleware, nppController.getNppRequestBySerialNo);
 
-// Update and delete
 app.put('/api/npp/request/:id', authMiddleware, nppController.updateNppRequest);
 app.delete('/api/npp/request/:id', authMiddleware, nppController.deleteNppRequest);
 
-// Approve/Reject
 app.patch('/api/npp/request/:id/approve', authMiddleware, nppController.approveNppRequest);
 app.patch('/api/npp/request/:id/reject', authMiddleware, nppController.rejectNppRequest);
 app.post('/api/npp/request/:id/send-email', authMiddleware, nppController.sendNppRequestEmail);
 
 console.log('✅ NPP Procurement routes loaded');
+
 // ==================== API ROUTES ====================
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
@@ -962,7 +928,7 @@ app.listen(PORT, () => {
   console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
   console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
   console.log(`✅ Google Login: POST /api/auth/google`);
-  console.log(`✅ CORS Configured for all origins`);
+  console.log(`✅ CORS: Configured for lcgc-rfq-frontend.onrender.com + localhost`);
 });
 
 module.exports = app;

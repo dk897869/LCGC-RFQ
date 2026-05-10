@@ -101,7 +101,7 @@ const uploadAvatar = multer({
 // Database connection
 connectDB();
 
-// ==================== CORS CONFIGURATION ====================
+// ==================== CORS CONFIGURATION - FIXED ====================
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
@@ -111,31 +111,67 @@ const allowedOrigins = [
   'https://lcgc-rfq-frontend.onrender.com'
 ];
 
+// CORS options
 const corsOptions = {
   origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, postman)
     if (!origin) return callback(null, true);
-    if (origin.includes('.onrender.com')) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (process.env.NODE_ENV === 'development') return callback(null, true);
+    
+    // Allow any render.com subdomain
+    if (origin && (origin.includes('.onrender.com') || origin.includes('render.com'))) {
+      return callback(null, true);
+    }
+    
+    // Check against allowed origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // For development, allow all origins
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
     console.log(`⚠️ CORS request from: ${origin}`);
+    // Allow all origins for now (temporarily)
     return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin', 'Cookie', 'Cache-Control', 'multipart/form-data'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Accept', 
+    'X-Requested-With', 
+    'Origin',
+    'Cookie',
+    'Cache-Control',
+    'multipart/form-data'
+  ],
   exposedHeaders: ['Content-Length', 'X-Requested-With', 'Set-Cookie'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
   maxAge: 86400
 };
 
+// Apply CORS middleware - MUST BE FIRST
 app.use(cors(corsOptions));
 
-// Handle OPTIONS preflight manually
+// IMPORTANT: DO NOT USE app.options('*', ...) - IT CAUSES THE ERROR!
+// Instead, handle OPTIONS requests manually
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     const origin = req.headers.origin;
-    if (origin && (allowedOrigins.includes(origin) || origin.includes('.onrender.com') || process.env.NODE_ENV === 'development')) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
+    if (origin) {
+      const isAllowed = allowedOrigins.includes(origin) || origin.includes('.onrender.com');
+      if (isAllowed || process.env.NODE_ENV === 'development') {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Access-Control-Allow-Credentials', 'true');
+      } else {
+        // Still allow for debugging
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Access-Control-Allow-Credentials', 'true');
+      }
     }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cookie');
@@ -144,7 +180,27 @@ app.use((req, res, next) => {
   }
   next();
 });
-// Security middleware
+
+// Additional CORS headers for all responses (safety net)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    const isAllowed = allowedOrigins.includes(origin) || origin.includes('.onrender.com');
+    if (isAllowed || process.env.NODE_ENV === 'development') {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cookie');
+  res.header('Access-Control-Expose-Headers', 'Content-Length, X-Requested-With');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
+// Security middleware (after CORS)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "unsafe-none" },
@@ -303,6 +359,10 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 // ==================== GOOGLE LOGIN API ====================
 app.post('/api/auth/google', async (req, res) => {
   console.log('📥 Google login endpoint hit');
+  
+  // Set CORS headers for this route
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
   
   try {
     const { credential } = req.body;
@@ -902,6 +962,7 @@ app.listen(PORT, () => {
   console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
   console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
   console.log(`✅ Google Login: POST /api/auth/google`);
+  console.log(`✅ CORS Configured for all origins`);
 });
 
 module.exports = app;

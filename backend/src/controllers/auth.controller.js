@@ -61,6 +61,7 @@ const saveOTP = async (email, mobile, otp, type) => {
     expiresAt: new Date(Date.now() + 10 * 60 * 1000)
   });
 };
+
 // ==================== SEND MOBILE OTP (Updated) ====================
 
 exports.sendMobileOTP = async (req, res) => {
@@ -178,6 +179,7 @@ exports.verifyMobileOTP = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // ==================== NPP PROCUREMENT APIs ====================
 
 const NPPRequest = require("../models/nppRequest.model");
@@ -508,6 +510,7 @@ exports.getNppStats = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // ==================== FORGOT PASSWORD WITH LINK ====================
 
 /**
@@ -928,6 +931,7 @@ exports.checkResetToken = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // ==================== UPDATE REGISTRATION TO SUPPORT MOBILE ====================
 
 exports.register = async (req, res) => {
@@ -1013,6 +1017,7 @@ exports.register = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // ==================== EMAIL FUNCTIONS ====================
 
 const sendEmailWithResend = async (to, subject, html, text, ccList = []) => {
@@ -1365,64 +1370,6 @@ exports.socialLoginCallback = async (req, res) => {
   }
 };
 
-// ==================== REGISTER USER ====================
-
-exports.register = async (req, res) => {
-  try {
-    const { name, email, password, role, contactNo, department, organization, dateOfBirth } = req.body;
-
-    console.log("📤 Register request:", { name, email, role });
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: "All fields required" });
-    }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: "Email already registered" });
-    }
-
-    const user = new User({
-      name: name.trim(),
-      email: email.toLowerCase(),
-      password: password,
-      role: role || "User",
-      department: department || 'Purchase',
-      contactNo: contactNo || '',
-      organization: organization || 'Radiant Appliances',
-      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-      rights: {}
-    });
-
-    await user.save();
-
-    const token = generateToken(user);
-
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        contactNo: user.contactNo,
-        organization: user.organization,
-        profileImage: user.profileImage || '',
-        workspaces: user.workspaces || [],
-        dateOfBirth: user.dateOfBirth,
-        rights: user.rights || {}
-      }
-    });
-
-  } catch (error) {
-    console.error("Register error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 // ==================== LOGIN ====================
 
 exports.login = async (req, res) => {
@@ -1747,115 +1694,8 @@ exports.getManagers = async (req, res) => {
 
 // ==================== FORGOT / RESET PASSWORD ====================
 
-exports.sendForgotPasswordOTP = async (req, res) => {
-  try {
-    req.body.type = 'reset';
-    return exports.sendEmailOTP(req, res);
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
-};
-
 exports.resendForgotPasswordOTP = async (req, res) => {
   return exports.sendForgotPasswordOTP(req, res);
-};
-
-exports.verifyOTPAndResetPassword = async (req, res) => {
-  try {
-    const { email, otp, newPassword, confirmPassword } = req.body;
-    if (!email || !otp || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Email, OTP and new password required' });
-    }
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ success: false, message: 'Passwords do not match' });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'Minimum 6 characters' });
-    }
-    const otpRecord = await OTP.findOne({ email: email.toLowerCase(), otp, type: 'reset' });
-    if (!otpRecord) {
-      return res.status(400).json({ success: false, message: 'Invalid OTP' });
-    }
-    if (new Date() > otpRecord.expiresAt) {
-      await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({ success: false, message: 'OTP has expired' });
-    }
-    await OTP.deleteOne({ _id: otpRecord._id });
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    user.password = newPassword;
-    await user.save();
-    res.json({ success: true, message: 'Password reset successful. You can log in.' });
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
-};
-
-exports.sendForgotPasswordLink = async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
-    }
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.json({ success: true, message: 'If an account exists, reset instructions have been sent.' });
-    }
-    const raw = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = crypto.createHash('sha256').update(raw).digest('hex');
-    user.resetPasswordExpire = new Date(Date.now() + 3600000);
-    await user.save({ validateBeforeSave: false });
-    const base = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:4200';
-    const link = `${base.replace(/\/$/, '')}/reset-password?token=${raw}`;
-    const mailResult = await sendMail({
-      to: user.email,
-      subject: 'Password reset instructions',
-      html: `<p>Hello ${user.name},</p><p><a href="${link}">Reset your password</a></p><p>${link}</p><p>Expires in 1 hour.</p>`,
-      text: link,
-    });
-    if (!mailResult.success) {
-      return res.status(502).json({
-        success: false,
-        message: mailResult.error || 'Email not configured or send failed.',
-      });
-    }
-    res.json({ success: true, message: 'If an account exists, reset instructions have been sent.' });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, message: e.message });
-  }
-};
-
-exports.resetPasswordWithToken = async (req, res) => {
-  try {
-    const { token, newPassword, confirmPassword } = req.body;
-    if (!token || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Token and new password required' });
-    }
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ success: false, message: 'Passwords do not match' });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'Minimum 6 characters' });
-    }
-    const hash = crypto.createHash('sha256').update(token).digest('hex');
-    const user = await User.findOne({
-      resetPasswordToken: hash,
-      resetPasswordExpire: { $gt: new Date() },
-    });
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
-    }
-    user.password = newPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
-    res.json({ success: true, message: 'Password updated. You can log in.' });
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
 };
 
 // ==================== EMAIL VERIFICATION ====================
@@ -1926,32 +1766,6 @@ exports.resendVerificationEmail = async (req, res) => {
   }
 };
 
-// ==================== CHECK RESET TOKEN ====================
-exports.checkResetToken = async (req, res) => {
-  try {
-    const { token } = req.query;
-    const User = require('../models/user.model');
-    
-    if (!token) {
-      return res.status(400).json({ success: false, message: 'Token required' });
-    }
-    
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpire: { $gt: Date.now() }
-    });
-    
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
-    }
-    
-    res.json({ success: true, message: 'Token is valid', email: user.email });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 // ==================== SEND SMS OTP ====================
 exports.sendSmsOTP = async (req, res) => {
   try {
@@ -2018,6 +1832,7 @@ exports.sendSmsOTP = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // ==================== CLEAR AVATAR ====================
 
 exports.clearAvatar = async (req, res) => {
@@ -2372,4 +2187,68 @@ exports.sendEPRequestEmail = async (req, res) => {
     console.error("Send EP email error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+// ==================== SEND NPP REQUEST EMAIL ====================
+exports.sendNppRequestEmail = async (req, res) => {
+  try {
+    const { toEmails, ccEmails, subject, message } = req.body;
+    const request = await NPPRequest.findById(req.params.id);
+    
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+    
+    const recipients = toEmails || request.stakeholders?.map(s => s.email) || [];
+    const ccList = ccEmails || request.ccList || [];
+    
+    if (recipients.length === 0) {
+      return res.status(400).json({ success: false, message: "No recipients specified" });
+    }
+    
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>${subject || 'NPP Request Notification'}</title></head>
+      <body style="font-family: Arial, sans-serif;">
+        <h2>${subject || 'NPP Request Notification'}</h2>
+        <p><strong>Request Type:</strong> ${request.type}</p>
+        <p><strong>Serial No:</strong> ${request.uniqueSerialNo}</p>
+        <p><strong>Title:</strong> ${request.titleOfActivity}</p>
+        <p><strong>Requester:</strong> ${request.requesterName}</p>
+        <p><strong>Status:</strong> ${request.status}</p>
+        <p><strong>Message:</strong> ${message || 'Please review this request.'}</p>
+        <hr>
+        <p>Please login to the system to review and take action.</p>
+      </body>
+      </html>
+    `;
+    
+    const results = [];
+    for (const recipient of recipients) {
+      const result = await sendMail({
+        to: recipient,
+        cc: ccList,
+        subject: subject || `NPP Request - ${request.uniqueSerialNo}`,
+        html: emailHtml,
+        text: message || 'Please review this request.'
+      });
+      results.push({ email: recipient, success: result.success });
+    }
+    
+    res.json({
+      success: true,
+      message: `Email sent to ${recipients.length} recipient(s)`,
+      results
+    });
+    
+  } catch (error) {
+    console.error('Send NPP email error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==================== RESEND FORGOT PASSWORD OTP ====================
+exports.resendForgotPasswordOTP = async (req, res) => {
+  return exports.sendForgotPasswordOTP(req, res);
 };

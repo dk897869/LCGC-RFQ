@@ -37,14 +37,25 @@ function getSMTPTransporter() {
   return smtpTransporter;
 }
 
+// ✅ FIX: When SMTP is enabled, the "from" address MUST match the authenticated
+// SMTP_USER (Gmail account). Using any other address (e.g. onboarding@resend.dev
+// from FROM_EMAIL) causes Gmail to silently drop the email — it sends OK via
+// Postman because Postman hits the RFQ route which uses a different email template
+// path, but OTP emails were calling FROM_EMAIL which was onboarding@resend.dev.
 function getFromAddress() {
-  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_FROM) {
-    return process.env.SMTP_FROM;
+  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_USER) {
+    return process.env.SMTP_USER;
   }
   return process.env.FROM_EMAIL || 'noreply@lcgc.com';
 }
 
+// ✅ FIX: Extract display name from SMTP_FROM env var if available,
+// e.g. "LCGC System" <dk897869@gmail.com> → "LCGC System"
 function getFromName() {
+  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_FROM) {
+    const match = process.env.SMTP_FROM.match(/^"?([^"<]+)"?\s*</);
+    if (match) return match[1].trim();
+  }
   return process.env.RESEND_FROM_NAME || 'LCGC System';
 }
 
@@ -1107,11 +1118,23 @@ async function sendMail(opts) {
     finalHtml = `<html><body><h2>${subject}</h2><p>${finalText || 'No content available'}</p></body></html>`;
   }
 
+  // ✅ FIX: Always use SMTP_USER as the from address when SMTP is the provider.
+  // Gmail SMTP silently rejects emails where from != authenticated SMTP_USER.
+  // The old code used FROM_EMAIL (onboarding@resend.dev) which caused Gmail to
+  // silently drop all OTP emails sent from the frontend — Postman worked because
+  // it hit the RFQ route which builds its own from field differently.
   const from = getFromAddress();
   const fromName = getFromName();
 
+  // ✅ FIX: Build the from string using SMTP_FROM env var directly if available
+  // (it already contains the correctly formatted "Name <email>" string),
+  // otherwise construct it from fromName + from.
+  const fromString = (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_FROM)
+    ? process.env.SMTP_FROM
+    : `"${fromName}" <${from}>`;
+
   const mailOptions = {
-    from: `"${fromName}" <${from}>`,
+    from: fromString,
     to: toList.join(', '),
     subject: subject,
     html: finalHtml,
@@ -1127,6 +1150,7 @@ async function sendMail(opts) {
   if (smtpTransporter && process.env.SMTP_ENABLED === 'true') {
     try {
       console.log(`📧 Sending email via SMTP to: ${toList.join(', ')}`);
+      console.log(`📧 From: ${fromString}`);
       const info = await smtpTransporter.sendMail(mailOptions);
       console.log(`✅ Email sent! Message ID: ${info.messageId}`);
       return { success: true, via: 'smtp', messageId: info.messageId };

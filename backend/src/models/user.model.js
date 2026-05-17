@@ -87,6 +87,27 @@ const userSchema = new mongoose.Schema({
     type: Boolean, 
     default: true 
   },
+  mobileVerified: {
+    type: Boolean,
+    default: false
+  },
+  fullModuleAccessGranted: {
+    type: Boolean,
+    default: false
+  },
+  accessRequest: {
+    status: {
+      type: String,
+      enum: ['none', 'pending', 'granted', 'rejected'],
+      default: 'none'
+    },
+    message: { type: String, default: '' },
+    requestedAt: Date,
+    reviewedAt: Date,
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    reviewedByName: String,
+    reviewedByEmail: String
+  },
   // Social Login Fields
   googleId: { type: String, unique: true, sparse: true },
   facebookId: { type: String, unique: true, sparse: true },

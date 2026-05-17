@@ -47,6 +47,14 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const cleanEmail = (email) => String(email || "").trim().toLowerCase();
+const cleanMobileNumber = (mobile) => {
+  let value = String(mobile || "").replace(/\D/g, "");
+  if (value.startsWith("91") && value.length > 10) value = value.slice(2);
+  if (value.startsWith("0") && value.length > 10) value = value.slice(1);
+  return value;
+};
+
 const saveOTP = async (email, mobile, otp, type) => {
   await OTP.deleteMany({
     $or: [{ email: email }, { mobile: mobile }],
@@ -78,7 +86,7 @@ exports.sendMobileOTP = async (req, res) => {
     }
     
     // Clean mobile number (remove any non-digit characters)
-    const cleanMobile = mobile.replace(/\D/g, '');
+    const cleanMobile = cleanMobileNumber(mobile);
     
     // For registration, check if mobile already exists
     if (type === 'registration') {
@@ -93,20 +101,20 @@ exports.sendMobileOTP = async (req, res) => {
       }
     }
     
-    // Send OTP via Twilio
-    const result = await sendSmsOtp(mobile);
+    const result = await sendSmsOtp(cleanMobile);
     
     if (!result.success) {
       console.error('Twilio SMS error:', result.error);
-      return res.status(500).json({ 
-        success: false, 
-        message: result.error || 'Failed to send SMS. Please check Twilio configuration.',
-        details: process.env.NODE_ENV === 'development' ? result : undefined
-      });
+      if (!result.otp) {
+        return res.status(500).json({ 
+          success: false, 
+          message: result.error || 'Failed to send SMS. Please check SMS configuration.',
+          details: process.env.NODE_ENV === 'development' ? result : undefined
+        });
+      }
     }
     
-    // Store OTP reference in database
-    const otp = generateOTP(); // Generate a 6-digit OTP
+    const otp = result.otp || generateOTP();
     await saveOTP(null, cleanMobile, otp, type);
     
     console.log(`✅ Mobile OTP sent to ${mobile}: ${otp} (development only)`);
@@ -116,7 +124,7 @@ exports.sendMobileOTP = async (req, res) => {
       message: `OTP sent successfully to ${mobile}`,
       method: 'mobile',
       devOTP: process.env.NODE_ENV === 'development' ? otp : undefined,
-      twilioStatus: result.status
+      twilioStatus: result.status || 'fallback'
     });
     
   } catch (error) {
@@ -140,7 +148,7 @@ exports.verifyMobileOTP = async (req, res) => {
       });
     }
     
-    const cleanMobile = mobile.replace(/\D/g, '');
+    const cleanMobile = cleanMobileNumber(mobile);
     
     // Find OTP record
     const otpRecord = await OTP.findOne({
@@ -1018,6 +1026,118 @@ exports.register = async (req, res) => {
   }
 };
 
+// Registration must happen only after a successful email OTP verification.
+exports.register = async (req, res) => {
+  try {
+    const {
+      name, email, password, role, contactNo, department,
+      organization, dateOfBirth, mobileVerified = false, otp, emailOtp
+    } = req.body;
+    const normalizedEmail = cleanEmail(email);
+
+    if (!name || !normalizedEmail || !password) {
+      return res.status(400).json({ success: false, message: "Name, email and password are required" });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "Email already registered" });
+    }
+
+    if (contactNo) {
+      const cleanMobile = cleanMobileNumber(contactNo);
+      const existingMobile = await User.findOne({ contactNo: { $regex: cleanMobile + '$', $options: 'i' } });
+      if (existingMobile) {
+        return res.status(400).json({ success: false, message: "Mobile number already registered" });
+      }
+    }
+
+    const submittedOtp = emailOtp || otp;
+    let verifiedMarker = null;
+    if (submittedOtp) {
+      const otpRecord = await OTP.findOne({
+        email: normalizedEmail,
+        otp: String(submittedOtp),
+        type: 'registration'
+      });
+
+      if (!otpRecord || new Date() > otpRecord.expiresAt) {
+        if (otpRecord) await OTP.deleteOne({ _id: otpRecord._id });
+        return res.status(400).json({ success: false, message: "Invalid or expired email OTP" });
+      }
+
+      await OTP.deleteOne({ _id: otpRecord._id });
+      verifiedMarker = true;
+    } else {
+      verifiedMarker = await OTP.findOne({
+        email: normalizedEmail,
+        otp: 'VERIFIED',
+        type: 'verification',
+        expiresAt: { $gt: new Date() }
+      });
+    }
+
+    if (!verifiedMarker) {
+      return res.status(400).json({
+        success: false,
+        message: "Please verify your email OTP before registration"
+      });
+    }
+
+    const user = new User({
+      name: name.trim(),
+      email: normalizedEmail,
+      password,
+      role: role || "User",
+      department: department || 'Purchase',
+      contactNo: contactNo || '',
+      organization: organization || 'Radiant Appliances',
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      mobileVerified,
+      emailVerified: true,
+      rights: {}
+    });
+
+    await user.save();
+    await OTP.deleteMany({ email: normalizedEmail, type: { $in: ['registration', 'verification'] } });
+
+    await sendMail({
+      to: user.email,
+      subject: 'Account Verified - LCGC RFQ',
+      type: 'welcome',
+      data: { name: user.name }
+    });
+
+    const token = generateToken(user);
+
+    res.status(201).json({
+      success: true,
+      message: "User registered and email verified successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        contactNo: user.contactNo,
+        organization: user.organization,
+        profileImage: user.profileImage || '',
+        workspaces: user.workspaces || [],
+        dateOfBirth: user.dateOfBirth,
+        mobileVerified: user.mobileVerified,
+        emailVerified: user.emailVerified,
+        rights: user.rights || {},
+        fullModuleAccessGranted: user.fullModuleAccessGranted || false,
+        accessRequest: user.accessRequest
+      }
+    });
+  } catch (error) {
+    console.error("Register error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ==================== EMAIL FUNCTIONS ====================
 
 const sendEmailWithResend = async (to, subject, html, text, ccList = []) => {
@@ -1190,6 +1310,96 @@ exports.verifyRegistrationOTP = async (req, res) => {
   }
 };
 
+exports.sendRegistrationOTP = async (req, res) => {
+  try {
+    const { email, ccEmails } = req.body;
+    const normalizedEmail = cleanEmail(email);
+
+    if (!normalizedEmail) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "Email already registered" });
+    }
+
+    const otp = generateOTP();
+    await saveOTP(normalizedEmail, null, otp, 'registration');
+
+    let ccArray = [];
+    if (ccEmails) {
+      ccArray = Array.isArray(ccEmails)
+        ? ccEmails.filter(Boolean)
+        : String(ccEmails).split(',').map(e => e.trim()).filter(Boolean);
+    }
+
+    const mailResult = await sendEmailOTPCode(
+      normalizedEmail,
+      normalizedEmail.split('@')[0],
+      otp,
+      'registration',
+      ccArray
+    );
+    if (!mailResult || mailResult.success === false) {
+      return res.status(502).json({
+        success: false,
+        message: mailResult?.error || 'Email could not be sent.',
+        devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "OTP sent successfully to your email",
+      devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
+    });
+  } catch (error) {
+    console.error("Send Registration OTP error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.verifyRegistrationOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const normalizedEmail = cleanEmail(email);
+
+    if (!normalizedEmail || !otp) {
+      return res.status(400).json({ success: false, message: "Email and OTP are required" });
+    }
+
+    const otpRecord = await OTP.findOne({
+      email: normalizedEmail,
+      otp: String(otp),
+      type: 'registration'
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    if (new Date() > otpRecord.expiresAt) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ success: false, message: "OTP has expired" });
+    }
+
+    await OTP.deleteOne({ _id: otpRecord._id });
+    await OTP.deleteMany({ email: normalizedEmail, type: 'verification' });
+    await OTP.create({
+      email: normalizedEmail,
+      otp: 'VERIFIED',
+      type: 'verification',
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000)
+    });
+
+    res.json({ success: true, message: "OTP verified successfully", verified: true });
+  } catch (error) {
+    console.error("Verify Registration OTP error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ==================== SEND EMAIL OTP (LOGIN) ====================
 
 exports.sendEmailOTP = async (req, res) => {
@@ -1281,21 +1491,35 @@ exports.verifyOTP = async (req, res) => {
       user = await User.findOne({ email: email.toLowerCase() });
       await OTP.deleteOne({ _id: otpRecord._id });
     } else {
-      const result = await verifySmsOtp(mobile, otp);
-      if (!result.success) {
-        return res.status(500).json({ success: false, message: result.error || 'SMS verify failed' });
+      const cleanMobile = cleanMobileNumber(mobile);
+      const otpRecord = await OTP.findOne({
+        mobile: cleanMobile,
+        otp: String(otp),
+        type
+      });
+
+      if (otpRecord) {
+        if (new Date() > otpRecord.expiresAt) {
+          await OTP.deleteOne({ _id: otpRecord._id });
+          return res.status(400).json({ success: false, message: "OTP has expired" });
+        }
+        await OTP.deleteOne({ _id: otpRecord._id });
+      } else {
+        const result = await verifySmsOtp(cleanMobile, otp);
+        if (!result.success) {
+          return res.status(500).json({ success: false, message: result.error || 'SMS verify failed' });
+        }
+        if (!result.isValid) {
+          return res.status(400).json({ success: false, message: 'Invalid OTP' });
+        }
       }
-      if (!result.isValid) {
-        return res.status(400).json({ success: false, message: 'Invalid OTP' });
-      }
-      const cleanMobile = mobile.replace(/\D/g, '');
       user = await User.findOne({
         $or: [
           { contactNo: { $regex: cleanMobile + '$', $options: 'i' } },
           { phone: { $regex: cleanMobile + '$', $options: 'i' } },
         ],
       });
-      await OTP.deleteMany({ mobile: mobile, type: type });
+      await OTP.deleteMany({ mobile: cleanMobile, type: type });
     }
 
     if (!user) {
@@ -1827,6 +2051,48 @@ exports.sendSmsOTP = async (req, res) => {
       status: result.status
     });
     
+  } catch (error) {
+    console.error('Send SMS OTP error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.sendSmsOTP = async (req, res) => {
+  try {
+    const { mobile, type = 'login' } = req.body;
+
+    if (!mobile) {
+      return res.status(400).json({ success: false, message: 'Mobile number is required' });
+    }
+
+    const cleanMobile = cleanMobileNumber(mobile);
+    if (type === 'login' || type === 'reset') {
+      const existingUser = await User.findOne({
+        $or: [
+          { contactNo: { $regex: cleanMobile + '$', $options: 'i' } },
+          { phone: { $regex: cleanMobile + '$', $options: 'i' } }
+        ]
+      });
+      if (!existingUser) {
+        return res.status(404).json({ success: false, message: 'Mobile number not registered' });
+      }
+    }
+
+    const result = await sendSmsOtp(cleanMobile);
+    const otp = result.otp || generateOTP();
+    await saveOTP(null, cleanMobile, otp, type);
+
+    if (!result.success && !result.otp) {
+      return res.status(500).json({ success: false, message: result.error || 'Failed to send SMS' });
+    }
+
+    res.json({
+      success: true,
+      message: `OTP sent to ${mobile}`,
+      method: 'mobile',
+      devOTP: process.env.NODE_ENV === 'development' ? otp : undefined,
+      status: result.status || 'fallback'
+    });
   } catch (error) {
     console.error('Send SMS OTP error:', error);
     res.status(500).json({ success: false, message: error.message });

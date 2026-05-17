@@ -13,6 +13,8 @@ const nppRequestSchema = new mongoose.Schema({
   titleOfActivity: { type: String },
   priority: { type: String },
   purposeAndObjective: { type: String },
+  amount: { type: Number, default: 0 },
+  vendorEmail: { type: String },
   stakeholders: [{
     line: String,
     managerName: String,
@@ -22,6 +24,12 @@ const nppRequestSchema = new mongoose.Schema({
     remarks: String
   }],
   ccList: [{ type: String }],
+  attachments: [{
+    name: String,
+    fileSize: String,
+    remark: String,
+    fileUrl: String
+  }],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

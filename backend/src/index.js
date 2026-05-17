@@ -21,11 +21,39 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
-    req.user = decoded;
+    const User = require('./models/user.model');
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+    req.user = user;
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Invalid token' });
   }
+};
+
+const moduleAccessMiddleware = (req, res, next) => {
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'No user found' });
+  }
+
+  const seniorRoles = ['Admin', 'Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+  if (seniorRoles.includes(user.role) || user.fullModuleAccessGranted) {
+    return next();
+  }
+
+  const rights = user.rights || {};
+  if (Object.values(rights.toObject ? rights.toObject() : rights).some(Boolean)) {
+    return next();
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: 'Module access not granted. Please send an access request to admin or manager.',
+    accessRequest: user.accessRequest || { status: 'none' }
+  });
 };
 
 // Helper function to safely require routes
@@ -827,34 +855,44 @@ try {
 }
 
 // Cash Purchase
-app.post('/api/npp/cash-purchase', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/new-vendor', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/rfq-vendor', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/rfq-requisition', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/vendor-list', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/employee-detail', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/item-master', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/quotation-comparison', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/pr-request', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/po-npp', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/payment-advise', authMiddleware, nppController.createNppRequest);
-app.post('/api/npp/wcc-npp', authMiddleware, nppController.createNppRequest);
+app.post('/api/npp/cash-purchase', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/new-vendor', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/rfq-vendor', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/rfq-requisition', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/vendor-list', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/employee-detail', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/item-master', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/quotation-comparison', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/pr-request', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/po-npp', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/payment-advise', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
+app.post('/api/npp/wcc-npp', authMiddleware, moduleAccessMiddleware, nppController.createNppRequest);
 
-app.get('/api/npp/requests', authMiddleware, nppController.getAllNppRequests);
-app.get('/api/npp/stats', authMiddleware, nppController.getNppStats);
-app.get('/api/npp/request/:id', authMiddleware, nppController.getNppRequestById);
-app.get('/api/npp/serial/:serialNo', authMiddleware, nppController.getNppRequestBySerialNo);
+app.get('/api/npp/requests', authMiddleware, moduleAccessMiddleware, nppController.getAllNppRequests);
+app.get('/api/npp/stats', authMiddleware, moduleAccessMiddleware, nppController.getNppStats);
+app.get('/api/npp/request/:id', authMiddleware, moduleAccessMiddleware, nppController.getNppRequestById);
+app.get('/api/npp/serial/:serialNo', authMiddleware, moduleAccessMiddleware, nppController.getNppRequestBySerialNo);
 
-app.put('/api/npp/request/:id', authMiddleware, nppController.updateNppRequest);
-app.delete('/api/npp/request/:id', authMiddleware, nppController.deleteNppRequest);
+app.put('/api/npp/request/:id', authMiddleware, moduleAccessMiddleware, nppController.updateNppRequest);
+app.delete('/api/npp/request/:id', authMiddleware, moduleAccessMiddleware, nppController.deleteNppRequest);
 
-app.patch('/api/npp/request/:id/approve', authMiddleware, nppController.approveNppRequest);
-app.patch('/api/npp/request/:id/reject', authMiddleware, nppController.rejectNppRequest);
-app.post('/api/npp/request/:id/send-email', authMiddleware, nppController.sendNppRequestEmail);
+app.patch('/api/npp/request/:id/approve', authMiddleware, moduleAccessMiddleware, nppController.approveNppRequest);
+app.patch('/api/npp/request/:id/reject', authMiddleware, moduleAccessMiddleware, nppController.rejectNppRequest);
+app.post('/api/npp/request/:id/send-email', authMiddleware, moduleAccessMiddleware, nppController.sendNppRequestEmail);
 
 console.log('✅ NPP Procurement routes loaded');
 
 // ==================== API ROUTES ====================
+app.use([
+  "/api/rfq",
+  "/api/pr-npp",
+  "/api/po-npp",
+  "/api/payment-npp",
+  "/api/request",
+  "/api/approvals",
+  "/api/ep-approval"
+], authMiddleware, moduleAccessMiddleware);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/request", requestRoutes);

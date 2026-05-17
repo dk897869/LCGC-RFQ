@@ -8,6 +8,7 @@ const authController = require('../controllers/auth.controller');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { sendMail } = require('../services/mail.service');
+const User = require('../models/user.model');
 
 // Configure multer for profile photo uploads
 const storage = multer.diskStorage({
@@ -45,11 +46,26 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = await User.findById(decoded.id).select('-password') || decoded;
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Invalid token' });
   }
+};
+
+const moduleAccessMiddleware = (req, res, next) => {
+  const user = req.user;
+  const seniorRoles = ['Admin', 'Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+  if (seniorRoles.includes(user?.role) || user?.fullModuleAccessGranted) return next();
+
+  const rights = user?.rights || {};
+  if (Object.values(rights.toObject ? rights.toObject() : rights).some(Boolean)) return next();
+
+  return res.status(403).json({
+    success: false,
+    message: 'Module access not granted. Please send an access request to admin or manager.',
+    accessRequest: user?.accessRequest || { status: 'none' }
+  });
 };
 
 // ==================== HELPER FUNCTIONS ====================
@@ -385,29 +401,29 @@ router.post('/resend-verification', authController.resendVerificationEmail);
 router.post('/social-callback', authController.socialLoginCallback);
 
 // ==================== NPP PROCUREMENT ROUTES ====================
-router.post('/npp/cash-purchase', authMiddleware, authController.createNppRequest);
-router.post('/npp/new-vendor', authMiddleware, authController.createNppRequest);
-router.post('/npp/rfq-vendor', authMiddleware, authController.createNppRequest);
-router.post('/npp/rfq-requisition', authMiddleware, authController.createNppRequest);
-router.post('/npp/vendor-list', authMiddleware, authController.createNppRequest);
-router.post('/npp/employee-detail', authMiddleware, authController.createNppRequest);
-router.post('/npp/item-master', authMiddleware, authController.createNppRequest);
-router.post('/npp/quotation-comparison', authMiddleware, authController.createNppRequest);
-router.post('/npp/pr-request', authMiddleware, authController.createNppRequest);
-router.post('/npp/po-npp', authMiddleware, authController.createNppRequest);
-router.post('/npp/payment-advise', authMiddleware, authController.createNppRequest);
-router.post('/npp/wcc-npp', authMiddleware, authController.createNppRequest);
+router.post('/npp/cash-purchase', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/new-vendor', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/rfq-vendor', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/rfq-requisition', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/vendor-list', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/employee-detail', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/item-master', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/quotation-comparison', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/pr-request', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/po-npp', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/payment-advise', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
+router.post('/npp/wcc-npp', authMiddleware, moduleAccessMiddleware, authController.createNppRequest);
 
-router.get('/npp/requests', authMiddleware, authController.getAllNppRequests);
-router.get('/npp/stats', authMiddleware, authController.getNppStats);
-router.get('/npp/request/:id', authMiddleware, authController.getNppRequestById);
-router.get('/npp/serial/:serialNo', authMiddleware, authController.getNppRequestBySerialNo);
+router.get('/npp/requests', authMiddleware, moduleAccessMiddleware, authController.getAllNppRequests);
+router.get('/npp/stats', authMiddleware, moduleAccessMiddleware, authController.getNppStats);
+router.get('/npp/request/:id', authMiddleware, moduleAccessMiddleware, authController.getNppRequestById);
+router.get('/npp/serial/:serialNo', authMiddleware, moduleAccessMiddleware, authController.getNppRequestBySerialNo);
 
-router.put('/npp/request/:id', authMiddleware, authController.updateNppRequest);
-router.delete('/npp/request/:id', authMiddleware, authController.deleteNppRequest);
-router.patch('/npp/request/:id/approve', authMiddleware, authController.approveNppRequest);
-router.patch('/npp/request/:id/reject', authMiddleware, authController.rejectNppRequest);
-router.post('/npp/request/:id/send-email', authMiddleware, authController.sendNppRequestEmail);
+router.put('/npp/request/:id', authMiddleware, moduleAccessMiddleware, authController.updateNppRequest);
+router.delete('/npp/request/:id', authMiddleware, moduleAccessMiddleware, authController.deleteNppRequest);
+router.patch('/npp/request/:id/approve', authMiddleware, moduleAccessMiddleware, authController.approveNppRequest);
+router.patch('/npp/request/:id/reject', authMiddleware, moduleAccessMiddleware, authController.rejectNppRequest);
+router.post('/npp/request/:id/send-email', authMiddleware, moduleAccessMiddleware, authController.sendNppRequestEmail);
 
 // ==================== PROTECTED ROUTES (Require Auth) ====================
 router.use(authMiddleware);
@@ -431,15 +447,15 @@ router.delete('/avatar', authController.clearAvatar);
 router.delete('/profile-photo', authController.clearAvatar);
 
 // EP Request routes
-router.post('/ep-requests', authController.createEPRequest);
-router.get('/ep-requests', authController.getAllEPRequests);
-router.get('/ep-requests/:id', authController.getEPRequestById);
-router.put('/ep-requests/:id', authController.updateEPRequest);
-router.delete('/ep-requests/:id', authController.deleteEPRequest);
-router.patch('/ep-requests/:id/approve', authController.approveEPRequest);
-router.patch('/ep-requests/:id/reject', authController.rejectEPRequest);
-router.get('/ep-requests-stats', authController.getEPRequestStats);
-router.post('/ep-requests-send-email', authController.sendEPRequestEmail);
+router.post('/ep-requests', moduleAccessMiddleware, authController.createEPRequest);
+router.get('/ep-requests', moduleAccessMiddleware, authController.getAllEPRequests);
+router.get('/ep-requests-stats', moduleAccessMiddleware, authController.getEPRequestStats);
+router.get('/ep-requests/:id', moduleAccessMiddleware, authController.getEPRequestById);
+router.put('/ep-requests/:id', moduleAccessMiddleware, authController.updateEPRequest);
+router.delete('/ep-requests/:id', moduleAccessMiddleware, authController.deleteEPRequest);
+router.patch('/ep-requests/:id/approve', moduleAccessMiddleware, authController.approveEPRequest);
+router.patch('/ep-requests/:id/reject', moduleAccessMiddleware, authController.rejectEPRequest);
+router.post('/ep-requests-send-email', moduleAccessMiddleware, authController.sendEPRequestEmail);
 
 // ==================== EXPORT ROUTER ====================
 module.exports = router;

@@ -8,6 +8,11 @@ const { verifyToken } = require("../middlewares/auth");
 // GET All Users (Admin only)
 router.get("/", verifyToken, userController.getAllUsers);
 
+// Module access request workflow
+router.post("/access-request", verifyToken, userController.requestModuleAccess);
+router.get("/access-requests", verifyToken, userController.getModuleAccessRequests);
+router.patch("/access-requests/:id", verifyToken, userController.reviewModuleAccessRequest);
+
 // GET Single User by ID
 router.get("/:id", verifyToken, userController.getUserById);
 

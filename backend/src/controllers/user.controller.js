@@ -1,5 +1,27 @@
 const mongoose = require("mongoose");
 const User = require("../models/user.model");
+const { sendMail } = require("../services/mail.service");
+
+const FULL_MODULE_RIGHTS = {
+  epApproval: true,
+  vendors: true,
+  parts: true,
+  rfq: true,
+  userManagement: true,
+  nppProcurement: true,
+  bidding: true,
+  paymentRequest: true,
+  dqms: true,
+  npi: true,
+  systemBom: true,
+  bomForecast: true,
+  priceApproval: true,
+  planStock: true,
+  supplierPerformance: true,
+  vehicularMs: true
+};
+
+const canReviewAccessRequests = (user) => ['Admin', 'Manager'].includes(user?.role);
 
 // Get all users
 exports.getAllUsers = async (req, res) => {
@@ -226,6 +248,9 @@ exports.updateUserRights = async (req, res) => {
         ...user.rights,
         ...rights
       };
+      if (Object.values(user.rights.toObject ? user.rights.toObject() : user.rights).some(Boolean)) {
+        user.fullModuleAccessGranted = true;
+      }
     }
     
     await user.save();
@@ -277,6 +302,154 @@ exports.deleteUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Delete user error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.requestModuleAccess = async (req, res) => {
+  try {
+    const requesterId = req.user.id || req.user._id;
+    const requester = await User.findById(requesterId).select('-password');
+    if (!requester) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (requester.role !== 'User') {
+      return res.status(400).json({ success: false, message: "Only User role accounts need to request module access" });
+    }
+
+    if (requester.fullModuleAccessGranted) {
+      return res.json({ success: true, message: "Access already granted", data: requester });
+    }
+
+    requester.accessRequest = {
+      status: 'pending',
+      message: req.body.message || '',
+      requestedAt: new Date()
+    };
+    await requester.save();
+
+    const reviewers = await User.find({ role: { $in: ['Admin', 'Manager'] }, isActive: true }).select('email name');
+    const reviewerEmails = reviewers.map((u) => u.email).filter(Boolean);
+    if (reviewerEmails.length) {
+      await sendMail({
+        to: reviewerEmails[0],
+        cc: reviewerEmails.slice(1),
+        subject: `Module Access Request - ${requester.name}`,
+        html: `
+          <h2>Module Access Request</h2>
+          <p><strong>Name:</strong> ${requester.name}</p>
+          <p><strong>Email:</strong> ${requester.email}</p>
+          <p><strong>Department:</strong> ${requester.department || '-'}</p>
+          <p><strong>Message:</strong> ${requester.accessRequest.message || '-'}</p>
+        `,
+        text: `Module access request from ${requester.name} (${requester.email})`
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Access request sent to admin/manager",
+      data: {
+        id: requester._id,
+        name: requester.name,
+        email: requester.email,
+        accessRequest: requester.accessRequest
+      }
+    });
+  } catch (error) {
+    console.error("Request module access error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getModuleAccessRequests = async (req, res) => {
+  try {
+    if (!canReviewAccessRequests(req.user)) {
+      return res.status(403).json({ success: false, message: "Access denied. Admin or Manager only." });
+    }
+
+    const status = req.query.status || 'pending';
+    const users = await User.find({ 'accessRequest.status': status })
+      .select('-password')
+      .sort({ 'accessRequest.requestedAt': -1 });
+
+    res.json({
+      success: true,
+      count: users.length,
+      data: users.map((u) => ({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        department: u.department,
+        contactNo: u.contactNo,
+        accessRequest: u.accessRequest,
+        rights: u.rights,
+        fullModuleAccessGranted: u.fullModuleAccessGranted
+      }))
+    });
+  } catch (error) {
+    console.error("Get module access requests error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.reviewModuleAccessRequest = async (req, res) => {
+  try {
+    if (!canReviewAccessRequests(req.user)) {
+      return res.status(403).json({ success: false, message: "Access denied. Admin or Manager only." });
+    }
+
+    const { id } = req.params;
+    const { action, comments } = req.body;
+    if (!['grant', 'reject'].includes(action)) {
+      return res.status(400).json({ success: false, message: "Action must be grant or reject" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.accessRequest = {
+      status: action === 'grant' ? 'granted' : 'rejected',
+      message: comments || user.accessRequest?.message || '',
+      requestedAt: user.accessRequest?.requestedAt,
+      reviewedAt: new Date(),
+      reviewedBy: req.user._id || req.user.id,
+      reviewedByName: req.user.name,
+      reviewedByEmail: req.user.email
+    };
+
+    if (action === 'grant') {
+      user.fullModuleAccessGranted = true;
+      user.rights = { ...(user.rights?.toObject ? user.rights.toObject() : user.rights || {}), ...FULL_MODULE_RIGHTS };
+    }
+
+    await user.save();
+
+    await sendMail({
+      to: user.email,
+      subject: action === 'grant' ? 'Module Access Granted - LCGC RFQ' : 'Module Access Request Rejected - LCGC RFQ',
+      html: `<p>Hello ${user.name},</p><p>Your module access request has been <strong>${user.accessRequest.status}</strong>.</p>`,
+      text: `Your module access request has been ${user.accessRequest.status}.`
+    });
+
+    res.json({
+      success: true,
+      message: action === 'grant' ? "Lifetime module access granted" : "Access request rejected",
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        rights: user.rights,
+        fullModuleAccessGranted: user.fullModuleAccessGranted,
+        accessRequest: user.accessRequest
+      }
+    });
+  } catch (error) {
+    console.error("Review module access request error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

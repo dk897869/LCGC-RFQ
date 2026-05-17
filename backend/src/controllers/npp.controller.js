@@ -1,6 +1,7 @@
 // controllers/npp.controller.js
 const NPPRequest = require('../models/nppRequest.model');
 const { sendMail } = require('../services/mail.service');
+const { generateBeautifulPDF } = require('../services/pdf.service');
 
 // Helper function to generate serial number
 const generateNppSerialNumber = (type) => {
@@ -28,12 +29,60 @@ const generateNppSerialNumber = (type) => {
 };
 
 // Helper to send email
+const normalizeEmailList = (value) => {
+  const list = Array.isArray(value) ? value : String(value || '').split(',');
+  return [...new Set(list.map((email) => String(email || '').trim().toLowerCase()).filter(Boolean))];
+};
+
+const requestTypeFromPath = (path = '') => {
+  const match = String(path).match(/\/api\/npp\/([^/?]+)/);
+  return match ? match[1] : null;
+};
+
+const toPdfData = (request) => {
+  const d = request.toObject ? request.toObject() : request;
+  return {
+    ...d,
+    requesterName: d.requesterName,
+    titleOfActivity: d.titleOfActivity,
+    amount: d.amount || d.paymentDetails?.expenseAmount || d.quotationItems?.reduce((sum, row) => sum + Number(row.supplier1Amount || row.supplier2Amount || row.supplier3Amount || 0), 0),
+    items: d.prItems || d.poItems || d.rfqItems || d.rfqVendorItems || d.cashPurchaseItems || d.quotationItems || [],
+    invoices: d.paymentInvoices || [],
+    source: d.type === 'po-npp' ? 'PO-NPP'
+      : d.type === 'pr-request' ? 'PR-REQUEST-NPP'
+      : d.type === 'payment-advise' ? 'PAYMENT-ADVISE-NPP'
+      : d.type
+  };
+};
+
 const sendNppEmail = async (request, subject, message) => {
   try {
-    const recipients = request.stakeholders?.map(s => s.email) || [];
-    const ccList = request.ccList || [];
+    const requesterEmail = request.emailId;
+    const stakeholderEmails = normalizeEmailList((request.stakeholders || []).map(s => s.email));
+    const ccList = normalizeEmailList(request.ccList);
+    const enteredEmails = normalizeEmailList([
+      request.emailId,
+      request.vendorEmail,
+      ...(request.vendorDetails || []).map(v => v.email),
+      ...(request.vendorList || []).map(v => v.emailId),
+      ...(request.employeeDetails || []).map(e => e.emailAddress)
+    ]);
+    const allRecipients = normalizeEmailList([requesterEmail, ...stakeholderEmails, ...enteredEmails]);
     
-    if (recipients.length === 0) return;
+    if (allRecipients.length === 0 && ccList.length === 0) return;
+
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateBeautifulPDF(toPdfData(request));
+    } catch (error) {
+      console.error('NPP PDF generation error:', error.message);
+    }
+
+    const attachments = pdfBuffer ? [{
+      filename: `${request.type || 'NPP'}_${request.uniqueSerialNo || request._id}.pdf`,
+      content: pdfBuffer.toString('base64'),
+      contentType: 'application/pdf'
+    }] : [];
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -54,15 +103,20 @@ const sendNppEmail = async (request, subject, message) => {
       </html>
     `;
     
-    for (const recipient of recipients) {
-      await sendMail({
-        to: recipient,
-        cc: ccList,
-        subject: subject,
-        html: emailHtml,
-        text: message
-      });
-    }
+    const to = requesterEmail || allRecipients[0];
+    const cc = normalizeEmailList([
+      ...ccList,
+      ...allRecipients.filter((email) => email !== String(to || '').toLowerCase())
+    ]);
+
+    await sendMail({
+      to,
+      cc,
+      subject,
+      html: emailHtml,
+      text: message,
+      attachments
+    });
   } catch (error) {
     console.error('Send NPP email error:', error);
   }
@@ -71,7 +125,8 @@ const sendNppEmail = async (request, subject, message) => {
 // ==================== CREATE NPP REQUEST ====================
 exports.createNppRequest = async (req, res) => {
   try {
-    const { type, ...requestData } = req.body;
+    const { type: bodyType, ...requestData } = req.body;
+    const type = bodyType || requestData.source || requestTypeFromPath(req.originalUrl || req.url);
     
     if (!type) {
       return res.status(400).json({ success: false, message: "Request type is required" });
@@ -92,8 +147,11 @@ exports.createNppRequest = async (req, res) => {
       titleOfActivity: requestData.titleOfActivity,
       priority: requestData.priority || 'M',
       purposeAndObjective: requestData.purposeAndObjective,
+      amount: requestData.amount || requestData.estimatedAmount || requestData.paymentDetails?.expenseAmount || 0,
+      vendorEmail: requestData.vendorEmail,
       stakeholders: requestData.stakeholders || [],
       ccList: requestData.ccList || [],
+      attachments: requestData.attachments || [],
       createdBy: req.user?.id,
       cashPurchaseItems: requestData.cashPurchaseItems,
       vendorDetails: requestData.vendorDetails,
@@ -339,8 +397,8 @@ exports.sendNppRequestEmail = async (req, res) => {
       return res.status(404).json({ success: false, message: "Request not found" });
     }
     
-    const recipients = toEmails || request.stakeholders?.map(s => s.email) || [];
-    const ccList = ccEmails || request.ccList || [];
+    const recipients = normalizeEmailList(toEmails || request.stakeholders?.map(s => s.email) || request.emailId);
+    const ccList = normalizeEmailList(ccEmails || request.ccList || []);
     
     if (recipients.length === 0) {
       return res.status(400).json({ success: false, message: "No recipients specified" });
@@ -364,17 +422,28 @@ exports.sendNppRequestEmail = async (req, res) => {
       </html>
     `;
     
-    const results = [];
-    for (const recipient of recipients) {
-      const result = await sendMail({
-        to: recipient,
-        cc: ccList,
-        subject: subject || `NPP Request - ${request.uniqueSerialNo}`,
-        html: emailHtml,
-        text: message || 'Please review this request.'
-      });
-      results.push({ email: recipient, success: result.success });
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateBeautifulPDF(toPdfData(request));
+    } catch (error) {
+      console.error('NPP PDF generation error:', error.message);
     }
+
+    const attachments = pdfBuffer ? [{
+      filename: `${request.type || 'NPP'}_${request.uniqueSerialNo || request._id}.pdf`,
+      content: pdfBuffer.toString('base64'),
+      contentType: 'application/pdf'
+    }] : [];
+    
+    const result = await sendMail({
+      to: recipients[0],
+      cc: normalizeEmailList([...ccList, ...recipients.slice(1)]),
+      subject: subject || `NPP Request - ${request.uniqueSerialNo}`,
+      html: emailHtml,
+      text: message || 'Please review this request.',
+      attachments
+    });
+    const results = recipients.map((email) => ({ email, success: result.success }));
     
     res.json({
       success: true,

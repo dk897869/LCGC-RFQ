@@ -124,15 +124,7 @@ const uploadAvatar = multer({
 // Database connection
 connectDB();
 
-// ==================== CORS CONFIGURATION - FIXED FOR BROWSER ====================
-// ✅ KEY FIX: The browser blocks requests when:
-//    1. withCredentials=true AND Access-Control-Allow-Origin is '*' (wildcard)
-//    2. The preflight OPTIONS response doesn't match the actual request headers
-//
-// Solution: Always echo the exact requesting origin back (never use '*'),
-// and since the frontend now sends withCredentials=false (Bearer token only),
-// we don't even need credentials:true — but we keep it for safety.
-
+// ==================== CORS CONFIGURATION ====================
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
@@ -142,28 +134,18 @@ const allowedOrigins = [
   'https://lcgc-rfq-frontend.onrender.com'
 ];
 
-// ✅ FIXED CORS: always return specific origin, never wildcard
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (Postman, curl, mobile apps, server-to-server)
     if (!origin) return callback(null, true);
-
-    // Allow any *.onrender.com subdomain
     if (origin.includes('.onrender.com') || origin.includes('render.com')) {
       return callback(null, true);
     }
-
-    // Check exact allowlist
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-
-    // Allow localhost in any environment (dev convenience)
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
-
-    // Log and allow unknown origins (remove this in strict production)
     console.log(`⚠️ CORS request from unknown origin: ${origin}`);
     return callback(null, true);
   },
@@ -182,11 +164,8 @@ const corsOptions = {
   maxAge: 86400
 };
 
-// ✅ Apply CORS FIRST — before any other middleware
 app.use(cors(corsOptions));
 
-// ✅ Handle OPTIONS preflight explicitly for all routes
-// Use '/{*path}' instead of '*' — required by path-to-regexp v8+ (Express 5 / router pkg)
 app.options('/{*path}', (req, res) => {
   const origin = req.headers.origin;
   if (origin) {
@@ -199,12 +178,9 @@ app.options('/{*path}', (req, res) => {
   res.status(204).end();
 });
 
-// ✅ Safety-net middleware: ensure every response has CORS headers
-// This catches cases where a route throws before cors() can set headers
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {
-    // Always echo the exact origin — NEVER use '*' when credentials may be involved
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
   }
@@ -458,6 +434,380 @@ app.get('/api/health', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ==================== EMAIL OTP ROUTES (FULLY WORKING) ====================
+
+// Send OTP for login (email)
+app.post('/api/auth/send-otp', async (req, res) => {
+  console.log('📍 POST /api/auth/send-otp - Email OTP route hit');
+  console.log('📦 Request body:', req.body);
+  
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+    
+    const cleanEmail = email.trim().toLowerCase();
+    console.log('📧 Sending OTP to email:', cleanEmail);
+    
+    const User = require('./models/user.model');
+    const OTP = require('./models/otp.model');
+    const { sendMail } = require('./services/mail.service');
+    
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email address'
+      });
+    }
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`🔐 Generated OTP for ${cleanEmail}: ${otp}`);
+    
+    await OTP.deleteMany({ email: cleanEmail, type: 'login' });
+    
+    await OTP.create({
+      email: cleanEmail,
+      otp: otp,
+      type: 'login',
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
+    
+    const emailResult = await sendMail({
+      to: cleanEmail,
+      subject: 'Login OTP - LCGC System',
+      type: 'otp',
+      data: {
+        name: user.name || cleanEmail.split('@')[0],
+        otp: otp,
+        otpType: 'login'
+      }
+    });
+    
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: `OTP sent successfully to ${cleanEmail}`,
+        method: 'email'
+      });
+    } else {
+      console.error('Email send failed but OTP generated:', emailResult.error);
+      res.json({
+        success: true,
+        message: `OTP generated. Check your email (might be in spam)`,
+        method: 'email',
+        devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
+      });
+    }
+    
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send OTP'
+    });
+  }
+});
+
+// Send Registration OTP (email)
+app.post('/api/auth/send-registration-otp', async (req, res) => {
+  console.log('📍 POST /api/auth/send-registration-otp - Registration OTP route hit');
+  console.log('📦 Request body:', req.body);
+  
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+    
+    const cleanEmail = email.trim().toLowerCase();
+    console.log('📧 Sending registration OTP to email:', cleanEmail);
+    
+    const User = require('./models/user.model');
+    const OTP = require('./models/otp.model');
+    const { sendMail } = require('./services/mail.service');
+    
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered. Please login instead.'
+      });
+    }
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`🔐 Generated registration OTP for ${cleanEmail}: ${otp}`);
+    
+    await OTP.deleteMany({ email: cleanEmail, type: 'registration' });
+    
+    await OTP.create({
+      email: cleanEmail,
+      otp: otp,
+      type: 'registration',
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
+    
+    const emailResult = await sendMail({
+      to: cleanEmail,
+      subject: 'Verify Your Email - LCGC Registration',
+      type: 'otp',
+      data: {
+        name: cleanEmail.split('@')[0],
+        otp: otp,
+        otpType: 'registration'
+      }
+    });
+    
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: `Verification OTP sent to ${cleanEmail}`,
+        method: 'email'
+      });
+    } else {
+      console.error('Email send failed but OTP generated:', emailResult.error);
+      res.json({
+        success: true,
+        message: `OTP generated. Check your email (might be in spam)`,
+        method: 'email',
+        devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
+      });
+    }
+    
+  } catch (error) {
+    console.error('Send registration OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send OTP'
+    });
+  }
+});
+
+// Verify Registration OTP
+app.post('/api/auth/verify-registration-otp', async (req, res) => {
+  console.log('📍 POST /api/auth/verify-registration-otp - Verify OTP route hit');
+  console.log('📦 Request body:', req.body);
+  
+  try {
+    const { email, otp } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and OTP are required'
+      });
+    }
+    
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = otp.trim();
+    
+    const OTP = require('./models/otp.model');
+    
+    const otpRecord = await OTP.findOne({
+      email: cleanEmail,
+      otp: cleanOtp,
+      type: 'registration'
+    });
+    
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP'
+      });
+    }
+    
+    if (new Date() > otpRecord.expiresAt) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new one.'
+      });
+    }
+    
+    await OTP.deleteOne({ _id: otpRecord._id });
+    
+    res.json({
+      success: true,
+      message: 'OTP verified successfully'
+    });
+    
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to verify OTP'
+    });
+  }
+});
+
+// Verify OTP for login
+app.post('/api/auth/verify-otp', async (req, res) => {
+  console.log('📍 POST /api/auth/verify-otp - Verify Login OTP route hit');
+  console.log('📦 Request body:', req.body);
+  
+  try {
+    const { email, otp, method, type } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and OTP are required'
+      });
+    }
+    
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = otp.trim();
+    
+    const OTP = require('./models/otp.model');
+    const User = require('./models/user.model');
+    
+    const otpRecord = await OTP.findOne({
+      email: cleanEmail,
+      otp: cleanOtp,
+      type: type || 'login'
+    });
+    
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP'
+      });
+    }
+    
+    if (new Date() > otpRecord.expiresAt) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new one.'
+      });
+    }
+    
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    await OTP.deleteOne({ _id: otpRecord._id });
+    
+    user.lastLogin = new Date();
+    await user.save();
+    
+    const token = generateToken(user);
+    
+    res.json({
+      success: true,
+      message: 'OTP verified successfully',
+      token: token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department || 'Purchase',
+        contactNo: user.contactNo || '',
+        organization: user.organization || 'Radiant Appliances',
+        rights: user.rights || {}
+      }
+    });
+    
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to verify OTP'
+    });
+  }
+});
+
+// Resend OTP
+app.post('/api/auth/resend-otp', async (req, res) => {
+  console.log('📍 POST /api/auth/resend-otp - Resend OTP route hit');
+  console.log('📦 Request body:', req.body);
+  
+  try {
+    const { email, type = 'login' } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+    
+    const cleanEmail = email.trim().toLowerCase();
+    const User = require('./models/user.model');
+    const OTP = require('./models/otp.model');
+    const { sendMail } = require('./services/mail.service');
+    
+    if (type === 'login') {
+      const user = await User.findOne({ email: cleanEmail });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'No account found with this email address'
+        });
+      }
+    }
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`🔐 Generated new OTP for ${cleanEmail}: ${otp}`);
+    
+    await OTP.deleteMany({ email: cleanEmail, type: type });
+    
+    await OTP.create({
+      email: cleanEmail,
+      otp: otp,
+      type: type,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
+    
+    const emailResult = await sendMail({
+      to: cleanEmail,
+      subject: type === 'login' ? 'Login OTP - LCGC System' : 'Verification OTP - LCGC Registration',
+      type: 'otp',
+      data: {
+        name: cleanEmail.split('@')[0],
+        otp: otp,
+        otpType: type
+      }
+    });
+    
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: `New OTP sent to ${cleanEmail}`,
+        method: 'email'
+      });
+    } else {
+      res.json({
+        success: true,
+        message: `OTP generated. Check your email (might be in spam)`,
+        method: 'email',
+        devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
+      });
+    }
+    
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to resend OTP'
+    });
+  }
 });
 
 // ==================== DIRECT MOBILE OTP ROUTES WITH FAST2SMS ====================
@@ -920,6 +1270,10 @@ app.get("/", (req, res) => {
       auth: {
         register: "POST /api/auth/register",
         login: "POST /api/auth/login",
+        sendOTP: "POST /api/auth/send-otp",
+        sendRegistrationOTP: "POST /api/auth/send-registration-otp",
+        verifyOTP: "POST /api/auth/verify-otp",
+        verifyRegistrationOTP: "POST /api/auth/verify-registration-otp",
         sendMobileOTP: "POST /api/auth/send-mobile-otp",
         verifyMobileOTP: "POST /api/auth/verify-mobile-otp",
         forgotPasswordLink: "POST /api/auth/forgot-password-link",
@@ -963,10 +1317,13 @@ app.listen(PORT, () => {
   console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`✅ Avatar upload: POST /api/auth/upload-avatar`);
+  console.log(`✅ Email OTP: POST /api/auth/send-otp`);
+  console.log(`✅ Registration OTP: POST /api/auth/send-registration-otp`);
+  console.log(`✅ Verify OTP: POST /api/auth/verify-otp`);
   console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
   console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
   console.log(`✅ Google Login: POST /api/auth/google`);
-  console.log(`✅ CORS: Configured for lcgc-rfq-frontend.onrender.com + localhost`);
+  console.log(`✅ CORS: Configured for all origins`);
 });
 
 module.exports = app;

@@ -1318,8 +1318,8 @@ app.listen(PORT, () => {
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`✅ Avatar upload: POST /api/auth/upload-avatar`);
   console.log(`✅ Email OTP: POST /api/auth/send-otp`);
-  console.log(`✅ Registration OTP: POST /api/auth/send-registration-otp`);
-  console.log(`✅ Verify OTP: POST /api/auth/verify-otp`);
+  // console.log(`✅ Registration OTP: POST /api/auth/send-registration-otp`);
+  // console.log(`✅ Verify OTP: POST /api/auth/verify-otp`);
   console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
   console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
   console.log(`✅ Google Login: POST /api/auth/google`);

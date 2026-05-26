@@ -940,7 +940,7 @@ exports.checkResetToken = async (req, res) => {
   }
 };
 
-// ==================== UPDATE REGISTRATION TO SUPPORT MOBILE ====================
+// ==================== REGISTRATION WITHOUT OTP ====================
 
 exports.register = async (req, res) => {
   try {
@@ -951,6 +951,7 @@ exports.register = async (req, res) => {
 
     console.log("📤 Register request:", { name, email, role, contactNo, mobileVerified });
 
+    // Validate required fields
     if (!name || !email || !password) {
       return res.status(400).json({ 
         success: false, 
@@ -958,12 +959,31 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Please enter a valid email address" 
+      });
+    }
+
+    // Validate password strength (optional but recommended)
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Password must be at least 6 characters long" 
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if email already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ 
         success: false, 
-        message: "Email already registered" 
+        message: "Email already registered. Please login instead." 
       });
     }
 
@@ -981,138 +1001,45 @@ exports.register = async (req, res) => {
       }
     }
 
-    const user = new User({
-      name: name.trim(),
-      email: email.toLowerCase(),
-      password: password,
-      role: role || "User",
-      department: department || 'Purchase',
-      contactNo: contactNo || '',
-      organization: organization || 'Radiant Appliances',
-      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-      mobileVerified: mobileVerified, // Track if mobile is verified
-      emailVerified: false,
-      rights: {}
-    });
-
-    await user.save();
-
-    const token = generateToken(user);
-
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        contactNo: user.contactNo,
-        organization: user.organization,
-        profileImage: user.profileImage || '',
-        workspaces: user.workspaces || [],
-        dateOfBirth: user.dateOfBirth,
-        mobileVerified: user.mobileVerified,
-        emailVerified: user.emailVerified,
-        rights: user.rights || {}
-      }
-    });
-
-  } catch (error) {
-    console.error("Register error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Registration must happen only after a successful email OTP verification.
-exports.register = async (req, res) => {
-  try {
-    const {
-      name, email, password, role, contactNo, department,
-      organization, dateOfBirth, mobileVerified = false, otp, emailOtp
-    } = req.body;
-    const normalizedEmail = cleanEmail(email);
-
-    if (!name || !normalizedEmail || !password) {
-      return res.status(400).json({ success: false, message: "Name, email and password are required" });
-    }
-
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: "Email already registered" });
-    }
-
-    if (contactNo) {
-      const cleanMobile = cleanMobileNumber(contactNo);
-      const existingMobile = await User.findOne({ contactNo: { $regex: cleanMobile + '$', $options: 'i' } });
-      if (existingMobile) {
-        return res.status(400).json({ success: false, message: "Mobile number already registered" });
-      }
-    }
-
-    const submittedOtp = emailOtp || otp;
-    let verifiedMarker = null;
-    if (submittedOtp) {
-      const otpRecord = await OTP.findOne({
-        email: normalizedEmail,
-        otp: String(submittedOtp),
-        type: 'registration'
-      });
-
-      if (!otpRecord || new Date() > otpRecord.expiresAt) {
-        if (otpRecord) await OTP.deleteOne({ _id: otpRecord._id });
-        return res.status(400).json({ success: false, message: "Invalid or expired email OTP" });
-      }
-
-      await OTP.deleteOne({ _id: otpRecord._id });
-      verifiedMarker = true;
-    } else {
-      verifiedMarker = await OTP.findOne({
-        email: normalizedEmail,
-        otp: 'VERIFIED',
-        type: 'verification',
-        expiresAt: { $gt: new Date() }
-      });
-    }
-
-    if (!verifiedMarker) {
-      return res.status(400).json({
-        success: false,
-        message: "Please verify your email OTP before registration"
-      });
-    }
-
+    // Create new user (no OTP verification required)
     const user = new User({
       name: name.trim(),
       email: normalizedEmail,
-      password,
+      password: password, // Make sure to hash this in your User model pre-save middleware
       role: role || "User",
       department: department || 'Purchase',
       contactNo: contactNo || '',
       organization: organization || 'Radiant Appliances',
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-      mobileVerified,
-      emailVerified: true,
-      rights: {}
+      mobileVerified: mobileVerified,
+      emailVerified: true, // ✅ Auto-verified since no OTP
+      rights: {},
+      createdAt: new Date()
     });
 
     await user.save();
-    await OTP.deleteMany({ email: normalizedEmail, type: { $in: ['registration', 'verification'] } });
 
-    await sendMail({
-      to: user.email,
-      subject: 'Account Verified - LCGC RFQ',
-      type: 'welcome',
-      data: { name: user.name }
-    });
-
+    // Generate JWT token
     const token = generateToken(user);
 
+    // Optional: Send welcome email (don't block registration if email fails)
+    try {
+      await sendMail({
+        to: user.email,
+        subject: 'Welcome to LCGC RFQ System',
+        type: 'welcome',
+        data: { name: user.name }
+      });
+      console.log(`✅ Welcome email sent to ${user.email}`);
+    } catch (emailError) {
+      console.error("⚠️ Welcome email failed (non-blocking):", emailError.message);
+      // Don't return error - registration still successful
+    }
+
+    // Return success response
     res.status(201).json({
       success: true,
-      message: "User registered and email verified successfully",
+      message: "User registered successfully! Welcome to LCGC RFQ System.",
       token,
       user: {
         id: user._id,
@@ -1132,12 +1059,25 @@ exports.register = async (req, res) => {
         accessRequest: user.accessRequest
       }
     });
+
   } catch (error) {
-    console.error("Register error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("❌ Register error:", error);
+    
+    // Handle duplicate key errors gracefully
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        success: false, 
+        message: `${field} already exists. Please use a different ${field}.` 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Registration failed. Please try again." 
+    });
   }
 };
-
 // ==================== EMAIL FUNCTIONS ====================
 
 const sendEmailWithResend = async (to, subject, html, text, ccList = []) => {

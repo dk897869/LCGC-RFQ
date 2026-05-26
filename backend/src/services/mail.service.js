@@ -37,20 +37,17 @@ function getSMTPTransporter() {
   return smtpTransporter;
 }
 
-// ✅ FIX: When SMTP is enabled, the "from" address MUST match the authenticated
-// SMTP_USER (Gmail account). Using any other address (e.g. onboarding@resend.dev
-// from FROM_EMAIL) causes Gmail to silently drop the email — it sends OK via
-// Postman because Postman hits the RFQ route which uses a different email template
-// path, but OTP emails were calling FROM_EMAIL which was onboarding@resend.dev.
+// ✅ FIXED: When SMTP is enabled, the "from" address MUST match the authenticated
+// SMTP_USER (Gmail account). Using any other address causes Gmail to silently drop emails.
 function getFromAddress() {
+  // When SMTP is enabled, ALWAYS use SMTP_USER as the from address
   if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_USER) {
     return process.env.SMTP_USER;
   }
   return process.env.FROM_EMAIL || 'noreply@lcgc.com';
 }
 
-// ✅ FIX: Extract display name from SMTP_FROM env var if available,
-// e.g. "LCGC System" <dk897869@gmail.com> → "LCGC System"
+// ✅ FIXED: Extract display name from SMTP_FROM env var if available
 function getFromName() {
   if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_FROM) {
     const match = process.env.SMTP_FROM.match(/^"?([^"<]+)"?\s*</);
@@ -1070,7 +1067,7 @@ function getApprovalEmailHTML(data, type, action, comments) {
 </html>`;
 }
 
-// Main send mail function
+// Main send mail function - FIXED VERSION
 async function sendMail(opts) {
   const { to, cc, bcc, subject, html, text, attachments, type, action, data, comments } = opts;
   
@@ -1118,20 +1115,30 @@ async function sendMail(opts) {
     finalHtml = `<html><body><h2>${subject}</h2><p>${finalText || 'No content available'}</p></body></html>`;
   }
 
-  // ✅ FIX: Always use SMTP_USER as the from address when SMTP is the provider.
-  // Gmail SMTP silently rejects emails where from != authenticated SMTP_USER.
-  // The old code used FROM_EMAIL (onboarding@resend.dev) which caused Gmail to
-  // silently drop all OTP emails sent from the frontend — Postman worked because
-  // it hit the RFQ route which builds its own from field differently.
-  const from = getFromAddress();
-  const fromName = getFromName();
-
-  // ✅ FIX: Build the from string using SMTP_FROM env var directly if available
-  // (it already contains the correctly formatted "Name <email>" string),
-  // otherwise construct it from fromName + from.
-  const fromString = (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_FROM)
-    ? process.env.SMTP_FROM
-    : `"${fromName}" <${from}>`;
+  // ✅ CRITICAL FIX: For SMTP (Gmail), the "from" address MUST exactly match SMTP_USER
+  // Using any other "from" address causes Gmail to silently reject the email.
+  // This is why Postman worked (it likely used a different email type that bypassed this issue)
+  // but OTP emails from frontend were failing.
+  
+  let fromString;
+  
+  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_USER) {
+    // When using SMTP, ALWAYS use SMTP_USER as the from address
+    // This is a Gmail requirement - the authenticated user must match the from address
+    const fromName = getFromName();
+    fromString = `"${fromName}" <${process.env.SMTP_USER}>`;
+    console.log(`📧 Using SMTP from address: ${fromString}`);
+  } else if (process.env.RESEND_API_KEY) {
+    // Use Resend with the configured FROM_EMAIL
+    const from = getFromAddress();
+    const fromName = getFromName();
+    fromString = `"${fromName}" <${from}>`;
+    console.log(`📧 Using Resend from address: ${fromString}`);
+  } else {
+    // Fallback
+    fromString = `"LCGC System" <noreply@lcgc.com>`;
+    console.log(`📧 Using fallback from address: ${fromString}`);
+  }
 
   const mailOptions = {
     from: fromString,
@@ -1145,48 +1152,95 @@ async function sendMail(opts) {
   if (bccList.length > 0) mailOptions.bcc = bccList.join(', ');
   if (attachments && attachments.length > 0) mailOptions.attachments = attachments;
 
-  const smtpTransporter = getSMTPTransporter();
-  
-  if (smtpTransporter && process.env.SMTP_ENABLED === 'true') {
-    try {
-      console.log(`📧 Sending email via SMTP to: ${toList.join(', ')}`);
-      console.log(`📧 From: ${fromString}`);
-      const info = await smtpTransporter.sendMail(mailOptions);
-      console.log(`✅ Email sent! Message ID: ${info.messageId}`);
-      return { success: true, via: 'smtp', messageId: info.messageId };
-    } catch (error) {
-      console.error('❌ SMTP error:', error.message);
-      
-      if (process.env.RESEND_API_KEY) {
-        try {
-          if (!resendClient) resendClient = new Resend(process.env.RESEND_API_KEY);
-          
-          const resendPayload = {
-            from: `${fromName} <${from}>`,
-            to: toList,
-            subject: subject,
-            html: finalHtml,
-          };
-          
-          if (ccList.length > 0) resendPayload.cc = ccList;
-          if (bccList.length > 0) resendPayload.bcc = bccList;
-          if (attachments && attachments.length > 0) resendPayload.attachments = attachments;
-          
-          const { data: resendData, error: resendError } = await resendClient.emails.send(resendPayload);
-          
-          if (resendError) {
-            console.error('❌ Resend error:', resendError);
-            return { success: false, error: resendError.message };
+  // Try SMTP first if enabled
+  if (process.env.SMTP_ENABLED === 'true') {
+    const smtpTransporter = getSMTPTransporter();
+    
+    if (smtpTransporter) {
+      try {
+        console.log(`📧 Sending email via SMTP to: ${toList.join(', ')}`);
+        console.log(`📧 From: ${fromString}`);
+        console.log(`📧 Subject: ${subject}`);
+        
+        const info = await smtpTransporter.sendMail(mailOptions);
+        console.log(`✅ Email sent successfully! Message ID: ${info.messageId}`);
+        return { success: true, via: 'smtp', messageId: info.messageId };
+      } catch (error) {
+        console.error('❌ SMTP error:', error.message);
+        console.error('❌ Error details:', error);
+        
+        // Fallback to Resend if available
+        if (process.env.RESEND_API_KEY) {
+          console.log('🔄 Falling back to Resend...');
+          try {
+            if (!resendClient) resendClient = new Resend(process.env.RESEND_API_KEY);
+            
+            // For Resend, we need to use a verified domain email
+            const resendFrom = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+            const resendFromName = process.env.RESEND_FROM_NAME || 'LCGC System';
+            
+            const resendPayload = {
+              from: `${resendFromName} <${resendFrom}>`,
+              to: toList,
+              subject: subject,
+              html: finalHtml,
+            };
+            
+            if (ccList.length > 0) resendPayload.cc = ccList;
+            if (bccList.length > 0) resendPayload.bcc = bccList;
+            if (attachments && attachments.length > 0) resendPayload.attachments = attachments;
+            
+            const { data: resendData, error: resendError } = await resendClient.emails.send(resendPayload);
+            
+            if (resendError) {
+              console.error('❌ Resend error:', resendError);
+              return { success: false, error: resendError.message };
+            }
+            
+            console.log(`✅ Email sent via Resend! ID: ${resendData?.id}`);
+            return { success: true, via: 'resend', id: resendData?.id };
+          } catch (resendErr) {
+            console.error('❌ Resend fallback error:', resendErr.message);
           }
-          
-          console.log(`✅ Email sent via Resend! ID: ${resendData?.id}`);
-          return { success: true, via: 'resend', id: resendData?.id };
-        } catch (resendErr) {
-          console.error('❌ Resend fallback error:', resendErr.message);
         }
+        
+        return { success: false, error: error.message };
+      }
+    }
+  }
+  
+  // Try Resend if SMTP is not enabled or failed
+  if (process.env.RESEND_API_KEY) {
+    try {
+      if (!resendClient) resendClient = new Resend(process.env.RESEND_API_KEY);
+      
+      const resendFrom = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+      const resendFromName = process.env.RESEND_FROM_NAME || 'LCGC System';
+      
+      const resendPayload = {
+        from: `${resendFromName} <${resendFrom}>`,
+        to: toList,
+        subject: subject,
+        html: finalHtml,
+      };
+      
+      if (ccList.length > 0) resendPayload.cc = ccList;
+      if (bccList.length > 0) resendPayload.bcc = bccList;
+      if (attachments && attachments.length > 0) resendPayload.attachments = attachments;
+      
+      console.log(`📧 Sending email via Resend to: ${toList.join(', ')}`);
+      const { data: resendData, error: resendError } = await resendClient.emails.send(resendPayload);
+      
+      if (resendError) {
+        console.error('❌ Resend error:', resendError);
+        return { success: false, error: resendError.message };
       }
       
-      return { success: false, error: error.message };
+      console.log(`✅ Email sent via Resend! ID: ${resendData?.id}`);
+      return { success: true, via: 'resend', id: resendData?.id };
+    } catch (resendErr) {
+      console.error('❌ Resend error:', resendErr.message);
+      return { success: false, error: resendErr.message };
     }
   }
   
@@ -1199,6 +1253,7 @@ async function sendMail(opts) {
   if (ccList.length > 0) console.log(`CC: ${ccList.join(', ')}`);
   if (bccList.length > 0) console.log(`BCC: ${bccList.join(', ')}`);
   console.log(`SUBJECT: ${subject}`);
+  console.log(`FROM: ${fromString}`);
   console.log(`TYPE: ${type || 'general'}`);
   if (data) console.log(`DATA:`, JSON.stringify(data, null, 2));
   console.log('='.repeat(80));

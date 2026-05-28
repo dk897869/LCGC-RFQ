@@ -436,12 +436,7 @@ app.get('/health', (req, res) => {
 
 // Send OTP for login (email)
 // ==================== WORKING OTP ROUTE ====================
-// In your index.js on production
-// ==================== FIXED OTP ROUTE - NO SYNTAX ERROR ====================
 app.post('/api/auth/send-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/send-otp - PRODUCTION FIXED');
-  console.log('📦 Request body:', req.body);
-  
   try {
     const { email } = req.body;
     
@@ -455,74 +450,76 @@ app.post('/api/auth/send-otp', async (req, res) => {
     const cleanEmail = email.trim().toLowerCase();
     console.log('📧 Sending OTP to:', cleanEmail);
     
-    // Import models
-    const User = require('./models/user.model');
-    const OTP = require('./models/otp.model');
-    
-    // Check if user exists
-    const user = await User.findOne({ email: cleanEmail });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'No account found with this email address'
-      });
-    }
-    
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`🔐 Generated OTP for ${cleanEmail}: ${otp}`);
+    console.log(`🔐 Generated OTP: ${otp}`);
     
-    // Save to database
-    await OTP.deleteMany({ email: cleanEmail, type: 'login' });
-    await OTP.create({
-      email: cleanEmail,
-      otp: otp,
-      type: 'login',
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-    });
+    // Save to database (if you have OTP model)
+    // await OTP.create({ email: cleanEmail, otp: otp });
     
-    // Use your existing mail service
-    const { sendMail } = require('./services/mail.service');
+    // Use Resend (which is working for RFQ)
+    const { Resend } = require('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
     
-    const emailResult = await sendMail({
-      to: cleanEmail,
+    const { data, error } = await resend.emails.send({
+      from: 'LCGC System <onboarding@resend.dev>',
+      to: [cleanEmail],
       subject: 'Your Login OTP - LCGC System',
-      type: 'otp',
-      data: {
-        name: user.name || cleanEmail.split('@')[0],
-        otp: otp,
-        otpType: 'login'
-      }
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Login OTP</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; }
+            .header { background: #0f2a5e; padding: 20px; text-align: center; }
+            .header h1 { color: white; margin: 0; }
+            .content { padding: 30px; text-align: center; }
+            .otp-code { font-size: 48px; font-weight: bold; letter-spacing: 5px; background: #f0f4f8; padding: 20px; margin: 20px 0; font-family: monospace; color: #0f2a5e; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>LCGC System</h1>
+            </div>
+            <div class="content">
+              <h2>Your Verification Code</h2>
+              <div class="otp-code">${otp}</div>
+              <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+              <p>If you didn't request this, please ignore this email.</p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} LCGC System</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
     });
     
-    if (emailResult.success) {
-      console.log('✅ Email sent successfully via SMTP/Resend');
-      res.json({
-        success: true,
-        message: `OTP sent successfully to ${cleanEmail}`,
-        method: 'email'
-      });
-    } else {
-      console.error('❌ Email send failed:', emailResult.error);
-      // Still return success but with warning
-      res.json({
-        success: true,
-        message: `OTP generated. Check your email (might be in spam)`,
-        method: 'email',
-        devOTP: otp // Only for debugging
-      });
+    if (error) {
+      console.error('Resend error:', error);
+      return res.status(500).json({ success: false, message: error.message });
     }
+    
+    console.log('✅ Email sent! ID:', data?.id);
+    res.json({
+      success: true,
+      message: `OTP sent successfully to ${cleanEmail}`
+    });
     
   } catch (error) {
     console.error('❌ Send OTP error:', error.message);
-    console.error('Full error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to send OTP'
     });
   }
 });
-
 // Verify SMTP connection
     await transporter.verify();
     console.log('✅ SMTP connection verified');

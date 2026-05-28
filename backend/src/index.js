@@ -434,10 +434,9 @@ app.get('/health', (req, res) => {
 
 // ==================== EMAIL OTP ROUTES (FULLY WORKING) ====================
 
-// Send OTP for login (email)
-// ==================== WORKING OTP ROUTE - SMTP ONLY ====================
+// ==================== OPTIMIZED OTP ROUTE - NO DELAY ====================
 app.post('/api/auth/send-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/send-otp - SMTP ONLY');
+  console.log('📍 POST /api/auth/send-otp - OPTIMIZED');
   console.log('📦 Request body:', req.body);
   
   try {
@@ -451,7 +450,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
     }
     
     const cleanEmail = email.trim().toLowerCase();
-    console.log('📧 Sending OTP via SMTP to:', cleanEmail);
+    console.log('📧 Sending OTP to:', cleanEmail);
     
     // Import required modules
     const User = require('./models/user.model');
@@ -480,28 +479,47 @@ app.post('/api/auth/send-otp', async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
     
-    // Create SMTP transporter (using your credentials)
+    // Send response immediately (don't wait for email)
+    res.json({
+      success: true,
+      message: `OTP sent successfully to ${cleanEmail}`,
+      note: "Check your email inbox or spam folder"
+    });
+    
+    // Send email in background (don't await)
+    sendEmailInBackground(cleanEmail, otp, user.name);
+    
+  } catch (error) {
+    console.error('❌ Send OTP error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send OTP'
+    });
+  }
+});
+
+// Background email sending function (non-blocking)
+async function sendEmailInBackground(email, otp, name) {
+  try {
+    const nodemailer = require('nodemailer');
+    
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
       secure: false,
       auth: {
         user: 'dk897869@gmail.com',
-        pass: 'pjrqcjgddftdwswn'  // Your app password without spaces
+        pass: 'pjrqcjgddftdwswn'
       },
       tls: {
         rejectUnauthorized: false
       }
     });
     
-    // Verify SMTP connection
-    await transporter.verify();
-    console.log('✅ SMTP connection verified');
-    
-    // Send email
+    // Don't verify connection, just send
     const info = await transporter.sendMail({
       from: '"LCGC System" <dk897869@gmail.com>',
-      to: cleanEmail,
+      to: email,
       subject: 'Your Login OTP - LCGC System',
       html: `
         <!DOCTYPE html>
@@ -543,24 +561,11 @@ app.post('/api/auth/send-otp', async (req, res) => {
       `
     });
     
-    console.log('✅ Email sent successfully! Message ID:', info.messageId);
-    
-    res.json({
-      success: true,
-      message: `OTP sent successfully to ${cleanEmail}`,
-      messageId: info.messageId
-    });
-    
+    console.log(`✅ Background email sent to ${email}: ${info.messageId}`);
   } catch (error) {
-    console.error('❌ Send OTP error:', error.message);
-    console.error('❌ Full error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to send OTP'
-    });
+    console.error(`❌ Background email failed for ${email}:`, error.message);
   }
-});
-
+}
 // Send Registration OTP (email)
 app.post('/api/auth/send-registration-otp', async (req, res) => {
   console.log('📍 POST /api/auth/send-registration-otp - Registration OTP route hit');

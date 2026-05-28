@@ -435,43 +435,129 @@ app.get('/health', (req, res) => {
 // ==================== EMAIL OTP ROUTES (FULLY WORKING) ====================
 
 // Send OTP for login (email)
-// ==================== SIMPLE WORKING OTP ROUTE - NO ASYNC ISSUES ====================
+// ==================== WORKING OTP ROUTE - SMTP ONLY ====================
 app.post('/api/auth/send-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/send-otp');
+  console.log('📍 POST /api/auth/send-otp - SMTP ONLY');
+  console.log('📦 Request body:', req.body);
   
   try {
     const { email } = req.body;
     
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Email required' });
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
     }
     
     const cleanEmail = email.trim().toLowerCase();
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('📧 Sending OTP via SMTP to:', cleanEmail);
     
-    console.log(`OTP for ${cleanEmail}: ${otp}`);
+    // Import required modules
+    const User = require('./models/user.model');
+    const OTP = require('./models/otp.model');
+    const nodemailer = require('nodemailer');
     
-    // Use Resend (already working for RFQ)
-    const { Resend } = require('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    const result = await resend.emails.send({
-      from: 'LCGC System <onboarding@resend.dev>',
-      to: [cleanEmail],
-      subject: 'Your Login OTP',
-      html: `<h1>Your OTP is: ${otp}</h1><p>Valid for 10 minutes.</p>`
-    });
-    
-    if (result.error) {
-      console.error('Email error:', result.error);
-      return res.status(500).json({ success: false, message: result.error.message });
+    // Check if user exists (for login OTP)
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email address'
+      });
     }
     
-    res.json({ success: true, message: `OTP sent to ${cleanEmail}` });
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`🔐 Generated OTP: ${otp}`);
+    
+    // Save OTP to database
+    await OTP.deleteMany({ email: cleanEmail, type: 'login' });
+    await OTP.create({
+      email: cleanEmail,
+      otp: otp,
+      type: 'login',
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
+    
+    // Create SMTP transporter (using your credentials)
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'dk897869@gmail.com',
+        pass: 'pjrqcjgddftdwswn'  // Your app password without spaces
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+    
+    // Verify SMTP connection
+    await transporter.verify();
+    console.log('✅ SMTP connection verified');
+    
+    // Send email
+    const info = await transporter.sendMail({
+      from: '"LCGC System" <dk897869@gmail.com>',
+      to: cleanEmail,
+      subject: 'Your Login OTP - LCGC System',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Login OTP - LCGC</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .header { background: #0f2a5e; padding: 20px; text-align: center; }
+            .header h1 { color: white; margin: 0; font-size: 24px; }
+            .content { padding: 30px; text-align: center; }
+            .otp-code { font-size: 48px; font-weight: bold; letter-spacing: 5px; background: #f0f4f8; padding: 20px; border-radius: 12px; margin: 20px 0; font-family: monospace; color: #0f2a5e; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #eee; }
+            .warning { background: #fff3cd; padding: 12px; border-radius: 8px; font-size: 12px; color: #856404; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>LCGC System</h1>
+            </div>
+            <div class="content">
+              <h2>Your Login Verification Code</h2>
+              <div class="otp-code">${otp}</div>
+              <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+              <div class="warning">
+                ⚠️ Never share this OTP with anyone.
+              </div>
+            </div>
+            <div class="footer">
+              <p>This is an automated message, please do not reply.</p>
+              <p>&copy; ${new Date().getFullYear()} LCGC System</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    
+    console.log('✅ Email sent successfully! Message ID:', info.messageId);
+    
+    res.json({
+      success: true,
+      message: `OTP sent successfully to ${cleanEmail}`,
+      messageId: info.messageId
+    });
     
   } catch (error) {
-    console.error('Error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('❌ Send OTP error:', error.message);
+    console.error('❌ Full error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send OTP'
+    });
   }
 });
 

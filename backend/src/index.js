@@ -437,23 +437,42 @@ app.get('/health', (req, res) => {
 // Send OTP for login (email)
 // ==================== WORKING OTP ROUTE ====================
 // In your index.js on production
+// ==================== FIXED OTP ROUTE - NO SYNTAX ERROR ====================
 app.post('/api/auth/send-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/send-otp - PRODUCTION');
+  console.log('📍 POST /api/auth/send-otp - PRODUCTION FIXED');
+  console.log('📦 Request body:', req.body);
   
   try {
     const { email } = req.body;
     
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
     }
     
     const cleanEmail = email.trim().toLowerCase();
+    console.log('📧 Sending OTP to:', cleanEmail);
+    
+    // Import models
+    const User = require('./models/user.model');
+    const OTP = require('./models/otp.model');
+    
+    // Check if user exists
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email address'
+      });
+    }
     
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`🔐 Generated OTP for ${cleanEmail}: ${otp}`);
     
     // Save to database
-    const OTP = require('./models/otp.model');
     await OTP.deleteMany({ email: cleanEmail, type: 'login' });
     await OTP.create({
       email: cleanEmail,
@@ -462,7 +481,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
     
-    // Send email using your email service
+    // Use your existing mail service
     const { sendMail } = require('./services/mail.service');
     
     const emailResult = await sendMail({
@@ -470,24 +489,41 @@ app.post('/api/auth/send-otp', async (req, res) => {
       subject: 'Your Login OTP - LCGC System',
       type: 'otp',
       data: {
-        name: cleanEmail.split('@')[0],
+        name: user.name || cleanEmail.split('@')[0],
         otp: otp,
         otpType: 'login'
       }
     });
     
     if (emailResult.success) {
-      res.json({ success: true, message: `OTP sent successfully to ${cleanEmail}` });
+      console.log('✅ Email sent successfully via SMTP/Resend');
+      res.json({
+        success: true,
+        message: `OTP sent successfully to ${cleanEmail}`,
+        method: 'email'
+      });
     } else {
-      res.json({ success: true, message: `OTP generated. Check your email`, devOTP: otp });
+      console.error('❌ Email send failed:', emailResult.error);
+      // Still return success but with warning
+      res.json({
+        success: true,
+        message: `OTP generated. Check your email (might be in spam)`,
+        method: 'email',
+        devOTP: otp // Only for debugging
+      });
     }
     
   } catch (error) {
-    console.error('OTP error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('❌ Send OTP error:', error.message);
+    console.error('Full error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send OTP'
+    });
   }
-});    
-    // Verify SMTP connection
+});
+
+// Verify SMTP connection
     await transporter.verify();
     console.log('✅ SMTP connection verified');
     

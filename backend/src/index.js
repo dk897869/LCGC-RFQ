@@ -435,152 +435,46 @@ app.get('/health', (req, res) => {
 // ==================== EMAIL OTP ROUTES (FULLY WORKING) ====================
 
 // Send OTP for login (email)
-// ==================== WORKING OTP ROUTE ====================
+// ==================== SIMPLE WORKING OTP ROUTE - NO ASYNC ISSUES ====================
 app.post('/api/auth/send-otp', async (req, res) => {
+  console.log('📍 POST /api/auth/send-otp');
+  
   try {
     const { email } = req.body;
     
     if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required'
-      });
+      return res.status(400).json({ success: false, message: 'Email required' });
     }
     
     const cleanEmail = email.trim().toLowerCase();
-    console.log('📧 Sending OTP to:', cleanEmail);
-    
-    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`🔐 Generated OTP: ${otp}`);
     
-    // Save to database (if you have OTP model)
-    // await OTP.create({ email: cleanEmail, otp: otp });
+    console.log(`OTP for ${cleanEmail}: ${otp}`);
     
-    // Use Resend (which is working for RFQ)
+    // Use Resend (already working for RFQ)
     const { Resend } = require('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     
-    const { data, error } = await resend.emails.send({
+    const result = await resend.emails.send({
       from: 'LCGC System <onboarding@resend.dev>',
       to: [cleanEmail],
-      subject: 'Your Login OTP - LCGC System',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Login OTP</title>
-          <style>
-            body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; }
-            .header { background: #0f2a5e; padding: 20px; text-align: center; }
-            .header h1 { color: white; margin: 0; }
-            .content { padding: 30px; text-align: center; }
-            .otp-code { font-size: 48px; font-weight: bold; letter-spacing: 5px; background: #f0f4f8; padding: 20px; margin: 20px 0; font-family: monospace; color: #0f2a5e; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>LCGC System</h1>
-            </div>
-            <div class="content">
-              <h2>Your Verification Code</h2>
-              <div class="otp-code">${otp}</div>
-              <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-              <p>If you didn't request this, please ignore this email.</p>
-            </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} LCGC System</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
+      subject: 'Your Login OTP',
+      html: `<h1>Your OTP is: ${otp}</h1><p>Valid for 10 minutes.</p>`
     });
     
-    if (error) {
-      console.error('Resend error:', error);
-      return res.status(500).json({ success: false, message: error.message });
+    if (result.error) {
+      console.error('Email error:', result.error);
+      return res.status(500).json({ success: false, message: result.error.message });
     }
     
-    console.log('✅ Email sent! ID:', data?.id);
-    res.json({
-      success: true,
-      message: `OTP sent successfully to ${cleanEmail}`
-    });
+    res.json({ success: true, message: `OTP sent to ${cleanEmail}` });
     
   } catch (error) {
-    console.error('❌ Send OTP error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to send OTP'
-    });
+    console.error('Error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
-// Verify SMTP connection
-    await transporter.verify();
-    console.log('✅ SMTP connection verified');
-    
-    // Send email
-    const info = await transporter.sendMail({
-      from: '"LCGC System" <dk897869@gmail.com>',
-      to: cleanEmail,
-      subject: 'Your Login OTP - LCGC System',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Login OTP - LCGC</title>
-          <style>
-            body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-            .header { background: #0f2a5e; padding: 20px; text-align: center; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
-            .content { padding: 30px; text-align: center; }
-            .otp-code { font-size: 48px; font-weight: bold; letter-spacing: 5px; background: #f0f4f8; padding: 20px; border-radius: 12px; margin: 20px 0; font-family: monospace; color: #0f2a5e; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #eee; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>LCGC System</h1>
-            </div>
-            <div class="content">
-              <h2>Your Verification Code</h2>
-              <div class="otp-code">${otp}</div>
-              <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-              <p>If you didn't request this, please ignore this email.</p>
-            </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} LCGC System</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    });
-    
-    console.log('✅ Email sent! Message ID:', info.messageId);
-    
-    res.json({
-      success: true,
-      message: `OTP sent successfully to ${cleanEmail}`,
-      messageId: info.messageId
-    });
-    
-  } catch (error) {
-    console.error('❌ Send OTP error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to send OTP'
-    });
-  }
-});
+
 // Send Registration OTP (email)
 app.post('/api/auth/send-registration-otp', async (req, res) => {
   console.log('📍 POST /api/auth/send-registration-otp - Registration OTP route hit');

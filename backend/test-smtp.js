@@ -11,7 +11,7 @@ async function testSMTP() {
     secure: false,
     auth: {
       user: 'dk897869@gmail.com',
-      pass: 'pjrq cjgd dftd wswn'
+      pass: 'pjrqcjgddftdwswn'
     },
     tls: {
       rejectUnauthorized: false

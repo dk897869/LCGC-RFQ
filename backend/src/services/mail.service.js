@@ -1,7 +1,5 @@
-const { Resend } = require('resend');
 const nodemailer = require('nodemailer');
 
-let resendClient = null;
 let smtpTransporter = null;
 
 // Initialize Gmail SMTP Transporter
@@ -9,51 +7,55 @@ function getSMTPTransporter() {
   if (smtpTransporter) return smtpTransporter;
   
   if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    // Remove spaces from password if present
+    let smtpPass = process.env.SMTP_PASS;
+    if (smtpPass && smtpPass.includes(' ')) {
+      smtpPass = smtpPass.replace(/\s/g, '');
+    }
+    
     smtpTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        pass: smtpPass
       },
       tls: {
         rejectUnauthorized: false
       },
       connectionTimeout: 30000,
       greetingTimeout: 30000,
-      socketTimeout: 30000
+      socketTimeout: 30000,
+      debug: true
     });
     
+    // Verify connection immediately
     smtpTransporter.verify((error, success) => {
       if (error) {
         console.error('❌ SMTP Connection Error:', error.message);
       } else {
         console.log('✅ SMTP is ready to send emails');
+        console.log('📧 Using SMTP User:', process.env.SMTP_USER);
       }
     });
+  } else {
+    console.error('❌ SMTP not configured. Please check your .env file');
   }
   
   return smtpTransporter;
 }
 
-// ✅ FIXED: When SMTP is enabled, the "from" address MUST match the authenticated
-// SMTP_USER (Gmail account). Using any other address causes Gmail to silently drop emails.
 function getFromAddress() {
-  // When SMTP is enabled, ALWAYS use SMTP_USER as the from address
+  // Always use SMTP_USER as the from address for Gmail
   if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_USER) {
     return process.env.SMTP_USER;
   }
-  return process.env.FROM_EMAIL || 'noreply@lcgc.com';
+  return 'dk897869@gmail.com';
 }
 
-// ✅ FIXED: Extract display name from SMTP_FROM env var if available
 function getFromName() {
-  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_FROM) {
-    const match = process.env.SMTP_FROM.match(/^"?([^"<]+)"?\s*</);
-    if (match) return match[1].trim();
-  }
-  return process.env.RESEND_FROM_NAME || 'LCGC System';
+  return 'LCGC System';
 }
 
 function escapeHtml(str) {
@@ -70,28 +72,22 @@ function escapeHtml(str) {
 // OTP Email Template
 function getOTPEmailHTML(name, otp, type) {
   let title = '';
-  let subjectPrefix = '';
   
   switch(type) {
     case 'login':
       title = 'Login Verification';
-      subjectPrefix = 'Your Login OTP';
       break;
     case 'registration':
       title = 'Email Verification';
-      subjectPrefix = 'Verify Your Email';
       break;
     case 'reset':
       title = 'Password Reset';
-      subjectPrefix = 'Password Reset OTP';
       break;
     case 'email_verification':
       title = 'Email Verification';
-      subjectPrefix = 'Verify Your Email Address';
       break;
     default:
       title = 'OTP Verification';
-      subjectPrefix = 'Your OTP';
   }
   
   return `<!DOCTYPE html>
@@ -99,7 +95,7 @@ function getOTPEmailHTML(name, otp, type) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subjectPrefix} - LCGC</title>
+  <title>${title} - LCGC</title>
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
@@ -111,7 +107,6 @@ function getOTPEmailHTML(name, otp, type) {
     .otp-box { background: #f8fafc; border: 2px dashed #cbd5e1; padding: 25px; text-align: center; border-radius: 12px; margin: 20px 0; }
     .otp-code { font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #0f2a5e; background: white; padding: 15px 25px; border-radius: 10px; display: inline-block; font-family: monospace; }
     .expiry-text { font-size: 12px; color: #64748b; margin-top: 12px; }
-    .button { display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #0f2a5e, #1e4a8a); color: white; text-decoration: none; border-radius: 40px; font-weight: 600; margin-top: 20px; }
     .footer { text-align: center; padding: 20px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; margin-top: 20px; }
     .warning { background: #fef3c7; padding: 12px; border-radius: 8px; font-size: 12px; color: #92400e; margin-top: 20px; }
   </style>
@@ -201,7 +196,7 @@ function getEmailVerificationLinkHTML(name, verificationLink) {
 </html>`;
 }
 
-// Welcome Email Template (After Verification)
+// Welcome Email Template
 function getWelcomeEmailHTML(name) {
   return `<!DOCTYPE html>
 <html>
@@ -691,7 +686,7 @@ function getPRNppEmailHTML(data, action) {
           <table style="width: 100%;">
             <thead><tr><th>#</th><th>Description</th><th>Part Code</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
-            <tfoot><tr style="background: #f8fafc;"><td colspan="5" style="text-align: right;"><strong>Total Value:</strong></td><td><strong>₹${prTotalValue.toLocaleString('en-IN')}</strong></td></tr></tfoot>
+            <tfoot><tr style="background: #f8fafc;"><td colspan="5" style="text-align: right;"><strong>Total Value:</strong></td><td style="text-align: right;"><strong>₹${prTotalValue.toLocaleString('en-IN')}</strong></td></tr></tfoot>
           </table>
         </div>
       </div>
@@ -1049,9 +1044,9 @@ function getApprovalEmailHTML(data, type, action, comments) {
     <div class="content">
       <h2>${type.toUpperCase()} Request ${action}</h2>
       <table class="info-table">
-        <tr><td>Serial Number</td><td>${escapeHtml(serialNo)}</td></tr>
-        <tr><td>Title</td><td>${escapeHtml(title)}</td></tr>
-        <tr><td>Requester</td><td>${escapeHtml(requester)}</td></tr>
+        <tr><td>Serial Number</td><td>${escapeHtml(serialNo)}</td>
+        <tr><th>Title</th><td>${escapeHtml(title)}</td>
+        <tr><th>Requester</th><td>${escapeHtml(requester)}</td>
       </table>
       ${comments ? `<div class="comments-box"><strong>📝 Comments:</strong><br>${escapeHtml(comments)}</div>` : ''}
       <div style="text-align: center;">
@@ -1067,7 +1062,7 @@ function getApprovalEmailHTML(data, type, action, comments) {
 </html>`;
 }
 
-// Main send mail function - FIXED VERSION
+// Main send mail function - USING ONLY SMTP (NO RESEND)
 async function sendMail(opts) {
   const { to, cc, bcc, subject, html, text, attachments, type, action, data, comments } = opts;
   
@@ -1081,7 +1076,6 @@ async function sendMail(opts) {
   }
 
   let finalHtml = html;
-  let finalText = text;
   
   if (!finalHtml && data) {
     if (type === 'otp') {
@@ -1112,33 +1106,19 @@ async function sendMail(opts) {
   }
 
   if (!finalHtml) {
-    finalHtml = `<html><body><h2>${subject}</h2><p>${finalText || 'No content available'}</p></body></html>`;
+    finalHtml = `<html><body><h2>${subject}</h2><p>${text || 'No content available'}</p></body></html>`;
   }
 
-  // ✅ CRITICAL FIX: For SMTP (Gmail), the "from" address MUST exactly match SMTP_USER
-  // Using any other "from" address causes Gmail to silently reject the email.
-  // This is why Postman worked (it likely used a different email type that bypassed this issue)
-  // but OTP emails from frontend were failing.
+  // For SMTP (Gmail), the "from" address MUST exactly match SMTP_USER
+  // This is a Gmail requirement - the authenticated user must match the from address
+  const fromEmail = getFromAddress();
+  const fromName = getFromName();
+  const fromString = `"${fromName}" <${fromEmail}>`;
   
-  let fromString;
-  
-  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_USER) {
-    // When using SMTP, ALWAYS use SMTP_USER as the from address
-    // This is a Gmail requirement - the authenticated user must match the from address
-    const fromName = getFromName();
-    fromString = `"${fromName}" <${process.env.SMTP_USER}>`;
-    console.log(`📧 Using SMTP from address: ${fromString}`);
-  } else if (process.env.RESEND_API_KEY) {
-    // Use Resend with the configured FROM_EMAIL
-    const from = getFromAddress();
-    const fromName = getFromName();
-    fromString = `"${fromName}" <${from}>`;
-    console.log(`📧 Using Resend from address: ${fromString}`);
-  } else {
-    // Fallback
-    fromString = `"LCGC System" <noreply@lcgc.com>`;
-    console.log(`📧 Using fallback from address: ${fromString}`);
-  }
+  console.log(`📧 From address: ${fromString}`);
+  console.log(`📧 To: ${toList.join(', ')}`);
+  if (ccList.length > 0) console.log(`📧 CC: ${ccList.join(', ')}`);
+  console.log(`📧 Subject: ${subject}`);
 
   const mailOptions = {
     from: fromString,
@@ -1147,118 +1127,30 @@ async function sendMail(opts) {
     html: finalHtml,
   };
   
-  if (finalText) mailOptions.text = finalText;
+  if (text) mailOptions.text = text;
   if (ccList.length > 0) mailOptions.cc = ccList.join(', ');
   if (bccList.length > 0) mailOptions.bcc = bccList.join(', ');
   if (attachments && attachments.length > 0) mailOptions.attachments = attachments;
 
-  // Try SMTP first if enabled
-  if (process.env.SMTP_ENABLED === 'true') {
-    const smtpTransporter = getSMTPTransporter();
-    
-    if (smtpTransporter) {
-      try {
-        console.log(`📧 Sending email via SMTP to: ${toList.join(', ')}`);
-        console.log(`📧 From: ${fromString}`);
-        console.log(`📧 Subject: ${subject}`);
-        
-        const info = await smtpTransporter.sendMail(mailOptions);
-        console.log(`✅ Email sent successfully! Message ID: ${info.messageId}`);
-        return { success: true, via: 'smtp', messageId: info.messageId };
-      } catch (error) {
-        console.error('❌ SMTP error:', error.message);
-        console.error('❌ Error details:', error);
-        
-        // Fallback to Resend if available
-        if (process.env.RESEND_API_KEY) {
-          console.log('🔄 Falling back to Resend...');
-          try {
-            if (!resendClient) resendClient = new Resend(process.env.RESEND_API_KEY);
-            
-            // For Resend, we need to use a verified domain email
-            const resendFrom = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-            const resendFromName = process.env.RESEND_FROM_NAME || 'LCGC System';
-            
-            const resendPayload = {
-              from: `${resendFromName} <${resendFrom}>`,
-              to: toList,
-              subject: subject,
-              html: finalHtml,
-            };
-            
-            if (ccList.length > 0) resendPayload.cc = ccList;
-            if (bccList.length > 0) resendPayload.bcc = bccList;
-            if (attachments && attachments.length > 0) resendPayload.attachments = attachments;
-            
-            const { data: resendData, error: resendError } = await resendClient.emails.send(resendPayload);
-            
-            if (resendError) {
-              console.error('❌ Resend error:', resendError);
-              return { success: false, error: resendError.message };
-            }
-            
-            console.log(`✅ Email sent via Resend! ID: ${resendData?.id}`);
-            return { success: true, via: 'resend', id: resendData?.id };
-          } catch (resendErr) {
-            console.error('❌ Resend fallback error:', resendErr.message);
-          }
-        }
-        
-        return { success: false, error: error.message };
-      }
-    }
+  // Get SMTP transporter and send email
+  const smtpTransporter = getSMTPTransporter();
+  
+  if (!smtpTransporter) {
+    console.error('❌ SMTP transporter not available');
+    return { success: false, error: 'SMTP not configured' };
   }
   
-  // Try Resend if SMTP is not enabled or failed
-  if (process.env.RESEND_API_KEY) {
-    try {
-      if (!resendClient) resendClient = new Resend(process.env.RESEND_API_KEY);
-      
-      const resendFrom = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-      const resendFromName = process.env.RESEND_FROM_NAME || 'LCGC System';
-      
-      const resendPayload = {
-        from: `${resendFromName} <${resendFrom}>`,
-        to: toList,
-        subject: subject,
-        html: finalHtml,
-      };
-      
-      if (ccList.length > 0) resendPayload.cc = ccList;
-      if (bccList.length > 0) resendPayload.bcc = bccList;
-      if (attachments && attachments.length > 0) resendPayload.attachments = attachments;
-      
-      console.log(`📧 Sending email via Resend to: ${toList.join(', ')}`);
-      const { data: resendData, error: resendError } = await resendClient.emails.send(resendPayload);
-      
-      if (resendError) {
-        console.error('❌ Resend error:', resendError);
-        return { success: false, error: resendError.message };
-      }
-      
-      console.log(`✅ Email sent via Resend! ID: ${resendData?.id}`);
-      return { success: true, via: 'resend', id: resendData?.id };
-    } catch (resendErr) {
-      console.error('❌ Resend error:', resendErr.message);
-      return { success: false, error: resendErr.message };
-    }
+  try {
+    console.log(`📧 Sending email via Gmail SMTP...`);
+    const info = await smtpTransporter.sendMail(mailOptions);
+    console.log(`✅ Email sent successfully! Message ID: ${info.messageId}`);
+    console.log(`✅ Email sent to: ${toList.join(', ')}`);
+    return { success: true, via: 'smtp', messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ SMTP send error:', error.message);
+    console.error('❌ Error details:', error);
+    return { success: false, error: error.message };
   }
-  
-  // Fallback: Log to console
-  console.warn('⚠️ No email provider configured. Logging to console.');
-  console.log('='.repeat(80));
-  console.log('📧 EMAIL NOTIFICATION');
-  console.log('='.repeat(80));
-  console.log(`TO: ${toList.join(', ')}`);
-  if (ccList.length > 0) console.log(`CC: ${ccList.join(', ')}`);
-  if (bccList.length > 0) console.log(`BCC: ${bccList.join(', ')}`);
-  console.log(`SUBJECT: ${subject}`);
-  console.log(`FROM: ${fromString}`);
-  console.log(`TYPE: ${type || 'general'}`);
-  if (data) console.log(`DATA:`, JSON.stringify(data, null, 2));
-  console.log('='.repeat(80));
-  
-  return { success: true, method: 'console', message: 'Email logged to console' };
 }
 
 module.exports = { 

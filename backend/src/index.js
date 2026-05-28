@@ -1309,7 +1309,65 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal Server Error"
   });
 });
-
+// Simple SMTP test endpoint
+app.post('/api/test-email-direct', async (req, res) => {
+  console.log('📍 Direct email test endpoint');
+  
+  try {
+    const { email } = req.body;
+    const testEmail = email || 'dk897869@gmail.com';
+    
+    const nodemailer = require('nodemailer');
+    
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'dk897869@gmail.com',
+        pass: 'pjrq cjgd dftd wswn' // Your app password without spaces
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+    
+    // Verify connection first
+    console.log('Verifying SMTP connection...');
+    await transporter.verify();
+    console.log('SMTP connection verified');
+    
+    // Send test email
+    const info = await transporter.sendMail({
+      from: '"LCGC System" <dk897869@gmail.com>',
+      to: testEmail,
+      subject: 'Direct SMTP Test from LCGC',
+      html: `
+        <h1>✅ SMTP Working!</h1>
+        <p>This email was sent directly from your backend.</p>
+        <p>Time: ${new Date().toLocaleString()}</p>
+        <p>If you received this, your SMTP configuration is correct!</p>
+      `
+    });
+    
+    console.log('Email sent:', info.messageId);
+    
+    res.json({
+      success: true,
+      message: `Test email sent to ${testEmail}`,
+      messageId: info.messageId
+    });
+    
+  } catch (error) {
+    console.error('Email test failed:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      details: error.toString()
+    });
+  }
+});
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

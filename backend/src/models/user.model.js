@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['Admin', 'Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'User', 'Approver'],
+    enum: ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver', 'User', 'Viewer'],
     default: 'User'
   },
   contactNo: { 
@@ -232,6 +232,12 @@ userSchema.methods.hasRight = function(rightName) {
   return this.rights && this.rights[rightName] === true;
 };
 
+// Check if user is admin or senior role (can approve EP requests)
+userSchema.methods.canApproveEP = function() {
+  const seniorRoles = ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+  return seniorRoles.includes(this.role);
+};
+
 // Check if user is admin
 userSchema.methods.isAdmin = function() {
   return this.role === 'Admin';
@@ -316,7 +322,7 @@ userSchema.statics.getStats = async function() {
   const total = await this.countDocuments();
   const active = await this.countDocuments({ isActive: true });
   const admin = await this.countDocuments({ role: 'Admin' });
-  const manager = await this.countDocuments({ role: 'Manager' });
+  const manager = await this.countDocuments({ role: { $in: ['Manager', 'Senior Manager'] } });
   const user = await this.countDocuments({ role: 'User' });
   const socialUsers = await this.countDocuments({ 
     $or: [

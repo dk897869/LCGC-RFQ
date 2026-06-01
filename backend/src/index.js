@@ -39,7 +39,7 @@ const moduleAccessMiddleware = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'No user found' });
   }
 
-  const seniorRoles = ['Admin', 'Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+  const seniorRoles = ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
   if (seniorRoles.includes(user.role)) {
     return next();
   }
@@ -726,7 +726,6 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     
     const OTP = require('./models/otp.model');
     const User = require('./models/user.model');
-    const certificateRoutes = require('./routes/certificate.routes');
 
     const otpRecord = await OTP.findOne({
       email: cleanEmail,

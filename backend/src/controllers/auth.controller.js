@@ -10,6 +10,7 @@ const { generateEPApprovalEmailHTML } = require("../templates/epApprovalEmail");
 const { buildEpPdfBuffer } = require("../utils/epPdf");
 const { sendSmsOtp, verifySmsOtp } = require("../services/twilio.service");
 
+// Senior approver roles - includes all roles that can approve EP requests
 const SENIOR_APPROVER_ROLES = new Set([
   "Admin",
   "Manager",
@@ -22,42 +23,52 @@ const SENIOR_APPROVER_ROLES = new Set([
   "Approver",
 ]);
 
+// Simple authorization check for EP requests
 function canActOnEpRequest(user, epDoc) {
-  if (!user || !epDoc) return false;
+  if (!user || !epDoc) {
+    console.log('❌ Authorization failed: Missing user or epDoc');
+    return false;
+  }
   
-  // Log for debugging
-  console.log('🔐 canActOnEpRequest check:', {
-    userRole: user.role,
-    userEmail: user.email,
-    userRights: user.rights,
-    epDocStatus: epDoc.status
+  console.log('🔐 ========== AUTHORIZATION CHECK ==========');
+  console.log('👤 User:', { 
+    id: user._id, 
+    email: user.email, 
+    role: user.role,
+    rights: user.rights 
   });
   
-  // Check if user has EP approval right
+  // CHECK 1: User has explicit EP approval right
   if (user.rights && user.rights.epApproval === true) {
-    console.log('✅ User has epApproval right');
+    console.log('✅ AUTHORIZED: User has epApproval right');
     return true;
   }
   
-  // Check if user has senior role
-  if (SENIOR_APPROVER_ROLES.has(user.role)) {
-    console.log('✅ User has senior role:', user.role);
-    return true;
+  // CHECK 2: User has senior role (case insensitive)
+  const userRoleLower = (user.role || '').toLowerCase();
+  for (const role of SENIOR_APPROVER_ROLES) {
+    if (role.toLowerCase() === userRoleLower) {
+      console.log(`✅ AUTHORIZED: User has senior role: ${user.role}`);
+      return true;
+    }
   }
   
-  // Check if user is a stakeholder
-  const userEmail = (user.email || "").toLowerCase();
+  // CHECK 3: User is a stakeholder with pending status
+  const userEmailLower = (user.email || '').toLowerCase();
   const isStakeholder = (epDoc.stakeholders || []).some(
-    (s) => (s.email || "").toLowerCase() === userEmail &&
-    (s.status === "Pending" || s.status === "In-Process")
+    (s) => {
+      const stakeholderEmail = (s.email || '').toLowerCase();
+      return stakeholderEmail === userEmailLower && 
+             (s.status === 'Pending' || s.status === 'In-Process');
+    }
   );
   
   if (isStakeholder) {
-    console.log('✅ User is a stakeholder with pending status');
+    console.log('✅ AUTHORIZED: User is a stakeholder with pending status');
     return true;
   }
   
-  console.log('❌ User NOT authorized');
+  console.log('❌ AUTHORIZATION FAILED: No matching criteria');
   return false;
 }
 
@@ -111,17 +122,7 @@ const getAdminReviewerEmails = async () => {
   }
 };
 
-// Helper to show toast message (will be sent in response)
-const sendToastResponse = (res, success, message, type = 'success', data = null) => {
-  return res.status(success ? 200 : 400).json({
-    success,
-    message,
-    toast: { type, message },
-    data
-  });
-};
-
-// ==================== SEND MOBILE OTP (Updated) ====================
+// ==================== SEND MOBILE OTP ====================
 
 exports.sendMobileOTP = async (req, res) => {
   try {
@@ -136,10 +137,8 @@ exports.sendMobileOTP = async (req, res) => {
       });
     }
     
-    // Clean mobile number (remove any non-digit characters)
     const cleanMobile = cleanMobileNumber(mobile);
     
-    // For registration, check if mobile already exists
     if (type === 'registration') {
       const existingUser = await User.findOne({ 
         contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
@@ -201,7 +200,6 @@ exports.verifyMobileOTP = async (req, res) => {
     
     const cleanMobile = cleanMobileNumber(mobile);
     
-    // Find OTP record
     const otpRecord = await OTP.findOne({
       mobile: cleanMobile,
       otp: otp,
@@ -215,7 +213,6 @@ exports.verifyMobileOTP = async (req, res) => {
       });
     }
     
-    // Check if OTP is expired
     if (new Date() > otpRecord.expiresAt) {
       await OTP.deleteOne({ _id: otpRecord._id });
       return res.status(400).json({ 
@@ -224,7 +221,6 @@ exports.verifyMobileOTP = async (req, res) => {
       });
     }
     
-    // Delete used OTP
     await OTP.deleteOne({ _id: otpRecord._id });
     
     res.json({
@@ -243,7 +239,6 @@ exports.verifyMobileOTP = async (req, res) => {
 
 const NPPRequest = require("../models/nppRequest.model");
 
-// Helper function to generate serial number
 const generateNppSerialNumber = (type) => {
   const prefix = {
     'cash-purchase': 'CP',
@@ -268,7 +263,6 @@ const generateNppSerialNumber = (type) => {
   return `${prefix}-${year}${month}${day}-${random}`;
 };
 
-// Helper to send email with PDF to stakeholders
 const sendNppEmailWithPdf = async (request, subject, message) => {
   try {
     const stakeholderEmails = request.stakeholders?.map(s => s.email).filter(Boolean) || [];
@@ -346,15 +340,12 @@ exports.createNppRequest = async (req, res) => {
     
     await nppRequest.save();
     
-    // Send email notifications
     await sendNppEmailWithPdf(nppRequest, `New ${type} Request - ${serialNo}`, `A new request has been created and is pending your approval.`);
     
-    // After saving nppRequest, check if it's a WCC request and generate certificate
+    // Auto-generate certificate for WCC
     if (type === 'wcc-npp') {
       try {
         const Certificate = require('../models/certificate.model');
-        
-        // Auto-generate certificate for WCC
         const certificateId = `CERT-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
         
         const certificate = new Certificate({
@@ -382,7 +373,6 @@ exports.createNppRequest = async (req, res) => {
         console.log(`✅ Auto-generated certificate for WCC: ${serialNo}`);
       } catch (certError) {
         console.error('Auto-certificate generation failed:', certError.message);
-        // Don't fail the request if certificate generation fails
       }
     }
     
@@ -510,7 +500,6 @@ exports.approveNppRequest = async (req, res) => {
       return res.status(400).json({ success: false, message: "Request already finalized" });
     }
     
-    // Update stakeholders
     if (request.stakeholders && request.stakeholders.length > 0) {
       const currentStakeholder = request.stakeholders.find(s => s.email === actor.email);
       if (currentStakeholder) {
@@ -526,7 +515,6 @@ exports.approveNppRequest = async (req, res) => {
     request.approvalComments = comments;
     await request.save();
     
-    // Send email notification
     await sendNppEmailWithPdf(request, `Request Approved - ${request.uniqueSerialNo}`, `Your request has been approved by ${actor.name || actor.email}. Comments: ${comments}`);
     
     res.json({
@@ -556,7 +544,6 @@ exports.rejectNppRequest = async (req, res) => {
       return res.status(400).json({ success: false, message: "Request already finalized" });
     }
     
-    // Update stakeholders
     if (request.stakeholders && request.stakeholders.length > 0) {
       const currentStakeholder = request.stakeholders.find(s => s.email === actor.email);
       if (currentStakeholder) {
@@ -572,7 +559,6 @@ exports.rejectNppRequest = async (req, res) => {
     request.rejectionReason = comments;
     await request.save();
     
-    // Send email notification
     await sendNppEmailWithPdf(request, `Request Rejected - ${request.uniqueSerialNo}`, `Your request has been rejected by ${actor.name || actor.email}. Reason: ${comments}`);
     
     res.json({
@@ -614,10 +600,6 @@ exports.getNppStats = async (req, res) => {
 
 // ==================== FORGOT PASSWORD WITH LINK ====================
 
-/**
- * Send password reset link to user's email
- * POST /api/auth/forgot-password-link
- */
 exports.sendForgotPasswordLink = async (req, res) => {
   try {
     const { email } = req.body;
@@ -629,33 +611,27 @@ exports.sendForgotPasswordLink = async (req, res) => {
       });
     }
     
-    // Find user by email
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      // For security, don't reveal that email doesn't exist
       return res.json({ 
         success: true, 
         message: 'If your email is registered, you will receive a password reset link.' 
       });
     }
     
-    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     
-    // Hash token and save to database
     user.resetPasswordToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
-    user.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+    user.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000);
     
     await user.save({ validateBeforeSave: false });
     
-    // Create reset URL
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
     
-    // Email HTML template
     const html = `
       <!DOCTYPE html>
       <html>
@@ -705,7 +681,6 @@ exports.sendForgotPasswordLink = async (req, res) => {
     
     const text = `Password Reset Request\n\nClick the link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`;
     
-    // Send email
     const mailResult = await sendMail({
       to: user.email,
       subject: 'Password Reset Request - LCGC RFQ',
@@ -733,10 +708,6 @@ exports.sendForgotPasswordLink = async (req, res) => {
 
 // ==================== RESET PASSWORD WITH TOKEN ====================
 
-/**
- * Reset password using token from email link
- * POST /api/auth/reset-password-with-token
- */
 exports.resetPasswordWithToken = async (req, res) => {
   try {
     const { token, newPassword, confirmPassword } = req.body;
@@ -762,13 +733,11 @@ exports.resetPasswordWithToken = async (req, res) => {
       });
     }
     
-    // Hash the token to compare with stored hash
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)
       .digest('hex');
     
-    // Find user with valid token
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
@@ -781,13 +750,11 @@ exports.resetPasswordWithToken = async (req, res) => {
       });
     }
     
-    // Update password
     user.password = newPassword;
     user.resetPasswordToken = null;
     user.resetPasswordExpire = null;
     await user.save();
     
-    // Send confirmation email
     const confirmationHtml = `
       <!DOCTYPE html>
       <html>
@@ -830,12 +797,8 @@ exports.resetPasswordWithToken = async (req, res) => {
   }
 };
 
-// ==================== REQUEST PASSWORD RESET OTP (Alternative) ====================
+// ==================== REQUEST PASSWORD RESET OTP ====================
 
-/**
- * Send OTP to email for password reset
- * POST /api/auth/forgot-password-otp
- */
 exports.sendForgotPasswordOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -855,15 +818,12 @@ exports.sendForgotPasswordOTP = async (req, res) => {
       });
     }
     
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Save OTP to database
     user.resetPasswordOTP = otp;
-    user.resetPasswordOTPExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    user.resetPasswordOTPExpire = new Date(Date.now() + 10 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
     
-    // Email HTML with OTP
     const html = `
       <!DOCTYPE html>
       <html>
@@ -918,10 +878,6 @@ exports.sendForgotPasswordOTP = async (req, res) => {
 
 // ==================== VERIFY OTP AND RESET PASSWORD ====================
 
-/**
- * Verify OTP and reset password
- * POST /api/auth/verify-otp-reset-password
- */
 exports.verifyOTPAndResetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword, confirmPassword } = req.body;
@@ -955,7 +911,6 @@ exports.verifyOTPAndResetPassword = async (req, res) => {
       });
     }
     
-    // Check OTP
     if (user.resetPasswordOTP !== otp) {
       return res.status(400).json({ 
         success: false, 
@@ -970,7 +925,6 @@ exports.verifyOTPAndResetPassword = async (req, res) => {
       });
     }
     
-    // Update password
     user.password = newPassword;
     user.resetPasswordOTP = null;
     user.resetPasswordOTPExpire = null;
@@ -989,10 +943,6 @@ exports.verifyOTPAndResetPassword = async (req, res) => {
 
 // ==================== CHECK RESET TOKEN VALIDITY ====================
 
-/**
- * Check if reset token is valid
- * GET /api/auth/check-reset-token?token=xxxx
- */
 exports.checkResetToken = async (req, res) => {
   try {
     const { token } = req.query;
@@ -1033,7 +983,7 @@ exports.checkResetToken = async (req, res) => {
   }
 };
 
-// ==================== REGISTRATION WITHOUT OTP ====================
+// ==================== REGISTRATION ====================
 
 exports.register = async (req, res) => {
   try {
@@ -1044,7 +994,6 @@ exports.register = async (req, res) => {
 
     console.log("📤 Register request:", { name, email, role, contactNo, mobileVerified });
 
-    // Validate required fields
     if (!name || !email || !password) {
       return res.status(400).json({ 
         success: false, 
@@ -1052,7 +1001,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
@@ -1061,7 +1009,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate password strength (optional but recommended)
     if (password.length < 6) {
       return res.status(400).json({ 
         success: false, 
@@ -1071,7 +1018,6 @@ exports.register = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if email already exists
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ 
@@ -1080,7 +1026,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Check if mobile already exists (if provided)
     if (contactNo) {
       const cleanMobile = contactNo.replace(/\D/g, '');
       const existingMobile = await User.findOne({ 
@@ -1094,28 +1039,25 @@ exports.register = async (req, res) => {
       }
     }
 
-    // Create new user (no OTP verification required)
     const user = new User({
       name: name.trim(),
       email: normalizedEmail,
-      password: password, // Make sure to hash this in your User model pre-save middleware
+      password: password,
       role: role || "User",
       department: department || 'Purchase',
       contactNo: contactNo || '',
       organization: organization || 'Radiant Appliances',
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
       mobileVerified: mobileVerified,
-      emailVerified: true, // ✅ Auto-verified since no OTP
+      emailVerified: true,
       rights: {},
       createdAt: new Date()
     });
 
     await user.save();
 
-    // Generate JWT token
     const token = generateToken(user);
 
-    // Optional: Send welcome email (don't block registration if email fails)
     try {
       await sendMail({
         to: user.email,
@@ -1126,10 +1068,8 @@ exports.register = async (req, res) => {
       console.log(`✅ Welcome email sent to ${user.email}`);
     } catch (emailError) {
       console.error("⚠️ Welcome email failed (non-blocking):", emailError.message);
-      // Don't return error - registration still successful
     }
 
-    // Return success response
     res.status(201).json({
       success: true,
       message: "User registered successfully! Welcome to LCGC RFQ System.",
@@ -1156,7 +1096,6 @@ exports.register = async (req, res) => {
   } catch (error) {
     console.error("❌ Register error:", error);
     
-    // Handle duplicate key errors gracefully
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return res.status(400).json({ 
@@ -1171,6 +1110,7 @@ exports.register = async (req, res) => {
     });
   }
 };
+
 // ==================== EMAIL FUNCTIONS ====================
 
 const sendEmailWithResend = async (to, subject, html, text, ccList = []) => {
@@ -1256,92 +1196,6 @@ const sendEmailOTPCode = async (email, name, otp, type, ccList = []) => {
 };
 
 // ==================== REGISTRATION OTP ====================
-
-exports.sendRegistrationOTP = async (req, res) => {
-  try {
-    const { email, ccEmails } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
-    }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: "Email already registered" });
-    }
-
-    const otp = generateOTP();
-    console.log(`🔐 Registration OTP for ${email}: ${otp}`);
-
-    await saveOTP(email, null, otp, 'registration');
-
-    let ccArray = [];
-    if (ccEmails) {
-      if (typeof ccEmails === 'string') {
-        ccArray = ccEmails.split(',').map(e => e.trim()).filter(e => e);
-      } else if (Array.isArray(ccEmails)) {
-        ccArray = ccEmails.filter(e => e && e.trim());
-      }
-    }
-
-    const name = email.split('@')[0];
-    const mailResult = await sendEmailOTPCode(email, name, otp, 'registration', ccArray);
-    if (!mailResult || mailResult.success === false) {
-      return res.status(502).json({
-        success: false,
-        message: mailResult?.error || 'Email could not be sent.',
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "OTP sent successfully to your email",
-      devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
-    });
-
-  } catch (error) {
-    console.error("Send Registration OTP error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// ==================== VERIFY REGISTRATION OTP ====================
-
-exports.verifyRegistrationOTP = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(400).json({ success: false, message: "Email and OTP are required" });
-    }
-
-    const otpRecord = await OTP.findOne({
-      email: email.toLowerCase(),
-      otp: otp,
-      type: 'registration'
-    });
-
-    if (!otpRecord) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
-    }
-
-    if (new Date() > otpRecord.expiresAt) {
-      await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({ success: false, message: "OTP has expired" });
-    }
-
-    await OTP.deleteOne({ _id: otpRecord._id });
-
-    res.json({
-      success: true,
-      message: "OTP verified successfully"
-    });
-
-  } catch (error) {
-    console.error("Verify Registration OTP error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
 
 exports.sendRegistrationOTP = async (req, res) => {
   try {
@@ -2040,7 +1894,6 @@ exports.sendSmsOTP = async (req, res) => {
     const cleanMobile = mobile.replace(/\D/g, '');
     
     if (type === 'login') {
-      const User = require('../models/user.model');
       const existingUser = await User.findOne({ 
         contactNo: { $regex: cleanMobile + '$', $options: 'i' } 
       });
@@ -2165,7 +2018,7 @@ exports.clearAvatar = async (req, res) => {
   }
 };
 
-// ==================== EP REQUEST METHODS ====================
+// ==================== EP REQUEST METHODS - FIXED ====================
 
 exports.createEPRequest = async (req, res) => {
   try {
@@ -2321,52 +2174,66 @@ exports.deleteEPRequest = async (req, res) => {
   }
 };
 
-// FIXED: approveEPRequest with proper role check
+// ==================== APPROVE EP REQUEST - FIXED ====================
+
 exports.approveEPRequest = async (req, res) => {
   try {
     const { comments = '' } = req.body;
     const actor = req.user;
     
-    console.log('🔐 Approve EP Request - Actor:', { 
-      id: actor?._id, 
-      email: actor?.email, 
-      role: actor?.role,
-      rights: actor?.rights 
-    });
+    console.log('📌 ========== APPROVE EP REQUEST ==========');
+    console.log('📌 Actor:', { id: actor?._id, email: actor?.email, role: actor?.role });
+    console.log('📌 Request ID:', req.params.id);
+    
+    if (!actor) {
+      console.log('❌ No user found in request');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated. Please login again.' 
+      });
+    }
     
     const epRequest = await EPRequest.findById(req.params.id);
     if (!epRequest) {
-      return res.status(404).json({ success: false, message: "EP Request not found" });
+      console.log('❌ EP Request not found:', req.params.id);
+      return res.status(404).json({ 
+        success: false, 
+        message: 'EP Request not found' 
+      });
     }
+    
+    console.log('📄 Found EP Request:', { 
+      id: epRequest._id, 
+      title: epRequest.title, 
+      status: epRequest.status,
+      requester: epRequest.requester
+    });
     
     if (['Approved', 'Rejected'].includes(epRequest.status)) {
-      return res.status(400).json({ success: false, message: "Request already finalized" });
+      console.log('❌ Request already finalized:', epRequest.status);
+      return res.status(400).json({ 
+        success: false, 
+        message: `Request already ${epRequest.status.toLowerCase()}. Cannot change status.` 
+      });
     }
     
-    // Check authorization using the helper function
-    if (!canActOnEpRequest(actor, epRequest)) {
-      console.log('❌ Authorization failed for user:', actor?.email, 'Role:', actor?.role);
+    // SIMPLE ROLE CHECK - Admin, Manager, Senior Manager can approve
+    const allowedRoles = ['Admin', 'Manager', 'Senior Manager'];
+    const isAllowed = allowedRoles.includes(actor.role);
+    
+    console.log('📌 Role check:', { userRole: actor.role, isAllowed });
+    
+    if (!isAllowed) {
+      console.log('❌ User not authorized - role:', actor.role);
       return res.status(403).json({ 
         success: false, 
-        message: "You are not authorized to approve this request. Only Admin, Manager, Senior Manager, or assigned stakeholders can approve." 
+        message: `You are not authorized to approve this request. Your role: ${actor.role}. Required: Admin, Manager, or Senior Manager.` 
       });
     }
     
-    console.log('✅ Authorization successful for user:', actor?.email);
+    console.log('✅ Authorization successful, proceeding with approval...');
     
-    const nowIso = new Date().toISOString();
     const label = actor.name || actor.email || 'Approver';
-    
-    // Update stakeholders
-    if (epRequest.stakeholders && epRequest.stakeholders.length > 0) {
-      epRequest.stakeholders.forEach((s) => {
-        if (s.status === 'Pending' || s.status === 'In-Process') {
-          s.status = 'Approved';
-          s.remarks = comments ? `${label}: ${comments}` : `${label}: Approved`;
-          s.dateTime = nowIso;
-        }
-      });
-    }
     
     epRequest.status = 'Approved';
     epRequest.approvedBy = label;
@@ -2374,7 +2241,9 @@ exports.approveEPRequest = async (req, res) => {
     epRequest.approvedAt = new Date();
     epRequest.approvalComments = comments;
     await epRequest.save();
-
+    
+    console.log('✅ EP Request approved successfully');
+    
     try {
       await sendEpMailWithPdf(
         epRequest,
@@ -2382,74 +2251,93 @@ exports.approveEPRequest = async (req, res) => {
         `Approved by ${label} (${actor.role})`
       );
     } catch (e) {
-      console.error('EP approve notify error:', e.message);
+      console.error('EP approve notify error (non-blocking):', e.message);
     }
-
+    
     res.json({
       success: true,
       toast: { type: 'success', message: 'Request approved successfully' },
       message: 'Request approved successfully',
       data: epRequest,
     });
+    
   } catch (error) {
-    console.error("Approve EP Request error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("❌ Approve EP Request error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Internal server error' 
+    });
   }
 };
 
-// FIXED: rejectEPRequest with proper role check
+// ==================== REJECT EP REQUEST - FIXED ====================
+
 exports.rejectEPRequest = async (req, res) => {
   try {
     const { comments = '' } = req.body;
     const actor = req.user;
     
-    console.log('🔐 Reject EP Request - Actor:', { 
-      id: actor?._id, 
-      email: actor?.email, 
-      role: actor?.role 
-    });
+    console.log('📌 ========== REJECT EP REQUEST ==========');
+    console.log('📌 Actor:', { id: actor?._id, email: actor?.email, role: actor?.role });
+    console.log('📌 Request ID:', req.params.id);
+    
+    if (!actor) {
+      console.log('❌ No user found in request');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated. Please login again.' 
+      });
+    }
     
     const epRequest = await EPRequest.findById(req.params.id);
     if (!epRequest) {
-      return res.status(404).json({ success: false, message: "EP Request not found" });
+      console.log('❌ EP Request not found:', req.params.id);
+      return res.status(404).json({ 
+        success: false, 
+        message: 'EP Request not found' 
+      });
     }
+    
+    console.log('📄 Found EP Request:', { 
+      id: epRequest._id, 
+      title: epRequest.title, 
+      status: epRequest.status 
+    });
     
     if (['Approved', 'Rejected'].includes(epRequest.status)) {
-      return res.status(400).json({ success: false, message: "Request already finalized" });
-    }
-    
-    // Check authorization using the helper function
-    if (!canActOnEpRequest(actor, epRequest)) {
-      console.log('❌ Authorization failed for user:', actor?.email);
-      return res.status(403).json({ 
-        success: false, 
-        message: "You are not authorized to reject this request. Only Admin, Manager, Senior Manager, or assigned stakeholders can reject." 
-      });
-    }
-    
-    // Check if comments are provided for rejection
-    if (!comments || comments.trim() === '') {
+      console.log('❌ Request already finalized:', epRequest.status);
       return res.status(400).json({ 
         success: false, 
-        message: "Rejection remarks are required. Please provide a reason for rejection." 
+        message: `Request already ${epRequest.status.toLowerCase()}. Cannot change status.` 
       });
     }
     
-    console.log('✅ Authorization successful for rejection');
+    // SIMPLE ROLE CHECK - Admin, Manager, Senior Manager can reject
+    const allowedRoles = ['Admin', 'Manager', 'Senior Manager'];
+    const isAllowed = allowedRoles.includes(actor.role);
     
-    const nowIso = new Date().toISOString();
-    const label = actor.name || actor.email || 'Approver';
+    console.log('📌 Role check:', { userRole: actor.role, isAllowed });
     
-    // Update stakeholders
-    if (epRequest.stakeholders && epRequest.stakeholders.length > 0) {
-      epRequest.stakeholders.forEach((s) => {
-        if (s.status === 'Pending' || s.status === 'In-Process') {
-          s.status = 'Rejected';
-          s.remarks = comments ? `${label}: ${comments}` : `${label}: Rejected`;
-          s.dateTime = nowIso;
-        }
+    if (!isAllowed) {
+      console.log('❌ User not authorized - role:', actor.role);
+      return res.status(403).json({ 
+        success: false, 
+        message: `You are not authorized to reject this request. Your role: ${actor.role}. Required: Admin, Manager, or Senior Manager.` 
       });
     }
+    
+    // Check if comments are provided
+    if (!comments || comments.trim() === '') {
+      console.log('❌ No rejection remarks provided');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Rejection remarks are required. Please provide a reason for rejection.' 
+      });
+    }
+    
+    console.log('✅ Authorization successful, proceeding with rejection...');
+    
+    const label = actor.name || actor.email || 'Rejector';
     
     epRequest.status = 'Rejected';
     epRequest.rejectionReason = comments;
@@ -2457,7 +2345,9 @@ exports.rejectEPRequest = async (req, res) => {
     epRequest.rejectedByRole = actor.role;
     epRequest.rejectedAt = new Date();
     await epRequest.save();
-
+    
+    console.log('❌ EP Request rejected');
+    
     try {
       await sendEpMailWithPdf(
         epRequest,
@@ -2465,18 +2355,22 @@ exports.rejectEPRequest = async (req, res) => {
         `Rejected by ${label} (${actor.role})`
       );
     } catch (e) {
-      console.error('EP reject notify error:', e.message);
+      console.error('EP reject notify error (non-blocking):', e.message);
     }
-
+    
     res.json({
       success: true,
       toast: { type: 'error', message: 'Request rejected' },
       message: 'Request rejected',
       data: epRequest,
     });
+    
   } catch (error) {
-    console.error("Reject EP Request error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("❌ Reject EP Request error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Internal server error' 
+    });
   }
 };
 

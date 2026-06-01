@@ -2474,7 +2474,42 @@ exports.sendNppRequestEmail = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// After saving nppRequest, check if it's a WCC request and generate certificate
+if (type === 'wcc-npp') {
+  try {
+    const Certificate = require('../models/certificate.model');
+    
+    // Auto-generate certificate for WCC
+    const certificateId = `CERT-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    
+    const certificate = new Certificate({
+      certificateId,
+      requestId: nppRequest._id,
+      requestModel: 'NPPRequest',
+      requestType: 'wcc',
+      serialNo: serialNo,
+      data: {
+        poNo: requestData.poNo,
+        vendorName: requestData.vendorName,
+        natureOfWork: requestData.natureOfWork,
+        workDescription: requestData.workDescription,
+        overallScore: requestData.overallScore || 0,
+        ratings: requestData.ratings || [],
+        finalDecision: requestData.finalDecision || 'Accept & close',
+        requesterName: requestData.requesterName,
+        generatedAt: new Date()
+      },
+      generatedBy: req.user?._id,
+      generatedAt: new Date()
+    });
+    
+    await certificate.save();
+    console.log(`✅ Auto-generated certificate for WCC: ${serialNo}`);
+  } catch (certError) {
+    console.error('Auto-certificate generation failed:', certError.message);
+    // Don't fail the request if certificate generation fails
+  }
+}
 // ==================== RESEND FORGOT PASSWORD OTP ====================
 exports.resendForgotPasswordOTP = async (req, res) => {
   return exports.sendForgotPasswordOTP(req, res);

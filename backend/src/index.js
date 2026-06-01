@@ -75,6 +75,8 @@ const safeRequire = (routePath, defaultValue) => {
 
 // ROUTES
 const authRoutes = safeRequire("./routes/auth.routes");
+// Add this line with other route requires
+const certificateRoutes = require('./routes/certificate.routes');
 const dashboardRoutes = safeRequire("./routes/dashboard.routes");
 const requestRoutes = safeRequire("./routes/request.routes");
 const vendorRoutes = safeRequire("./routes/vendor.routes");
@@ -724,7 +726,8 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     
     const OTP = require('./models/otp.model');
     const User = require('./models/user.model');
-    
+    const certificateRoutes = require('./routes/certificate.routes');
+
     const otpRecord = await OTP.findOne({
       email: cleanEmail,
       otp: cleanOtp,
@@ -1282,6 +1285,7 @@ app.delete('/api/npp/request/:id', authMiddleware, moduleAccessMiddleware, nppCo
 app.patch('/api/npp/request/:id/approve', authMiddleware, moduleAccessMiddleware, nppController.approveNppRequest);
 app.patch('/api/npp/request/:id/reject', authMiddleware, moduleAccessMiddleware, nppController.rejectNppRequest);
 app.post('/api/npp/request/:id/send-email', authMiddleware, moduleAccessMiddleware, nppController.sendNppRequestEmail);
+app.use('/api/certificates', certificateRoutes);
 
 console.log('✅ NPP Procurement routes loaded');
 

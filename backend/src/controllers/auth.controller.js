@@ -13,6 +13,7 @@ const { sendSmsOtp, verifySmsOtp } = require("../services/twilio.service");
 const SENIOR_APPROVER_ROLES = new Set([
   "Admin",
   "Manager",
+  "Senior Manager",
   "VP",
   "GM",
   "MD",
@@ -23,14 +24,41 @@ const SENIOR_APPROVER_ROLES = new Set([
 
 function canActOnEpRequest(user, epDoc) {
   if (!user || !epDoc) return false;
-  if (user.rights && user.rights.epApproval) return true;
-  if (SENIOR_APPROVER_ROLES.has(user.role)) return true;
-  const u = (user.email || "").toLowerCase();
-  return (epDoc.stakeholders || []).some(
-    (s) =>
-      (s.email || "").toLowerCase() === u &&
-      (s.status === "Pending" || s.status === "In-Process")
+  
+  // Log for debugging
+  console.log('🔐 canActOnEpRequest check:', {
+    userRole: user.role,
+    userEmail: user.email,
+    userRights: user.rights,
+    epDocStatus: epDoc.status
+  });
+  
+  // Check if user has EP approval right
+  if (user.rights && user.rights.epApproval === true) {
+    console.log('✅ User has epApproval right');
+    return true;
+  }
+  
+  // Check if user has senior role
+  if (SENIOR_APPROVER_ROLES.has(user.role)) {
+    console.log('✅ User has senior role:', user.role);
+    return true;
+  }
+  
+  // Check if user is a stakeholder
+  const userEmail = (user.email || "").toLowerCase();
+  const isStakeholder = (epDoc.stakeholders || []).some(
+    (s) => (s.email || "").toLowerCase() === userEmail &&
+    (s.status === "Pending" || s.status === "In-Process")
   );
+  
+  if (isStakeholder) {
+    console.log('✅ User is a stakeholder with pending status');
+    return true;
+  }
+  
+  console.log('❌ User NOT authorized');
+  return false;
 }
 
 // ==================== HELPER FUNCTIONS ====================
@@ -73,7 +101,7 @@ const saveOTP = async (email, mobile, otp, type) => {
 const getAdminReviewerEmails = async () => {
   try {
     const reviewers = await User.find({
-      role: { $in: ['Admin', 'Manager'] },
+      role: { $in: ['Admin', 'Manager', 'Senior Manager'] },
       isActive: { $ne: false }
     }).select('email').lean();
     return reviewers.map((u) => u.email).filter(Boolean);
@@ -81,6 +109,16 @@ const getAdminReviewerEmails = async () => {
     console.error('Admin reviewer lookup failed:', error.message);
     return [];
   }
+};
+
+// Helper to show toast message (will be sent in response)
+const sendToastResponse = (res, success, message, type = 'success', data = null) => {
+  return res.status(success ? 200 : 400).json({
+    success,
+    message,
+    toast: { type, message },
+    data
+  });
 };
 
 // ==================== SEND MOBILE OTP (Updated) ====================
@@ -310,6 +348,43 @@ exports.createNppRequest = async (req, res) => {
     
     // Send email notifications
     await sendNppEmailWithPdf(nppRequest, `New ${type} Request - ${serialNo}`, `A new request has been created and is pending your approval.`);
+    
+    // After saving nppRequest, check if it's a WCC request and generate certificate
+    if (type === 'wcc-npp') {
+      try {
+        const Certificate = require('../models/certificate.model');
+        
+        // Auto-generate certificate for WCC
+        const certificateId = `CERT-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        
+        const certificate = new Certificate({
+          certificateId,
+          requestId: nppRequest._id,
+          requestModel: 'NPPRequest',
+          requestType: 'wcc',
+          serialNo: serialNo,
+          data: {
+            poNo: requestData.poNo,
+            vendorName: requestData.vendorName,
+            natureOfWork: requestData.natureOfWork,
+            workDescription: requestData.workDescription,
+            overallScore: requestData.overallScore || 0,
+            ratings: requestData.ratings || [],
+            finalDecision: requestData.finalDecision || 'Accept & close',
+            requesterName: requestData.requesterName,
+            generatedAt: new Date()
+          },
+          generatedBy: req.user?._id,
+          generatedAt: new Date()
+        });
+        
+        await certificate.save();
+        console.log(`✅ Auto-generated certificate for WCC: ${serialNo}`);
+      } catch (certError) {
+        console.error('Auto-certificate generation failed:', certError.message);
+        // Don't fail the request if certificate generation fails
+      }
+    }
     
     res.status(201).json({
       success: true,
@@ -2246,31 +2321,56 @@ exports.deleteEPRequest = async (req, res) => {
   }
 };
 
+// FIXED: approveEPRequest with proper role check
 exports.approveEPRequest = async (req, res) => {
   try {
     const { comments = '' } = req.body;
     const actor = req.user;
+    
+    console.log('🔐 Approve EP Request - Actor:', { 
+      id: actor?._id, 
+      email: actor?.email, 
+      role: actor?.role,
+      rights: actor?.rights 
+    });
+    
     const epRequest = await EPRequest.findById(req.params.id);
     if (!epRequest) {
       return res.status(404).json({ success: false, message: "EP Request not found" });
     }
+    
     if (['Approved', 'Rejected'].includes(epRequest.status)) {
       return res.status(400).json({ success: false, message: "Request already finalized" });
     }
+    
+    // Check authorization using the helper function
     if (!canActOnEpRequest(actor, epRequest)) {
-      return res.status(403).json({ success: false, message: "Not authorized to approve this request" });
+      console.log('❌ Authorization failed for user:', actor?.email, 'Role:', actor?.role);
+      return res.status(403).json({ 
+        success: false, 
+        message: "You are not authorized to approve this request. Only Admin, Manager, Senior Manager, or assigned stakeholders can approve." 
+      });
     }
+    
+    console.log('✅ Authorization successful for user:', actor?.email);
+    
     const nowIso = new Date().toISOString();
     const label = actor.name || actor.email || 'Approver';
-    epRequest.stakeholders.forEach((s) => {
-      if (s.status === 'Pending' || s.status === 'In-Process') {
-        s.status = 'Approved';
-        s.remarks = comments ? `${label}: ${comments}` : `${label}: Approved`;
-        s.dateTime = nowIso;
-      }
-    });
+    
+    // Update stakeholders
+    if (epRequest.stakeholders && epRequest.stakeholders.length > 0) {
+      epRequest.stakeholders.forEach((s) => {
+        if (s.status === 'Pending' || s.status === 'In-Process') {
+          s.status = 'Approved';
+          s.remarks = comments ? `${label}: ${comments}` : `${label}: Approved`;
+          s.dateTime = nowIso;
+        }
+      });
+    }
+    
     epRequest.status = 'Approved';
     epRequest.approvedBy = label;
+    epRequest.approvedByRole = actor.role;
     epRequest.approvedAt = new Date();
     epRequest.approvalComments = comments;
     await epRequest.save();
@@ -2279,16 +2379,16 @@ exports.approveEPRequest = async (req, res) => {
       await sendEpMailWithPdf(
         epRequest,
         `EP Approved: ${epRequest.title}`,
-        `Approved by ${label}`
+        `Approved by ${label} (${actor.role})`
       );
     } catch (e) {
-      console.error('EP approve notify:', e.message);
+      console.error('EP approve notify error:', e.message);
     }
 
     res.json({
       success: true,
-      toast: 'success',
-      message: 'Request approved.',
+      toast: { type: 'success', message: 'Request approved successfully' },
+      message: 'Request approved successfully',
       data: epRequest,
     });
   } catch (error) {
@@ -2297,32 +2397,64 @@ exports.approveEPRequest = async (req, res) => {
   }
 };
 
+// FIXED: rejectEPRequest with proper role check
 exports.rejectEPRequest = async (req, res) => {
   try {
     const { comments = '' } = req.body;
     const actor = req.user;
+    
+    console.log('🔐 Reject EP Request - Actor:', { 
+      id: actor?._id, 
+      email: actor?.email, 
+      role: actor?.role 
+    });
+    
     const epRequest = await EPRequest.findById(req.params.id);
     if (!epRequest) {
       return res.status(404).json({ success: false, message: "EP Request not found" });
     }
+    
     if (['Approved', 'Rejected'].includes(epRequest.status)) {
       return res.status(400).json({ success: false, message: "Request already finalized" });
     }
+    
+    // Check authorization using the helper function
     if (!canActOnEpRequest(actor, epRequest)) {
-      return res.status(403).json({ success: false, message: "Not authorized to reject this request" });
+      console.log('❌ Authorization failed for user:', actor?.email);
+      return res.status(403).json({ 
+        success: false, 
+        message: "You are not authorized to reject this request. Only Admin, Manager, Senior Manager, or assigned stakeholders can reject." 
+      });
     }
+    
+    // Check if comments are provided for rejection
+    if (!comments || comments.trim() === '') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Rejection remarks are required. Please provide a reason for rejection." 
+      });
+    }
+    
+    console.log('✅ Authorization successful for rejection');
+    
     const nowIso = new Date().toISOString();
     const label = actor.name || actor.email || 'Approver';
-    epRequest.stakeholders.forEach((s) => {
-      if (s.status === 'Pending' || s.status === 'In-Process') {
-        s.status = 'Rejected';
-        s.remarks = comments ? `${label}: ${comments}` : `${label}: Rejected`;
-        s.dateTime = nowIso;
-      }
-    });
+    
+    // Update stakeholders
+    if (epRequest.stakeholders && epRequest.stakeholders.length > 0) {
+      epRequest.stakeholders.forEach((s) => {
+        if (s.status === 'Pending' || s.status === 'In-Process') {
+          s.status = 'Rejected';
+          s.remarks = comments ? `${label}: ${comments}` : `${label}: Rejected`;
+          s.dateTime = nowIso;
+        }
+      });
+    }
+    
     epRequest.status = 'Rejected';
     epRequest.rejectionReason = comments;
     epRequest.rejectedBy = label;
+    epRequest.rejectedByRole = actor.role;
     epRequest.rejectedAt = new Date();
     await epRequest.save();
 
@@ -2330,16 +2462,16 @@ exports.rejectEPRequest = async (req, res) => {
       await sendEpMailWithPdf(
         epRequest,
         `EP Rejected: ${epRequest.title}`,
-        `Rejected by ${label}`
+        `Rejected by ${label} (${actor.role})`
       );
     } catch (e) {
-      console.error('EP reject notify:', e.message);
+      console.error('EP reject notify error:', e.message);
     }
 
     res.json({
       success: true,
-      toast: 'error',
-      message: 'Request rejected.',
+      toast: { type: 'error', message: 'Request rejected' },
+      message: 'Request rejected',
       data: epRequest,
     });
   } catch (error) {
@@ -2474,42 +2606,7 @@ exports.sendNppRequestEmail = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-// After saving nppRequest, check if it's a WCC request and generate certificate
-if (type === 'wcc-npp') {
-  try {
-    const Certificate = require('../models/certificate.model');
-    
-    // Auto-generate certificate for WCC
-    const certificateId = `CERT-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-    
-    const certificate = new Certificate({
-      certificateId,
-      requestId: nppRequest._id,
-      requestModel: 'NPPRequest',
-      requestType: 'wcc',
-      serialNo: serialNo,
-      data: {
-        poNo: requestData.poNo,
-        vendorName: requestData.vendorName,
-        natureOfWork: requestData.natureOfWork,
-        workDescription: requestData.workDescription,
-        overallScore: requestData.overallScore || 0,
-        ratings: requestData.ratings || [],
-        finalDecision: requestData.finalDecision || 'Accept & close',
-        requesterName: requestData.requesterName,
-        generatedAt: new Date()
-      },
-      generatedBy: req.user?._id,
-      generatedAt: new Date()
-    });
-    
-    await certificate.save();
-    console.log(`✅ Auto-generated certificate for WCC: ${serialNo}`);
-  } catch (certError) {
-    console.error('Auto-certificate generation failed:', certError.message);
-    // Don't fail the request if certificate generation fails
-  }
-}
+
 // ==================== RESEND FORGOT PASSWORD OTP ====================
 exports.resendForgotPasswordOTP = async (req, res) => {
   return exports.sendForgotPasswordOTP(req, res);

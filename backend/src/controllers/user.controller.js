@@ -2,23 +2,33 @@ const mongoose = require("mongoose");
 const User = require("../models/user.model");
 const { sendMail } = require("../services/mail.service");
 
-const FULL_MODULE_RIGHTS = {
-  epApproval: true,
-  vendors: true,
-  parts: true,
-  rfq: true,
-  userManagement: true,
-  nppProcurement: true,
-  bidding: true,
-  paymentRequest: true,
-  dqms: true,
-  npi: true,
-  systemBom: true,
-  bomForecast: true,
-  priceApproval: true,
-  planStock: true,
-  supplierPerformance: true,
-  vehicularMs: true
+const MODULE_ID_TO_RIGHT = {
+  'ep-approval': 'epApproval',
+  vendors: 'vendors',
+  parts: 'parts',
+  rfq: 'rfq',
+  'npp-procurement': 'nppProcurement',
+  'po-npp': 'nppProcurement',
+  wcc: 'nppProcurement',
+  'rfq-request': 'nppProcurement',
+  'pr-process': 'nppProcurement',
+  'material-management': 'nppProcurement',
+  reports: 'nppProcurement',
+  'scrap-material-bidding': 'bidding',
+  'item-master-list': 'nppProcurement',
+  'vendor-details': 'nppProcurement',
+  'approval-status': 'nppProcurement',
+  bidding: 'bidding',
+  'payment-request': 'paymentRequest',
+  dqms: 'dqms',
+  npi: 'npi',
+  'system-bom': 'systemBom',
+  'bom-forecast': 'bomForecast',
+  'price-approval': 'priceApproval',
+  'plan-stock': 'planStock',
+  'supplier-performance': 'supplierPerformance',
+  'vehicular-ms': 'vehicularMs',
+  'user-management': 'userManagement'
 };
 
 const canReviewAccessRequests = (user) => ['Admin', 'Manager'].includes(user?.role);
@@ -248,9 +258,7 @@ exports.updateUserRights = async (req, res) => {
         ...user.rights,
         ...rights
       };
-      if (Object.values(user.rights.toObject ? user.rights.toObject() : user.rights).some(Boolean)) {
-        user.fullModuleAccessGranted = true;
-      }
+      user.fullModuleAccessGranted = false;
     }
     
     await user.save();
@@ -322,9 +330,14 @@ exports.requestModuleAccess = async (req, res) => {
       return res.json({ success: true, message: "Access already granted", data: requester });
     }
 
+    const moduleId = String(req.body.moduleId || '').trim();
+    const moduleName = String(req.body.moduleName || '').trim();
+
     requester.accessRequest = {
       status: 'pending',
       message: req.body.message || '',
+      moduleId,
+      moduleName,
       requestedAt: new Date()
     };
     await requester.save();
@@ -341,6 +354,7 @@ exports.requestModuleAccess = async (req, res) => {
           <p><strong>Name:</strong> ${requester.name}</p>
           <p><strong>Email:</strong> ${requester.email}</p>
           <p><strong>Department:</strong> ${requester.department || '-'}</p>
+          <p><strong>Requested Module:</strong> ${requester.accessRequest.moduleName || requester.accessRequest.moduleId || 'Module Access'}</p>
           <p><strong>Message:</strong> ${requester.accessRequest.message || '-'}</p>
         `,
         text: `Module access request from ${requester.name} (${requester.email})`
@@ -385,6 +399,8 @@ exports.getModuleAccessRequests = async (req, res) => {
         department: u.department,
         contactNo: u.contactNo,
         accessRequest: u.accessRequest,
+        requestedModuleId: u.accessRequest?.moduleId || '',
+        requestedModuleName: u.accessRequest?.moduleName || '',
         rights: u.rights,
         fullModuleAccessGranted: u.fullModuleAccessGranted
       }))
@@ -415,6 +431,8 @@ exports.reviewModuleAccessRequest = async (req, res) => {
     user.accessRequest = {
       status: action === 'grant' ? 'granted' : 'rejected',
       message: comments || user.accessRequest?.message || '',
+      moduleId: user.accessRequest?.moduleId || '',
+      moduleName: user.accessRequest?.moduleName || '',
       requestedAt: user.accessRequest?.requestedAt,
       reviewedAt: new Date(),
       reviewedBy: req.user._id || req.user.id,
@@ -423,8 +441,9 @@ exports.reviewModuleAccessRequest = async (req, res) => {
     };
 
     if (action === 'grant') {
-      user.fullModuleAccessGranted = true;
-      user.rights = { ...(user.rights?.toObject ? user.rights.toObject() : user.rights || {}), ...FULL_MODULE_RIGHTS };
+      const requestedRight = MODULE_ID_TO_RIGHT[user.accessRequest?.moduleId] || 'nppProcurement';
+      user.fullModuleAccessGranted = false;
+      user.rights = { ...(user.rights?.toObject ? user.rights.toObject() : user.rights || {}), [requestedRight]: true };
     }
 
     await user.save();
@@ -432,13 +451,13 @@ exports.reviewModuleAccessRequest = async (req, res) => {
     await sendMail({
       to: user.email,
       subject: action === 'grant' ? 'Module Access Granted - LCGC RFQ' : 'Module Access Request Rejected - LCGC RFQ',
-      html: `<p>Hello ${user.name},</p><p>Your module access request has been <strong>${user.accessRequest.status}</strong>.</p>`,
-      text: `Your module access request has been ${user.accessRequest.status}.`
+      html: `<p>Hello ${user.name},</p><p>Your access request for <strong>${user.accessRequest.moduleName || 'the requested module'}</strong> has been <strong>${user.accessRequest.status}</strong>.</p>`,
+      text: `Your access request for ${user.accessRequest.moduleName || 'the requested module'} has been ${user.accessRequest.status}.`
     });
 
     res.json({
       success: true,
-      message: action === 'grant' ? "Lifetime module access granted" : "Access request rejected",
+      message: action === 'grant' ? "Access request accepted" : "Access request rejected",
       data: {
         id: user._id,
         name: user.name,

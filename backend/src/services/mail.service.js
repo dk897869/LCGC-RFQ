@@ -6,7 +6,8 @@ let smtpTransporter = null;
 function getSMTPTransporter() {
   if (smtpTransporter) return smtpTransporter;
   
-  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  const smtpEnabled = process.env.SMTP_ENABLED !== 'false';
+  if (smtpEnabled && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     // Remove spaces from password if present
     let smtpPass = process.env.SMTP_PASS;
     if (smtpPass && smtpPass.includes(' ')) {
@@ -48,7 +49,7 @@ function getSMTPTransporter() {
 
 function getFromAddress() {
   // Always use SMTP_USER as the from address for Gmail
-  if (process.env.SMTP_ENABLED === 'true' && process.env.SMTP_USER) {
+  if (process.env.SMTP_ENABLED !== 'false' && process.env.SMTP_USER) {
     return process.env.SMTP_USER;
   }
   return 'dk897869@gmail.com';

@@ -70,6 +70,19 @@ const saveOTP = async (email, mobile, otp, type) => {
   });
 };
 
+const getAdminReviewerEmails = async () => {
+  try {
+    const reviewers = await User.find({
+      role: { $in: ['Admin', 'Manager'] },
+      isActive: { $ne: false }
+    }).select('email').lean();
+    return reviewers.map((u) => u.email).filter(Boolean);
+  } catch (error) {
+    console.error('Admin reviewer lookup failed:', error.message);
+    return [];
+  }
+};
+
 // ==================== SEND MOBILE OTP (Updated) ====================
 
 exports.sendMobileOTP = async (req, res) => {
@@ -220,10 +233,14 @@ const generateNppSerialNumber = (type) => {
 // Helper to send email with PDF to stakeholders
 const sendNppEmailWithPdf = async (request, subject, message) => {
   try {
-    const recipients = request.stakeholders?.map(s => s.email) || [];
+    const stakeholderEmails = request.stakeholders?.map(s => s.email).filter(Boolean) || [];
+    const adminEmails = await getAdminReviewerEmails();
+    const recipients = [...new Set([...stakeholderEmails, ...adminEmails])];
     const ccList = request.ccList || [];
     
     if (recipients.length === 0) return;
+    const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:4200';
+    const viewUrl = `${baseUrl}/dashboard`;
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -239,7 +256,8 @@ const sendNppEmailWithPdf = async (request, subject, message) => {
         <p><strong>Status:</strong> ${request.status}</p>
         <p><strong>Message:</strong> ${message}</p>
         <hr>
-        <p>Please login to the system to review and take action.</p>
+        <p>Please login to the system to review, add remarks, approve, or reject.</p>
+        <p><a href="${viewUrl}" style="display:inline-block;background:#0f2a5e;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Open Request Dashboard</a></p>
       </body>
       </html>
     `;
@@ -2126,6 +2144,9 @@ exports.createEPRequest = async (req, res) => {
     }
 
     try {
+      const adminEmails = await getAdminReviewerEmails();
+      const existingCc = Array.isArray(epRequest.ccList) ? epRequest.ccList : [];
+      epRequest.ccList = [...new Set([...existingCc, ...adminEmails])];
       await sendEpMailWithPdf(
         epRequest,
         `EP Approval Request: ${title} - ${requester || email}`,

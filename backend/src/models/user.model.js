@@ -102,6 +102,8 @@ const userSchema = new mongoose.Schema({
       default: 'none'
     },
     message: { type: String, default: '' },
+    moduleId: { type: String, default: '' },
+    moduleName: { type: String, default: '' },
     requestedAt: Date,
     reviewedAt: Date,
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

@@ -1,0 +1,6 @@
+Approvals Changes
+1.) Full screen view of full filled form
+2.) Select multiple to approve and reject
+3.) approve reject button after action for multiple selection requests
+4.)Remove all button from approvals
+5.) Remove duplicate buttons in non-bom and arrange buttons according to requests

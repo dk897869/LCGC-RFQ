@@ -17,6 +17,7 @@ const generateNppSerialNumber = (type) => {
     'vendor-list': 'VL',
     'employee-detail': 'EMP',
     'item-master': 'IM',
+    'quotation-submission': 'QSV',
     'quotation-comparison': 'QC'
   }[type] || 'NPP';
   
@@ -35,8 +36,76 @@ const normalizeEmailList = (value) => {
 };
 
 const requestTypeFromPath = (path = '') => {
-  const match = String(path).match(/\/api\/npp\/([^/?]+)/);
+  const match = String(path).match(/\/api\/(?:npp|npp-forms|forms)\/([^/?]+)/);
   return match ? match[1] : null;
+};
+
+const normalizeType = (type = '') => {
+  const aliases = {
+    rfq: 'rfq-vendor',
+    'rfq-request': 'rfq-vendor',
+    requisition: 'rfq-requisition',
+    'quotation-collection': 'quotation-comparison',
+    quotation: 'quotation-submission',
+    pr: 'pr-request',
+    po: 'po-npp',
+    wcc: 'wcc-npp',
+    payment: 'payment-advise'
+  };
+  const value = String(type || '').trim();
+  return aliases[value] || value;
+};
+
+const deriveRfqNo = (requestData = {}) => {
+  const candidates = [
+    requestData.rfqNo,
+    requestData.rfqNumber,
+    requestData.form?.rfqNo,
+    requestData.form?.rfqNumber,
+    ...(requestData.rfqVendorItems || []).map((item) => item.rfqNo),
+    ...(requestData.rfqItems || []).map((item) => item.rfqNo),
+    ...(requestData.quotationItems || []).map((item) => item.rfqNo),
+    ...(requestData.quotationSubmissionItems || []).map((item) => item.rfqNo),
+    ...(requestData.prItems || []).map((item) => item.rfqNo)
+  ];
+  return String(candidates.find(Boolean) || '').trim();
+};
+
+const buildSearchFilter = ({ type, serialNo, rfqNo, q, status, fromDate, toDate } = {}) => {
+  const filter = {};
+  const normalizedType = normalizeType(type);
+  if (normalizedType && normalizedType !== 'all') filter.type = normalizedType;
+  if (status && status !== 'all') filter.status = status;
+  if (fromDate || toDate) {
+    filter.requestDate = {};
+    if (fromDate) filter.requestDate.$gte = new Date(fromDate);
+    if (toDate) {
+      const end = new Date(toDate);
+      end.setHours(23, 59, 59, 999);
+      filter.requestDate.$lte = end;
+    }
+  }
+
+  const searchTerms = [];
+  if (serialNo) searchTerms.push(String(serialNo).trim());
+  if (rfqNo) searchTerms.push(String(rfqNo).trim());
+  if (q) searchTerms.push(String(q).trim());
+
+  if (searchTerms.length) {
+    const regexes = searchTerms.filter(Boolean).map((term) => new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+    filter.$or = regexes.flatMap((regex) => [
+      { uniqueSerialNo: regex },
+      { rfqNo: regex },
+      { titleOfActivity: regex },
+      { requesterName: regex },
+      { 'rfqVendorItems.rfqNo': regex },
+      { 'quotationItems.rfqNo': regex },
+      { 'quotationSubmissionItems.rfqNo': regex },
+      { 'prItems.rfqNo': regex }
+    ]);
+  }
+
+  return filter;
 };
 
 const toPdfData = (request) => {
@@ -126,7 +195,7 @@ const sendNppEmail = async (request, subject, message) => {
 exports.createNppRequest = async (req, res) => {
   try {
     const { type: bodyType, ...requestData } = req.body;
-    const type = bodyType || requestData.source || requestTypeFromPath(req.originalUrl || req.url);
+    const type = normalizeType(req.params.type || bodyType || requestData.source || requestTypeFromPath(req.originalUrl || req.url));
     
     if (!type) {
       return res.status(400).json({ success: false, message: "Request type is required" });
@@ -137,6 +206,8 @@ exports.createNppRequest = async (req, res) => {
     const nppRequest = new NPPRequest({
       type,
       uniqueSerialNo: serialNo,
+      rfqNo: deriveRfqNo(requestData),
+      formData: requestData,
       status: 'Pending',
       requesterName: requestData.requesterName || req.user?.name,
       department: requestData.department,
@@ -160,6 +231,7 @@ exports.createNppRequest = async (req, res) => {
       vendorList: requestData.vendorList,
       employeeDetails: requestData.employeeDetails,
       itemMasterList: requestData.itemMasterList,
+      quotationSubmissionItems: requestData.quotationSubmissionItems,
       quotationItems: requestData.quotationItems,
       supplierNames: requestData.supplierNames,
       quotationTerms: requestData.quotationTerms,
@@ -199,16 +271,20 @@ exports.createNppRequest = async (req, res) => {
 // ==================== GET ALL NPP REQUESTS ====================
 exports.getAllNppRequests = async (req, res) => {
   try {
-    const { type, status, department, startDate, endDate } = req.query;
+    const { type: queryType, status, department, startDate, endDate, serialNo, rfqNo, q } = req.query;
+    const type = req.params.type || queryType;
     let filter = {};
     
-    if (type) filter.type = type;
+    if (type) filter.type = normalizeType(type);
     if (status) filter.status = status;
     if (department) filter.department = department;
     if (startDate || endDate) {
       filter.requestDate = {};
       if (startDate) filter.requestDate.$gte = new Date(startDate);
       if (endDate) filter.requestDate.$lte = new Date(endDate);
+    }
+    if (serialNo || rfqNo || q) {
+      filter = { ...filter, ...buildSearchFilter({ serialNo, rfqNo, q }) };
     }
     
     const requests = await NPPRequest.find(filter).sort({ createdAt: -1 });
@@ -242,7 +318,7 @@ exports.getNppRequestById = async (req, res) => {
 // ==================== GET NPP REQUEST BY SERIAL NO ====================
 exports.getNppRequestBySerialNo = async (req, res) => {
   try {
-    const request = await NPPRequest.findOne({ uniqueSerialNo: req.params.serialNo });
+    const request = await NPPRequest.findOne({ uniqueSerialNo: new RegExp(`^${String(req.params.serialNo).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
     if (!request) {
       return res.status(404).json({ success: false, message: "Request not found" });
     }
@@ -453,6 +529,35 @@ exports.sendNppRequestEmail = async (req, res) => {
     
   } catch (error) {
     console.error('Send NPP email error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.searchNppRequests = async (req, res) => {
+  try {
+    const filter = buildSearchFilter(req.query);
+    const requests = await NPPRequest.find(filter).sort({ createdAt: -1 }).limit(Number(req.query.limit) || 100);
+    res.json({
+      success: true,
+      count: requests.length,
+      data: requests
+    });
+  } catch (error) {
+    console.error('Search NPP requests error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getNppRequestsByRfqNo = async (req, res) => {
+  try {
+    const rfqNo = req.params.rfqNo;
+    const requests = await NPPRequest.find(buildSearchFilter({ rfqNo })).sort({ createdAt: -1 });
+    if (!requests.length) {
+      return res.status(404).json({ success: false, message: 'No requests found for this RFQ number' });
+    }
+    res.json({ success: true, count: requests.length, data: requests });
+  } catch (error) {
+    console.error('Get NPP request by RFQ error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

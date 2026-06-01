@@ -8,7 +8,7 @@ const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 const yourPersonalNumber = process.env.YOUR_PERSONAL_NUMBER || '+916239785524';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
-const useRealSms = process.env.USE_REAL_SMS === 'true';
+const useRealSms = process.env.USE_REAL_SMS === 'true' || (process.env.NODE_ENV === 'production' && process.env.USE_REAL_SMS !== 'false');
 
 console.log('📱 ========================================');
 console.log('📱 TWILIO CONFIGURATION');

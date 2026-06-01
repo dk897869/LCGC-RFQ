@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const nppRequestSchema = new mongoose.Schema({
   type: { type: String, required: true },
   uniqueSerialNo: { type: String, unique: true },
+  rfqNo: { type: String, default: '' },
+  formData: { type: mongoose.Schema.Types.Mixed, default: {} },
   status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In-Process'], default: 'Pending' },
   requesterName: { type: String },
   department: { type: String },
@@ -135,6 +137,22 @@ const nppRequestSchema = new mongoose.Schema({
     supplier3Price: Number,
     supplier3Amount: Number
   }],
+  quotationSubmissionItems: [{
+    rfqNo: String,
+    vendorName: String,
+    vendorEmail: String,
+    partCode: String,
+    partDescription: String,
+    specification: String,
+    uom: String,
+    qty: Number,
+    currency: String,
+    unitPrice: Number,
+    amount: Number,
+    leadTime: String,
+    paymentTerms: String,
+    remarks: String
+  }],
   
   // PR Request
   prItems: [{
@@ -197,5 +215,13 @@ const nppRequestSchema = new mongoose.Schema({
     remark: String
   }]
 });
+
+nppRequestSchema.index({ uniqueSerialNo: 1 });
+nppRequestSchema.index({ rfqNo: 1 });
+nppRequestSchema.index({ type: 1, createdAt: -1 });
+nppRequestSchema.index({ 'rfqVendorItems.rfqNo': 1 });
+nppRequestSchema.index({ 'quotationItems.rfqNo': 1 });
+nppRequestSchema.index({ 'quotationSubmissionItems.rfqNo': 1 });
+nppRequestSchema.index({ 'prItems.rfqNo': 1 });
 
 module.exports = mongoose.model('NPPRequest', nppRequestSchema);

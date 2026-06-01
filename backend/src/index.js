@@ -40,7 +40,7 @@ const moduleAccessMiddleware = (req, res, next) => {
   }
 
   const seniorRoles = ['Admin', 'Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
-  if (seniorRoles.includes(user.role) || user.fullModuleAccessGranted) {
+  if (seniorRoles.includes(user.role)) {
     return next();
   }
 
@@ -88,6 +88,7 @@ const orderHistoryRoutes = safeRequire("./routes/orderHistory.routes");
 const reportRoutes = safeRequire("./routes/report.routes");
 const approvalRoutes = safeRequire("./routes/approval.routes");
 const serialNumberRoutes = safeRequire("./routes/serialNumber.routes");
+const nppFormsRoutes = safeRequire("./routes/nppForms.routes");
 
 const app = express();
 
@@ -1306,6 +1307,8 @@ app.use("/api/payment-npp", paymentNppRoutes);
 app.use("/api/order-history", orderHistoryRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/approvals", approvalRoutes);
+app.use("/api/npp-forms", nppFormsRoutes);
+app.use("/api/forms", nppFormsRoutes);
 app.use("/api/serial-number", serialNumberRoutes);
 app.use("/api/part", partRoutes);
 app.use("/api/users", userRoutes);

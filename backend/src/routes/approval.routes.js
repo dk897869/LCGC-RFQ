@@ -46,28 +46,35 @@ const queryModel = async (modelPath, type) => {
   return rows.map(row => normalizeRequest(row, type));
 };
 
-const getModelByType = (type) => {
+const getModelsByType = (type) => {
+  const npp = getModel('../models/nppRequest.model');
   const map = {
-    ep: '../models/request',
-    rfq: '../models/Rfq',
-    pr: '../models/prNpp.model',
-    po: '../models/poNpp.model',
-    payment: '../models/paymentNpp.model'
+    ep: ['../models/request'],
+    rfq: ['../models/Rfq', '../models/nppRequest.model'],
+    pr: ['../models/nppRequest.model', '../models/prNpp.model'],
+    po: ['../models/nppRequest.model', '../models/poNpp.model'],
+    payment: ['../models/nppRequest.model', '../models/paymentNpp.model'],
+    wcc: ['../models/nppRequest.model'],
+    comparison: ['../models/nppRequest.model'],
+    npp: ['../models/nppRequest.model']
   };
-  return getModel(map[type]);
+  const models = (map[type] || ['../models/nppRequest.model']).map(getModel).filter(Boolean);
+  return npp && models.length === 0 ? [npp] : models;
 };
 
 router.get('/unified', verifyToken, async (req, res) => {
   try {
-    const [ep, rfq, pr, po, payment] = await Promise.all([
+    const [ep, rfq, npp, pr, po, payment] = await Promise.all([
       queryModel('../models/request', 'ep'),
       queryModel('../models/Rfq', 'rfq'),
+      queryModel('../models/nppRequest.model', 'npp'),
       queryModel('../models/prNpp.model', 'pr'),
       queryModel('../models/poNpp.model', 'po'),
       queryModel('../models/paymentNpp.model', 'payment')
     ]);
 
-    const data = [...ep, ...rfq, ...pr, ...po, ...payment]
+    const data = [...ep, ...rfq, ...npp, ...pr, ...po, ...payment]
+      .filter((item, index, list) => index === list.findIndex((other) => String(other.id) === String(item.id)))
       .sort((a, b) => new Date(b.createdAt || b.requestDate || 0) - new Date(a.createdAt || a.requestDate || 0));
 
     res.status(200).json({ success: true, data, count: data.length });
@@ -78,19 +85,23 @@ router.get('/unified', verifyToken, async (req, res) => {
 
 router.patch('/:type/:requestId/approve', verifyToken, async (req, res) => {
   try {
-    const model = getModelByType(req.params.type);
-    if (!model) return res.status(404).json({ success: false, message: 'Approval type not available' });
+    const models = getModelsByType(req.params.type);
+    if (!models.length) return res.status(404).json({ success: false, message: 'Approval type not available' });
 
-    const data = await model.findByIdAndUpdate(
-      req.params.requestId,
-      {
-        status: 'Approved',
-        approvedAt: new Date(),
-        approvedBy: req.user?.name || req.user?.email || 'Approver',
-        approvalComments: req.body.comments || ''
-      },
-      { new: true }
-    );
+    let data = null;
+    for (const model of models) {
+      data = await model.findByIdAndUpdate(
+        req.params.requestId,
+        {
+          status: 'Approved',
+          approvedAt: new Date(),
+          approvedBy: req.user?.name || req.user?.email || 'Approver',
+          approvalComments: req.body.comments || ''
+        },
+        { new: true }
+      );
+      if (data) break;
+    }
 
     if (!data) return res.status(404).json({ success: false, message: 'Request not found' });
 
@@ -113,19 +124,23 @@ router.patch('/:type/:requestId/approve', verifyToken, async (req, res) => {
 
 router.patch('/:type/:requestId/reject', verifyToken, async (req, res) => {
   try {
-    const model = getModelByType(req.params.type);
-    if (!model) return res.status(404).json({ success: false, message: 'Approval type not available' });
+    const models = getModelsByType(req.params.type);
+    if (!models.length) return res.status(404).json({ success: false, message: 'Approval type not available' });
 
-    const data = await model.findByIdAndUpdate(
-      req.params.requestId,
-      {
-        status: 'Rejected',
-        rejectedAt: new Date(),
-        rejectedBy: req.user?.name || req.user?.email || 'Approver',
-        rejectionComments: req.body.comments || ''
-      },
-      { new: true }
-    );
+    let data = null;
+    for (const model of models) {
+      data = await model.findByIdAndUpdate(
+        req.params.requestId,
+        {
+          status: 'Rejected',
+          rejectedAt: new Date(),
+          rejectedBy: req.user?.name || req.user?.email || 'Approver',
+          rejectionComments: req.body.comments || ''
+        },
+        { new: true }
+      );
+      if (data) break;
+    }
 
     if (!data) return res.status(404).json({ success: false, message: 'Request not found' });
 

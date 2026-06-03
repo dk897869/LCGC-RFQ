@@ -6,6 +6,10 @@ const { verifyToken } = require("../middlewares/auth");
 
 // ====================== FULL CRUD ======================
 
+router.get("/dashboard/rfqs", verifyToken, vendorController.getMyVendorRfqs);
+router.post("/temporary-account", verifyToken, vendorController.createTemporaryVendorAccount);
+router.patch("/temporary-account/:id/deactivate", verifyToken, vendorController.deactivateTemporaryVendorAccount);
+
 // GET All Vendors
 router.get("/", verifyToken, vendorController.getVendors);
 

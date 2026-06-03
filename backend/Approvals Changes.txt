@@ -4,3 +4,14 @@ Approvals Changes
 3.) approve reject button after action for multiple selection requests
 4.)Remove all button from approvals
 5.) Remove duplicate buttons in non-bom and arrange buttons according to requests
+
+
+RFQ->4 options left side regarding rfq
+RFQ number is bidefault in rfq quotation form
+approver remove in request to vendor show vendor details and mail id show and sent mail to vendor and add cc mail option to add seniors
+add purchase requests in vendors profile to see and add attachment,add query remarks,cpmpany name
+vendor dashboard is different as compare to admin and show only vendor requests
+if admin create vendor account its account is temporary and will be shared on vendor mail temporary username and password if rfq quotation done than vendor not able to access account
+everytime new account create for vendor but temporary
+
+add vi and vi% in rfq quotation comparison cost comparison also add manual comparison data if entered by user create option create quotation cost comparison form

@@ -3,6 +3,10 @@ const { sendMail } = require('../services/mail.service');
 const { generatePDFFromRequest } = require('../services/pdf.service');
 const epNotify = require('../services/epNotify.service');
 
+const SENIOR_APPROVER_ROLES = ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+
+const isSeniorApprover = (user = {}) => SENIOR_APPROVER_ROLES.includes(user.role);
+
 // ====================== CREATE REQUEST ======================
 const createRequest = async (req, res) => {
   try {
@@ -259,15 +263,18 @@ const approveRequest = async (req, res) => {
       });
     }
     
-    // Check if user can approve
-    if (!request.canUserApprove(userEmail)) {
+    // Senior approvers can act from the dashboard modal; listed approvers can act in normal flow.
+    if (!isSeniorApprover(req.user) && !request.canUserApprove(userEmail)) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to approve this request"
       });
     }
     
-    const currentApprover = request.getCurrentApprover();
+    let currentApprover = request.getCurrentApprover();
+    if (!currentApprover && isSeniorApprover(req.user)) {
+      currentApprover = request.stakeholders?.find(s => s.status === 'Pending') || null;
+    }
     if (!currentApprover) {
       return res.status(400).json({
         success: false,
@@ -346,8 +353,8 @@ const rejectRequest = async (req, res) => {
       });
     }
     
-    // Check if user can reject
-    if (!request.canUserApprove(userEmail)) {
+    // Senior approvers can reject from the dashboard modal; listed approvers can act in normal flow.
+    if (!isSeniorApprover(req.user) && !request.canUserApprove(userEmail)) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to reject this request"

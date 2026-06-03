@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 const Vendor = require("../models/vendor");
+const User = require("../models/user.model");
+const NPPRequest = require("../models/nppRequest.model");
+
+const isAdminUser = (user = {}) => ['Admin', 'Manager', 'Senior Manager'].includes(user.role);
+const makeTempPassword = () => `Vendor@${Math.floor(100000 + Math.random() * 900000)}`;
 
 // GET All Vendors
 exports.getVendors = async (req, res) => {
@@ -311,5 +316,140 @@ exports.getVendorStats = async (req, res) => {
       success: false, 
       message: err.message 
     });
+  }
+};
+
+// CREATE temporary vendor login for an RFQ/work package.
+exports.createTemporaryVendorAccount = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({ success: false, message: "Only admin/manager can create vendor login" });
+    }
+
+    const { name, email, phone, company, gst, rfqNos = [], expiresAt, password } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ success: false, message: "Vendor name and email are required" });
+    }
+
+    let vendor = await Vendor.findOne({ email: String(email).toLowerCase() });
+    if (!vendor) {
+      vendor = await Vendor.create({
+        name,
+        email: String(email).toLowerCase(),
+        phone: phone || '',
+        company: company || name,
+        gst: gst || '',
+        status: 'Active'
+      });
+    }
+
+    const tempPassword = password || makeTempPassword();
+    const accountData = {
+      name,
+      email: String(email).toLowerCase(),
+      password: tempPassword,
+      role: 'Vendor',
+      contactNo: phone || '',
+      department: 'Vendor',
+      designation: 'Temporary Vendor',
+      organization: company || vendor.company || name,
+      isActive: true,
+      emailVerified: true,
+      rights: { nppProcurement: true },
+      vendorAccount: {
+        isTemporary: true,
+        vendorId: vendor._id,
+        rfqNos: Array.isArray(rfqNos) ? rfqNos.filter(Boolean) : String(rfqNos || '').split(',').map(v => v.trim()).filter(Boolean),
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+        deactivatedAt: undefined,
+        deactivatedReason: ''
+      }
+    };
+
+    let user = await User.findOne({ email: accountData.email });
+    if (user) {
+      Object.assign(user, accountData);
+      await user.save();
+    } else {
+      user = await User.create(accountData);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Temporary vendor login created",
+      data: {
+        vendor,
+        account: {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          expiresAt: user.vendorAccount?.expiresAt,
+          rfqNos: user.vendorAccount?.rfqNos || []
+        },
+        temporaryPassword: tempPassword
+      }
+    });
+  } catch (err) {
+    console.error("Create Temporary Vendor Account Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.deactivateTemporaryVendorAccount = async (req, res) => {
+  try {
+    if (!isAdminUser(req.user)) {
+      return res.status(403).json({ success: false, message: "Only admin/manager can deactivate vendor login" });
+    }
+    const { id } = req.params;
+    const { reason = 'Work completed' } = req.body || {};
+    const user = await User.findByIdAndUpdate(
+      id,
+      {
+        isActive: false,
+        'vendorAccount.deactivatedAt': new Date(),
+        'vendorAccount.deactivatedReason': reason
+      },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ success: false, message: "Vendor account not found" });
+    res.json({ success: true, message: "Vendor login deactivated", data: user });
+  } catch (err) {
+    console.error("Deactivate Vendor Account Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getMyVendorRfqs = async (req, res) => {
+  try {
+    if (req.user?.role !== 'Vendor') {
+      return res.status(403).json({ success: false, message: "Vendor login required" });
+    }
+    if (req.user?.vendorAccount?.expiresAt && new Date(req.user.vendorAccount.expiresAt) < new Date()) {
+      await User.findByIdAndUpdate(req.user.id || req.user._id, {
+        isActive: false,
+        'vendorAccount.deactivatedAt': new Date(),
+        'vendorAccount.deactivatedReason': 'Temporary access expired'
+      });
+      return res.status(403).json({ success: false, message: "Vendor access expired" });
+    }
+
+    const email = String(req.user.email || '').toLowerCase();
+    const rfqNos = req.user.vendorAccount?.rfqNos || [];
+    const query = {
+      type: { $in: ['rfq-vendor', 'rfq-requisition', 'quotation-submission'] },
+      $or: [
+        { vendorEmail: email },
+        { 'vendorDetails.email': email },
+        { 'vendorList.emailId': email },
+        { rfqNo: { $in: rfqNos } },
+        { 'rfqVendorItems.rfqNo': { $in: rfqNos } }
+      ]
+    };
+    const requests = await NPPRequest.find(query).sort({ createdAt: -1 }).limit(100);
+    res.json({ success: true, count: requests.length, data: requests });
+  } catch (err) {
+    console.error("Vendor RFQ Dashboard Error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

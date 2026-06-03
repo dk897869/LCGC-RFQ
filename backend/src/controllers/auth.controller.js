@@ -10,11 +10,12 @@ const { generateEPApprovalEmailHTML } = require("../templates/epApprovalEmail");
 const { buildEpPdfBuffer } = require("../utils/epPdf");
 const { sendSmsOtp, verifySmsOtp } = require("../services/twilio.service");
 
-// Senior approver roles - includes all roles that can approve EP requests
+// Senior approver roles - includes all roles that can approve EP requests (INCLUDING VENDOR)
 const SENIOR_APPROVER_ROLES = new Set([
   "Admin",
   "Manager",
   "Senior Manager",
+  "Vendor",
   "VP",
   "GM",
   "MD",
@@ -23,7 +24,7 @@ const SENIOR_APPROVER_ROLES = new Set([
   "Approver",
 ]);
 
-// Simple authorization check for EP requests
+// Simple authorization check for EP requests - UPDATED TO INCLUDE VENDOR
 function canActOnEpRequest(user, epDoc) {
   if (!user || !epDoc) {
     console.log('❌ Authorization failed: Missing user or epDoc');
@@ -44,7 +45,7 @@ function canActOnEpRequest(user, epDoc) {
     return true;
   }
   
-  // CHECK 2: User has senior role (case insensitive)
+  // CHECK 2: User has senior role (case insensitive) - NOW INCLUDES VENDOR
   const userRoleLower = (user.role || '').toLowerCase();
   for (const role of SENIOR_APPROVER_ROLES) {
     if (role.toLowerCase() === userRoleLower) {
@@ -112,7 +113,7 @@ const saveOTP = async (email, mobile, otp, type) => {
 const getAdminReviewerEmails = async () => {
   try {
     const reviewers = await User.find({
-      role: { $in: ['Admin', 'Manager', 'Senior Manager'] },
+      role: { $in: ['Admin', 'Manager', 'Senior Manager', 'Vendor'] },
       isActive: { $ne: false }
     }).select('email').lean();
     return reviewers.map((u) => u.email).filter(Boolean);
@@ -2018,7 +2019,7 @@ exports.clearAvatar = async (req, res) => {
   }
 };
 
-// ==================== EP REQUEST METHODS - FIXED ====================
+// ==================== EP REQUEST METHODS - FIXED WITH VENDOR APPROVAL RIGHTS ====================
 
 exports.createEPRequest = async (req, res) => {
   try {
@@ -2174,7 +2175,7 @@ exports.deleteEPRequest = async (req, res) => {
   }
 };
 
-// ==================== APPROVE EP REQUEST - FIXED ====================
+// ==================== APPROVE EP REQUEST - FIXED WITH VENDOR ====================
 
 exports.approveEPRequest = async (req, res) => {
   try {
@@ -2217,8 +2218,8 @@ exports.approveEPRequest = async (req, res) => {
       });
     }
     
-    // SIMPLE ROLE CHECK - Admin, Manager, Senior Manager can approve
-    const allowedRoles = ['Admin', 'Manager', 'Senior Manager'];
+    // ✅ FIXED: ALLOW VENDOR TO APPROVE - Updated allowed roles
+    const allowedRoles = ['Admin', 'Manager', 'Senior Manager', 'Vendor'];
     const isAllowed = allowedRoles.includes(actor.role);
     
     console.log('📌 Role check:', { userRole: actor.role, isAllowed });
@@ -2227,7 +2228,7 @@ exports.approveEPRequest = async (req, res) => {
       console.log('❌ User not authorized - role:', actor.role);
       return res.status(403).json({ 
         success: false, 
-        message: `You are not authorized to approve this request. Your role: ${actor.role}. Required: Admin, Manager, or Senior Manager.` 
+        message: `You are not authorized to approve this request. Your role: ${actor.role}. Required: Admin, Manager, Senior Manager, or Vendor.` 
       });
     }
     
@@ -2270,7 +2271,7 @@ exports.approveEPRequest = async (req, res) => {
   }
 };
 
-// ==================== REJECT EP REQUEST - FIXED ====================
+// ==================== REJECT EP REQUEST - FIXED WITH VENDOR ====================
 
 exports.rejectEPRequest = async (req, res) => {
   try {
@@ -2312,8 +2313,8 @@ exports.rejectEPRequest = async (req, res) => {
       });
     }
     
-    // SIMPLE ROLE CHECK - Admin, Manager, Senior Manager can reject
-    const allowedRoles = ['Admin', 'Manager', 'Senior Manager'];
+    // ✅ FIXED: ALLOW VENDOR TO REJECT - Updated allowed roles
+    const allowedRoles = ['Admin', 'Manager', 'Senior Manager', 'Vendor'];
     const isAllowed = allowedRoles.includes(actor.role);
     
     console.log('📌 Role check:', { userRole: actor.role, isAllowed });
@@ -2322,7 +2323,7 @@ exports.rejectEPRequest = async (req, res) => {
       console.log('❌ User not authorized - role:', actor.role);
       return res.status(403).json({ 
         success: false, 
-        message: `You are not authorized to reject this request. Your role: ${actor.role}. Required: Admin, Manager, or Senior Manager.` 
+        message: `You are not authorized to reject this request. Your role: ${actor.role}. Required: Admin, Manager, Senior Manager, or Vendor.` 
       });
     }
     

@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver', 'User', 'Viewer'],
+    enum: ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver', 'Vendor', 'User', 'Viewer'],
     default: 'User'
   },
   contactNo: { 
@@ -94,6 +94,14 @@ const userSchema = new mongoose.Schema({
   fullModuleAccessGranted: {
     type: Boolean,
     default: false
+  },
+  vendorAccount: {
+    isTemporary: { type: Boolean, default: false },
+    vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
+    rfqNos: [{ type: String }],
+    expiresAt: Date,
+    deactivatedAt: Date,
+    deactivatedReason: String
   },
   accessRequest: {
     status: {

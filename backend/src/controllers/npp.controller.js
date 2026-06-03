@@ -1,5 +1,6 @@
 // controllers/npp.controller.js
 const NPPRequest = require('../models/nppRequest.model');
+const User = require('../models/user.model');
 const { sendMail } = require('../services/mail.service');
 const { generateBeautifulPDF } = require('../services/pdf.service');
 
@@ -126,6 +127,17 @@ const toPdfData = (request) => {
 
 const sendNppEmail = async (request, subject, message) => {
   try {
+    let adminEmails = [];
+    try {
+      const admins = await User.find({
+        isActive: { $ne: false },
+        role: { $in: ['Admin', 'Manager', 'Senior Manager'] }
+      }).select('email').lean();
+      adminEmails = admins.map(user => user.email);
+    } catch (lookupError) {
+      console.error('Admin notification lookup error:', lookupError.message);
+    }
+
     const requesterEmail = request.emailId;
     const stakeholderEmails = normalizeEmailList((request.stakeholders || []).map(s => s.email));
     const ccList = normalizeEmailList(request.ccList);
@@ -136,7 +148,7 @@ const sendNppEmail = async (request, subject, message) => {
       ...(request.vendorList || []).map(v => v.emailId),
       ...(request.employeeDetails || []).map(e => e.emailAddress)
     ]);
-    const allRecipients = normalizeEmailList([requesterEmail, ...stakeholderEmails, ...enteredEmails]);
+    const allRecipients = normalizeEmailList([requesterEmail, ...stakeholderEmails, ...enteredEmails, ...adminEmails]);
     
     if (allRecipients.length === 0 && ccList.length === 0) return;
 
@@ -167,7 +179,7 @@ const sendNppEmail = async (request, subject, message) => {
         <p><strong>Status:</strong> ${request.status}</p>
         <p><strong>Message:</strong> ${message}</p>
         <hr>
-        <p>Please login to the system to review and take action.</p>
+        <p>Please login to the system to review, add remarks, approve, or reject.</p>
       </body>
       </html>
     `;

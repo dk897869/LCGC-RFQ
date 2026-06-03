@@ -12,7 +12,6 @@ const crypto = require("crypto");
 const axios = require("axios");
 
 const connectDB = require("./config/db");
-
 // ==================== DEFINE AUTH MIDDLEWARE FIRST ====================
 const authMiddleware = async (req, res, next) => {
   try {
@@ -21,6 +20,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
+    // ✅ Require User model HERE - not at the top level
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
@@ -39,7 +39,7 @@ const moduleAccessMiddleware = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'No user found' });
   }
 
-  const seniorRoles = ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+  const seniorRoles = ['Admin', 'Manager', 'Senior Manager', 'Vendor', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
   if (seniorRoles.includes(user.role)) {
     return next();
   }

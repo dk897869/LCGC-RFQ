@@ -262,7 +262,7 @@
           </div>
         </div>
 
-        <div class="unified-panel" *ngIf="showApprovalsSection">
+        <div class="unified-panel" id="approval-section" *ngIf="showApprovalsSection">
           <div class="unified-panel__hdr"><div><h3>{{ activeSection === 'requests' ? 'All Requests' : activeSection === 'approvals' ? 'Approved Requests' : 'Approval Status' }}</h3><p>{{ activeSection === 'status' ? 'Live calculation of request approval outcomes.' : 'EP approvals, NON BOM, RFQ, PR, PO, Payments, WCC in one place.' }}</p></div><div class="unified-panel__actions"><button class="action-btn action-btn--outline-w" (click)="navigateToModule('ep-approval')">EP Approval</button><button class="action-btn action-btn--purple-sm" (click)="openReportsModal()">📊 Reports</button></div></div>
           <div class="unified-filters"><input [(ngModel)]="unifiedSearchTerm" (input)="applyUnifiedFilters()" placeholder="Search request..."><select [(ngModel)]="unifiedTypeFilter" (change)="applyUnifiedFilters()"><option value="all">All Types</option><option value="ep">EP Approval</option><option value="rfq">RFQ</option><option value="pr">PR</option><option value="po">PO</option><option value="payment">Payments</option></select></div>
           <div class="unified-tabs"><button [class.active]="activeSection === 'requests'" (click)="setActiveSection('requests')">Request ({{ filteredUnifiedRequests.length }})</button><button [class.active]="activeSection === 'approvals'" (click)="setActiveSection('approvals')">Approval ({{ filteredUnifiedApprovals.length }})</button><button [class.active]="activeSection === 'status'" (click)="setActiveSection('status')">Status</button></div>

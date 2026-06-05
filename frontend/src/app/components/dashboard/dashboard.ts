@@ -529,17 +529,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.openDropdown = null;
   }
 
-  openApprovalSection(section: 'requests' | 'approvals' | 'status') {
-    this.activeTab = 'dashboard';
-    this.showApprovalsSection = true;
-    this.activeSection = section;
-    if (!this.unifiedRequests.length) {
-      this.loadUnifiedData();
-    } else {
-      this.applyUnifiedFilters();
-    }
-    this.openDropdown = null;
+openApprovalSection(section: 'requests' | 'approvals' | 'status') {
+  this.activeTab = 'dashboard';
+  this.showApprovalsSection = true;
+  this.activeSection = section;
+
+  if (!this.unifiedRequests.length) {
+    this.loadUnifiedData();
+  } else {
+    this.applyUnifiedFilters();
   }
+
+  this.openDropdown = null;
+
+  setTimeout(() => {
+    const sectionElement = document.getElementById('approval-section');
+
+    if (sectionElement) {
+      sectionElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, 100);
+}
 
   openReportsModal() {
     this.showReportsModal = true;

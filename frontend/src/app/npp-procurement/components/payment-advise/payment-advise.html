@@ -1,0 +1,40 @@
+<div class="form-card">
+  <div class="form-header">
+    <h2>NPP Procurement</h2>
+    <span class="badge payment">💰 Payment Advice</span>
+  </div>
+
+  <div class="form-body">
+    <div class="section">
+      <h3>Employee & Request Information</h3>
+      <div class="grid-4">
+        <div><label>Employee Name</label><input [(ngModel)]="form.employeeName" readonly></div>
+        <div><label>Designation</label><input [(ngModel)]="form.designation"></div>
+        <div><label>Department</label><input [(ngModel)]="form.department"></div>
+        <div><label>Application Date</label><input type="date" [(ngModel)]="form.applicationDate"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Purpose & Expense Details</h3>
+      <textarea class="form-textarea" rows="3" [(ngModel)]="form.purpose" placeholder="Purpose of payment..."></textarea>
+      
+      <div class="grid-3" style="margin-top: 16px;">
+        <div><label>Expense Amount (₹)</label><input type="number" [(ngModel)]="form.expenseAmount" class="form-input"></div>
+        <div><label>Invoice No</label><input [(ngModel)]="form.invoiceNo"></div>
+        <div><label>Invoice Date</label><input type="date" [(ngModel)]="form.invoiceDate"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Remarks</h3>
+      <textarea class="form-textarea" rows="2" [(ngModel)]="form.remarks"></textarea>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <button class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Submitting...' : 'Submit Payment Advice' }}
+    </button>
+  </div>
+</div>

@@ -1,0 +1,79 @@
+<div class="form-card">
+  <div class="form-header">
+    <h2>NPP Procurement (NON-BOM)</h2>
+    <span class="badge vendor">🏢 New Vendor Approval-NPP</span>
+  </div>
+
+  <div class="form-body">
+    <!-- Requester Information -->
+    <div class="section">
+      <h3>Requester Information</h3>
+      <div class="grid-4">
+        <div><label>Name</label><input [(ngModel)]="form.requesterName" readonly></div>
+        <div><label>Department</label><input [(ngModel)]="form.department" readonly></div>
+        <div><label>Email ID</label><input [(ngModel)]="form.emailId" readonly></div>
+        <div><label>Contact No.</label><input [(ngModel)]="form.contactNo" readonly></div>
+        <div><label>Request Date</label><input type="date" [(ngModel)]="form.requestDate"></div>
+        <div><label>Organization</label><input [(ngModel)]="form.organization" readonly></div>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="section">
+      <h3>Title of Activity</h3>
+      <input class="form-input" [(ngModel)]="form.titleOfActivity" placeholder="Approval For: New Vendor registration">
+    </div>
+
+    <!-- Vendor Details -->
+    <div class="section">
+      <div class="section-header">
+        <h3>Vendor Details</h3>
+        <button class="btn-outline" (click)="addVendor()">+ Add Vendor</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="vendor-table">
+          <thead>
+            <tr>
+              <th>Vendor Code</th>
+              <th>Supplier Name</th>
+              <th>GST No</th>
+              <th>PAN No</th>
+              <th>MSME</th>
+              <th>Bank Account No</th>
+              <th>Contact Person</th>
+              <th>Contact No</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Location</th>
+              <th>Payment Term</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of vendorDetails; let i = index">
+              <td><input class="cell-input" [(ngModel)]="v.vendorCode"></td>
+              <td><input class="cell-input" [(ngModel)]="v.supplierName"></td>
+              <td><input class="cell-input" [(ngModel)]="v.gstNo"></td>
+              <td><input class="cell-input" [(ngModel)]="v.panNo"></td>
+              <td><input class="cell-input" [(ngModel)]="v.msme"></td>
+              <td><input class="cell-input" [(ngModel)]="v.bankAccountNo"></td>
+              <td><input class="cell-input" [(ngModel)]="v.contactPerson"></td>
+              <td><input class="cell-input" [(ngModel)]="v.contactNo"></td>
+              <td><input class="cell-input" [(ngModel)]="v.email"></td>
+              <td><input class="cell-input" [(ngModel)]="v.address"></td>
+              <td><input class="cell-input" [(ngModel)]="v.location"></td>
+              <td><input class="cell-input" [(ngModel)]="v.paymentTerm"></td>
+              <td><button class="remove-btn" (click)="removeVendor(i)">×</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <button class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Submitting...' : 'Submit New Vendor Approval' }}
+    </button>
+  </div>
+</div>

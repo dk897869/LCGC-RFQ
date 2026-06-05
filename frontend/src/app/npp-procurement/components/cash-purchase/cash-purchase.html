@@ -1,0 +1,95 @@
+<div class="form-card">
+  <div class="form-header">
+    <h2>NPP Procurement (NON-BOM)</h2>
+    <span class="badge cash">Cash Purchase-NPP</span>
+  </div>
+
+  <div class="form-body">
+    <!-- Requester Info -->
+    <div class="section">
+      <h3>Requester Information</h3>
+      <div class="grid-4">
+        <div><label>Name</label><input [(ngModel)]="form.requesterName" readonly></div>
+        <div><label>Department</label><input [(ngModel)]="form.department" readonly></div>
+        <div><label>Email ID</label><input [(ngModel)]="form.emailId" readonly></div>
+        <div><label>Contact No.</label><input [(ngModel)]="form.contactNo" readonly></div>
+        <div><label>Request Date</label><input type="date" [(ngModel)]="form.requestDate"></div>
+        <div><label>Organization</label><input [(ngModel)]="form.organization" readonly></div>
+        <div><label>Cost Center</label><input [(ngModel)]="form.costCenter"></div>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="section">
+      <h3>NPP-PR Request</h3>
+      <textarea [(ngModel)]="form.titleOfActivity" 
+                placeholder="Approval For: Payment Request Case Purchase..." 
+                rows="3"></textarea>
+    </div>
+
+    <!-- Items -->
+    <div class="section">
+      <div class="section-header">
+        <h3>Items / Vendor Details</h3>
+        <button class="btn-outline" (click)="addItem()">+ Add Item</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Item Description</th>
+              <th>Purpose</th>
+              <th>Payment Detail</th>
+              <th>Bill/Invoice Copy</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of items; let i = index">
+              <td><input [(ngModel)]="item.itemDescription" placeholder="e.g. Fabrication Work"></td>
+              <td><input [(ngModel)]="item.purpose"></td>
+              <td><input [(ngModel)]="item.paymentDetail"></td>
+              <td><input [(ngModel)]="item.billInvoiceCopy"></td>
+              <td><button class="remove-btn" (click)="removeItem(i)">×</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Attachments -->
+    <div class="section">
+      <h3>Attachments</h3>
+      <input type="file" multiple (change)="handleFiles($event)">
+    </div>
+
+    <!-- Approval Matrix -->
+    <div class="section">
+      <h3>Approval Matrix</h3>
+      <div class="table-wrapper">
+        <table class="approvers-table">
+          <thead>
+            <tr>
+              <th>Stakeholder</th>
+              <th>Designation</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let app of approvers">
+              <td>{{app.managerName || 'Not Assigned'}}</td>
+              <td>{{app.designation}}</td>
+              <td><span class="status-badge approved">Approved</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <button class="btn-submit" [disabled]="isSubmitting" (click)="submit()">
+      {{ isSubmitting ? 'Submitting...' : 'Submit Cash Purchase Request' }}
+    </button>
+  </div>
+</div>

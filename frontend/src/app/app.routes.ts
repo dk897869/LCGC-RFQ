@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './auth/auth-guard';
 
 export const routes: Routes = [
   {
@@ -19,13 +20,20 @@ export const routes: Routes = [
   },
   { 
     path: 'dashboard',
+    canActivate: [authGuard],
     loadComponent: () => import('./components/dashboard/dashboard').then(m => m.DashboardComponent)
   },
     {
     path: 'ep-approval',
+    canActivate: [authGuard],
     loadComponent: () => import('./components/ep-approval/ep-approval').then(m => m.EPApprovalComponent)
   },
-
+{
+  path: 'approvals',
+  canActivate: [authGuard],
+  loadComponent: () => import('./components/approvals/approvals').then(m => m.ApprovalsComponent)
+}
+,
   {
     path: '',
     redirectTo: 'login',

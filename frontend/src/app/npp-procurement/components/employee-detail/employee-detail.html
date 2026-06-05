@@ -1,0 +1,267 @@
+<div class="employee-detail-container">
+  <!-- Header -->
+  <div class="form-header">
+    <div class="header-badges">
+      <span class="badge primary">NPP PROCUREMENT</span>
+      <span class="badge employee">👥 Employee Detail</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-add" (click)="openAddModal()">
+        <span class="btn-icon">+</span> Add Employee
+      </button>
+      <button class="btn-export" (click)="exportToExcel()">
+        📎 Export Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" *ngIf="showToast" [ngClass]="'toast-' + toastType">
+    <span class="toast-icon">{{ toastType === 'success' ? '✅' : '❌' }}</span>
+    <span class="toast-message">{{ toastMessage }}</span>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading employees...</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-cards" *ngIf="!isLoading">
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ getTotalEmployees() }}</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+    </div>
+    <div class="stat-card" *ngFor="let dept of departments.slice(0, 4)">
+      <div class="stat-icon">🏢</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ getDepartmentCount(dept) }}</div>
+        <div class="stat-label">{{ dept }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section" *ngIf="!isLoading">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        class="search-input" 
+        [(ngModel)]="searchTerm" 
+        (input)="applyFilters()" 
+        placeholder="Search by name, ID, email, department, designation...">
+      <button class="search-clear" *ngIf="searchTerm" (click)="searchTerm=''; applyFilters()">✕</button>
+    </div>
+    <div class="filter-group">
+      <select class="filter-select" [(ngModel)]="departmentFilter" (change)="applyFilters()">
+        <option value="">All Departments</option>
+        <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="designationFilter" (change)="applyFilters()">
+        <option value="">All Designations</option>
+        <option *ngFor="let desig of designations" [value]="desig">{{ desig }}</option>
+      </select>
+      <button class="btn-clear" (click)="clearFilters()">Clear Filters</button>
+    </div>
+  </div>
+
+  <!-- Employee Table -->
+  <div class="table-wrapper" *ngIf="!isLoading">
+    <div class="empty-state" *ngIf="filteredEmployees.length === 0">
+      <div class="empty-icon">👥</div>
+      <h3>No employees found</h3>
+      <p>Try adjusting your filters or add a new employee</p>
+      <button class="btn-add" (click)="openAddModal()">+ Add Employee</button>
+    </div>
+
+    <div class="table-responsive" *ngIf="filteredEmployees.length > 0">
+      <table class="employee-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Email Address</th>
+            <th>Designation</th>
+            <th>Department</th>
+            <th>Contact No</th>
+            <th>Date of Birth</th>
+            <th>Reporting Head</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let emp of filteredEmployees; let i = index">
+            <td class="id-cell">{{ emp.id }}</td>
+            <td class="name-cell">
+              <strong>{{ emp.fullName }}</strong>
+            </td>
+            <td class="email-cell">{{ emp.emailAddress }}</td>
+            <td>{{ emp.designation }}</td>
+            <td>
+              <span class="dept-badge">{{ emp.department }}</span>
+            </td>
+            <td>{{ emp.contactNo }}</td>
+            <td>{{ emp.dateOfBirth }}</td>
+            <td>
+              <div class="reporting-info">
+                <strong>{{ emp.reportingHead }}</strong>
+                <span class="reporting-designation">{{ emp.reportingDesignation }}</span>
+              </div>
+            </td>
+            <td class="actions-cell">
+              <button class="btn-edit" (click)="openEditModal(emp)" title="Edit Employee">✏️ Edit</button>
+              <button class="btn-delete" (click)="confirmDelete(emp, i)" title="Delete Employee">🗑️ Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Employee Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>➕ Add New Employee</h3>
+        <button class="close-btn" (click)="closeAddModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label>Full Name <span class="required">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="newEmployee.fullName" placeholder="Enter full name">
+          </div>
+          <div class="form-field">
+            <label>Email Address <span class="required">*</span></label>
+            <input type="email" class="form-control" [(ngModel)]="newEmployee.emailAddress" placeholder="email@company.com">
+          </div>
+          <div class="form-field">
+            <label>Password</label>
+            <input type="password" class="form-control" [(ngModel)]="newEmployee.password" placeholder="Enter password">
+          </div>
+          <div class="form-field">
+            <label>Designation <span class="required">*</span></label>
+            <select class="form-control" [(ngModel)]="newEmployee.designation">
+              <option value="">Select Designation</option>
+              <option *ngFor="let desig of designations" [value]="desig">{{ desig }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Department <span class="required">*</span></label>
+            <select class="form-control" [(ngModel)]="newEmployee.department">
+              <option value="">Select Department</option>
+              <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Contact No <span class="required">*</span></label>
+            <input type="tel" class="form-control" [(ngModel)]="newEmployee.contactNo" placeholder="10-digit mobile number">
+          </div>
+          <div class="form-field">
+            <label>Date of Birth</label>
+            <input type="date" class="form-control" [(ngModel)]="newEmployee.dateOfBirth">
+          </div>
+          <div class="form-field">
+            <label>Organization</label>
+            <input type="text" class="form-control" [(ngModel)]="newEmployee.organization" placeholder="Organization name">
+          </div>
+          <div class="form-field">
+            <label>Reporting Head</label>
+            <input type="text" class="form-control" [(ngModel)]="newEmployee.reportingHead" placeholder="Reporting manager name">
+          </div>
+          <div class="form-field">
+            <label>Reporting Designation</label>
+            <input type="text" class="form-control" [(ngModel)]="newEmployee.reportingDesignation" placeholder="Manager designation">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeAddModal()">Cancel</button>
+        <button class="btn-save" (click)="addEmployee()">Add Employee</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Employee Modal -->
+  <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Edit Employee</h3>
+        <button class="close-btn" (click)="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedEmployee">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label>Full Name <span class="required">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="selectedEmployee.fullName" placeholder="Enter full name">
+          </div>
+          <div class="form-field">
+            <label>Email Address <span class="required">*</span></label>
+            <input type="email" class="form-control" [(ngModel)]="selectedEmployee.emailAddress" placeholder="email@company.com">
+          </div>
+          <div class="form-field">
+            <label>Designation <span class="required">*</span></label>
+            <select class="form-control" [(ngModel)]="selectedEmployee.designation">
+              <option value="">Select Designation</option>
+              <option *ngFor="let desig of designations" [value]="desig">{{ desig }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Department <span class="required">*</span></label>
+            <select class="form-control" [(ngModel)]="selectedEmployee.department">
+              <option value="">Select Department</option>
+              <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Contact No <span class="required">*</span></label>
+            <input type="tel" class="form-control" [(ngModel)]="selectedEmployee.contactNo" placeholder="10-digit mobile number">
+          </div>
+          <div class="form-field">
+            <label>Date of Birth</label>
+            <input type="date" class="form-control" [(ngModel)]="selectedEmployee.dateOfBirth">
+          </div>
+          <div class="form-field">
+            <label>Organization</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedEmployee.organization">
+          </div>
+          <div class="form-field">
+            <label>Reporting Head</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedEmployee.reportingHead">
+          </div>
+          <div class="form-field">
+            <label>Reporting Designation</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedEmployee.reportingDesignation">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+        <button class="btn-save" (click)="updateEmployee()">Update Employee</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDelete()">
+    <div class="modal-card delete-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header delete-header">
+        <h3>⚠️ Confirm Delete</h3>
+        <button class="close-btn" (click)="cancelDelete()">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ selectedEmployee?.fullName }}</strong>?</p>
+        <p class="delete-warning">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelDelete()">Cancel</button>
+        <button class="btn-delete" (click)="deleteEmployee()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>

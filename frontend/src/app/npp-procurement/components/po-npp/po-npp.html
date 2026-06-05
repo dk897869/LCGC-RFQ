@@ -1,0 +1,87 @@
+<!-- po-npp.html -->
+<div class="po-container">
+  <div class="po-header">
+    <div class="po-title-section">
+      <span class="po-icon">📄</span>
+      <h2>Purchase Order - NPP</h2>
+      <span class="po-status-badge" [ngClass]="'status-' + poData.status">{{ poData.status | uppercase }}</span>
+    </div>
+    <div class="po-meta" *ngIf="poData.poNumber">
+      <span>PO #: {{ poData.poNumber }}</span>
+    </div>
+  </div>
+
+  <div class="po-body">
+    <!-- Vendor Section -->
+    <div class="po-section">
+      <div class="section-head"><span>🏢 Vendor Information</span></div>
+      <div class="form-row two-col">
+        <div class="field"><label>Vendor Name <span class="req">*</span></label><input type="text" [(ngModel)]="poData.vendorName" class="input" [class.error]="showErrors && !poData.vendorName"></div>
+        <div class="field"><label>Vendor ID</label><input type="text" [(ngModel)]="poData.vendorId" class="input"></div>
+        <div class="field"><label>GST Number</label><input type="text" [(ngModel)]="poData.vendorGst" class="input"></div>
+        <div class="field full"><label>Address</label><input type="text" [(ngModel)]="poData.vendorAddress" class="input"></div>
+      </div>
+    </div>
+
+    <!-- Delivery Section -->
+    <div class="po-section">
+      <div class="section-head"><span>🚚 Delivery & Terms</span></div>
+      <div class="form-row two-col">
+        <div class="field"><label>Shipping Address <span class="req">*</span></label><textarea rows="2" [(ngModel)]="poData.shippingAddress" class="input" [class.error]="showErrors && !poData.shippingAddress"></textarea></div>
+        <div class="field"><label>Billing Address</label><textarea rows="2" [(ngModel)]="poData.billingAddress" class="input"></textarea></div>
+        <div class="field"><label>Payment Terms</label><select [(ngModel)]="poData.paymentTerms" class="input"><option *ngFor="let term of paymentTermsList">{{ term }}</option></select></div>
+        <div class="field"><label>Delivery Terms</label><select [(ngModel)]="poData.deliveryTerms" class="input"><option *ngFor="let dt of deliveryTermsList">{{ dt }}</option></select></div>
+        <div class="field"><label>Required Delivery Date <span class="req">*</span></label><input type="date" [(ngModel)]="poData.deliveryDate" class="input" [class.error]="showErrors && !poData.deliveryDate"></div>
+        <div class="field"><label>PR Reference</label><input type="text" [(ngModel)]="poData.attachedPrRef" placeholder="PR-xxxxxx" class="input"></div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="po-section">
+      <div class="section-head"><span>📦 Line Items</span><button class="add-item-btn" (click)="addItem()">+ Add Item</button></div>
+      <div class="table-wrapper">
+        <table class="po-items-table">
+          <thead><tr><th>#</th><th>Item Code</th><th>Description <span class="req">*</span></th><th>Qty</th><th>UOM</th><th>Unit Price</th><th>Total</th><th>Tax %</th><th>Tax Amt</th><th>Disc.</th><th>Net Amt</th><th>Req Date</th><th></th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of poData.items; let i = index">
+              <td>{{ i+1 }}</td>
+              <td><input type="text" [(ngModel)]="item.itemCode" class="cell-input"></td>
+              <td><input type="text" [(ngModel)]="item.description" class="cell-input" [class.error]="showErrors && !item.description"></td>
+              <td><input type="number" [(ngModel)]="item.quantity" (change)="updateItemCalculations(item)" class="cell-input num-input" min="0.01"></td>
+              <td><input type="text" [(ngModel)]="item.uom" class="cell-input" style="width:60px"></td>
+              <td><input type="number" [(ngModel)]="item.unitPrice" (change)="updateItemCalculations(item)" class="cell-input num-input" min="0"></td>
+              <td class="calc-cell">₹ {{ item.totalPrice | number:'1.2-2' }}</td>
+              <td><select [(ngModel)]="item.taxRate" (change)="updateItemCalculations(item)" class="cell-input"><option *ngFor="let tr of taxRates" [value]="tr">{{ tr }}%</option></select></td>
+              <td class="calc-cell">₹ {{ item.taxAmount | number:'1.2-2' }}</td>
+              <td><input type="number" [(ngModel)]="item.discount" (change)="updateItemCalculations(item)" class="cell-input num-input" min="0"></td>
+              <td class="calc-cell total-net">₹ {{ item.netAmount | number:'1.2-2' }}</td>
+              <td><input type="date" [(ngModel)]="item.deliveryDate" class="cell-input date-input"></td>
+              <td><button class="remove-btn" (click)="removeItem(i)" [disabled]="poData.items.length===1">✖</button></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="summary-row"><td colspan="6" class="summary-label">Subtotal</td><td colspan="6" class="summary-value">₹ {{ poData.subtotal | number:'1.2-2' }}</td></tr>
+            <tr class="summary-row"><td colspan="6" class="summary-label">Total Tax</td><td colspan="6" class="summary-value">₹ {{ poData.totalTax | number:'1.2-2' }}</td></tr>
+            <tr class="summary-row"><td colspan="6" class="summary-label">Total Discount</td><td colspan="6" class="summary-value">₹ {{ poData.totalDiscount | number:'1.2-2' }}</td></tr>
+            <tr class="grand-total-row"><td colspan="6" class="grand-label">GRAND TOTAL ({{ poData.currency }})</td><td colspan="6" class="grand-value">₹ {{ poData.grandTotal | number:'1.2-2' }}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="po-section">
+      <div class="section-head"><span>📝 Special Instructions</span></div>
+      <textarea rows="3" [(ngModel)]="poData.specialNotes" placeholder="Delivery instructions, quality requirements, etc." class="input full-textarea"></textarea>
+      <div class="approval-row"><label>Approved By</label><input type="text" [(ngModel)]="poData.approvedBy" placeholder="Name of Approver" class="input" style="width:250px"></div>
+    </div>
+  </div>
+
+  <div class="po-actions">
+    <button class="btn-outline" (click)="resetForm()">Reset</button>
+    <button class="btn-submit" (click)="submitPo()" [disabled]="isSubmitting">
+      <span *ngIf="!isSubmitting">✓ Issue Purchase Order</span>
+      <span *ngIf="isSubmitting">Processing...</span>
+    </button>
+  </div>
+</div>

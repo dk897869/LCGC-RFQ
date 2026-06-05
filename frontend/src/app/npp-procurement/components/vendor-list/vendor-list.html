@@ -1,0 +1,74 @@
+<div class="vendor-list-container">
+  <div class="form-header">
+    <div class="header-badges">
+      <span class="badge primary">NPP PROCUREMENT</span>
+      <span class="badge vendor">🏢 Vendor List-NPP</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" *ngIf="showToast" [ngClass]="'toast-' + toastType">
+    <span>{{ toastType === 'success' ? '✅' : '❌' }}</span>
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <input class="filter-input" [(ngModel)]="filterCode" (input)="applyFilters()" placeholder="🔍 Filter by Code">
+      <input class="filter-input" [(ngModel)]="filterName" (input)="applyFilters()" placeholder="🔍 Filter by Name">
+      <input class="filter-input" [(ngModel)]="filterEmail" (input)="applyFilters()" placeholder="🔍 Filter by Email">
+      <input class="filter-input" [(ngModel)]="filterPhone" (input)="applyFilters()" placeholder="🔍 Filter by Phone">
+    </div>
+    <div class="action-buttons">
+      <button class="btn-add" (click)="addVendorRow()">+ Add Vendor</button>
+      <button class="btn-export" (click)="exportToExcel()">📎 Export Excel</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <table class="vendor-table">
+      <thead>
+        <tr>
+          <th>Select</th>
+          <th>Vendor Code</th>
+          <th>Vendor Name</th>
+          <th>Email ID</th>
+          <th>Phone No</th>
+          <th>GST</th>
+          <th>MSME</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let vendor of filteredVendors; let i = index">
+          <td><input type="checkbox" [(ngModel)]="vendor.select"></td>
+          <td><input class="table-input" [(ngModel)]="vendor.code" placeholder="Code"></td>
+          <td><input class="table-input" [(ngModel)]="vendor.name" placeholder="Name"></td>
+          <td><input class="table-input" [(ngModel)]="vendor.emailId" placeholder="Email"></td>
+          <td><input class="table-input" [(ngModel)]="vendor.phoneNo" placeholder="Phone"></td>
+          <td><input class="table-input" [(ngModel)]="vendor.gst" placeholder="GST"></td>
+          <td><input class="table-input" [(ngModel)]="vendor.msme" placeholder="MSME"></td>
+          <td>
+            <select class="table-select" [(ngModel)]="vendor.status">
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+          </td>
+          <td>
+            <button class="btn-save" (click)="saveVendor(vendor)">💾 Save</button>
+            <button class="btn-delete" (click)="deleteVendor(i)">🗑️ Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer Stats -->
+  <div class="footer-stats">
+    <span>Total Vendors: {{ filteredVendors.length }}</span>
+    <span>Active: {{ filteredVendors.filter(v => v.status === 'Active').length }}</span>
+  </div>
+</div>

@@ -1,0 +1,388 @@
+<div class="approvals-container">
+  <!-- Toast Container -->
+  <div class="toast-container">
+    <div *ngFor="let toast of toasts" class="toast" [ngClass]="'toast-' + toast.type">
+      <span class="toast-icon">{{ toast.icon }}</span>
+      <span class="toast-message">{{ toast.message }}</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="approvals-header">
+    <div class="header-left">
+      <h1>✅ Approvals Dashboard</h1>
+      <p>Manage and track all approval requests across EP, RFQ, NPP, PR, PO, and Payment</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-create" (click)="navigateToCreate()">
+        <span class="btn-icon">➕</span> Create New Request
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" (click)="setActiveTab('all')">
+      <div class="stat-icon">📊</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ approvalStats.total }}</div>
+        <div class="stat-label">Total Requests</div>
+      </div>
+    </div>
+    <div class="stat-card pending-card" (click)="setActiveTab('pending')">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-info">
+        <div class="stat-value pending">{{ approvalStats.pending }}</div>
+        <div class="stat-label">Pending</div>
+      </div>
+    </div>
+    <div class="stat-card approved-card" (click)="setActiveTab('approved')">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info">
+        <div class="stat-value approved">{{ approvalStats.approved }}</div>
+        <div class="stat-label">Approved</div>
+      </div>
+    </div>
+    <div class="stat-card rejected-card" (click)="setActiveTab('rejected')">
+      <div class="stat-icon">❌</div>
+      <div class="stat-info">
+        <div class="stat-value rejected">{{ approvalStats.rejected }}</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Section -->
+  <div class="progress-section">
+    <div class="progress-card">
+      <div class="progress-header">
+        <span>📈 Approval Rate</span>
+        <strong>{{ getApprovalRate() }}%</strong>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill approved" [style.width]="getApprovalRate() + '%'"></div>
+      </div>
+    </div>
+    <div class="progress-card">
+      <div class="progress-header">
+        <span>⏳ Pending Rate</span>
+        <strong>{{ getPendingRate() }}%</strong>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill pending" [style.width]="getPendingRate() + '%'"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics by Type -->
+  <div class="stats-type-section">
+    <h3>📊 Statistics by Request Type</h3>
+    <div class="stats-type-grid">
+      <div class="type-stat-card ep" (click)="typeFilter='ep'; applyFilters()">
+        <div class="type-icon">📋</div>
+        <div class="type-name">EP Requests</div>
+        <div class="type-stats">
+          <span class="total">{{ approvalStats.byType.ep.total }}</span>
+          <span class="pending">Pending: {{ approvalStats.byType.ep.pending }}</span>
+          <span class="approved">Approved: {{ approvalStats.byType.ep.approved }}</span>
+        </div>
+      </div>
+      <div class="type-stat-card rfq" (click)="typeFilter='rfq'; applyFilters()">
+        <div class="type-icon">📄</div>
+        <div class="type-name">RFQ Requests</div>
+        <div class="type-stats">
+          <span class="total">{{ approvalStats.byType.rfq.total }}</span>
+          <span class="pending">Pending: {{ approvalStats.byType.rfq.pending }}</span>
+          <span class="approved">Approved: {{ approvalStats.byType.rfq.approved }}</span>
+        </div>
+      </div>
+      <div class="type-stat-card npp" (click)="typeFilter='npp'; applyFilters()">
+        <div class="type-icon">🛒</div>
+        <div class="type-name">NPP Requests</div>
+        <div class="type-stats">
+          <span class="total">{{ approvalStats.byType.npp.total }}</span>
+          <span class="pending">Pending: {{ approvalStats.byType.npp.pending }}</span>
+          <span class="approved">Approved: {{ approvalStats.byType.npp.approved }}</span>
+        </div>
+      </div>
+      <div class="type-stat-card pr" (click)="typeFilter='pr'; applyFilters()">
+        <div class="type-icon">🧾</div>
+        <div class="type-name">PR Requests</div>
+        <div class="type-stats">
+          <span class="total">{{ approvalStats.byType.pr.total }}</span>
+          <span class="pending">Pending: {{ approvalStats.byType.pr.pending }}</span>
+          <span class="approved">Approved: {{ approvalStats.byType.pr.approved }}</span>
+        </div>
+      </div>
+      <div class="type-stat-card po" (click)="typeFilter='po'; applyFilters()">
+        <div class="type-icon">📦</div>
+        <div class="type-name">PO Requests</div>
+        <div class="type-stats">
+          <span class="total">{{ approvalStats.byType.po.total }}</span>
+          <span class="pending">Pending: {{ approvalStats.byType.po.pending }}</span>
+          <span class="approved">Approved: {{ approvalStats.byType.po.approved }}</span>
+        </div>
+      </div>
+      <div class="type-stat-card payment" (click)="typeFilter='payment'; applyFilters()">
+        <div class="type-icon">💰</div>
+        <div class="type-name">Payment Requests</div>
+        <div class="type-stats">
+          <span class="total">{{ approvalStats.byType.payment.total }}</span>
+          <span class="pending">Pending: {{ approvalStats.byType.payment.pending }}</span>
+          <span class="approved">Approved: {{ approvalStats.byType.payment.approved }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-container">
+    <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="setActiveTab('all')">
+      <span>📋</span> All Requests
+      <span class="tab-count">{{ approvalStats.total }}</span>
+    </button>
+    <button class="tab-btn pending" [class.active]="activeTab === 'pending'" (click)="setActiveTab('pending')">
+      <span>⏳</span> Pending
+      <span class="tab-count">{{ approvalStats.pending }}</span>
+    </button>
+    <button class="tab-btn approved" [class.active]="activeTab === 'approved'" (click)="setActiveTab('approved')">
+      <span>✅</span> Approved
+      <span class="tab-count">{{ approvalStats.approved }}</span>
+    </button>
+    <button class="tab-btn rejected" [class.active]="activeTab === 'rejected'" (click)="setActiveTab('rejected')">
+      <span>❌</span> Rejected
+      <span class="tab-count">{{ approvalStats.rejected }}</span>
+    </button>
+    <button class="tab-btn inprocess" [class.active]="activeTab === 'in-process'" (click)="setActiveTab('in-process')">
+      <span>🔄</span> In Process
+      <span class="tab-count">{{ approvalStats.inProcess }}</span>
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        (input)="applyFilters()" 
+        placeholder="Search by title, requester, department, or serial number..."
+      >
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="typeFilter" (change)="applyFilters()" class="filter-select">
+        <option value="all">All Types</option>
+        <option value="ep">📋 EP Requests</option>
+        <option value="rfq">📄 RFQ Requests</option>
+        <option value="npp">🛒 NPP Requests</option>
+        <option value="pr">🧾 PR Requests</option>
+        <option value="po">📦 PO Requests</option>
+        <option value="payment">💰 Payment Requests</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="priorityFilter" (change)="applyFilters()" class="filter-select">
+        <option value="all">All Priorities</option>
+        <option value="High">🔴 High Priority</option>
+        <option value="Medium">🟡 Medium Priority</option>
+        <option value="Low">🟢 Low Priority</option>
+      </select>
+    </div>
+    <button class="btn-clear" (click)="clearFilters()">Clear Filters</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading approvals...</p>
+  </div>
+
+  <!-- Approval Table -->
+  <div *ngIf="!isLoading" class="table-container">
+    <div *ngIf="filteredRequests.length === 0" class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>No requests found</h3>
+      <p>Try adjusting your filters or create a new request</p>
+      <button class="btn-create" (click)="navigateToCreate()">Create New Request</button>
+    </div>
+
+    <table *ngIf="filteredRequests.length > 0" class="approval-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Serial No</th>
+          <th>Title</th>
+          <th>Requester</th>
+          <th>Department</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let request of filteredRequests">
+          <td class="type-cell">
+            <span class="type-badge" [ngClass]="'type-' + request.type">
+              {{ getTypeIcon(request.type) }} {{ getTypeLabel(request.type) }}
+            </span>
+          </td>
+          <td class="serial-cell">
+            <span class="serial-badge">{{ request.serialNo }}</span>
+          </td>
+          <td class="title-cell">
+            <strong>{{ request.title }}</strong>
+            <span *ngIf="request.vendor" class="vendor-sub">{{ request.vendor }}</span>
+          </td>
+          <td class="requester-cell">
+            {{ request.requester }}
+            <span class="email-sub">{{ request.email }}</span>
+          </td>
+          <td>{{ request.department }}</td>
+          <td>
+            <span class="priority-badge" [ngClass]="getPriorityClass(request.priority)">
+              {{ request.priority }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(request.status)">
+              {{ request.status }}
+            </span>
+          </td>
+          <td class="amount-cell">{{ formatAmount(request.amount) }}</td>
+          <td class="date-cell">{{ formatDate(request.requestDate) }}</td>
+          <td class="actions-cell">
+            <button class="action-btn view" (click)="viewDetails(request)" title="View Details">👁️</button>
+            <button *ngIf="request.status === 'Pending'" class="action-btn approve" (click)="openApproveModal(request)" title="Approve">✅</button>
+            <button *ngIf="request.status === 'Pending'" class="action-btn reject" (click)="openRejectModal(request)" title="Reject">❌</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeModals()">
+    <div class="modal-card details-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📄 Request Details</h2>
+        <button class="close-btn" (click)="closeModals()">×</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedRequest">
+        <div class="detail-grid">
+          <div class="detail-group">
+            <label>Request Type:</label>
+            <span class="type-badge" [ngClass]="'type-' + selectedRequest.type">
+              {{ getTypeIcon(selectedRequest.type) }} {{ getTypeLabel(selectedRequest.type) }}
+            </span>
+          </div>
+          <div class="detail-group">
+            <label>Serial Number:</label>
+            <span class="serial-badge">{{ selectedRequest.serialNo }}</span>
+          </div>
+          <div class="detail-group full-width">
+            <label>Title:</label>
+            <span>{{ selectedRequest.title }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Requester:</label>
+            <span>{{ selectedRequest.requester }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Email:</label>
+            <span>{{ selectedRequest.email || '—' }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Department:</label>
+            <span>{{ selectedRequest.department }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Vendor:</label>
+            <span>{{ selectedRequest.vendor || '—' }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Amount:</label>
+            <span class="amount">{{ formatAmount(selectedRequest.amount) }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Priority:</label>
+            <span class="priority-badge" [ngClass]="getPriorityClass(selectedRequest.priority)">{{ selectedRequest.priority }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Status:</label>
+            <span class="status-badge" [ngClass]="getStatusClass(selectedRequest.status)">{{ selectedRequest.status }}</span>
+          </div>
+          <div class="detail-group">
+            <label>Request Date:</label>
+            <span>{{ formatDate(selectedRequest.requestDate) }}</span>
+          </div>
+          <div class="detail-group full-width" *ngIf="selectedRequest.comments">
+            <label>Comments:</label>
+            <span>{{ selectedRequest.comments }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeModals()">Close</button>
+        <button *ngIf="selectedRequest?.status === 'Pending'" class="btn-approve" (click)="openApproveModal(selectedRequest!); closeModals()">Approve</button>
+        <button *ngIf="selectedRequest?.status === 'Pending'" class="btn-reject" (click)="openRejectModal(selectedRequest!); closeModals()">Reject</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approve Modal -->
+  <div class="modal-overlay" *ngIf="showApproveModal" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>✅ Approve Request</h2>
+        <button class="close-btn" (click)="closeModals()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="request-summary">
+          <p><strong>Title:</strong> {{ selectedRequest?.title }}</p>
+          <p><strong>Requester:</strong> {{ selectedRequest?.requester }}</p>
+          <p><strong>Amount:</strong> {{ formatAmount(selectedRequest?.amount || 0) }}</p>
+        </div>
+        <div class="form-group">
+          <label>Comments (Optional)</label>
+          <textarea [(ngModel)]="approvalComments" placeholder="Add any comments about this approval..." rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeModals()" [disabled]="isSubmitting">Cancel</button>
+        <button class="btn-approve" (click)="approveRequest()" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Processing...' : 'Confirm Approve' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div class="modal-overlay" *ngIf="showRejectModal" (click)="closeModals()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>❌ Reject Request</h2>
+        <button class="close-btn" (click)="closeModals()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="request-summary">
+          <p><strong>Title:</strong> {{ selectedRequest?.title }}</p>
+          <p><strong>Requester:</strong> {{ selectedRequest?.requester }}</p>
+        </div>
+        <div class="form-group required">
+          <label>Reason for Rejection <span class="required">*</span></label>
+          <textarea [(ngModel)]="rejectionReason" placeholder="Please provide a reason for rejecting this request..." rows="3"></textarea>
+          <div class="error-hint" *ngIf="!rejectionReason.trim() && isSubmitting">Please provide a reason for rejection</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeModals()" [disabled]="isSubmitting">Cancel</button>
+        <button class="btn-reject" (click)="rejectRequest()" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Processing...' : 'Confirm Reject' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

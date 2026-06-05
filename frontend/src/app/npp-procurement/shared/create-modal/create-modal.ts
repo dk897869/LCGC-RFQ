@@ -1,0 +1,9 @@
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-create-modal',
+  imports: [],
+  templateUrl: './create-modal.html',
+  styleUrl: './create-modal.scss',
+})
+export class CreateModal {}

@@ -1,0 +1,163 @@
+<div class="rfq-vendor-container">
+  <div class="form-header">
+    <div class="header-badges">
+      <span class="badge primary">NPP PROCUREMENT</span>
+      <span class="badge rfq">📋 Request for Quotation-NPP</span>
+    </div>
+  </div>
+
+  <!-- Requester Info -->
+  <div class="form-section">
+    <h3 class="section-title">📋 Requester Information</h3>
+    <div class="info-grid">
+      <div class="info-row">
+        <div class="info-label">Name</div>
+        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.requesterName" placeholder="Enter name"></div>
+        <div class="info-label">Request Date</div>
+        <div class="info-value"><input class="form-input" type="date" [(ngModel)]="rfqVendorForm.requestDate"></div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Department</div>
+        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.department" placeholder="Department"></div>
+        <div class="info-label">Contact No.</div>
+        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.contactNo" placeholder="Contact number"></div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Email ID</div>
+        <div class="info-value"><input class="form-input" type="email" [(ngModel)]="rfqVendorForm.emailId" placeholder="Email address"></div>
+        <div class="info-label">Organization</div>
+        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.organization" placeholder="Organization"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Title & Priority -->
+  <div class="form-section">
+    <div class="row-2col">
+      <div class="field-group">
+        <label>Title of Activity *</label>
+        <input class="form-input" [(ngModel)]="rfqVendorForm.titleOfActivity" placeholder="Enter title">
+      </div>
+      <div class="field-group">
+        <label>Priority</label>
+        <select class="form-input" [(ngModel)]="rfqVendorForm.priority">
+          <option value="H">High</option>
+          <option value="M">Medium</option>
+          <option value="L">Low</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items Table -->
+  <div class="form-section">
+    <div class="section-header">
+      <h3 class="section-title">📦 Items / Materials</h3>
+      <div class="toolbar">
+        <button class="btn-outline" (click)="downloadExcelTemplate()">📎 Download Template</button>
+        <label class="btn-outline file-label">
+          📂 Import Excel
+          <input type="file" accept=".xlsx,.xls,.csv" (change)="onExcelFileSelected($event)" hidden>
+        </label>
+        <button class="btn-outline" (click)="exportToExcel()">📤 Export Excel</button>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>RFQ No</th>
+            <th>Description</th>
+            <th>UOM</th>
+            <th>Qty</th>
+            <th>Make</th>
+            <th>Alternative</th>
+            <th>Currency</th>
+            <th>Unit Cost</th>
+            <th>Value</th>
+            <th>Remark</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of rfqVendorItems; let i = index">
+            <td><input class="form-input sm" [(ngModel)]="item.rfqNo" placeholder="RFQ No"></td>
+            <td><input class="form-input" [(ngModel)]="item.description" placeholder="Description"></td>
+            <td><input class="form-input sm" [(ngModel)]="item.uom" placeholder="UOM"></td>
+            <td><input class="form-input sm" type="number" [(ngModel)]="item.quantity" (ngModelChange)="calcRfqVendorValue(item)"></td>
+            <td><input class="form-input" [(ngModel)]="item.make" placeholder="Make"></td>
+            <td><input class="form-input" [(ngModel)]="item.alternative" placeholder="Alternative"></td>
+            <td><select class="form-input sm" [(ngModel)]="item.currency"><option>INR</option><option>USD</option></select></td>
+            <td><input class="form-input sm" type="number" [(ngModel)]="item.unitCost" (ngModelChange)="calcRfqVendorValue(item)"></td>
+            <td class="value-cell">{{item.value | number}}</td>
+            <td><input class="form-input" [(ngModel)]="item.remark" placeholder="Remark"></td>
+            <td><button class="remove-btn" (click)="removeRfqVendorItem(i)" *ngIf="rfqVendorItems.length > 1">×</button></td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="8" class="total-label">Total Value</td>
+            <td class="value-cell total-value">{{getRfqVendorTotal() | number}}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="11"><button class="add-btn" (click)="addRfqVendorItem()">+ Add Row</button></td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Purpose -->
+  <div class="form-section">
+    <label>Purpose & Objective</label>
+    <textarea class="form-textarea" rows="3" [(ngModel)]="rfqVendorForm.purposeAndObjective" placeholder="Purpose..."></textarea>
+  </div>
+
+  <!-- Approvers -->
+  <div class="form-section">
+    <div class="section-header">
+      <h3 class="section-title">👥 Approvers</h3>
+      <button class="btn-outline" (click)="addRfqVendorApprover()">+ Add Approver</button>
+    </div>
+    <div class="table-wrapper">
+      <table class="approvers-table">
+        <thead>
+          <tr>
+            <th>Line</th>
+            <th>Manager Name</th>
+            <th>Email</th>
+            <th>Designation</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let approver of rfqVendorApprovers; let i = index">
+            <td>
+              <select class="form-input sm" [(ngModel)]="approver.line">
+                <option>Parallel</option>
+                <option>Sequential</option>
+              </select>
+            </td>
+            <td>
+              <select class="form-input" [(ngModel)]="approver.managerName" (change)="onManagerChange(approver, approver.managerName)">
+                <option value="">Select Manager</option>
+                <option *ngFor="let m of managerOptions" [value]="m.name">{{m.name}}</option>
+              </select>
+            </td>
+            <td><input class="form-input" [(ngModel)]="approver.email" placeholder="Email"></td>
+            <td><input class="form-input" [(ngModel)]="approver.designation" placeholder="Designation"></td>
+            <td><span class="status-badge pending">{{approver.status}}</span></td>
+            <td><button class="remove-btn" (click)="removeRfqVendorApprover(i)" *ngIf="rfqVendorApprovers.length > 1">×</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="form-actions">
+    <button class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Submitting...' : '✅ Submit Request for Quotation' }}
+    </button>
+  </div>
+</div>

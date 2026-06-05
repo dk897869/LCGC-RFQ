@@ -1,0 +1,105 @@
+<div class="pr-sheet">
+  <div class="sheet-title">
+    <div>
+      <h2>NPP - PR Request</h2>
+      <span>Approval for operational support and action plan</span>
+    </div>
+    <button class="home-mark" type="button">⌂</button>
+  </div>
+
+  <section class="grid-section">
+    <div class="side-label">Requester Information</div>
+    <div class="form-grid">
+      <label>Name <input [(ngModel)]="form.requesterName"></label>
+      <label>Department <input [(ngModel)]="form.department"></label>
+      <label>Email ID <input [(ngModel)]="form.emailId"></label>
+      <label>Request Date <input type="date" [(ngModel)]="form.requestDate"></label>
+      <label>Contact No. <input [(ngModel)]="form.contactNo"></label>
+      <label>Organization <input [(ngModel)]="form.organization"></label>
+      <label>Department Budget <input [(ngModel)]="form.departmentBudget"></label>
+      <label>Cost Center <input [(ngModel)]="form.costCenter"></label>
+    </div>
+  </section>
+
+  <section class="activity-row">
+    <strong>NPP - PR Request</strong>
+    <input [(ngModel)]="form.titleOfActivity" placeholder="Title of Activity">
+    <input [(ngModel)]="form.purposeAndObjective" placeholder="Purpose & objectives">
+  </section>
+
+  <section class="sheet-table">
+    <div class="table-top">
+      <h3>PR Items</h3>
+      <button type="button" (click)="addItem()">+ Add Item</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>S. No.</th>
+            <th>RFQ No.</th>
+            <th>Supplier Name</th>
+            <th>Part Code</th>
+            <th>Part Description</th>
+            <th>Specification</th>
+            <th>CMDT</th>
+            <th>UOM</th>
+            <th>Qty</th>
+            <th>Currency</th>
+            <th>Unit Price</th>
+            <th>Value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td><input [(ngModel)]="item.rfqNo"></td>
+            <td><input [(ngModel)]="item.supplierName"></td>
+            <td><input [(ngModel)]="item.partCode"></td>
+            <td><input [(ngModel)]="item.partDescription"></td>
+            <td><input [(ngModel)]="item.specification"></td>
+            <td><input [(ngModel)]="item.cmdt"></td>
+            <td><input [(ngModel)]="item.uom"></td>
+            <td><input type="number" [(ngModel)]="item.qty" (input)="calculateItem(item)"></td>
+            <td><input [(ngModel)]="item.currency"></td>
+            <td><input type="number" [(ngModel)]="item.unitPrice" (input)="calculateItem(item)"></td>
+            <td>{{ item.totalValue | number:'1.2-2' }}</td>
+            <td><button type="button" class="remove-btn" (click)="removeItem(i)">×</button></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="11">Total Value (INR)</td>
+            <td colspan="2">{{ getTotalValue() | number:'1.2-2' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="approval-table">
+    <div class="side-label">Approval</div>
+    <table>
+      <thead>
+        <tr><th>Line</th><th>Stakeholder</th><th>Email</th><th>Designation</th><th>Status</th><th>Remarks</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let approver of approvers">
+          <td>{{ approver.line }}</td>
+          <td><input [(ngModel)]="approver.managerName"></td>
+          <td><input [(ngModel)]="approver.email"></td>
+          <td><input [(ngModel)]="approver.designation"></td>
+          <td>{{ approver.status }}</td>
+          <td><input [(ngModel)]="approver.remarks"></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="form-actions">
+    <button type="button" class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Submitting...' : 'Submit PR Request' }}
+    </button>
+  </div>
+</div>

@@ -1,5 +1,7 @@
+// login.component.ts (COMPLETE FIXED VERSION)
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
@@ -50,14 +52,18 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   serverReady = false;
   serverWarmupMessage = '';
 
-  // Google Client ID - Your actual credentials
+  // Google Client ID
   private readonly GOOGLE_CLIENT_ID = '965877400039-isl9dli56jh3qqqeqt9of8gccneahs5o.apps.googleusercontent.com';
+  private readonly isBrowser: boolean;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit() {
     if (this.authService.isAuthenticated()) {
@@ -70,15 +76,14 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     this.serverWarmupMessage = 'Connecting to server...';
     setTimeout(() => { this.serverWarmupMessage = ''; this.serverReady = true; }, 8000);
 
-    // Load Google Sign-In script
-    this.loadGoogleScript();
-    
-    // Load Facebook SDK
-    this.loadFacebookSDK();
+    if (this.isBrowser) {
+      this.loadGoogleScript();
+      this.loadFacebookSDK();
+    }
   }
 
   ngAfterViewInit() {
-    // Initialize Google button after view is ready
+    if (!this.isBrowser) return;
     setTimeout(() => {
       this.initGoogleButton();
     }, 500);
@@ -89,7 +94,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadGoogleScript() {
-    // Check if script already exists
+    if (!this.isBrowser) return;
     if (document.querySelector('#google-js')) return;
     
     const script = document.createElement('script');
@@ -105,6 +110,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   initGoogleButton() {
+    if (!this.isBrowser) return;
     if (typeof google !== 'undefined' && google.accounts) {
       console.log('Initializing Google button...');
       google.accounts.id.initialize({
@@ -112,7 +118,6 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
         callback: this.handleGoogleCredentialResponse.bind(this),
         auto_select: false,
         cancel_on_tap_outside: true,
-        // Important: Add these for local development
         context: 'signin',
         ux_mode: 'popup',
         itp_support: true
@@ -135,7 +140,6 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
         console.log('Google button rendered');
       }
       
-      // Optional: Also prompt one-tap login
       google.accounts.id.prompt();
     } else {
       console.log('Google accounts not available yet, retrying...');
@@ -167,6 +171,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadFacebookSDK() {
+    if (!this.isBrowser) return;
     if (document.querySelector('#facebook-js')) return;
     
     (window as any).fbAsyncInit = () => {
@@ -295,14 +300,19 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
         this.isLoading = false;
         this.cdr.detectChanges();
         if (res?.success) {
-          this.showToast('success', `Welcome back, ${res.user?.name?.split(' ')[0] || 'User'}! 🎉`);
-          setTimeout(() => this.router.navigate(['/dashboard']), 1200);
+          const mustChangePassword = res.user?.mustChangePassword === true;
+          const target = mustChangePassword ? '/profile' : '/dashboard';
+          const message = mustChangePassword
+            ? 'Temporary password verified. Please change your password now.'
+            : `Welcome back, ${res.user?.name?.split(' ')[0] || 'User'}!`;
+          this.showToast('success', message);
+          setTimeout(() => {
+            this.router.navigate([target], mustChangePassword ? { queryParams: { tab: 'password', firstLogin: 'true' } } : undefined);
+          }, 900);
+        } else if (res?.needsVerification) {
+          this.showToast('info', 'Please verify your email first. Check your inbox.');
         } else {
-          if (res?.needsVerification) {
-            this.showToast('info', 'Please verify your email first. Check your inbox.');
-          } else {
-            this.showToast('error', res?.message || 'Login failed. Please check your credentials.');
-          }
+          this.showToast('error', res?.message || 'Login failed. Please check your credentials.');
         }
       },
       error: err => {
@@ -312,7 +322,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
   }
-
+  // ✅ FIXED: Send Mobile OTP with better handling
   sendMobileOTP() {
     if (!this.mobileNumber || !/^[0-9]{10}$/.test(this.mobileNumber)) {
       this.showToast('error', 'Please enter a valid 10-digit mobile number.');
@@ -322,13 +332,22 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.detectChanges();
 
     this.authService.sendSMSOTP(this.mobileNumber, 'login').subscribe({
-      next: () => {
+      next: (res) => {
+        console.log('Mobile OTP response:', res);
         this.isLoading = false;
         this.otpChannel = 'mobile';
         this.otpMobile = this.mobileNumber;
-        this.otpCode = ''; this.otpError = ''; this.otpSuccess = '';
+        this.otpCode = ''; 
+        this.otpError = ''; 
+        
+        const message = res.mockOtp ? 
+          `Demo Mode - OTP: ${res.mockOtp}` : 
+          (res.message || `OTP sent to ${this.mobileNumber}`);
+        
+        this.otpSuccess = message;
         this.showOTPModal = true;
         this.startOTPTimer();
+        this.showToast('success', message);
         this.cdr.detectChanges();
       },
       error: err => {
@@ -339,50 +358,66 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  // ✅ FIXED: Send Email OTP with better handling
   sendEmailOTP() {
     if (!this.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
       this.showToast('error', 'Please enter a valid email address.');
       return;
     }
+    
+    console.log('📧 Sending email OTP to:', this.email);
     this.isLoading = true;
     this.cdr.detectChanges();
+    
     this.authService.sendOTP(this.email).subscribe({
-      next: () => {
+      next: (res) => {
+        console.log('Email OTP response:', res);
         this.isLoading = false;
-        this.otpChannel = 'email';
-        this.otpEmail = this.email.trim().toLowerCase();
-        this.otpCode = '';
-        this.otpError = '';
-        this.otpSuccess = '';
-        this.showOTPModal = true;
-        this.startOTPTimer();
+        
+        if (res?.success) {
+          this.otpChannel = 'email';
+          this.otpEmail = this.email.trim().toLowerCase();
+          this.otpCode = '';
+          this.otpError = '';
+          this.otpSuccess = res.message || `OTP sent to ${this.email}!`;
+          this.showOTPModal = true;
+          this.startOTPTimer();
+          this.showToast('success', this.otpSuccess);
+        } else {
+          this.showToast('error', res?.message || 'Failed to send OTP');
+        }
         this.cdr.detectChanges();
-        this.showToast('success', 'Check your inbox for the login code.');
       },
-      error: err => {
+      error: (err) => {
+        console.error('Email OTP error:', err);
         this.isLoading = false;
         this.cdr.detectChanges();
-        this.showToast('error', err?.message || 'Failed to send email OTP.');
+        this.showToast('error', err.message || 'Failed to send OTP. Please try again.');
       }
     });
   }
 
+  // ✅ ADDED: Verify OTP method (this was missing)
   verifyOTP() {
     if (!this.otpCode || this.otpCode.length !== 6) {
       this.otpError = 'Please enter a valid 6-digit OTP.';
       this.cdr.detectChanges();
       return;
     }
-    this.otpLoading = true; this.otpError = '';
+    
+    this.otpLoading = true;
+    this.otpError = '';
     this.cdr.detectChanges();
 
     const identifier = this.otpChannel === 'email' ? this.otpEmail : this.otpMobile;
     const method = this.otpChannel === 'email' ? 'email' : 'mobile';
 
     this.authService.verifyOTP(identifier, this.otpCode, method, 'login').subscribe({
-      next: res => {
+      next: (res) => {
+        console.log('OTP verification response:', res);
         this.otpLoading = false;
         this.cdr.detectChanges();
+        
         if (res?.success && res.token) {
           this.closeOTPModal();
           this.showToast('success', `Welcome back! 🎉`);
@@ -392,7 +427,8 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
           this.cdr.detectChanges();
         }
       },
-      error: err => {
+      error: (err) => {
+        console.error('OTP verification error:', err);
         this.otpLoading = false;
         this.otpError = err?.message || 'Invalid OTP. Please try again.';
         this.cdr.detectChanges();
@@ -400,40 +436,76 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  // ✅ FIXED: Resend OTP with better handling
   resendOTP() {
     if (!this.canResendOTP) return;
-    this.otpLoading = true; this.otpError = ''; this.otpSuccess = '';
-    const req$ =
-      this.otpChannel === 'email'
-        ? this.authService.sendOTP(this.otpEmail)
-        : this.authService.sendSMSOTP(this.otpMobile, 'login');
+    
+    this.otpLoading = true; 
+    this.otpError = ''; 
+    this.otpSuccess = '';
+    this.cdr.detectChanges();
+    
+    let req$;
+    if (this.otpChannel === 'email') {
+      req$ = this.authService.sendOTP(this.otpEmail);
+    } else {
+      req$ = this.authService.sendSMSOTP(this.otpMobile, 'login');
+    }
+    
     req$.subscribe({
-      next: () => { this.otpLoading = false; this.otpSuccess = 'OTP resent!'; this.resetOTPTimer(); this.startOTPTimer(); this.cdr.detectChanges(); },
-      error: err => { this.otpLoading = false; this.otpError = err?.message || 'Failed to resend.'; this.cdr.detectChanges(); }
+      next: (res) => { 
+        this.otpLoading = false; 
+        const message = res.mockOtp ? `Demo Mode - OTP: ${res.mockOtp}` : 'OTP resent!';
+        this.otpSuccess = message; 
+        this.resetOTPTimer(); 
+        this.startOTPTimer(); 
+        this.cdr.detectChanges();
+        this.showToast('success', message);
+      },
+      error: (err) => { 
+        this.otpLoading = false; 
+        this.otpError = err?.message || 'Failed to resend.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
   startOTPTimer() {
-    this.otpTimer = 60; this.canResendOTP = false;
+    this.otpTimer = 60; 
+    this.canResendOTP = false;
     if (this.otpTimerInterval) clearInterval(this.otpTimerInterval);
     this.otpTimerInterval = setInterval(() => {
       this.otpTimer--;
-      if (this.otpTimer <= 0) { this.canResendOTP = true; clearInterval(this.otpTimerInterval); this.otpTimerInterval = null; }
+      if (this.otpTimer <= 0) { 
+        this.canResendOTP = true; 
+        clearInterval(this.otpTimerInterval); 
+        this.otpTimerInterval = null; 
+      }
       this.cdr.detectChanges();
     }, 1000);
   }
 
-  resetOTPTimer() { if (this.otpTimerInterval) { clearInterval(this.otpTimerInterval); this.otpTimerInterval = null; } }
+  resetOTPTimer() { 
+    if (this.otpTimerInterval) { 
+      clearInterval(this.otpTimerInterval); 
+      this.otpTimerInterval = null; 
+    } 
+  }
 
   closeOTPModal() {
-    this.showOTPModal = false; this.otpCode = ''; this.otpError = '';
-    this.otpSuccess = ''; this.otpLoading = false; this.resetOTPTimer();
+    this.showOTPModal = false; 
+    this.otpCode = ''; 
+    this.otpError = '';
+    this.otpSuccess = ''; 
+    this.otpLoading = false; 
+    this.resetOTPTimer();
     this.cdr.detectChanges();
   }
 
   onOTPInput(e: any) {
     const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-    this.otpCode = val; e.target.value = val;
+    this.otpCode = val; 
+    e.target.value = val;
   }
 
   formatTimer(s: number): string {

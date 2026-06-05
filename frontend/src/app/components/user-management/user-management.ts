@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth';
 import { environment } from '../../../environments/environment';
-import { forkJoin, of, timer } from 'rxjs';
-import { timeout, catchError, switchMap } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { timeout, catchError } from 'rxjs/operators';
 
 interface UserRights {
   epApproval?: boolean; vendors?: boolean; parts?: boolean; rfq?: boolean;
@@ -21,6 +21,8 @@ interface User {
   name: string; email: string; password?: string;
   role: string; department?: string; contactNo?: string;
   dateOfBirth?: string; organization?: string; rights?: UserRights;
+  fullModuleAccessGranted?: boolean;
+  accessRequest?: any;
 }
 
 interface RightsRequest {
@@ -35,6 +37,7 @@ interface RightsRequest {
   status: string;
   createdAt?: string;
   updatedAt?: string;
+  fullModuleAccessGranted?: boolean;
 }
 
 const USER_MGMT_CACHE = {
@@ -67,26 +70,30 @@ export class UserManagementComponent implements OnInit {
   rightsRequests: RightsRequest[] = [];
 
   private readonly apiUrl = `${environment.apiUrl}/users`;
-  private readonly rightsUrl = `${environment.apiUrl}/user-rights`;
+  private readonly rightsUrl = `${environment.apiUrl}/users/access-requests`;
 
   actionLoading = false;
   topToast: { message: string; type: 'success' | 'error' | 'info' } | null = null;
   private topToastTimer: ReturnType<typeof setTimeout> | null = null;
 
   roleOptions = [
-    { value: 'Admin', label: 'Admin' }, { value: 'User', label: 'User' },
-    { value: 'Manager', label: 'Manager' }, { value: 'Viewer', label: 'Viewer' }
+    { value: 'Admin', label: 'Admin' }, 
+    { value: 'Manager', label: 'Manager' },
+    { value: 'Senior Manager', label: 'Senior Manager' },
+    { value: 'User', label: 'User' },
+    { value: 'Vendor', label: 'Vendor' },
+    { value: 'Viewer', label: 'Viewer' }
   ];
 
   moduleCategories = [
-    { name: 'Procurement', modules: ['epApproval', 'vendors', 'parts', 'rfq', 'nppProcurement', 'bidding', 'paymentRequest'] },
-    { name: 'Quality', modules: ['dqms', 'npi'] },
-    { name: 'Engineering', modules: ['systemBom', 'bomForecast'] },
-    { name: 'Finance', modules: ['priceApproval'] },
-    { name: 'Inventory', modules: ['planStock'] },
-    { name: 'Supplier', modules: ['supplierPerformance'] },
-    { name: 'Logistics', modules: ['vehicularMs'] },
-    { name: 'Administration', modules: ['userManagement'] }
+    { name: '📋 Procurement', modules: ['epApproval', 'vendors', 'parts', 'rfq', 'nppProcurement', 'bidding', 'paymentRequest'] },
+    { name: '✅ Quality', modules: ['dqms', 'npi'] },
+    { name: '🔬 Engineering', modules: ['systemBom', 'bomForecast'] },
+    { name: '💰 Finance', modules: ['priceApproval'] },
+    { name: '📦 Inventory', modules: ['planStock'] },
+    { name: '⭐ Supplier', modules: ['supplierPerformance'] },
+    { name: '🚚 Logistics', modules: ['vehicularMs'] },
+    { name: '⚙️ Administration', modules: ['userManagement'] }
   ];
 
   formData: User = {
@@ -142,7 +149,7 @@ export class UserManagementComponent implements OnInit {
 
     forkJoin({
       users: this.http.get<any>(this.apiUrl, { headers: this.getHeaders() }).pipe(timeout(5000), catchError(() => of(null))),
-      requests: this.http.get<any>(this.rightsUrl, { headers: this.getHeaders() }).pipe(timeout(5000), catchError(() => of(null)))
+      requests: this.http.get<any>(`${this.rightsUrl}?status=pending`, { headers: this.getHeaders() }).pipe(timeout(5000), catchError(() => of(null)))
     }).subscribe(({ users, requests }) => {
       clearTimeout(fallbackTimer);
 
@@ -189,7 +196,7 @@ export class UserManagementComponent implements OnInit {
     }
 
     this.isLoadingRequests = true;
-    this.http.get<any>(this.rightsUrl, { headers: this.getHeaders() })
+    this.http.get<any>(`${this.rightsUrl}?status=pending`, { headers: this.getHeaders() })
       .pipe(timeout(5000), catchError(() => of(null)))
       .subscribe(res => {
         if (res) {
@@ -229,21 +236,18 @@ export class UserManagementComponent implements OnInit {
     }
     this.actionLoading = true;
     this.http
-      .put<any>(`${this.rightsUrl}/${id}`, { status: 'Approved', action: 'Approved' }, { headers: this.getHeaders() })
-      .pipe(
-        switchMap(res => forkJoin([of(res), timer(5000)]))
-      )
+      .patch<any>(`${this.rightsUrl}/${id}`, { action: 'grant', comments: req.reason || '' }, { headers: this.getHeaders() })
       .subscribe({
-        next: ([res]) => {
+        next: (res) => {
           this.actionLoading = false;
           if (res && typeof res === 'object' && 'success' in res && (res as any).success === false) {
             this.showTopToast((res as any)?.message || 'Approval failed.', 'error');
             return;
           }
-          req.status = 'Approved';
-          req.action = 'Approved';
-          this.successMessage = `"${req.userRight}" access granted to ${req.requestedBy || 'user'}. They have been notified by email.`;
-          this.grantRightToUser(req);
+          req.status = 'granted';
+          req.action = 'grant';
+          this.successMessage = `Access request accepted for ${req.requestedBy || 'user'}. They have been notified by email.`;
+          this.markModuleAccessGranted(req, (res as any)?.data);
           this.showTopToast(this.successMessage, 'success');
 
           const currentUser = this.authService.getUser();
@@ -266,18 +270,17 @@ export class UserManagementComponent implements OnInit {
     if (!id) return;
     this.actionLoading = true;
     this.http
-      .put<any>(`${this.rightsUrl}/${id}`, { status: 'Rejected', action: 'Rejected' }, { headers: this.getHeaders() })
-      .pipe(switchMap(res => forkJoin([of(res), timer(5000)])))
+      .patch<any>(`${this.rightsUrl}/${id}`, { action: 'reject', comments: req.reason || '' }, { headers: this.getHeaders() })
       .subscribe({
-        next: ([res]) => {
+        next: (res) => {
           this.actionLoading = false;
           if (res && typeof res === 'object' && 'success' in res && (res as any).success === false) {
             this.showTopToast((res as any)?.message || 'Reject failed.', 'error');
             return;
           }
-          req.status = 'Rejected';
-          req.action = 'Rejected';
-          this.successMessage = `Request for "${req.userRight}" rejected.`;
+          req.status = 'rejected';
+          req.action = 'reject';
+          this.successMessage = `Access request from ${req.requestedBy || 'user'} rejected.`;
           this.writeCache(USER_MGMT_CACHE.requests, this.rightsRequests);
           this.showTopToast(this.successMessage, 'info');
           setTimeout(() => this.clearMessages(), 4000);
@@ -291,40 +294,25 @@ export class UserManagementComponent implements OnInit {
       });
   }
 
-  private grantRightToUser(req: RightsRequest): void {
-    if (!req.requestedByEmail) return;
+  private markModuleAccessGranted(req: RightsRequest, updated?: any): void {
     const user = this.users.find(u => u.email?.toLowerCase() === req.requestedByEmail?.toLowerCase());
-    if (!user) return;
-    const userId = user._id || user.id;
-    const rightKey = this.moduleIdToRightKey[req.code] || req.code;
-    if (!rightKey || !userId) return;
-
-    const updatedRights = { ...(user.rights || {}), [rightKey]: true };
-    this.http.patch<any>(`${this.apiUrl}/${userId}/rights`, { rights: updatedRights }, { headers: this.getHeaders() }).subscribe({
-      next: () => {
-        user.rights = { ...(user.rights || {}), [rightKey]: true };
-        this.rightsRequests = this.rightsRequests.map(item => item._id === req._id ? { ...item, status: 'Approved', action: 'Approved' } : item);
-
-        const currentUser = this.authService.getUser();
-        if (currentUser?.email?.toLowerCase() === req.requestedByEmail?.toLowerCase()) {
-          const updatedUser = { ...currentUser, rights: updatedRights };
-          const storage = localStorage.getItem('auth_token') ? localStorage : sessionStorage;
-          storage.setItem('user_data', JSON.stringify(updatedUser));
-          storage.setItem('currentUser', JSON.stringify(updatedUser));
-        }
-
-        this.writeCache(USER_MGMT_CACHE.users, this.users);
-        this.writeCache(USER_MGMT_CACHE.requests, this.rightsRequests);
-        if (req.requestedByEmail) {
-          this.authService.refreshAnyUserSession(req.requestedByEmail).subscribe({ next: () => {}, error: () => {} });
-        }
-      }
-    });
+    if (user) {
+      user.rights = updated?.rights || user.rights || {};
+      user.fullModuleAccessGranted = updated?.fullModuleAccessGranted || false;
+    }
+    this.rightsRequests = this.rightsRequests.map(item =>
+      item._id === req._id ? { ...item, status: 'granted', action: 'grant', fullModuleAccessGranted: updated?.fullModuleAccessGranted || false } : item
+    );
+    this.writeCache(USER_MGMT_CACHE.users, this.users);
+    this.writeCache(USER_MGMT_CACHE.requests, this.rightsRequests);
+    if (req.requestedByEmail) {
+      this.authService.refreshAnyUserSession(req.requestedByEmail).subscribe({ next: () => {}, error: () => {} });
+    }
   }
 
   getRequestStatusClass(status: string): string {
     const s = (status || '').toLowerCase().replace(/\s+/g, '-');
-    if (s === 'approved') return 'status-approved';
+    if (s === 'approved' || s === 'granted') return 'status-approved';
     if (s === 'rejected') return 'status-rejected';
     if (s === 'in-process' || s === 'pending') return 'status-inprocess';
     return 'status-pending';
@@ -370,6 +358,8 @@ export class UserManagementComponent implements OnInit {
   createUser(): void {
     if (!this.formData.name?.trim()) { this.errorMessage = 'Please enter full name.'; setTimeout(() => this.clearMessages(), 3000); return; }
     if (!this.formData.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formData.email)) { this.errorMessage = 'Please enter a valid email.'; setTimeout(() => this.clearMessages(), 3000); return; }
+    const isVendor = this.formData.role === 'Vendor';
+    if (isVendor && !this.formData.password?.trim()) this.formData.password = this.generateSystemPassword();
     if (!this.formData.password?.trim() || (this.formData.password?.length || 0) < 6) { this.errorMessage = 'Password must be at least 6 characters.'; setTimeout(() => this.clearMessages(), 3000); return; }
 
     this.isLoading = true;
@@ -386,16 +376,28 @@ export class UserManagementComponent implements OnInit {
       rights: this.formData.rights || {}
     };
 
-    this.http.post<any>(this.apiUrl, body, { headers: this.getHeaders() }).subscribe({
+    const request$ = isVendor
+      ? this.authService.createTemporaryVendorAccount({
+          name: body.name,
+          email: body.email,
+          phone: body.contactNo,
+          company: body.organization,
+          password: originalPassword,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        })
+      : this.http.post<any>(this.apiUrl, { ...body, mustChangePassword: false }, { headers: this.getHeaders() });
+
+    request$.subscribe({
       next: res => {
-        const newUser = res?.data || res;
+        const newUser = isVendor ? { ...(res?.data?.account || {}), name: body.name, email: body.email, role: 'Vendor', contactNo: body.contactNo, organization: body.organization, rights: { nppProcurement: true } } : (res?.data || res);
         this.newUserCredentials = { email: this.formData.email || '', password: originalPassword };
         this.users.push(newUser);
         this.writeCache(USER_MGMT_CACHE.users, this.users);
         this.isLoading = false;
         this.showCreateModal = false;
         this.showCredentialsModal = true;
-        this.successMessage = 'User created successfully!';
+        this.successMessage = isVendor ? 'Temporary vendor login created. Credentials are ready to share.' : 'User created successfully!';
+        this.showTopToast(this.successMessage, 'success');
         this.resetForm();
         setTimeout(() => this.clearMessages(), 5000);
       },
@@ -440,6 +442,15 @@ export class UserManagementComponent implements OnInit {
 
   closeCredentialsModal(): void { this.showCredentialsModal = false; this.newUserCredentials = { email: '', password: '' }; }
 
+  private generateSystemPassword(): string {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    const special = '@#%';
+    let value = 'Vd';
+    for (let i = 0; i < 8; i++) value += alphabet[Math.floor(Math.random() * alphabet.length)];
+    value += special[Math.floor(Math.random() * special.length)] + Math.floor(10 + Math.random() * 90);
+    return value;
+  }
+
   copyToClipboard(text: string): void {
     if (!text) return;
     navigator.clipboard.writeText(text).then(
@@ -461,6 +472,13 @@ export class UserManagementComponent implements OnInit {
       .map((r: any) => ({
         ...r,
         _id: r._id || r.id,
+        userRight: r.userRight || r.requestedModuleName || r.accessRequest?.moduleName || 'Requested Module',
+        code: r.code || r.requestedModuleId || r.accessRequest?.moduleId || '',
+        reason: r.reason || r.accessRequest?.message || '',
+        action: r.action || r.accessRequest?.status || 'Request',
+        status: r.status || r.accessRequest?.status || 'pending',
+        createdAt: r.createdAt || r.accessRequest?.requestedAt,
+        updatedAt: r.updatedAt || r.accessRequest?.reviewedAt || r.accessRequest?.requestedAt,
         requestedBy: this.resolveRequestUserName(r),
         requestedByEmail: this.resolveRequestUserEmail(r)
       }))

@@ -1,0 +1,180 @@
+<!-- wcc-npp.component.html -->
+<div class="wcc-container">
+  <!-- Toast -->
+  <div class="toast" *ngIf="toast" [class]="'toast-' + toast.type">
+    <span>{{ toast.type === 'success' ? '✓' : toast.type === 'error' ? '✗' : 'ℹ' }}</span>
+    <span>{{ toast.message }}</span>
+    <button (click)="toast = null">×</button>
+  </div>
+
+  <!-- Success Banner -->
+  <div class="success-banner" *ngIf="showSuccessMessage">
+    <span>🎉</span>
+    <span>{{ successMessage }}</span>
+    <button (click)="showSuccessMessage = false">×</button>
+  </div>
+
+  <!-- Main Form -->
+  <div class="form-card">
+    <div class="form-header">
+      <div>
+        <h2>Work Completion Certificate</h2>
+        <span class="badge">NPP Procurement</span>
+      </div>
+      <button class="btn-secondary" (click)="resetForm()">Reset Form</button>
+    </div>
+
+    <div class="form-body">
+      <!-- Section 1: Work Details -->
+      <div class="section">
+        <div class="section-title">📋 Work Details</div>
+        <div class="grid-4">
+          <div class="field">
+            <label>RECEIVER NAME</label>
+            <input type="text" [(ngModel)]="form.requesterName" readonly>
+          </div>
+          <div class="field">
+            <label>PO / WO No *</label>
+            <input type="text" [(ngModel)]="form.poNo" placeholder="Enter PO number">
+          </div>
+          <div class="field">
+            <label>Vendor Name *</label>
+            <input type="text" [(ngModel)]="form.vendorName" placeholder="Enter vendor name">
+          </div>
+          <div class="field">
+            <label>Nature of Work</label>
+            <select [(ngModel)]="form.natureOfWork">
+              <option>Fabrication</option><option>Installation</option><option>Maintenance</option><option>Repair</option>
+            </select>
+          </div>
+        </div>
+        <div class="field full-width">
+          <label>Work Description *</label>
+          <textarea rows="3" [(ngModel)]="form.workDescription" placeholder="Brief description..."></textarea>
+        </div>
+        <div class="field full-width">
+          <label>Observations</label>
+          <textarea rows="2" [(ngModel)]="form.observations" placeholder="Any observations..."></textarea>
+        </div>
+      </div>
+
+      <!-- Section 2: Ratings -->
+      <div class="section">
+        <div class="section-title">⭐ Performance Rating</div>
+        <div class="score-bar">
+          <div class="score-fill" [style.width]="getScorePercentage() + '%'" [style.background]="getScoreColor()"></div>
+        </div>
+        <div class="rating-table-wrapper">
+          <table class="rating-table">
+            <thead><tr><th>Heads</th><th>Weight</th><th>Rating (1-5)</th><th>N/A</th><th>Score</th><th>Remark</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let r of ratings">
+                <td>{{ r.head }}</td>
+                <td>{{ r.weight }}%</td>
+                <td><input type="range" min="0" max="5" step="0.5" [(ngModel)]="r.rating" (input)="calculateScore()"> <span class="rating-badge" [class]="getRatingClass(r.rating)">{{ r.rating }}</span></td>
+                <td><input type="checkbox" [(ngModel)]="r.na" (change)="calculateScore()"></td>
+                <td>{{ (r.rating * r.weight / 5).toFixed(1) }}</td>
+                <td><input type="text" [(ngModel)]="r.remark" placeholder="Remark"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="score-summary" [style.border-left-color]="getScoreColor()">
+          <div class="score-circle"><span>{{ overallScore }}</span><small>/5</small></div>
+          <div><strong>{{ getRatingLabel() }}</strong><br>{{ getScorePercentage() }}% Performance</div>
+          <div><label>Final Decision:</label><select [(ngModel)]="finalDecision"><option>Accept & close</option><option>Accept with corrections</option><option>Reject / Rework required</option></select></div>
+        </div>
+      </div>
+
+      <!-- Section 3: Approval Chain - DYNAMIC FROM API -->
+      <div class="section">
+        <div class="section-title">🔗 Approval Chain</div>
+        <div class="api-status" *ngIf="isLoadingApprovers">Loading approvers from API...</div>
+        <div class="approvers-list">
+          <div class="approver-row" *ngFor="let approver of approvers; let i=index">
+            <div class="approver-number">{{ i+1 }}</div>
+            <div class="approver-field">
+              <select [(ngModel)]="approver.name" (change)="onApproverSelect(approver, approver.name)">
+                <option value="">-- Select Approver --</option>
+                <option *ngFor="let a of availableApprovers" [value]="a.name">{{ a.name }} - {{ a.designation }}</option>
+              </select>
+            </div>
+            <div class="approver-field"><input type="email" [(ngModel)]="approver.email" placeholder="Email auto-fills" readonly></div>
+            <div class="approver-field"><input type="text" [(ngModel)]="approver.designation" placeholder="Designation auto-fills" readonly></div>
+            <div class="approver-field">
+              <select [(ngModel)]="approver.line"><option>Parallel</option><option>Sequential</option></select>
+            </div>
+            <div class="approver-field"><input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks"></div>
+            <button class="remove-btn" (click)="removeApprover(approver.id)" *ngIf="approvers.length > 1">🗑️</button>
+          </div>
+        </div>
+        <button class="btn-add" (click)="addApprover()">+ Add Approver</button>
+        <button class="btn-refresh" (click)="fetchApprovers()">⟳ Refresh Approvers</button>
+      </div>
+
+      <!-- Section 4: CC Recipients - DYNAMIC -->
+      <div class="section">
+        <div class="section-title">📧 CC Recipients</div>
+        <div class="cc-input-group">
+          <textarea [(ngModel)]="ccInput" placeholder="Paste emails (comma, semicolon, or space separated)"></textarea>
+          <button class="btn-add" (click)="addCcRecipients()">+ Add</button>
+        </div>
+        <div class="cc-list">
+          <span *ngFor="let email of ccRecipients" class="cc-tag">{{ email }} <button (click)="removeCc(email)">×</button></span>
+        </div>
+      </div>
+
+      <!-- Section 5: Attachments - DYNAMIC -->
+      <div class="section">
+        <div class="section-title">📎 Attachments</div>
+        <input type="file" multiple (change)="onFileSelected($event)" class="file-input">
+        <div class="attachment-list">
+          <div *ngFor="let att of attachments; let i=index" class="attachment-item">
+            <span>📄 {{ att.name }} ({{ (att.size/1024).toFixed(1) }} KB)</span>
+            <button (click)="removeAttachment(i)">×</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6: Drafts -->
+      <div class="section">
+        <div class="section-title">💾 Drafts</div>
+        <div class="draft-row">
+          <select [(ngModel)]="selectedDraftId"><option value="">Select saved draft</option><option *ngFor="let d of savedDrafts" [value]="d.id">{{ d.name }}</option></select>
+          <button class="btn-secondary" (click)="loadDraft()">Load</button>
+          <button class="btn-primary" (click)="saveDraft()">Save Draft</button>
+        </div>
+      </div>
+
+
+    <div class="form-footer">
+      <button class="btn-secondary" (click)="resetForm()">Cancel</button>
+      <button class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Submitting...' : '✓ Submit WCC' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Certificate Modal -->
+  <div class="modal" *ngIf="showCertificateModal" (click)="closeCertificateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>📜 Certificate</h3><button (click)="closeCertificateModal()">×</button></div>
+      <div class="modal-body">
+        <div class="cert-info"><strong>Serial:</strong> {{ submittedSerialNo }}</div>
+        <button class="btn-primary" (click)="generateCertificate()" [disabled]="isGeneratingCertificate">{{ isGeneratingCertificate ? 'Generating...' : '✨ Generate Certificate' }}</button>
+        <div class="cert-list" *ngIf="certificateList.length">
+          <h4>Recent Certificates</h4>
+          <div *ngFor="let cert of certificateList" class="cert-item">
+            <span>📄 {{ cert.serialNo }}<br><small>{{ formatDate(cert.generatedAt) }}</small></span>
+            <div><button (click)="previewCertificate(cert)">Preview</button><button (click)="downloadCertificate(cert)">Download</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Status -->
+  <div class="email-status" *ngIf="emailSentStatus">
+    <span>📧 {{ emailSentStatus.message }}</span>
+  </div>
+</div>

@@ -1,0 +1,67 @@
+<div class="requests-list-container">
+  <div class="form-header">
+    <div class="header-badges">
+      <span class="badge primary">NPP PROCUREMENT</span>
+      <span class="badge status">📊 RFQ / PR / PO Status</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <input class="search-input" [(ngModel)]="searchTerm" (input)="applyFilters()" placeholder="🔍 Search by title, requester, or serial no...">
+    </div>
+    <div class="filter-group">
+      <select class="filter-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+        <option *ngFor="let opt of statusOptions" [value]="opt">{{opt}}</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="typeFilter" (change)="applyFilters()">
+        <option *ngFor="let opt of typeOptions" [value]="opt">{{opt}}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading requests...</p>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper" *ngIf="!isLoading">
+    <div class="empty-state" *ngIf="filteredRequests.length === 0">
+      <div class="empty-icon">📭</div>
+      <h3>No requests found</h3>
+      <p>Try adjusting your filters</p>
+    </div>
+
+    <table class="requests-table" *ngIf="filteredRequests.length > 0">
+      <thead>
+        <tr>
+          <th>Serial No</th>
+          <th>Type</th>
+          <th>Title</th>
+          <th>Requester</th>
+          <th>Department</th>
+          <th>Amount</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let req of filteredRequests">
+          <td class="serial-cell"><span class="serial-badge">{{req.serialNo}}</span></td>
+          <td><span class="type-badge" [ngClass]="'type-' + req.type.toLowerCase()">{{req.type}}</span></td>
+          <td class="title-cell"><strong>{{req.title}}</strong><br><span class="sub-text">{{req.email}}</span></td>
+          <td>{{req.requester}}</td>
+          <td>{{req.department}}</td>
+          <td class="amount">{{formatAmount(req.amount)}}</td>
+          <td><span class="priority-badge" [ngClass]="getPriorityClass(req.priority)">{{req.priority}}</span></td>
+          <td><span class="status-badge" [ngClass]="getStatusClass(req.status)">{{req.status}}</span></td>
+          <td>{{req.requestDate}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

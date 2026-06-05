@@ -1,0 +1,341 @@
+<div class="qc-wrap">
+
+  <!-- ── Success Banner ── -->
+  <div class="success-banner" *ngIf="submitSuccess">
+    <span class="success-icon">✓</span>
+    <span>Quotation submitted successfully!</span>
+    <button class="banner-close" (click)="submitSuccess = false">×</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════ -->
+  <div class="qc-header">
+    <div class="header-brand">
+      <div class="brand-logo">
+        <img src="assets/logo.png" alt="LCGC" class="logo-img" onerror="this.style.display='none'">
+        <div class="brand-fallback">
+          <span class="brand-icon">⬡</span>
+          <div class="brand-text">
+            <span class="brand-name">LCGC</span>
+            <span class="brand-sub">Resolute Group</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="doc-badge">COMPARATIVE STATEMENT</div>
+      <h1 class="header-title">Quotation Cost Comparison</h1>
+      <p class="header-sub">Non-BOM Procurement · RFQ Analysis</p>
+    </div>
+
+    <div class="header-meta">
+      <div class="meta-field">
+        <label class="meta-label">RFQ No.</label>
+        <input class="meta-input" type="text" [(ngModel)]="rfqNo" placeholder="RFQ-2026-XXX">
+      </div>
+      <div class="meta-field">
+        <label class="meta-label">Date</label>
+        <div class="meta-value">{{ requestDate }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SUPPLIER HEADER CARDS
+  ══════════════════════════════════════════ -->
+  <div class="suppliers-strip">
+    <div class="strip-label">
+      <span class="strip-icon">🏢</span>
+      <span>Competing Suppliers</span>
+    </div>
+
+    <div class="supplier-cards">
+
+      <div class="supplier-card" [class.best-card]="isBestSupplier(1)" [class.selected-card]="selectedSupplierIndex === 1" (click)="selectSupplier(1)">
+        <div class="card-rank">S1</div>
+        <div class="card-body">
+          <label class="card-label">Supplier 1</label>
+          <input class="card-input" [(ngModel)]="supplier1Name" placeholder="Supplier Name">
+        </div>
+        <div class="best-tag" *ngIf="isBestSupplier(1)">★ Best Price</div>
+      </div>
+
+      <div class="supplier-card" [class.best-card]="isBestSupplier(2)" [class.selected-card]="selectedSupplierIndex === 2" (click)="selectSupplier(2)">
+        <div class="card-rank s2">S2</div>
+        <div class="card-body">
+          <label class="card-label">Supplier 2</label>
+          <input class="card-input" [(ngModel)]="supplier2Name" placeholder="Supplier Name">
+        </div>
+        <div class="best-tag" *ngIf="isBestSupplier(2)">★ Best Price</div>
+      </div>
+
+      <div class="supplier-card" [class.best-card]="isBestSupplier(3)" [class.selected-card]="selectedSupplierIndex === 3" (click)="selectSupplier(3)">
+        <div class="card-rank s3">S3</div>
+        <div class="card-body">
+          <label class="card-label">Supplier 3</label>
+          <input class="card-input" [(ngModel)]="supplier3Name" placeholder="Supplier Name">
+        </div>
+        <div class="best-tag" *ngIf="isBestSupplier(3)">★ Best Price</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       COMPARISON TABLE
+  ══════════════════════════════════════════ -->
+  <div class="table-section">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="section-icon">📊</span>
+        Item Price Comparison
+      </div>
+      <button class="add-row-btn" (click)="addRow()">
+        <span>＋</span> Add Row
+      </button>
+    </div>
+
+    <div class="table-scroll">
+      <table class="comp-table">
+        <thead>
+          <tr class="head-supplier">
+            <th rowspan="2" class="th-sno">S.N</th>
+            <th rowspan="2" class="th-code">Part Code</th>
+            <th rowspan="2" class="th-desc">Part Description</th>
+            <th rowspan="2" class="th-spec">Specification</th>
+            <th rowspan="2" class="th-uom">UOM</th>
+            <th rowspan="2" class="th-qty">Qty</th>
+            <th colspan="2" class="th-sup th-sup1">{{ supplier1Name }}</th>
+            <th colspan="2" class="th-sup th-sup2">{{ supplier2Name }}</th>
+            <th colspan="2" class="th-sup th-sup3">{{ supplier3Name }}</th>
+            <th rowspan="2" class="th-action">—</th>
+          </tr>
+          <tr class="head-cols">
+            <th class="th-price">Price</th>
+            <th class="th-amount">Amount</th>
+            <th class="th-price">Price</th>
+            <th class="th-amount">Amount</th>
+            <th class="th-price">Price</th>
+            <th class="th-amount">Amount</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of quotationItems; let i = index" class="data-row">
+            <td class="td-sno">{{ i + 1 }}</td>
+
+            <td class="td-edit">
+              <input class="cell-input" [(ngModel)]="item.partCode" placeholder="Part code">
+            </td>
+
+            <td class="td-edit td-wide">
+              <textarea class="cell-textarea" rows="2" [(ngModel)]="item.partDescription" placeholder="Description"></textarea>
+            </td>
+
+            <td class="td-edit">
+              <input class="cell-input" [(ngModel)]="item.specification" placeholder="Spec">
+            </td>
+
+            <td class="td-edit td-sm">
+              <input class="cell-input" [(ngModel)]="item.uom" placeholder="UOM">
+            </td>
+
+            <td class="td-edit td-sm">
+              <input class="cell-input cell-num" type="number" min="0"
+                [(ngModel)]="item.qty" (input)="calcAmounts(item)">
+            </td>
+
+            <!-- Supplier 1 -->
+            <td class="td-edit td-price">
+              <input class="cell-input cell-num" type="number" min="0"
+                [(ngModel)]="item.supplier1Price" (input)="calcAmounts(item)">
+            </td>
+            <td class="td-amount" [class.td-best]="isBestSupplier(1)">
+              ₹ {{ item.supplier1Amount | number:'1.2-2' }}
+            </td>
+
+            <!-- Supplier 2 -->
+            <td class="td-edit td-price">
+              <input class="cell-input cell-num" type="number" min="0"
+                [(ngModel)]="item.supplier2Price" (input)="calcAmounts(item)">
+            </td>
+            <td class="td-amount" [class.td-best]="isBestSupplier(2)">
+              ₹ {{ item.supplier2Amount | number:'1.2-2' }}
+            </td>
+
+            <!-- Supplier 3 -->
+            <td class="td-edit td-price">
+              <input class="cell-input cell-num" type="number" min="0"
+                [(ngModel)]="item.supplier3Price" (input)="calcAmounts(item)">
+            </td>
+            <td class="td-amount" [class.td-best]="isBestSupplier(3)">
+              ₹ {{ item.supplier3Amount | number:'1.2-2' }}
+            </td>
+
+            <td class="td-action">
+              <button class="remove-btn" (click)="removeRow(i)"
+                [disabled]="quotationItems.length === 1" title="Remove row">✕</button>
+            </td>
+          </tr>
+        </tbody>
+
+        <tfoot>
+          <!-- Total row -->
+          <tr class="foot-total">
+            <td colspan="6" class="foot-label">Total Amount (INR)</td>
+            <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(1)">
+              ₹ {{ getTotals().t1 | number:'1.2-2' }}
+            </td>
+            <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(2)">
+              ₹ {{ getTotals().t2 | number:'1.2-2' }}
+            </td>
+            <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(3)">
+              ₹ {{ getTotals().t3 | number:'1.2-2' }}
+            </td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TERMS & CONDITIONS
+  ══════════════════════════════════════════ -->
+  <div class="terms-section">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="section-icon">📋</span>
+        Terms &amp; Conditions
+      </div>
+    </div>
+
+    <div class="terms-grid">
+
+      <div class="terms-col terms-col-label">
+        <div class="terms-header-cell label-head">Condition</div>
+        <div class="terms-row-label">1 · GST</div>
+        <div class="terms-row-label">2 · Transport</div>
+        <div class="terms-row-label">3 · Payment Terms</div>
+        <div class="terms-row-label">· Lead Time</div>
+        <div class="terms-row-label">· Attachment 1</div>
+        <div class="terms-row-label">· Attachment 2</div>
+        <div class="terms-row-label">· Attachment 3</div>
+      </div>
+
+      <!-- Supplier 1 Terms -->
+      <div class="terms-col" [class.terms-best-col]="isBestSupplier(1)">
+        <div class="terms-header-cell sup1-head">
+          <span class="tc-rank">S1</span>
+          <span class="tc-name">{{ supplier1Name }}</span>
+          <span class="tc-best-badge" *ngIf="isBestSupplier(1)">★</span>
+        </div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.gst" placeholder="GST"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.transport" placeholder="Transport"></div>
+        <div class="terms-cell"><textarea class="tc-textarea" rows="2" [(ngModel)]="terms1.paymentTerms"></textarea></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.leadTime" placeholder="Lead time"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.attachment1" placeholder="Attachment"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.attachment2" placeholder="Attachment"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.attachment3" placeholder="Attachment"></div>
+      </div>
+
+      <!-- Supplier 2 Terms -->
+      <div class="terms-col" [class.terms-best-col]="isBestSupplier(2)">
+        <div class="terms-header-cell sup2-head">
+          <span class="tc-rank">S2</span>
+          <span class="tc-name">{{ supplier2Name }}</span>
+          <span class="tc-best-badge" *ngIf="isBestSupplier(2)">★</span>
+        </div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.gst" placeholder="GST"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.transport" placeholder="Transport"></div>
+        <div class="terms-cell"><textarea class="tc-textarea" rows="2" [(ngModel)]="terms2.paymentTerms"></textarea></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.leadTime" placeholder="Lead time"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.attachment1" placeholder="Attachment"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.attachment2" placeholder="Attachment"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.attachment3" placeholder="Attachment"></div>
+      </div>
+
+      <!-- Supplier 3 Terms -->
+      <div class="terms-col" [class.terms-best-col]="isBestSupplier(3)">
+        <div class="terms-header-cell sup3-head">
+          <span class="tc-rank">S3</span>
+          <span class="tc-name">{{ supplier3Name }}</span>
+          <span class="tc-best-badge" *ngIf="isBestSupplier(3)">★</span>
+        </div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.gst" placeholder="GST"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.transport" placeholder="Transport"></div>
+        <div class="terms-cell"><textarea class="tc-textarea" rows="2" [(ngModel)]="terms3.paymentTerms"></textarea></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.leadTime" placeholder="Lead time"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.attachment1" placeholder="Attachment"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.attachment2" placeholder="Attachment"></div>
+        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.attachment3" placeholder="Attachment"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SAVINGS INSIGHT + RECOMMENDATION
+  ══════════════════════════════════════════ -->
+  <div class="insights-row">
+
+    <div class="insight-card">
+      <div class="insight-icon">🏆</div>
+      <div class="insight-body">
+        <div class="insight-label">Recommended Supplier</div>
+        <div class="insight-value">{{ getBestSupplier() }}</div>
+      </div>
+    </div>
+
+    <div class="insight-card insight-savings">
+      <div class="insight-icon">💰</div>
+      <div class="insight-body">
+        <div class="insight-label">Max Potential Savings</div>
+        <div class="insight-value">₹ {{ getSavings() }}</div>
+      </div>
+    </div>
+
+    <div class="insight-card insight-selected">
+      <div class="insight-icon">✓</div>
+      <div class="insight-body">
+        <div class="insight-label">Selected Vendor</div>
+        <div class="insight-value">{{ getSelectedSupplier() }}</div>
+        <small>{{ getSelectedVsBestMessage() }}</small>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="recommendation-section">
+    <label class="rec-label">
+      <span class="rec-icon">✍️</span>
+      Recommendation
+    </label>
+    <textarea class="rec-textarea" rows="3" [(ngModel)]="recommendation"
+      placeholder="Enter recommendation..."></textarea>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOOTER ACTIONS
+  ══════════════════════════════════════════ -->
+  <div class="footer-actions">
+    <button class="action-btn secondary" (click)="addRow()">
+      <span>＋</span> Add Row
+    </button>
+    <div class="action-right">
+      <button class="action-btn ghost" type="button">
+        🖨 Print
+      </button>
+      <button class="action-btn primary"
+        (click)="submitQuotation()"
+        [disabled]="isSubmitting">
+        <span class="btn-spinner" *ngIf="isSubmitting">⟳</span>
+        <span *ngIf="!isSubmitting">✓ Submit Quotation</span>
+        <span *ngIf="isSubmitting">Submitting…</span>
+      </button>
+    </div>
+  </div>
+
+</div>

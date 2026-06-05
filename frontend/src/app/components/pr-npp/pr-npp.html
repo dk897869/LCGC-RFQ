@@ -1,0 +1,136 @@
+<!-- pr-request.html -->
+<div class="pr-request-container">
+  <div class="form-header">
+    <div class="header-left">
+      <span class="header-icon">📋</span>
+      <h2>PR Request - NPP</h2>
+      <span class="badge" [ngClass]="'badge-' + prData.status">{{ prData.status | titlecase }}</span>
+    </div>
+    <div class="header-right">
+      <span class="required-note"><span class="asterisk">*</span> Required fields</span>
+    </div>
+  </div>
+
+  <div class="form-body">
+    <!-- Basic Information Section -->
+    <div class="form-section">
+      <div class="section-title">
+        <span class="section-icon">📝</span>
+        <h3>Basic Information</h3>
+      </div>
+      <div class="form-grid-2col">
+        <div class="form-field">
+          <label>Request Date <span class="asterisk">*</span></label>
+          <input type="date" [(ngModel)]="prData.requestDate" class="form-input" [disabled]="true">
+        </div>
+        <div class="form-field">
+          <label>Requester Name <span class="asterisk">*</span></label>
+          <input type="text" [(ngModel)]="prData.requesterName" placeholder="Enter requester full name" class="form-input" [class.error-border]="showValidationErrors && !prData.requesterName">
+          <div class="error-msg" *ngIf="showValidationErrors && !prData.requesterName">Requester name is required</div>
+        </div>
+        <div class="form-field">
+          <label>Department</label>
+          <select [(ngModel)]="prData.department" class="form-input">
+            <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Cost Center</label>
+          <select [(ngModel)]="prData.costCenter" class="form-input">
+            <option *ngFor="let cc of costCenters" [value]="cc">{{ cc }}</option>
+          </select>
+        </div>
+<!-- pr-request.html (updated priority buttons section) -->
+<div class="form-field">
+  <label>Priority <span class="asterisk">*</span></label>
+  <div class="priority-group">
+    <button 
+      *ngFor="let p of priorities" 
+      type="button" 
+      class="priority-btn" 
+      [class.active]="prData.priority === p.value" 
+      [ngClass]="p.class" 
+      (click)="prData.priority = p.value">
+      {{ p.label }}
+    </button>
+  </div>
+</div>        <div class="form-field">
+          <label>Procurement Type</label>
+          <select [(ngModel)]="prData.procurementType" class="form-input">
+            <option *ngFor="let pt of procurementTypes" [value]="pt.value">{{ pt.label }}</option>
+          </select>
+        </div>
+        <div class="form-field full-width">
+          <label>Delivery Location</label>
+          <input type="text" [(ngModel)]="prData.deliveryLocation" placeholder="Complete delivery address" class="form-input">
+        </div>
+        <div class="form-field">
+          <label>Expected Delivery Date <span class="asterisk">*</span></label>
+          <input type="date" [(ngModel)]="prData.expectedDelivery" class="form-input" [class.error-border]="showValidationErrors && !prData.expectedDelivery">
+          <div class="error-msg" *ngIf="showValidationErrors && !prData.expectedDelivery">Delivery date is required</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items Section -->
+    <div class="form-section">
+      <div class="section-title">
+        <span class="section-icon">📦</span>
+        <h3>Items / Materials Required</h3>
+        <button type="button" class="btn-add-item" (click)="addItem()">+ Add Item</button>
+      </div>
+
+      <div class="items-table-wrapper">
+        <table class="items-table">
+          <thead>
+            <tr><th>#</th><th>Item Code</th><th>Description <span class="asterisk">*</span></th><th>Qty</th><th>UOM</th><th>Est. Price (₹)</th><th>Total (₹)</th><th>Required By</th><th style="width: 40px"></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of prData.items; let i = index" [class.error-row]="showValidationErrors && (!item.description || item.quantity <= 0)">
+              <td>{{ i+1 }}</td>
+              <td><input type="text" [(ngModel)]="item.itemCode" placeholder="Code" class="item-input"></td>
+              <td><input type="text" [(ngModel)]="item.description" placeholder="Item description *" class="item-input" [class.error-border]="showValidationErrors && !item.description"></td>
+              <td><input type="number" [(ngModel)]="item.quantity" (change)="updateItemTotal(item)" class="item-input qty-input" min="0.01" step="any"></td>
+              <td><select [(ngModel)]="item.uom" class="item-input uom-select"><option *ngFor="let u of uomOptions" [value]="u">{{ u }}</option></select></td>
+              <td><input type="number" [(ngModel)]="item.estimatedPrice" (change)="updateItemTotal(item)" class="item-input price-input" min="0" step="any"></td>
+              <td class="total-cell">₹ {{ item.totalAmount | number:'1.2-2' }}</td>
+              <td><input type="date" [(ngModel)]="item.deliveryDate" class="item-input date-input"></td>
+              <td><button type="button" class="remove-item-btn" (click)="removeItem(i)" [disabled]="prData.items.length === 1">🗑️</button></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="total-row"><td colspan="6" class="total-label">Total Estimated Value</td><td colspan="3" class="total-value">₹ {{ totalEstimatedValue | number:'1.2-2' }}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Additional Info Section -->
+    <div class="form-section">
+      <div class="section-title">
+        <span class="section-icon">💬</span>
+        <h3>Additional Information</h3>
+      </div>
+      <div class="form-grid-2col">
+        <div class="form-field full-width">
+          <label>Justification / Business Need</label>
+          <textarea rows="3" [(ngModel)]="prData.justifications" placeholder="Explain why this purchase is required, expected benefits, urgency etc." class="form-textarea"></textarea>
+        </div>
+        <div class="form-field full-width">
+          <label>Additional Notes / Special Instructions</label>
+          <textarea rows="2" [(ngModel)]="prData.additionalNotes" placeholder="Any special delivery instructions, quality requirements, or compliance notes" class="form-textarea"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Actions -->
+  <div class="form-actions">
+    <button type="button" class="btn-secondary" (click)="resetForm()">Clear Form</button>
+    <button type="button" class="btn-primary" (click)="submitPr()" [disabled]="isSubmitting">
+      <span class="btn-spinner" *ngIf="isSubmitting"></span>
+      <span *ngIf="!isSubmitting">📤 Submit PR Request</span>
+      <span *ngIf="isSubmitting">Submitting...</span>
+    </button>
+  </div>
+</div>

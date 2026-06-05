@@ -1,0 +1,51 @@
+<div class="item-master-container">
+  <div class="form-header">
+    <div class="header-badges">
+      <span class="badge primary">NPP PROCUREMENT</span>
+      <span class="badge item">🔧 Item Master List-NPP</span>
+    </div>
+  </div>
+
+  <div class="toast" *ngIf="showToast">✅ {{toastMessage}}</div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <input class="filter-input" [(ngModel)]="filterPartCode" (input)="applyFilters()" placeholder="🔍 Filter by Part Code">
+      <input class="filter-input" [(ngModel)]="filterSupplier" (input)="applyFilters()" placeholder="🔍 Filter by Supplier">
+    </div>
+    <div class="action-buttons">
+      <button class="btn-add" (click)="addItem()">+ Add Item</button>
+      <button class="btn-export" (click)="exportToExcel()">📎 Export Excel</button>
+    </div>
+  </div>
+
+  <div class="selection-display" *ngIf="selectedDesc">Selected: {{selectedDesc}}</div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <table class="item-table">
+      <thead>
+        <tr>
+          <th>Select</th><th>CMDT</th><th>Part Code</th><th>Part Description</th>
+          <th>Supplier</th><th>Location</th><th>Price</th><th>UIT</th><th>SOB</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredItems; let i=index">
+          <td><input type="checkbox" [(ngModel)]="item.select" (change)="selectItem(item)"></td>
+          <td><input class="table-input" [(ngModel)]="item.cmdt"></td>
+          <td><input class="table-input" [(ngModel)]="item.partCode"></td>
+          <td><input class="table-input" [(ngModel)]="item.partDesc"></td>
+          <td><input class="table-input" [(ngModel)]="item.supplier"></td>
+          <td><input class="table-input" [(ngModel)]="item.location"></td>
+          <td><input class="table-input" type="number" [(ngModel)]="item.price"></td>
+          <td><input class="table-input" [(ngModel)]="item.uit"></td>
+          <td><input class="table-input" [(ngModel)]="item.sob"></td>
+          <td><button class="btn-save" (click)="saveItem(item)">💾</button>
+            <button class="btn-delete" (click)="deleteItem(i)">🗑️</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

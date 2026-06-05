@@ -69,7 +69,7 @@ export class UserRightsComponent implements OnInit {
 
     forkJoin({
       me: this.authService.refreshUserRights().pipe(catchError(() => of(null))),
-      requests: this.http.get<any>(`${this.apiUrl}/user-rights`, { headers: this.getHeaders() }).pipe(
+      requests: this.http.get<any>(`${this.apiUrl}/users/access-requests?status=pending`, { headers: this.getHeaders() }).pipe(
         timeout(5000), 
         catchError(() => of(null))
       )
@@ -83,21 +83,20 @@ export class UserRightsComponent implements OnInit {
 
       const allRequests = requests?.data || (Array.isArray(requests) ? requests : []);
       const latestByModule = allRequests
-        .filter((item: any) => item?.requestedByEmail?.toLowerCase() === myEmail)
+        .filter((item: any) => (item?.email || item?.requestedByEmail || '').toLowerCase() === myEmail)
         .sort((a: any, b: any) =>
-          new Date(b.updatedAt || b.createdAt || 0).getTime() -
-          new Date(a.updatedAt || a.createdAt || 0).getTime()
+          new Date(b.accessRequest?.requestedAt || b.updatedAt || b.createdAt || 0).getTime() -
+          new Date(a.accessRequest?.requestedAt || a.updatedAt || a.createdAt || 0).getTime()
         )
         .reduce((acc: Record<string, any>, item: any) => {
-          if (!acc[item.code]) acc[item.code] = item;
-          if (item?.userRight && !acc[item.userRight]) acc[item.userRight] = item;
+          acc['full-module-access'] = item;
           return acc;
         }, {});
 
       this.userRights = this.rightsCatalog.map((module: any) => {
-        const granted = rights?.[module.rightKey] === true;
-        const latestRequest = latestByModule[module.moduleId] || latestByModule[module.code] || latestByModule[module.userRight];
-        const latestStatus = latestRequest?.status || '';
+        const granted = latestUser?.fullModuleAccessGranted === true || rights?.[module.rightKey] === true;
+        const latestRequest = latestByModule['full-module-access'];
+        const latestStatus = latestRequest?.accessRequest?.status || latestRequest?.status || '';
 
         return {
           userRight: module.userRight,
@@ -108,8 +107,8 @@ export class UserRightsComponent implements OnInit {
           approval: granted,
           action: granted ? 'Granted for Lifetime' : this.isPendingStatus(latestStatus) ? 'Pending Approval' : latestStatus === 'Rejected' ? 'Request Again' : 'Request Access',
           status: granted ? 'Approved' : latestStatus || 'Not Requested',
-          reason: latestRequest?.reason || '',
-          updatedAt: latestRequest?.updatedAt || latestRequest?.createdAt || '',
+          reason: latestRequest?.accessRequest?.message || latestRequest?.reason || '',
+          updatedAt: latestRequest?.accessRequest?.requestedAt || latestRequest?.updatedAt || latestRequest?.createdAt || '',
           canRequest: !granted && !this.isPendingStatus(latestStatus)
         };
       });
@@ -125,15 +124,8 @@ export class UserRightsComponent implements OnInit {
 
   requestAccess(row: UserRightsRow) {
     if (!row.canRequest) return;
-    this.http.post<any>(`${this.apiUrl}/user-rights`, {
-      userRight: row.userRight,
-      code: row.moduleId,
-      reason: `Access requested by ${this.currentUserName} from User Rights page.`,
-      requestedBy: this.currentUserName,
-      requestedByEmail: this.currentUserEmail,
-      requestedByUserId: this.authService.getUser()?._id || this.authService.getUser()?.id || '',
-      action: 'Request',
-      status: 'In-process'
+    this.http.post<any>(`${this.apiUrl}/users/access-request`, {
+      message: `Access requested by ${this.currentUserName} from User Rights page for ${row.userRight}.`
     }, { headers: this.getHeaders() }).pipe(
       timeout(5000),
       catchError(() => of(null))

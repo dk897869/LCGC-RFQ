@@ -1,0 +1,2352 @@
+
+> frontend@0.0.0 start
+> ng serve --host 127.0.0.1 --port 4300
+
+[33m>[39m Building...
+[32m√[39m Building...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-IBTTSTKL.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.63 MB[39m[2m | [22m
+[32mchunk-G54BG2NW.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-RXEYQEIB.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-4U7SMZKB.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-NDCMAX4P.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m68.91 kB[39m[2m | [22m
+[32mchunk-3F7ZXKWS.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-JEHWC46J.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-DMQ42ZUF.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-PLGGMMYR.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-YBWCAM5K.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-YXW2TY3U.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.63 MB[39m[2m | [22m
+[32mchunk-5ORP5PFX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-VEMJT4PU.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-RKCDKQS6.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-HXSCRTLS.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m68.94 kB[39m[2m | [22m
+[32mchunk-H6YZNSWT.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-XHNBTCPH.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-HTCJ6EYR.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-IOEEKQTW.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-DTHPLANL.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [23.564 seconds] - 2026-06-01T07:54:45.059Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m4300[22m/[39m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [24.146 seconds] - 2026-06-01T08:14:08.682Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.253 seconds] - 2026-06-01T08:20:35.667Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.895 seconds] - 2026-06-01T08:20:46.779Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.021 seconds] - 2026-06-01T08:21:05.246Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-ZA4GS37V.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.63 MB[39m[2m | [22m
+[32mchunk-G54BG2NW.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-RXEYQEIB.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-4U7SMZKB.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-NDCMAX4P.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m68.91 kB[39m[2m | [22m
+[32mchunk-3F7ZXKWS.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-JEHWC46J.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-DMQ42ZUF.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-PLGGMMYR.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-YBWCAM5K.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-X5T4AMJK.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.63 MB[39m[2m | [22m
+[32mchunk-5ORP5PFX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-VEMJT4PU.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-RKCDKQS6.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-HXSCRTLS.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m68.94 kB[39m[2m | [22m
+[32mchunk-H6YZNSWT.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-XHNBTCPH.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-HTCJ6EYR.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-IOEEKQTW.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-DTHPLANL.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [2.696 seconds] - 2026-06-01T08:21:29.284Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-2JULSN3B.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-DFLPKDPA.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+Application bundle generation complete. [1.962 seconds] - 2026-06-01T08:21:52.500Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-MQZMTUO7.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-B4TLP5NF.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+Application bundle generation complete. [3.354 seconds] - 2026-06-01T08:22:17.233Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.743 seconds] - 2026-06-01T08:22:41.952Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.308 seconds] - 2026-06-01T08:23:31.053Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-B3TSEHIP.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-PU5DO3BZ.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-AOWS4ZRN.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-XWDRMWML.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-I27YSUEE.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m68.96 kB[39m[2m | [22m
+[32mchunk-LA7JGAFD.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-67V4RJVS.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-PLEHYGMU.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-EHC2SKO6.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-GURU4B5N.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-53ES5E53.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-GKJ3NQMB.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-YSXEUUB2.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-AWDUJZZ3.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-T75CNJ7G.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m68.99 kB[39m[2m | [22m
+[32mchunk-WWDEHS7W.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-UHRYNWWF.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-JIO3UMJT.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-6IU4Y4J4.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-OCRI4W76.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [4.888 seconds] - 2026-06-01T08:23:40.524Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-46RYPBS2.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-RPW2JTHI.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [2.480 seconds] - 2026-06-01T08:23:58.871Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-AYNYUQJW.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-FGUGA2Z6.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [1.952 seconds] - 2026-06-01T08:24:08.365Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-DBPL3B74.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-PBCCTKT4.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [3.756 seconds] - 2026-06-01T08:25:14.794Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-QCQHMSCZ.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-SOL72GWI.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [3.108 seconds] - 2026-06-01T08:25:30.037Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-QGYCYL32.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-J664W5AZ.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [9.973 seconds] - 2026-06-01T08:29:07.431Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-MT3LRYGB.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-UH3Q44N6.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [3.757 seconds] - 2026-06-01T08:30:35.501Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-FSBMHROH.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-HFWCCCJS.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+Application bundle generation complete. [2.684 seconds] - 2026-06-01T08:30:49.303Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-UUDYSVVH.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-VFWZO6KR.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+Application bundle generation complete. [6.851 seconds] - 2026-06-01T08:33:10.252Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m           [2m | [22m  [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mchunk-F6X2YK23.js[39m  [2m | [22m[2mdashboard[22m      [2m | [22m  [36m1.63 MB[39m[2m | [22m
+[32mchunk-4ZAPJQ2O.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-2H6MFKIR.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-LJQ3JVQU.js[39m  [2m | [22m[2mlogin[22m          [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-DIXVXZZ5.js[39m  [2m | [22m[2m-[22m              [2m | [22m [36m69.71 kB[39m[2m | [22m
+[32mchunk-U2BXT2JL.js[39m  [2m | [22m[2mregister[22m       [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-FUUCD47I.js[39m  [2m | [22m[2mreset-password[22m [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-2XFRYGTQ.js[39m  [2m | [22m[2mforgot-password[22m[2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-X4GRFW6I.js[39m  [2m | [22m[2mep-approval[22m    [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OF74YZMF.js[39m  [2m | [22m[2mapprovals[22m      [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m    [2m | [22m  [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mchunk-ONQPFPH2.mjs[39m [2m | [22m[2mdashboard[22m      [2m | [22m  [36m1.63 MB[39m[2m | [22m
+[32mchunk-L2HDUQKF.mjs[39m [2m | [22m[2m-[22m              [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-A3XI3D3K.mjs[39m [2m | [22m[2m-[22m              [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-33JPQXMJ.mjs[39m [2m | [22m[2mlogin[22m          [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-6AXWIXFU.mjs[39m [2m | [22m[2m-[22m              [2m | [22m [36m69.75 kB[39m[2m | [22m
+[32mchunk-XUJ4RFEO.mjs[39m [2m | [22m[2mregister[22m       [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-Y467QQ7V.mjs[39m [2m | [22m[2mreset-password[22m [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-J7QAGUMS.mjs[39m [2m | [22m[2mforgot-password[22m[2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-EMFMR655.mjs[39m [2m | [22m[2mep-approval[22m    [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-3J2AP5NC.mjs[39m [2m | [22m[2mapprovals[22m      [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [11.320 seconds] - 2026-06-01T11:25:18.343Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-764FK3CC.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-SM64B3AK.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.63 MB[39m[2m | [22m
+
+Application bundle generation complete. [3.571 seconds] - 2026-06-01T11:25:47.889Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-FGE2YFYK.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-T3SSXR5Q.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [1.499 seconds] - 2026-06-01T11:25:55.259Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-FG6SDBSJ.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-3VAWCSOJ.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [2.885 seconds] - 2026-06-01T11:26:06.513Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-COYGO65X.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-J5ZINEVM.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [6.566 seconds] - 2026-06-01T11:27:23.017Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-P3EBOXML.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-NLOFOROV.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.64 MB[39m[2m | [22m
+
+Application bundle generation complete. [4.106 seconds] - 2026-06-01T11:27:30.017Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-P3EBOXML.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-4ZAPJQ2O.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-2H6MFKIR.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-LJQ3JVQU.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-DIXVXZZ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m69.71 kB[39m[2m | [22m
+[32mchunk-U2BXT2JL.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-FUUCD47I.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-2XFRYGTQ.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-X4GRFW6I.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OF74YZMF.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-NLOFOROV.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-L2HDUQKF.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-A3XI3D3K.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-33JPQXMJ.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-6AXWIXFU.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m69.75 kB[39m[2m | [22m
+[32mchunk-XUJ4RFEO.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-Y467QQ7V.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-J7QAGUMS.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-EMFMR655.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-3J2AP5NC.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [29.566 seconds] - 2026-06-01T12:05:18.952Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-P3EBOXML.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-4ZAPJQ2O.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-2H6MFKIR.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-LJQ3JVQU.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-DIXVXZZ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m69.71 kB[39m[2m | [22m
+[32mchunk-U2BXT2JL.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-FUUCD47I.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-2XFRYGTQ.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-X4GRFW6I.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OF74YZMF.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-NLOFOROV.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-L2HDUQKF.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-A3XI3D3K.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-33JPQXMJ.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-6AXWIXFU.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m69.75 kB[39m[2m | [22m
+[32mchunk-XUJ4RFEO.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-Y467QQ7V.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-J7QAGUMS.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-EMFMR655.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-3J2AP5NC.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [15.976 seconds] - 2026-06-01T12:05:35.123Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [12.603 seconds] - 2026-06-01T12:11:19.416Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-WBFRLTK3.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-NXUBNGDJ.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-ZM6NSBZB.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-3XLN6UJU.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-53H25DPL.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m77.39 kB[39m[2m | [22m
+[32mchunk-PAHYT7IX.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-QY7S6AT5.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-XEQNWDEI.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-PKTCOEA6.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-CR2XKJNS.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-BUTK4CNY.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.64 MB[39m[2m | [22m
+[32mchunk-XTD4FDWX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-SATHBKY4.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-IAXP5N5U.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-G7RVKJRO.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m77.43 kB[39m[2m | [22m
+[32mchunk-EIVWT6E5.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-GPGXUS27.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-4G6DPPPO.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-3HZZUPX7.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-IIMZFEAA.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [4.273 seconds] - 2026-06-01T12:14:14.848Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [30.786 seconds] - 2026-06-01T12:19:07.847Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-SPTTTS34.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.65 MB[39m[2m | [22m
+[32mchunk-NXUBNGDJ.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-ZM6NSBZB.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-3XLN6UJU.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-53H25DPL.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m77.39 kB[39m[2m | [22m
+[32mchunk-PAHYT7IX.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-QY7S6AT5.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-XEQNWDEI.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-PKTCOEA6.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-CR2XKJNS.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-FBGZOE4Y.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.65 MB[39m[2m | [22m
+[32mchunk-XTD4FDWX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-SATHBKY4.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-IAXP5N5U.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-G7RVKJRO.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m77.43 kB[39m[2m | [22m
+[32mchunk-EIVWT6E5.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-GPGXUS27.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-4G6DPPPO.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-3HZZUPX7.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-IIMZFEAA.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [5.126 seconds] - 2026-06-01T12:19:12.991Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-GM7BFIBE.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.69 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-DXN6BHRV.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.69 MB[39m[2m | [22m
+
+Application bundle generation complete. [19.428 seconds] - 2026-06-01T12:24:53.084Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-7X4HG5DG.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.72 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-POGX5JUJ.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.72 MB[39m[2m | [22m
+
+Application bundle generation complete. [9.646 seconds] - 2026-06-01T12:25:03.149Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-PSNYJRKL.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.73 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-JXKKFNU4.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.73 MB[39m[2m | [22m
+
+Application bundle generation complete. [16.702 seconds] - 2026-06-01T12:31:29.765Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-3X6USJNN.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.76 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-POPVYLRI.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.76 MB[39m[2m | [22m
+
+Application bundle generation complete. [6.132 seconds] - 2026-06-01T12:31:38.024Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-7T57RGKN.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.78 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-FHNGX3GN.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.78 MB[39m[2m | [22m
+
+Application bundle generation complete. [4.911 seconds] - 2026-06-01T12:31:43.021Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-QARRSM5D.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.78 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-BFY6UHBW.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.78 MB[39m[2m | [22m
+
+Application bundle generation complete. [8.111 seconds] - 2026-06-01T12:35:17.215Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-ZIAGXF4E.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.79 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-CUTNTQ5N.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.79 MB[39m[2m | [22m
+
+Application bundle generation complete. [4.728 seconds] - 2026-06-01T12:35:25.063Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-MWE2PGWV.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.83 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-QGPRHC6C.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.83 MB[39m[2m | [22m
+
+Application bundle generation complete. [5.435 seconds] - 2026-06-01T12:35:32.639Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-SJSQG5DJ.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.85 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-6MNR7AIF.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.85 MB[39m[2m | [22m
+
+Application bundle generation complete. [7.046 seconds] - 2026-06-01T12:39:29.726Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.907 seconds] - 2026-06-01T12:39:35.567Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.110 seconds] - 2026-06-01T12:39:42.980Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.999 seconds] - 2026-06-01T12:41:45.535Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-DLJWI5WB.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-NXUBNGDJ.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-ZM6NSBZB.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-3XLN6UJU.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-53H25DPL.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m77.39 kB[39m[2m | [22m
+[32mchunk-PAHYT7IX.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-QY7S6AT5.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-XEQNWDEI.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-PKTCOEA6.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-CR2XKJNS.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-EHKW3IGC.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-XTD4FDWX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-SATHBKY4.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-IAXP5N5U.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-G7RVKJRO.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m77.43 kB[39m[2m | [22m
+[32mchunk-EIVWT6E5.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-GPGXUS27.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-4G6DPPPO.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-3HZZUPX7.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-IIMZFEAA.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [3.035 seconds] - 2026-06-01T12:42:29.978Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m           [2m | [22m  [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mchunk-SN6NMEQH.js[39m  [2m | [22m[2mdashboard[22m      [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-DHIJHH3C.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-66IWJ7BL.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-DRQUR7VD.js[39m  [2m | [22m[2mlogin[22m          [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-77WVQTHF.js[39m  [2m | [22m[2m-[22m              [2m | [22m [36m78.83 kB[39m[2m | [22m
+[32mchunk-3C3YWA5G.js[39m  [2m | [22m[2mregister[22m       [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-3PM5EVB3.js[39m  [2m | [22m[2mreset-password[22m [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QVMCYJEW.js[39m  [2m | [22m[2mforgot-password[22m[2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-ZNZVDMRS.js[39m  [2m | [22m[2mep-approval[22m    [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-CQNPXRRY.js[39m  [2m | [22m[2mapprovals[22m      [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m    [2m | [22m  [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mchunk-RKTMIS2D.mjs[39m [2m | [22m[2mdashboard[22m      [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-FJMEKHJH.mjs[39m [2m | [22m[2m-[22m              [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-TBJB6ZD6.mjs[39m [2m | [22m[2m-[22m              [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-44SYHIEB.mjs[39m [2m | [22m[2mlogin[22m          [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-X4CWWCRF.mjs[39m [2m | [22m[2m-[22m              [2m | [22m [36m78.86 kB[39m[2m | [22m
+[32mchunk-ORTED4B6.mjs[39m [2m | [22m[2mregister[22m       [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-ENUOJ57A.mjs[39m [2m | [22m[2mreset-password[22m [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-GQ3SHEXP.mjs[39m [2m | [22m[2mforgot-password[22m[2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-MJASEL6T.mjs[39m [2m | [22m[2mep-approval[22m    [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-SRSJA47K.mjs[39m [2m | [22m[2mapprovals[22m      [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [13.939 seconds] - 2026-06-01T13:09:12.584Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m           [2m | [22m  [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mchunk-2KQSMFBU.js[39m  [2m | [22m[2mdashboard[22m      [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m  [2m | [22m[2m-[22m              [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m  [2m | [22m[2mlogin[22m          [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m  [2m | [22m[2m-[22m              [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m  [2m | [22m[2mregister[22m       [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m  [2m | [22m[2mreset-password[22m [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m  [2m | [22m[2mforgot-password[22m[2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m  [2m | [22m[2mep-approval[22m    [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m  [2m | [22m[2mapprovals[22m      [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m    [2m | [22m  [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m          [2m | [22m [1mRaw size[22m
+[32mchunk-SECS3ODS.mjs[39m [2m | [22m[2mdashboard[22m      [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m [2m | [22m[2m-[22m              [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m [2m | [22m[2m-[22m              [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m [2m | [22m[2mlogin[22m          [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m [2m | [22m[2m-[22m              [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m [2m | [22m[2mregister[22m       [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m [2m | [22m[2mreset-password[22m [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m [2m | [22m[2mforgot-password[22m[2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m [2m | [22m[2mep-approval[22m    [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m [2m | [22m[2mapprovals[22m      [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [15.390 seconds] - 2026-06-01T14:34:22.053Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-DMZW5O2Z.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.95 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-QMVFJZUW.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.95 MB[39m[2m | [22m
+
+Application bundle generation complete. [22.304 seconds] - 2026-06-02T10:17:11.757Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [10.417 seconds] - 2026-06-02T10:17:23.906Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.015 seconds] - 2026-06-02T10:17:25.474Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.017 seconds] - 2026-06-02T10:17:34.890Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [9.535 seconds] - 2026-06-02T10:18:06.816Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.339 seconds] - 2026-06-02T10:18:10.196Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-YDGJGN32.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.95 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-IIP66U7M.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.95 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [2.211 seconds] - 2026-06-02T10:18:22.594Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [11.068 seconds] - 2026-06-02T10:23:05.779Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.782 seconds] - 2026-06-02T10:23:31.936Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-763GOAWR.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.95 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-GI2EKEGH.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.95 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [1.556 seconds] - 2026-06-02T10:23:33.514Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.383 seconds] - 2026-06-02T10:24:00.271Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-763GOAWR.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.95 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-GI2EKEGH.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.95 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [2.747 seconds] - 2026-06-02T10:24:03.815Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [16.555 seconds] - 2026-06-02T10:32:29.988Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-ZRB7OKWC.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.72 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-3XR2WYAT.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.72 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [2.465 seconds] - 2026-06-02T10:32:32.629Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [8.142 seconds] - 2026-06-02T10:32:42.289Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.458 seconds] - 2026-06-02T10:32:44.792Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-FZGMP3YK.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.97 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-CNQT7NFA.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.97 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [4.975 seconds] - 2026-06-02T10:33:13.345Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-ST6I5ABJ.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.96 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-AWUQSRS4.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.96 MB[39m[2m | [22m
+
+Application bundle generation complete. [13.576 seconds] - 2026-06-02T10:39:21.364Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-2633NCQW.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.97 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-7GVKXRIL.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.97 MB[39m[2m | [22m
+
+Application bundle generation complete. [6.190 seconds] - 2026-06-02T10:39:28.440Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [10.072 seconds] - 2026-06-02T10:39:54.578Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [8.888 seconds] - 2026-06-02T10:40:03.503Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.251 seconds] - 2026-06-02T10:40:08.776Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-E3XJ5Z2N.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-EHZLLBLG.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.94 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [17.264 seconds] - 2026-06-02T10:51:14.455Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [11.510 seconds] - 2026-06-02T10:51:28.920Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.007 seconds] - 2026-06-02T10:51:31.984Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-OLCALV7V.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.91 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-TGPEOI4E.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.91 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [2.965 seconds] - 2026-06-02T10:51:34.963Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-OLCALV7V.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.91 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-TGPEOI4E.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.91 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [16.258 seconds] - 2026-06-02T18:35:20.103Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-OLCALV7V.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.91 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-TGPEOI4E.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.91 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [9.186 seconds] - 2026-06-02T18:35:29.506Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-GHIHLAHM.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.92 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-UCQCMHEU.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.92 MB[39m[2m | [22m
+
+Application bundle generation complete. [34.656 seconds] - 2026-06-02T18:46:04.385Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-VXFLTX7S.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.92 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-7VCVCBLF.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.92 MB[39m[2m | [22m
+
+Application bundle generation complete. [8.487 seconds] - 2026-06-02T18:46:13.438Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [33.190 seconds] - 2026-06-02T19:39:34.448Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-VQVV3BAM.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.90 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-3QESE23R.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.90 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [20.792 seconds] - 2026-06-02T19:39:55.628Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-HLATKOXC.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.86 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-WMEMZDOM.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.86 MB[39m[2m | [22m
+
+Application bundle generation complete. [10.182 seconds] - 2026-06-02T19:40:26.657Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [11.785 seconds] - 2026-06-02T20:05:10.126Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.019 seconds] - 2026-06-02T20:05:10.251Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [9.783 seconds] - 2026-06-02T20:05:32.212Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [16.144 seconds] - 2026-06-02T20:06:08.600Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [8.392 seconds] - 2026-06-02T20:06:17.194Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [9.951 seconds] - 2026-06-02T20:06:36.350Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.515 seconds] - 2026-06-02T20:06:43.051Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.656 seconds] - 2026-06-02T20:06:48.770Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [9.930 seconds] - 2026-06-02T20:06:58.880Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [12.795 seconds] - 2026-06-02T20:07:25.643Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.039 seconds] - 2026-06-02T20:07:28.413Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.337 seconds] - 2026-06-02T20:07:44.167Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.417 seconds] - 2026-06-02T20:08:05.577Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.231 seconds] - 2026-06-02T20:08:07.873Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.249 seconds] - 2026-06-02T20:08:15.889Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.649 seconds] - 2026-06-02T20:08:23.014Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.150 seconds] - 2026-06-02T20:08:25.180Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.315 seconds] - 2026-06-02T20:08:53.301Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.661 seconds] - 2026-06-02T20:08:55.017Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.678 seconds] - 2026-06-02T20:09:01.530Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.597 seconds] - 2026-06-02T20:09:06.397Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.957 seconds] - 2026-06-02T20:09:08.466Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.723 seconds] - 2026-06-02T20:09:11.526Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.357 seconds] - 2026-06-02T20:09:13.016Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.001 seconds] - 2026-06-02T20:09:16.422Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.086 seconds] - 2026-06-02T20:09:19.004Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.431 seconds] - 2026-06-02T20:09:31.808Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.482 seconds] - 2026-06-02T20:09:33.744Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.536 seconds] - 2026-06-02T20:09:39.134Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.588 seconds] - 2026-06-02T20:09:43.500Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.116 seconds] - 2026-06-02T20:09:52.018Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.149 seconds] - 2026-06-02T20:09:53.181Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.067 seconds] - 2026-06-02T20:10:10.315Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.348 seconds] - 2026-06-02T20:10:11.714Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.094 seconds] - 2026-06-02T20:10:35.310Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.085 seconds] - 2026-06-02T20:10:59.149Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.346 seconds] - 2026-06-02T20:11:16.129Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.351 seconds] - 2026-06-02T20:11:46.715Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [15.373 seconds] - 2026-06-02T20:25:16.040Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.317 seconds] - 2026-06-02T20:25:19.441Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.953 seconds] - 2026-06-02T20:25:53.991Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.189 seconds] - 2026-06-02T20:26:00.330Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.341 seconds] - 2026-06-02T20:26:01.840Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [14.684 seconds] - 2026-06-02T20:27:34.945Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.136 seconds] - 2026-06-02T20:27:38.130Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.176 seconds] - 2026-06-02T20:28:18.656Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.678 seconds] - 2026-06-02T20:28:21.395Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.340 seconds] - 2026-06-02T20:28:23.748Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.428 seconds] - 2026-06-02T20:28:26.340Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.565 seconds] - 2026-06-02T20:28:36.048Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [35.608 seconds] - 2026-06-02T20:33:15.398Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.646 seconds] - 2026-06-02T20:33:23.075Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [17.766 seconds] - 2026-06-02T20:35:07.542Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.798 seconds] - 2026-06-02T20:35:10.485Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [14.650 seconds] - 2026-06-02T20:37:43.895Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.476 seconds] - 2026-06-02T20:37:46.392Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [24.971 seconds] - 2026-06-02T20:41:28.701Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [12.327 seconds] - 2026-06-02T20:41:41.187Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [39.885 seconds] - 2026-06-02T20:47:03.472Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [13.316 seconds] - 2026-06-02T20:47:17.040Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [9.869 seconds] - 2026-06-02T20:47:54.956Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.136 seconds] - 2026-06-02T20:48:00.244Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.837 seconds] - 2026-06-02T20:48:04.308Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.409 seconds] - 2026-06-02T20:48:13.125Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.244 seconds] - 2026-06-02T20:48:15.430Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.081 seconds] - 2026-06-02T20:48:20.682Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.281 seconds] - 2026-06-02T20:48:22.977Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.142 seconds] - 2026-06-02T20:48:27.507Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.117 seconds] - 2026-06-02T20:48:30.633Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [13.045 seconds] - 2026-06-02T20:49:21.109Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.657 seconds] - 2026-06-02T20:49:27.893Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.664 seconds] - 2026-06-02T20:49:33.642Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.674 seconds] - 2026-06-02T20:49:36.333Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.757 seconds] - 2026-06-02T20:49:40.681Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.574 seconds] - 2026-06-02T20:49:42.273Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.044 seconds] - 2026-06-02T20:49:46.056Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.513 seconds] - 2026-06-02T20:50:12.010Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.610 seconds] - 2026-06-02T20:50:21.788Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.563 seconds] - 2026-06-02T20:50:26.683Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.064 seconds] - 2026-06-02T20:50:29.763Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.648 seconds] - 2026-06-02T20:50:32.434Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.872 seconds] - 2026-06-02T20:50:59.474Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.997 seconds] - 2026-06-02T20:51:02.523Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.687 seconds] - 2026-06-02T20:51:05.226Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.773 seconds] - 2026-06-02T20:51:12.523Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.305 seconds] - 2026-06-02T20:51:15.887Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.909 seconds] - 2026-06-02T20:51:29.435Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.841 seconds] - 2026-06-02T20:51:35.933Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.039 seconds] - 2026-06-02T20:51:41.486Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.428 seconds] - 2026-06-02T20:51:49.174Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.123 seconds] - 2026-06-02T20:51:55.585Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.258 seconds] - 2026-06-02T20:51:57.976Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.793 seconds] - 2026-06-02T20:52:06.451Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.652 seconds] - 2026-06-02T20:52:08.146Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.852 seconds] - 2026-06-02T20:52:24.515Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.351 seconds] - 2026-06-02T20:52:37.027Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.594 seconds] - 2026-06-02T20:52:51.904Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.914 seconds] - 2026-06-02T20:53:39.296Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [8.757 seconds] - 2026-06-02T20:54:43.223Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [24.483 seconds] - 2026-06-02T20:56:24.037Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [13.582 seconds] - 2026-06-02T20:56:37.975Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-HLATKOXC.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.86 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-WMEMZDOM.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.86 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [13.625 seconds] - 2026-06-02T20:59:44.511Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-VYVBD6SI.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.86 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-S33ZONU3.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m1.86 MB[39m[2m | [22m
+
+Application bundle generation complete. [15.985 seconds] - 2026-06-02T21:22:29.469Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.306 seconds] - 2026-06-02T21:22:50.987Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.759 seconds] - 2026-06-02T21:23:31.720Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.330 seconds] - 2026-06-02T21:24:17.369Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.447 seconds] - 2026-06-02T21:28:45.207Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.506 seconds] - 2026-06-02T21:28:51.478Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [5.927 seconds] - 2026-06-02T21:30:12.299Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.146 seconds] - 2026-06-02T21:31:16.156Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [6.546 seconds] - 2026-06-02T21:31:25.531Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.217 seconds] - 2026-06-02T21:31:26.758Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.023 seconds] - 2026-06-02T21:31:27.792Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.709 seconds] - 2026-06-02T21:31:32.616Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.759 seconds] - 2026-06-02T21:31:35.598Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [9.771 seconds] - 2026-06-02T21:34:49.167Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.971 seconds] - 2026-06-02T21:35:21.215Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.306 seconds] - 2026-06-02T21:35:23.621Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.448 seconds] - 2026-06-02T21:38:58.571Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.792 seconds] - 2026-06-02T21:39:19.300Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.897 seconds] - 2026-06-02T21:39:26.451Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.429 seconds] - 2026-06-02T21:40:34.386Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.354 seconds] - 2026-06-02T21:40:46.208Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.581 seconds] - 2026-06-02T21:41:22.838Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [4.258 seconds] - 2026-06-02T21:41:29.944Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-XHGJL7T7.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.88 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-4KWQ4JYE.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.88 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [4.173 seconds] - 2026-06-02T21:42:27.636Z
+
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-XHGJL7T7.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.88 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-4KWQ4JYE.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.88 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [4.818 seconds] - 2026-06-02T21:42:32.789Z
+
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [16.709 seconds] - 2026-06-02T21:44:50.843Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.931 seconds] - 2026-06-02T21:44:54.884Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.307 seconds] - 2026-06-02T21:44:59.316Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [0.760 seconds] - 2026-06-02T21:45:02.200Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [1.142 seconds] - 2026-06-02T21:45:11.098Z
+
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-HLATKOXC.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.86 MB[39m[2m | [22m
+[32mchunk-6GNAOQJ5.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-OOKULMZV.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-M6VJRMQ7.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.23 kB[39m[2m | [22m
+[32mchunk-RBOSRT6G.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m74.68 kB[39m[2m | [22m
+[32mchunk-TVXJ3PZT.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-WSKIB4UI.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-QYQTBUEY.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-NVJ3LKSH.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-OCISSXWQ.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-WMEMZDOM.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m1.86 MB[39m[2m | [22m
+[32mchunk-X7HKN5C3.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-26USU6YZ.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-F4IUFEJA.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.27 kB[39m[2m | [22m
+[32mchunk-JQK4B3RR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m74.72 kB[39m[2m | [22m
+[32mchunk-GI6T7YVR.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-IHRBQ5WX.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-LUVC56OY.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-FUQD3FA5.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-PNPSRRD5.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [4.936 seconds] - 2026-06-02T21:45:16.379Z
+
+Page reload sent to client(s).

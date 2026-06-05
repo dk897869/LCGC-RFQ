@@ -1,0 +1,2642 @@
+
+> frontend@0.0.0 start
+> ng serve --port=4301 --host=127.0.0.1
+
+[33m>[39m Building...
+[32m√[39m Building...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-FFDEWM62.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.12 MB[39m[2m | [22m
+[32mchunk-HSM624HI.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-WCXCHUA3.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-DZBKEMK2.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.57 kB[39m[2m | [22m
+[32mchunk-3YSH5Y3W.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m75.45 kB[39m[2m | [22m
+[32mchunk-HPHEAKMH.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-ZFXTMCEM.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-L2JO4ZH2.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-JM64HGO2.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-AVB7AW6O.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-VG7SW7I6.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.12 MB[39m[2m | [22m
+[32mchunk-YFQ5TXHW.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-UPYB6YAY.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-AFUBGVJE.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.61 kB[39m[2m | [22m
+[32mchunk-J4J3OQZX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m75.49 kB[39m[2m | [22m
+[32mchunk-VDUMZY4W.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-3YVDFVQI.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-WMYKPLFS.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-XTNTZFOI.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-ZHSZZIMQ.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [29.857 seconds] - 2026-06-05T07:17:08.260Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:663:62:
+[37m      663 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:126:15:
+[37m      126 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:121:29:
+[37m      121 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:121:35:
+[37m      121 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:121:40:
+[37m      121 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:121:51:
+[37m      121 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDeprecation[0m [1m[35m[plugin angular-sass][0m
+
+    src/app/components/parts/parts.scss:1:8:
+[37m      1 │ @import [32m[37m'../ep-approval/ep-approval.scss';
+        ╵         [32m^[0m
+
+
+  Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+  
+  More info and automated migrator: [4mhttps://sass-lang.com/d/import[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mDeprecation[0m [1m[35m[plugin angular-sass][0m
+
+    src/app/components/vendors/VendorsComponent.scss:1:8:
+[37m      1 │ @import [32m[37m'../ep-approval/ep-approval.scss';
+        ╵         [32m^[0m
+
+
+  Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+  
+  More info and automated migrator: [4mhttps://sass-lang.com/d/import[0m
+
+[39m[22m
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m4301[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[1m[33mNG02801: Angular detected that `HttpClient` is not configured to use `fetch` APIs. It's strongly recommended to enable `fetch` for applications that use Server-Side Rendering for better performance and compatibility. To enable `fetch`, add the `withFetch()` to the `provideHttpClient()` call at the root of the application.[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-PWO7Z6CG.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.12 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-YSED2TGX.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.12 MB[39m[2m | [22m
+
+Application bundle generation complete. [34.756 seconds] - 2026-06-05T07:42:27.333Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:663:62:
+[37m      663 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.266 seconds] - 2026-06-05T07:42:29.675Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: EPApprovalComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:4:
+[37m      128 │     [32mEPApprovalComponent[37m, RfqComponent, UserManagementComponent,
+          ╵     [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RfqComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:25:
+[37m      128 │     EPApprovalComponent, [32mRfqComponent[37m, UserManagementComponent,
+          ╵                          [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UserManagementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:39:
+[37m      128 │     EPApprovalComponent, RfqComponent, [32mUserManagementComponent[37m,
+          ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Bidding is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:4:
+[37m      129 │     [32mBidding[37m, PaymentRequest, Dqms, Npi, SystemBom, BomForecast,
+          ╵     [32m~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PaymentRequest is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:13:
+[37m      129 │     Bidding, [32mPaymentRequest[37m, Dqms, Npi, SystemBom, BomForecast,
+          ╵              [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PriceApproval is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:4:
+[37m      130 │     [32mPriceApproval[37m, PlanStock, SupplierPerformance, VehicularMs,
+          ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PlanStock is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:19:
+[37m      130 │     PriceApproval, [32mPlanStock[37m, SupplierPerformance, VehicularMs,
+          ╵                    [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SupplierPerformance is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:30:
+[37m      130 │     PriceApproval, PlanStock, [32mSupplierPerformance[37m, VehicularMs,
+          ╵                               [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VehicularMs is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:51:
+[37m      130 │     PriceApproval, PlanStock, SupplierPerformance, [32mVehicularMs[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ProfileComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:4:
+[37m      131 │     [32mProfileComponent[37m, PartsComponent, VendorsComponent, Approvals...
+          ╵     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PartsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:22:
+[37m      131 │     ProfileComponent, [32mPartsComponent[37m, VendorsComponent, Approvals...
+          ╵                       [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VendorsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:38:
+[37m      131 │ ...eComponent, PartsComponent, [32mVendorsComponent[37m, ApprovalsComponent,
+          ╵                                [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ApprovalsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:56:
+[37m      131 │ ...eComponent, PartsComponent, VendorsComponent, [32mApprovalsComponent[37m,
+          ╵                                                  [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PoNpp is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:4:
+[37m      132 │     [32mPoNpp[37m, WccCertificate, NppProcurementComponent
+          ╵     [32m~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WccCertificate is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:11:
+[37m      132 │     PoNpp, [32mWccCertificate[37m, NppProcurementComponent
+          ╵            [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: NppProcurementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:27:
+[37m      132 │     PoNpp, WccCertificate, [32mNppProcurementComponent[37m
+          ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "tbody". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:813:12:
+[37m      813 │             [32m</tbody>[37m
+          ╵             [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "table". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:814:10:
+[37m      814 │           [32m</table>[37m
+          ╵           [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.617 seconds] - 2026-06-05T07:42:39.587Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: EPApprovalComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:4:
+[37m      128 │     [32mEPApprovalComponent[37m, RfqComponent, UserManagementComponent,
+          ╵     [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RfqComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:25:
+[37m      128 │     EPApprovalComponent, [32mRfqComponent[37m, UserManagementComponent,
+          ╵                          [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UserManagementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:39:
+[37m      128 │     EPApprovalComponent, RfqComponent, [32mUserManagementComponent[37m,
+          ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Bidding is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:4:
+[37m      129 │     [32mBidding[37m, PaymentRequest, Dqms, Npi, SystemBom, BomForecast,
+          ╵     [32m~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PaymentRequest is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:13:
+[37m      129 │     Bidding, [32mPaymentRequest[37m, Dqms, Npi, SystemBom, BomForecast,
+          ╵              [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PriceApproval is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:4:
+[37m      130 │     [32mPriceApproval[37m, PlanStock, SupplierPerformance, VehicularMs,
+          ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PlanStock is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:19:
+[37m      130 │     PriceApproval, [32mPlanStock[37m, SupplierPerformance, VehicularMs,
+          ╵                    [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SupplierPerformance is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:30:
+[37m      130 │     PriceApproval, PlanStock, [32mSupplierPerformance[37m, VehicularMs,
+          ╵                               [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VehicularMs is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:51:
+[37m      130 │     PriceApproval, PlanStock, SupplierPerformance, [32mVehicularMs[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ProfileComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:4:
+[37m      131 │     [32mProfileComponent[37m, PartsComponent, VendorsComponent, Approvals...
+          ╵     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PartsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:22:
+[37m      131 │     ProfileComponent, [32mPartsComponent[37m, VendorsComponent, Approvals...
+          ╵                       [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VendorsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:38:
+[37m      131 │ ...eComponent, PartsComponent, [32mVendorsComponent[37m, ApprovalsComponent,
+          ╵                                [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ApprovalsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:56:
+[37m      131 │ ...eComponent, PartsComponent, VendorsComponent, [32mApprovalsComponent[37m,
+          ╵                                                  [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PoNpp is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:4:
+[37m      132 │     [32mPoNpp[37m, WccCertificate, NppProcurementComponent
+          ╵     [32m~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WccCertificate is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:11:
+[37m      132 │     PoNpp, [32mWccCertificate[37m, NppProcurementComponent
+          ╵            [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: NppProcurementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:27:
+[37m      132 │     PoNpp, WccCertificate, [32mNppProcurementComponent[37m
+          ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "tbody". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:813:12:
+[37m      813 │             [32m</tbody>[37m
+          ╵             [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "table". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:814:10:
+[37m      814 │           [32m</table>[37m
+          ╵           [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-PEJWB3LW.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.13 MB[39m[2m | [22m
+[32mchunk-HSM624HI.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-WCXCHUA3.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-DZBKEMK2.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.57 kB[39m[2m | [22m
+[32mchunk-3YSH5Y3W.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m75.45 kB[39m[2m | [22m
+[32mchunk-HPHEAKMH.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-ZFXTMCEM.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-L2JO4ZH2.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-JM64HGO2.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-AVB7AW6O.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-BDFQCDB3.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.13 MB[39m[2m | [22m
+[32mchunk-YFQ5TXHW.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-UPYB6YAY.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-AFUBGVJE.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.61 kB[39m[2m | [22m
+[32mchunk-J4J3OQZX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m75.49 kB[39m[2m | [22m
+[32mchunk-VDUMZY4W.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-3YVDFVQI.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-WMYKPLFS.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-XTNTZFOI.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-ZHSZZIMQ.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [8.845 seconds] - 2026-06-05T07:43:14.153Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8116: NG8116: A structural directive `ng-if` was used in the template without a corresponding import in the component. Make sure that the directive is included in the `@Component.imports` array of this component. Find more at https://v21.angular.dev/extended-diagnostics/NG8116[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:87:40:
+[37m      87 │ ...span class="sb-item__label" *[32mng-if[37m="!sidebarCollapsed">Payment<...
+         ╵                                 [32m~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:723:62:
+[37m      723 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-NRFEPPH4.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.13 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-TMK36OMN.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.13 MB[39m[2m | [22m
+
+Application bundle generation complete. [14.329 seconds] - 2026-06-05T07:47:00.385Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8116: NG8116: A structural directive `ng-if` was used in the template without a corresponding import in the component. Make sure that the directive is included in the `@Component.imports` array of this component. Find more at https://v21.angular.dev/extended-diagnostics/NG8116[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:87:40:
+[37m      87 │ ...span class="sb-item__label" *[32mng-if[37m="!sidebarCollapsed">Payment<...
+         ╵                                 [32m~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:723:62:
+[37m      723 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+
+No output file changes.
+
+Application bundle generation complete. [6.111 seconds] - 2026-06-05T07:47:06.757Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8116: NG8116: A structural directive `ng-if` was used in the template without a corresponding import in the component. Make sure that the directive is included in the `@Component.imports` array of this component. Find more at https://v21.angular.dev/extended-diagnostics/NG8116[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:87:40:
+[37m      87 │ ...span class="sb-item__label" *[32mng-if[37m="!sidebarCollapsed">Payment<...
+         ╵                                 [32m~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:723:62:
+[37m      723 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-PEJWB3LW.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.13 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-BDFQCDB3.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.13 MB[39m[2m | [22m
+
+Application bundle generation complete. [12.708 seconds] - 2026-06-05T07:48:14.028Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8116: NG8116: A structural directive `ng-if` was used in the template without a corresponding import in the component. Make sure that the directive is included in the `@Component.imports` array of this component. Find more at https://v21.angular.dev/extended-diagnostics/NG8116[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:87:40:
+[37m      87 │ ...span class="sb-item__label" *[32mng-if[37m="!sidebarCollapsed">Payment<...
+         ╵                                 [32m~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:723:62:
+[37m      723 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-JKHHYVVH.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.12 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-YZ6SPA7O.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.12 MB[39m[2m | [22m
+
+Application bundle generation complete. [18.894 seconds] - 2026-06-05T07:55:37.792Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:723:62:
+[37m      723 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [3.799 seconds] - 2026-06-05T07:55:41.879Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: EPApprovalComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:4:
+[37m      128 │     [32mEPApprovalComponent[37m, RfqComponent, UserManagementComponent,
+          ╵     [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RfqComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:25:
+[37m      128 │     EPApprovalComponent, [32mRfqComponent[37m, UserManagementComponent,
+          ╵                          [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UserManagementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:39:
+[37m      128 │     EPApprovalComponent, RfqComponent, [32mUserManagementComponent[37m,
+          ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Bidding is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:4:
+[37m      129 │     [32mBidding[37m, PaymentRequest, Dqms, Npi, SystemBom, BomForecast,
+          ╵     [32m~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PaymentRequest is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:13:
+[37m      129 │     Bidding, [32mPaymentRequest[37m, Dqms, Npi, SystemBom, BomForecast,
+          ╵              [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PriceApproval is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:4:
+[37m      130 │     [32mPriceApproval[37m, PlanStock, SupplierPerformance, VehicularMs,
+          ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PlanStock is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:19:
+[37m      130 │     PriceApproval, [32mPlanStock[37m, SupplierPerformance, VehicularMs,
+          ╵                    [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SupplierPerformance is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:30:
+[37m      130 │     PriceApproval, PlanStock, [32mSupplierPerformance[37m, VehicularMs,
+          ╵                               [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VehicularMs is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:51:
+[37m      130 │     PriceApproval, PlanStock, SupplierPerformance, [32mVehicularMs[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ProfileComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:4:
+[37m      131 │     [32mProfileComponent[37m, PartsComponent, VendorsComponent, Approvals...
+          ╵     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PartsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:22:
+[37m      131 │     ProfileComponent, [32mPartsComponent[37m, VendorsComponent, Approvals...
+          ╵                       [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VendorsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:38:
+[37m      131 │ ...eComponent, PartsComponent, [32mVendorsComponent[37m, ApprovalsComponent,
+          ╵                                [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ApprovalsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:56:
+[37m      131 │ ...eComponent, PartsComponent, VendorsComponent, [32mApprovalsComponent[37m,
+          ╵                                                  [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PoNpp is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:4:
+[37m      132 │     [32mPoNpp[37m, WccCertificate, NppProcurementComponent
+          ╵     [32m~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WccCertificate is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:11:
+[37m      132 │     PoNpp, [32mWccCertificate[37m, NppProcurementComponent
+          ╵            [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: NppProcurementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:27:
+[37m      132 │     PoNpp, WccCertificate, [32mNppProcurementComponent[37m
+          ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "tbody". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:813:12:
+[37m      813 │             [32m</tbody>[37m
+          ╵             [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "table". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:814:10:
+[37m      814 │           [32m</table>[37m
+          ╵           [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [7.081 seconds] - 2026-06-05T08:05:42.490Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: EPApprovalComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:4:
+[37m      128 │     [32mEPApprovalComponent[37m, RfqComponent, UserManagementComponent,
+          ╵     [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RfqComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:25:
+[37m      128 │     EPApprovalComponent, [32mRfqComponent[37m, UserManagementComponent,
+          ╵                          [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UserManagementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:128:39:
+[37m      128 │     EPApprovalComponent, RfqComponent, [32mUserManagementComponent[37m,
+          ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Bidding is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:4:
+[37m      129 │     [32mBidding[37m, PaymentRequest, Dqms, Npi, SystemBom, BomForecast,
+          ╵     [32m~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PaymentRequest is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:13:
+[37m      129 │     Bidding, [32mPaymentRequest[37m, Dqms, Npi, SystemBom, BomForecast,
+          ╵              [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PriceApproval is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:4:
+[37m      130 │     [32mPriceApproval[37m, PlanStock, SupplierPerformance, VehicularMs,
+          ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PlanStock is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:19:
+[37m      130 │     PriceApproval, [32mPlanStock[37m, SupplierPerformance, VehicularMs,
+          ╵                    [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SupplierPerformance is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:30:
+[37m      130 │     PriceApproval, PlanStock, [32mSupplierPerformance[37m, VehicularMs,
+          ╵                               [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VehicularMs is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:130:51:
+[37m      130 │     PriceApproval, PlanStock, SupplierPerformance, [32mVehicularMs[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ProfileComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:4:
+[37m      131 │     [32mProfileComponent[37m, PartsComponent, VendorsComponent, Approvals...
+          ╵     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PartsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:22:
+[37m      131 │     ProfileComponent, [32mPartsComponent[37m, VendorsComponent, Approvals...
+          ╵                       [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VendorsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:38:
+[37m      131 │ ...eComponent, PartsComponent, [32mVendorsComponent[37m, ApprovalsComponent,
+          ╵                                [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ApprovalsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:131:56:
+[37m      131 │ ...eComponent, PartsComponent, VendorsComponent, [32mApprovalsComponent[37m,
+          ╵                                                  [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PoNpp is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:4:
+[37m      132 │     [32mPoNpp[37m, WccCertificate, NppProcurementComponent
+          ╵     [32m~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WccCertificate is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:11:
+[37m      132 │     PoNpp, [32mWccCertificate[37m, NppProcurementComponent
+          ╵            [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: NppProcurementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:132:27:
+[37m      132 │     PoNpp, WccCertificate, [32mNppProcurementComponent[37m
+          ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "tbody". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:813:12:
+[37m      813 │             [32m</tbody>[37m
+          ╵             [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "table". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:814:10:
+[37m      814 │           [32m</table>[37m
+          ╵           [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-3FQU4RWL.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.13 MB[39m[2m | [22m
+[32mchunk-HSM624HI.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-WCXCHUA3.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-DZBKEMK2.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.57 kB[39m[2m | [22m
+[32mchunk-3YSH5Y3W.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m75.45 kB[39m[2m | [22m
+[32mchunk-HPHEAKMH.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-ZFXTMCEM.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-L2JO4ZH2.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-JM64HGO2.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-AVB7AW6O.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-R5BD7RO3.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.13 MB[39m[2m | [22m
+[32mchunk-YFQ5TXHW.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-UPYB6YAY.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-AFUBGVJE.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.61 kB[39m[2m | [22m
+[32mchunk-J4J3OQZX.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m75.49 kB[39m[2m | [22m
+[32mchunk-VDUMZY4W.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-3YVDFVQI.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-WMYKPLFS.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-XTNTZFOI.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-ZHSZZIMQ.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [13.852 seconds] - 2026-06-05T08:06:13.804Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8116: NG8116: A structural directive `ng-if` was used in the template without a corresponding import in the component. Make sure that the directive is included in the `@Component.imports` array of this component. Find more at https://v21.angular.dev/extended-diagnostics/NG8116[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:87:40:
+[37m      87 │ ...span class="sb-item__label" *[32mng-if[37m="!sidebarCollapsed">Payment<...
+         ╵                                 [32m~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:723:62:
+[37m      723 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:134:15:
+[37m      134 │   templateUrl: [32m'./dashboard.html'[37m,
+          ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:29:
+[37m      129 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+          ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:35:
+[37m      129 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+          ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:40:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+          ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:129:51:
+[37m      129 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+          ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-HUC7XGJR.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.12 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-X4Q42P3U.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.12 MB[39m[2m | [22m
+
+Application bundle generation complete. [22.555 seconds] - 2026-06-05T08:32:12.483Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8116: NG8116: A structural directive `ng-if` was used in the template without a corresponding import in the component. Make sure that the directive is included in the `@Component.imports` array of this component. Find more at https://v21.angular.dev/extended-diagnostics/NG8116[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:87:40:
+[37m      87 │ ...span class="sb-item__label" *[32mng-if[37m="!sidebarCollapsed">Payment<...
+         ╵                                 [32m~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:95:15:
+[37m      95 │   templateUrl: [32m'./dashboard.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:723:62:
+[37m      723 │ ...If="selectedUnifiedRequest?.[32mstatus[37m === 'Pending'" class="req-m...
+          ╵                                [32m~~~~~~[0m
+
+  Warning occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:95:15:
+[37m      95 │   templateUrl: [32m'./dashboard.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:29:
+[37m      90 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:35:
+[37m      90 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:40:
+[37m      90 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:51:
+[37m      90 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-PSSY2MYO.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.05 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-KDER3FAB.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.05 MB[39m[2m | [22m
+
+Application bundle generation complete. [20.248 seconds] - 2026-06-05T08:38:55.453Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:29:
+[37m      90 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:35:
+[37m      90 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:40:
+[37m      90 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:51:
+[37m      90 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [2.947 seconds] - 2026-06-05T08:38:58.632Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: EPApprovalComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:89:4:
+[37m      89 │     [32mEPApprovalComponent[37m, RfqComponent, UserManagementComponent,
+         ╵     [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RfqComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:89:25:
+[37m      89 │     EPApprovalComponent, [32mRfqComponent[37m, UserManagementComponent,
+         ╵                          [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UserManagementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:89:39:
+[37m      89 │     EPApprovalComponent, RfqComponent, [32mUserManagementComponent[37m,
+         ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Bidding is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:4:
+[37m      90 │     [32mBidding[37m, PaymentRequest, Dqms, Npi, SystemBom, BomForecast,
+         ╵     [32m~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PaymentRequest is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:13:
+[37m      90 │     Bidding, [32mPaymentRequest[37m, Dqms, Npi, SystemBom, BomForecast,
+         ╵              [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:29:
+[37m      90 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:35:
+[37m      90 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:40:
+[37m      90 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:51:
+[37m      90 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PriceApproval is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:91:4:
+[37m      91 │     [32mPriceApproval[37m, PlanStock, SupplierPerformance, VehicularMs,
+         ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PlanStock is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:91:19:
+[37m      91 │     PriceApproval, [32mPlanStock[37m, SupplierPerformance, VehicularMs,
+         ╵                    [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SupplierPerformance is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:91:30:
+[37m      91 │     PriceApproval, PlanStock, [32mSupplierPerformance[37m, VehicularMs,
+         ╵                               [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VehicularMs is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:91:51:
+[37m      91 │     PriceApproval, PlanStock, SupplierPerformance, [32mVehicularMs[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ProfileComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:92:4:
+[37m      92 │     [32mProfileComponent[37m, PartsComponent, VendorsComponent, ApprovalsC...
+         ╵     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PartsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:92:22:
+[37m      92 │     ProfileComponent, [32mPartsComponent[37m, VendorsComponent, ApprovalsC...
+         ╵                       [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VendorsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:92:38:
+[37m      92 │ ...leComponent, PartsComponent, [32mVendorsComponent[37m, ApprovalsComponent,
+         ╵                                 [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ApprovalsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:92:56:
+[37m      92 │ ...leComponent, PartsComponent, VendorsComponent, [32mApprovalsComponent[37m,
+         ╵                                                   [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PoNpp is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:93:4:
+[37m      93 │     [32mPoNpp[37m, WccCertificate, NppProcurementComponent
+         ╵     [32m~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WccCertificate is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:93:11:
+[37m      93 │     PoNpp, [32mWccCertificate[37m, NppProcurementComponent
+         ╵            [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: NppProcurementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:93:27:
+[37m      93 │     PoNpp, WccCertificate, [32mNppProcurementComponent[37m
+         ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "tbody". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:813:12:
+[37m      813 │             [32m</tbody>[37m
+          ╵             [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:95:15:
+[37m      95 │   templateUrl: [32m'./dashboard.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "table". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:814:10:
+[37m      814 │           [32m</table>[37m
+          ╵           [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:95:15:
+[37m      95 │   templateUrl: [32m'./dashboard.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+Application bundle generation failed. [10.305 seconds] - 2026-06-05T09:17:14.433Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: EPApprovalComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:87:4:
+[37m      87 │     [32mEPApprovalComponent[37m, RfqComponent, UserManagementComponent,
+         ╵     [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RfqComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:87:25:
+[37m      87 │     EPApprovalComponent, [32mRfqComponent[37m, UserManagementComponent,
+         ╵                          [32m~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: UserManagementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:87:39:
+[37m      87 │     EPApprovalComponent, RfqComponent, [32mUserManagementComponent[37m,
+         ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Bidding is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:4:
+[37m      88 │     [32mBidding[37m, PaymentRequest, Dqms, Npi, SystemBom, BomForecast,
+         ╵     [32m~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PaymentRequest is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:13:
+[37m      88 │     Bidding, [32mPaymentRequest[37m, Dqms, Npi, SystemBom, BomForecast,
+         ╵              [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PriceApproval is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:89:4:
+[37m      89 │     [32mPriceApproval[37m, PlanStock, SupplierPerformance, VehicularMs,
+         ╵     [32m~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PlanStock is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:89:19:
+[37m      89 │     PriceApproval, [32mPlanStock[37m, SupplierPerformance, VehicularMs,
+         ╵                    [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SupplierPerformance is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:89:30:
+[37m      89 │     PriceApproval, PlanStock, [32mSupplierPerformance[37m, VehicularMs,
+         ╵                               [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VehicularMs is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:89:51:
+[37m      89 │     PriceApproval, PlanStock, SupplierPerformance, [32mVehicularMs[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ProfileComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:4:
+[37m      90 │     [32mProfileComponent[37m, PartsComponent, VendorsComponent, ApprovalsC...
+         ╵     [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PartsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:22:
+[37m      90 │     ProfileComponent, [32mPartsComponent[37m, VendorsComponent, ApprovalsC...
+         ╵                       [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: VendorsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:38:
+[37m      90 │ ...leComponent, PartsComponent, [32mVendorsComponent[37m, ApprovalsComponent,
+         ╵                                 [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: ApprovalsComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:90:56:
+[37m      90 │ ...leComponent, PartsComponent, VendorsComponent, [32mApprovalsComponent[37m,
+         ╵                                                   [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: PoNpp is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:91:4:
+[37m      91 │     [32mPoNpp[37m, WccCertificate, NppProcurementComponent
+         ╵     [32m~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WccCertificate is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:91:11:
+[37m      91 │     PoNpp, [32mWccCertificate[37m, NppProcurementComponent
+         ╵            [32m~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: NppProcurementComponent is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:91:27:
+[37m      91 │     PoNpp, WccCertificate, [32mNppProcurementComponent[37m
+         ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "tbody". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:813:12:
+[37m      813 │             [32m</tbody>[37m
+          ╵             [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:93:15:
+[37m      93 │   templateUrl: [32m'./dashboard.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "table". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.html:814:10:
+[37m      814 │           [32m</table>[37m
+          ╵           [32m~~~~~~~~[0m
+
+  Error occurs in the template of component DashboardComponent.
+
+    src/app/components/dashboard/dashboard.ts:93:15:
+[37m      93 │   templateUrl: [32m'./dashboard.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m     
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.js[39m             [2m | [22m[2mmain[22m            [2m | [22m  [36m4.71 kB[39m[2m | [22m
+[32mchunk-653SOEEV.js[39m   [2m | [22m[2m-[22m               [2m | [22m  [36m1.51 kB[39m[2m | [22m
+[32mstyles.css[39m          [2m | [22m[2mstyles[22m          [2m | [22m [36m96 bytes[39m[2m | [22m
+
+[1m [22m                   [2m | [22m[1mInitial total[22m   [2m | [22m  [1m6.32 kB[22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-WMEZHZQU.js[39m   [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.02 MB[39m[2m | [22m
+[32mchunk-WQXYQJVF.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m203.01 kB[39m[2m | [22m
+[32mchunk-MC5STGFL.js[39m   [2m | [22m[2m-[22m               [2m | [22m[36m120.82 kB[39m[2m | [22m
+[32mchunk-OO4FJF7T.js[39m   [2m | [22m[2mlogin[22m           [2m | [22m[36m102.57 kB[39m[2m | [22m
+[32mchunk-FXSY52HM.js[39m   [2m | [22m[2m-[22m               [2m | [22m [36m75.48 kB[39m[2m | [22m
+[32mchunk-CWZXX4VV.js[39m   [2m | [22m[2mregister[22m        [2m | [22m [36m65.44 kB[39m[2m | [22m
+[32mchunk-B2A4KG5D.js[39m   [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.57 kB[39m[2m | [22m
+[32mchunk-NI6447LV.js[39m   [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.27 kB[39m[2m | [22m
+[32mchunk-GSX6VOFX.js[39m   [2m | [22m[2mep-approval[22m     [2m | [22m[36m198 bytes[39m[2m | [22m
+[32mchunk-K3ZQCBC5.js[39m   [2m | [22m[2mapprovals[22m       [2m | [22m[36m196 bytes[39m[2m | [22m
+
+
+[35mServer bundles[39m      
+[1mInitial chunk files[22m [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[39m     [2m | [22m[2mmain.server[22m     [2m | [22m  [36m6.41 kB[39m[2m | [22m
+[32mserver.mjs[39m          [2m | [22m[2mserver[22m          [2m | [22m  [36m1.81 kB[39m[2m | [22m
+[32mchunk-S5NAN44N.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m  [36m1.55 kB[39m[2m | [22m
+[32mpolyfills.server.mjs[39m[2m | [22m[2mpolyfills.server[22m[2m | [22m[36m243 bytes[39m[2m | [22m
+
+[1mLazy chunk files[22m    [2m | [22m[1mNames[22m           [2m | [22m [1mRaw size[22m
+[32mchunk-UTOYUNBB.mjs[39m  [2m | [22m[2mdashboard[22m       [2m | [22m  [36m2.02 MB[39m[2m | [22m
+[32mchunk-B3JAQ3FK.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m203.04 kB[39m[2m | [22m
+[32mchunk-62464VXR.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m[36m120.86 kB[39m[2m | [22m
+[32mchunk-DVHJLC3K.mjs[39m  [2m | [22m[2mlogin[22m           [2m | [22m[36m102.61 kB[39m[2m | [22m
+[32mchunk-M2ACN3UG.mjs[39m  [2m | [22m[2m-[22m               [2m | [22m [36m75.52 kB[39m[2m | [22m
+[32mchunk-VGDMCI43.mjs[39m  [2m | [22m[2mregister[22m        [2m | [22m [36m65.48 kB[39m[2m | [22m
+[32mchunk-DKK7BNH4.mjs[39m  [2m | [22m[2mreset-password[22m  [2m | [22m [36m36.60 kB[39m[2m | [22m
+[32mchunk-43Q3SRIC.mjs[39m  [2m | [22m[2mforgot-password[22m [2m | [22m [36m11.30 kB[39m[2m | [22m
+[32mchunk-WO2OKOMQ.mjs[39m  [2m | [22m[2mep-approval[22m     [2m | [22m[36m235 bytes[39m[2m | [22m
+[32mchunk-54QHOLJ2.mjs[39m  [2m | [22m[2mapprovals[22m       [2m | [22m[36m233 bytes[39m[2m | [22m
+
+Application bundle generation complete. [7.586 seconds] - 2026-06-05T09:18:28.693Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-IDQMXLTW.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.01 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-3NAEQON5.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.01 MB[39m[2m | [22m
+
+Application bundle generation complete. [9.750 seconds] - 2026-06-05T09:21:36.935Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-F2XB5GT3.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.01 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-BLCSONSP.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.01 MB[39m[2m | [22m
+
+Application bundle generation complete. [17.952 seconds] - 2026-06-05T09:33:05.554Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-FMAVGPQP.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-R2XWNZYQ.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [15.749 seconds] - 2026-06-05T09:34:44.421Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-BRXTWZ2K.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-Q2HXMTD5.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [10.057 seconds] - 2026-06-05T09:35:55.489Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-JM74KKYD.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-RFHF7WME.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [6.532 seconds] - 2026-06-05T09:36:22.365Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-TD5IPHRA.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-XZNSPSL2.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [5.934 seconds] - 2026-06-05T09:36:38.879Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-N55AX33A.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-G47ZN2Y7.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [6.529 seconds] - 2026-06-05T09:37:00.113Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-NHRGCMAA.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-DRAXJYJU.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [5.071 seconds] - 2026-06-05T09:37:14.068Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Component update sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-DJTHUFNY.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-IEFMBRSD.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [5.625 seconds] - 2026-06-05T09:37:35.183Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-5DSROGN2.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-6TDARZR2.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [5.546 seconds] - 2026-06-05T09:37:53.013Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-6SL3QMAY.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-VDS3EHR4.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [4.761 seconds] - 2026-06-05T09:38:10.665Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).
+[33m>[39m Changes detected. Rebuilding...
+[32m√[39m Changes detected. Rebuilding...
+[35mBrowser bundles[39m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m       [2m | [22m [36m4.71 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-BOYTTAWC.js[39m  [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+
+[35mServer bundles[39m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mmain.server.mjs[39m    [2m | [22m[2mmain.server[22m[2m | [22m [36m6.41 kB[39m[2m | [22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m      [2m | [22m[1mRaw size[22m
+[32mchunk-XB6WANQC.mjs[39m [2m | [22m[2mdashboard[22m  [2m | [22m [36m2.02 MB[39m[2m | [22m
+
+Application bundle generation complete. [29.507 seconds] - 2026-06-05T09:52:01.315Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Dqms is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:29:
+[37m      88 │     Bidding, PaymentRequest, [32mDqms[37m, Npi, SystemBom, BomForecast,
+         ╵                              [32m~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Npi is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:35:
+[37m      88 │     Bidding, PaymentRequest, Dqms, [32mNpi[37m, SystemBom, BomForecast,
+         ╵                                    [32m~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SystemBom is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:40:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, [32mSystemBom[37m, BomForecast,
+         ╵                                         [32m~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BomForecast is not used within the template of DashboardComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/dashboard/dashboard.ts:88:51:
+[37m      88 │     Bidding, PaymentRequest, Dqms, Npi, SystemBom, [32mBomForecast[37m,
+         ╵                                                    [32m~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of ResetPasswordComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/reset-password/reset-password.ts:10:39:
+[37m      10 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+Page reload sent to client(s).

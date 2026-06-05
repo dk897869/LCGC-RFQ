@@ -1,32 +1,50 @@
 <div class="user-management-container">
+  
+  <!-- Top Toast Notification -->
   <div class="um-global-toast" *ngIf="topToast" [ngClass]="'um-toast-' + topToast.type">
-    <span>{{ topToast.message }}</span>
+    <span class="toast-icon">{{ topToast.type === 'success' ? '✅' : topToast.type === 'error' ? '❌' : 'ℹ️' }}</span>
+    <span class="toast-message">{{ topToast.message }}</span>
     <button type="button" (click)="closeTopToast()">×</button>
   </div>
 
+  <!-- Action Loading Overlay -->
   <div class="um-action-loading" *ngIf="actionLoading">
     <div class="um-spinner"></div>
-    <p>Processing…</p>
+    <p>Processing request...</p>
   </div>
 
+  <!-- Header Section -->
   <div class="header">
-    <h1>User Management</h1>
+    <div class="header-left">
+      <h1>👥 User Management</h1>
+      <p class="header-subtitle">Manage users, roles, and module access permissions</p>
+    </div>
     <button class="create-btn" (click)="openCreateModal()">
-      + Create New User
+      <span class="btn-icon">+</span> Create New User
     </button>
   </div>
 
-  <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
-  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="success-message">
+    <span class="msg-icon">✅</span> {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="error-message">
+    <span class="msg-icon">❌</span> {{ errorMessage }}
+  </div>
 
+  <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-btn" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">Users</button>
+    <button class="tab-btn" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">
+      <span class="tab-icon">👥</span> Users
+      <span class="tab-count">{{ users.length }}</span>
+    </button>
     <button class="tab-btn" [class.active]="activeTab === 'requests'" (click)="activeTab = 'requests'; loadRightsRequests()">
-      Access Requests
+      <span class="tab-icon">🔔</span> Access Requests
       <span class="tab-badge" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
     </button>
   </div>
 
+  <!-- Users Tab -->
   <ng-container *ngIf="activeTab === 'users'">
     <div *ngIf="isLoading" class="loading">
       <div class="spinner"></div>
@@ -37,55 +55,77 @@
       <table class="users-table">
         <thead>
           <tr>
-            <th>Name</th>
+            <th>User</th>
             <th>Email</th>
             <th>Role</th>
             <th>Department</th>
             <th>Contact</th>
-            <th>Modules Access</th>
+            <th>Module Access</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let user of users">
-            <td><strong>{{ user.name }}</strong></td>
-            <td>{{ user.email }}</td>
-            <td><span class="role-badge" [class.admin]="user.role === 'Admin'" [class.manager]="user.role === 'Manager'">{{ user.role }}</span></td>
+            <td class="user-cell">
+              <div class="user-avatar-sm" [style.background]="'linear-gradient(135deg, #0f2a5e, #1e4a8a)'">
+                {{ user.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="user-info-cell">
+                <strong>{{ user.name }}</strong>
+                <span class="user-role-badge" [ngClass]="user.role === 'Admin' ? 'role-admin' : user.role === 'Manager' ? 'role-manager' : user.role === 'Senior Manager' ? 'role-senior' : 'role-user'">
+                  {{ user.role }}
+                </span>
+              </div>
+            </td>
+            <td class="email-cell">{{ user.email }}</td>
+            <td>
+              <span class="role-badge" [class.admin]="user.role === 'Admin'" [class.manager]="user.role === 'Manager'" [class.senior]="user.role === 'Senior Manager'">
+                {{ user.role }}
+              </span>
+            </td>
             <td>{{ user.department || '—' }}</td>
             <td>{{ user.contactNo || '—' }}</td>
             <td class="rights-cell">
               <div class="rights-badges">
-                <span *ngIf="user.rights?.epApproval" class="right-badge">EP Approval</span>
-                <span *ngIf="user.rights?.vendors" class="right-badge">Vendors</span>
-                <span *ngIf="user.rights?.parts" class="right-badge">Parts</span>
-                <span *ngIf="user.rights?.rfq" class="right-badge">RFQ</span>
-                <span *ngIf="user.rights?.nppProcurement" class="right-badge">NPP Procurement</span>
-                <span *ngIf="user.rights?.bidding" class="right-badge">Bidding</span>
-                <span *ngIf="user.rights?.paymentRequest" class="right-badge">Payment Request</span>
-                <span *ngIf="user.rights?.dqms" class="right-badge">DQMS</span>
-                <span *ngIf="user.rights?.npi" class="right-badge">NPI</span>
-                <span *ngIf="user.rights?.systemBom" class="right-badge">System BOM</span>
-                <span *ngIf="user.rights?.bomForecast" class="right-badge">BOM Forecast</span>
-                <span *ngIf="user.rights?.priceApproval" class="right-badge">Price Approval</span>
-                <span *ngIf="user.rights?.planStock" class="right-badge">Plan Vs Stock</span>
-                <span *ngIf="user.rights?.supplierPerformance" class="right-badge">Supplier Perf.</span>
-                <span *ngIf="user.rights?.vehicularMs" class="right-badge">Vehicular - MS</span>
-                <span *ngIf="user.rights?.userManagement" class="right-badge">User Mgmt</span>
-                <span *ngIf="!hasAnyRight(user.rights)" class="no-rights">No access</span>
+                <span *ngIf="user.rights?.epApproval" class="right-badge ep">📋 EP Approval</span>
+                <span *ngIf="user.rights?.vendors" class="right-badge vendor">🏢 Vendors</span>
+                <span *ngIf="user.rights?.parts" class="right-badge parts">🔧 Parts</span>
+                <span *ngIf="user.rights?.rfq" class="right-badge rfq">📄 RFQ</span>
+                <span *ngIf="user.rights?.nppProcurement" class="right-badge npp">🛒 NPP Procurement</span>
+                <span *ngIf="user.rights?.bidding" class="right-badge bidding">🏷️ Bidding</span>
+                <span *ngIf="user.rights?.paymentRequest" class="right-badge payment">💰 Payment Request</span>
+                <span *ngIf="user.rights?.dqms" class="right-badge quality">✅ DQMS</span>
+                <span *ngIf="user.rights?.npi" class="right-badge quality">🔬 NPI</span>
+                <span *ngIf="user.rights?.systemBom" class="right-badge eng">📊 System BOM</span>
+                <span *ngIf="user.rights?.bomForecast" class="right-badge eng">📈 BOM Forecast</span>
+                <span *ngIf="user.rights?.priceApproval" class="right-badge finance">💲 Price Approval</span>
+                <span *ngIf="user.rights?.planStock" class="right-badge inventory">📉 Plan Vs Stock</span>
+                <span *ngIf="user.rights?.supplierPerformance" class="right-badge supplier">⭐ Supplier Perf.</span>
+                <span *ngIf="user.rights?.vehicularMs" class="right-badge logistics">🚚 Vehicular - MS</span>
+                <span *ngIf="user.rights?.userManagement" class="right-badge admin">⚙️ User Mgmt</span>
+                <span *ngIf="!hasAnyRight(user.rights)" class="no-rights">No access rights</span>
+                <span *ngIf="user.fullModuleAccessGranted" class="right-badge lifetime">🔓 Full Access</span>
               </div>
             </td>
-            <td>
-              <button class="edit-btn" (click)="openEditModal(user)" title="Edit Permissions">Edit</button>
+            <td class="action-cell">
+              <button class="edit-btn" (click)="openEditModal(user)" title="Edit Permissions">
+                ✏️ Edit
+              </button>
             </td>
           </tr>
           <tr *ngIf="users.length === 0">
-            <td colspan="7" class="empty-state">No users found.</td>
+            <td colspan="7" class="empty-state">
+              <div class="empty-icon">👥</div>
+              <p>No users found</p>
+              <button class="create-btn-small" (click)="openCreateModal()">+ Create your first user</button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
   </ng-container>
 
+  <!-- Access Requests Tab -->
   <ng-container *ngIf="activeTab === 'requests'">
     <div *ngIf="isLoadingRequests" class="loading">
       <div class="spinner"></div>
@@ -93,76 +133,104 @@
     </div>
 
     <div class="table-container" *ngIf="!isLoadingRequests">
-      <div class="requests-section-label pending-label" *ngIf="pendingRequests.length > 0">
-        Pending Requests ({{ pendingRequests.length }})
+      <!-- Pending Requests Section -->
+      <div class="requests-section pending-section" *ngIf="pendingRequests.length > 0">
+        <div class="section-header">
+          <span class="section-icon">⏳</span>
+          <h3>Pending Requests</h3>
+          <span class="pending-count">{{ pendingRequests.length }}</span>
+        </div>
+        <div class="requests-grid">
+          <div class="request-card" *ngFor="let req of pendingRequests">
+            <div class="request-card-header">
+              <div class="requester-avatar">
+                {{ (req.requestedBy || req.requestedByEmail || 'U')[0].toUpperCase() }}
+              </div>
+              <div class="requester-info">
+                <div class="requester-name">{{ req.requestedBy || 'Unknown User' }}</div>
+                <div class="requester-email">{{ req.requestedByEmail || 'No email' }}</div>
+              </div>
+              <span class="request-badge pending">Pending</span>
+            </div>
+            <div class="request-card-body">
+              <div class="request-module">
+                <span class="module-icon">📦</span>
+                <span class="module-name">{{ req.userRight }}</span>
+              </div>
+              <div class="request-reason" *ngIf="req.reason">
+                <span class="reason-icon">💬</span>
+                <span class="reason-text">"{{ req.reason }}"</span>
+              </div>
+              <div class="request-date">
+                <span class="date-icon">📅</span>
+                <span class="date-text">{{ formatDate(req.createdAt) }}</span>
+              </div>
+            </div>
+            <div class="request-card-footer">
+              <button class="btn-approve" (click)="approveRequest(req)">
+                ✓ Approve Access
+              </button>
+              <button class="btn-reject" (click)="rejectRequest(req)">
+                ✗ Reject
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <table class="users-table" *ngIf="pendingRequests.length > 0">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Email</th>
-            <th>Module</th>
-            <th>Reason</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let req of pendingRequests">
-            <td><strong>{{ req.requestedBy || '—' }}</strong></td>
-            <td>{{ req.requestedByEmail || '—' }}</td>
-            <td><strong>{{ req.userRight }}</strong></td>
-            <td>{{ req.reason || '—' }}</td>
-            <td>{{ req.createdAt ? (req.createdAt | date:'dd MMM yy, h:mm a') : '—' }}</td>
-            <td><span class="status-badge" [ngClass]="getRequestStatusClass(req.status)">{{ req.status }}</span></td>
-            <td class="action-btns">
-              <button class="approve-btn" (click)="approveRequest(req)">Approve</button>
-              <button class="reject-btn" (click)="rejectRequest(req)">Reject</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="requests-section-label" style="margin-top: 24px;">All Requests ({{ rightsRequests.length }})</div>
-
-      <table class="users-table">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Email</th>
-            <th>Module</th>
-            <th>Reason</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let req of rightsRequests">
-            <td><strong>{{ req.requestedBy || '—' }}</strong></td>
-            <td>{{ req.requestedByEmail || '—' }}</td>
-            <td>{{ req.userRight }}</td>
-            <td>{{ req.reason || '—' }}</td>
-            <td>{{ req.createdAt ? (req.createdAt | date:'dd MMM yy, h:mm a') : '—' }}</td>
-            <td><span class="status-badge" [ngClass]="getRequestStatusClass(req.status)">{{ req.status }}</span></td>
-            <td class="action-btns">
-              <ng-container *ngIf="isPendingRequestStatus(req.status)">
-                <button class="approve-btn" (click)="approveRequest(req)">Approve</button>
-                <button class="reject-btn" (click)="rejectRequest(req)">Reject</button>
-              </ng-container>
-              <span *ngIf="!isPendingRequestStatus(req.status)" class="done-label">—</span>
-            </td>
-          </tr>
-          <tr *ngIf="rightsRequests.length === 0">
-            <td colspan="7" class="empty-state">No access requests found.</td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- All Requests Section -->
+      <div class="requests-section">
+        <div class="section-header">
+          <span class="section-icon">📋</span>
+          <h3>All Access Requests</h3>
+          <span class="total-count">{{ rightsRequests.length }}</span>
+        </div>
+        <div class="requests-grid" *ngIf="rightsRequests.length > 0">
+          <div class="request-card" *ngFor="let req of rightsRequests">
+            <div class="request-card-header">
+              <div class="requester-avatar">
+                {{ (req.requestedBy || req.requestedByEmail || 'U')[0].toUpperCase() }}
+              </div>
+              <div class="requester-info">
+                <div class="requester-name">{{ req.requestedBy || 'Unknown User' }}</div>
+                <div class="requester-email">{{ req.requestedByEmail || 'No email' }}</div>
+              </div>
+              <span class="request-badge" [ngClass]="getRequestStatusClass(req.status)">
+                {{ req.status === 'granted' ? 'Approved' : req.status === 'rejected' ? 'Rejected' : 'Pending' }}
+              </span>
+            </div>
+            <div class="request-card-body">
+              <div class="request-module">
+                <span class="module-icon">📦</span>
+                <span class="module-name">{{ req.userRight }}</span>
+              </div>
+              <div class="request-reason" *ngIf="req.reason">
+                <span class="reason-icon">💬</span>
+                <span class="reason-text">"{{ req.reason }}"</span>
+              </div>
+              <div class="request-date">
+                <span class="date-icon">📅</span>
+                <span class="date-text">{{ formatDate(req.createdAt) }}</span>
+              </div>
+            </div>
+            <div class="request-card-footer" *ngIf="isPendingRequestStatus(req.status)">
+              <button class="btn-approve" (click)="approveRequest(req)">✓ Approve</button>
+              <button class="btn-reject" (click)="rejectRequest(req)">✗ Reject</button>
+            </div>
+            <div class="request-card-footer resolved" *ngIf="!isPendingRequestStatus(req.status)">
+              <span class="resolved-label">{{ req.status === 'granted' ? '✓ Access Granted' : '✗ Request Rejected' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="empty-requests" *ngIf="rightsRequests.length === 0">
+          <div class="empty-icon">🔔</div>
+          <p>No access requests found</p>
+        </div>
+      </div>
     </div>
   </ng-container>
 
+  <!-- Create User Modal -->
   <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeModal()">
     <div class="modal-container create-user-modal" (click)="$event.stopPropagation()">
       <div class="modal-header create-user-header">
@@ -173,8 +241,9 @@
         <button class="close-btn" (click)="closeModal()">×</button>
       </div>
       <div class="modal-body">
+        <!-- Login Details Section -->
         <div class="form-section professional-card">
-          <h3>Login Details</h3>
+          <h3>🔐 Login Details</h3>
           <div class="form-row">
             <div class="form-group">
               <label>Full Name *</label>
@@ -188,8 +257,8 @@
           <div class="form-row">
             <div class="form-group">
               <label>Password *</label>
-              <input type="password" [(ngModel)]="formData.password" placeholder="Minimum 6 characters">
-              <small class="form-hint">User will login with this password</small>
+              <input type="password" [(ngModel)]="formData.password" [placeholder]="formData.role === 'Vendor' ? 'Auto-generated if left blank' : 'Minimum 6 characters'">
+              <small class="form-hint">{{ formData.role === 'Vendor' ? 'Vendor password is temporary and must be changed on first login.' : 'User will login with this password' }}</small>
             </div>
             <div class="form-group">
               <label>Role</label>
@@ -200,8 +269,9 @@
           </div>
         </div>
 
+        <!-- Profile Details Section -->
         <div class="form-section professional-card">
-          <h3>Profile Details</h3>
+          <h3>👤 Profile Details</h3>
           <div class="form-row">
             <div class="form-group">
               <label>Department</label>
@@ -224,12 +294,13 @@
           </div>
         </div>
 
+        <!-- Module Access Section -->
         <div class="form-section professional-card">
           <div class="permission-header">
-            <h3>Module Access</h3>
+            <h3>🔧 Module Access</h3>
             <label class="checkbox-label select-all-inline">
               <input type="checkbox" [checked]="areAllRightsSelected()" (change)="toggleAllRights($event)">
-              <span>Select All</span>
+              <span>Select All Modules</span>
             </label>
           </div>
           <div *ngFor="let category of moduleCategories" class="permission-category compact-permissions">
@@ -247,28 +318,39 @@
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" (click)="closeModal()">Cancel</button>
-        <button class="btn-submit" (click)="createUser()" [disabled]="isLoading">{{ isLoading ? 'Creating...' : 'Create User' }}</button>
+        <button class="btn-submit" (click)="createUser()" [disabled]="isLoading">
+          {{ isLoading ? 'Creating...' : 'Create User' }}
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- Edit User Modal -->
   <div class="modal-overlay" *ngIf="showEditModal" (click)="closeModal()">
-    <div class="modal-container" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Edit User Permissions</h2>
+    <div class="modal-container edit-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header edit-header">
+        <h2>✏️ Edit User Permissions</h2>
         <button class="close-btn" (click)="closeModal()">×</button>
       </div>
       <div class="modal-body">
-        <div class="user-info">
-          <h3>{{ selectedUser?.name }}</h3>
-          <p>{{ selectedUser?.email }}</p>
+        <div class="user-info-card">
+          <div class="user-avatar-lg">
+            {{ selectedUser?.name?.charAt(0)?.toUpperCase() || 'U' }}
+          </div>
+          <div class="user-details">
+            <h3>{{ selectedUser?.name }}</h3>
+            <p>{{ selectedUser?.email }}</p>
+            <span class="user-role-tag" [ngClass]="selectedUser?.role === 'Admin' ? 'role-admin' : selectedUser?.role === 'Manager' ? 'role-manager' : 'role-user'">
+              {{ selectedUser?.role }}
+            </span>
+          </div>
         </div>
         <div class="form-section">
           <h3>Module Permissions</h3>
           <div class="permission-header">
             <label class="checkbox-label">
               <input type="checkbox" [checked]="areAllRightsSelected()" (change)="toggleAllRights($event)">
-              <span>Select All Modules</span>
+              <span>📦 Select All Modules</span>
             </label>
           </div>
           <div *ngFor="let category of moduleCategories" class="permission-category">
@@ -286,11 +368,14 @@
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" (click)="closeModal()">Cancel</button>
-        <button class="btn-submit" (click)="updateUser()" [disabled]="isLoading">{{ isLoading ? 'Saving...' : 'Save Changes' }}</button>
+        <button class="btn-submit" (click)="updateUser()" [disabled]="isLoading">
+          {{ isLoading ? 'Saving...' : 'Save Changes' }}
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- Credentials Modal -->
   <div class="modal-overlay" *ngIf="showCredentialsModal" (click)="closeCredentialsModal()">
     <div class="modal-container credentials-modal" (click)="$event.stopPropagation()">
       <div class="modal-header success-header">
@@ -302,19 +387,23 @@
         <p>The user account has been created. Share these credentials with the user:</p>
         <div class="credentials-box">
           <div class="credential-item">
-            <label>Email:</label>
+            <label>📧 Email:</label>
             <div class="credential-value">
               <span>{{ newUserCredentials.email || 'N/A' }}</span>
               <button class="copy-btn" (click)="copyToClipboard(newUserCredentials.email || '')">Copy</button>
             </div>
           </div>
           <div class="credential-item">
-            <label>Password:</label>
+            <label>🔒 Password:</label>
             <div class="credential-value">
               <span>{{ newUserCredentials.password || 'N/A' }}</span>
               <button class="copy-btn" (click)="copyToClipboard(newUserCredentials.password || '')">Copy</button>
             </div>
           </div>
+        </div>
+        <div class="security-note">
+          <span class="note-icon">⚠️</span>
+          <span class="note-text">Please share these credentials securely. The user can change their password after first login.</span>
         </div>
       </div>
       <div class="modal-footer">
@@ -322,4 +411,5 @@
       </div>
     </div>
   </div>
+
 </div>

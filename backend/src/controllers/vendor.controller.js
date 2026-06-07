@@ -422,16 +422,8 @@ exports.deactivateTemporaryVendorAccount = async (req, res) => {
 
 exports.getMyVendorRfqs = async (req, res) => {
   try {
-    const isVendor = req.user?.role === 'Vendor';
-    const isAdminPreview = isAdminUser(req.user);
-    if (!isVendor && !isAdminPreview) {
+    if (req.user?.role !== 'Vendor') {
       return res.status(403).json({ success: false, message: "Vendor login required" });
-    }
-    if (!isVendor && isAdminPreview) {
-      const requests = await NPPRequest.find({
-        type: { $in: ['rfq-vendor', 'rfq-requisition', 'quotation-submission', 'rfq'] }
-      }).sort({ createdAt: -1 }).limit(100);
-      return res.json({ success: true, count: requests.length, data: requests, preview: true });
     }
     if (req.user?.vendorAccount?.expiresAt && new Date(req.user.vendorAccount.expiresAt) < new Date()) {
       await User.findByIdAndUpdate(req.user.id || req.user._id, {

@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { sendMail } = require('../services/mail.service');
-const prComparisonCtrl = require('../controllers/prComparison.controller');
 const verifyToken = (req, res, next) => {
   req.user = { id: 'test-user-id', name: 'Test User', email: 'test@example.com' };
   next();
@@ -61,8 +60,6 @@ router.get('/serial/:serialNo', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-router.get('/:prId/comparison', verifyToken, prComparisonCtrl.getComparison);
-
 router.get('/:id', verifyToken, async (req, res) => {
   try {
     const pr = prNppStore.find(p => p._id === req.params.id);

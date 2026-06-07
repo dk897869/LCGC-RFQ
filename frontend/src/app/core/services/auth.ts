@@ -1223,13 +1223,6 @@ export class AuthService {
     );
   }
 
-  getRFQById(id: string): Observable<any> {
-    return this.http.get<any>(`${this.API_URL}/rfq/${id}`, this.getHttpOptions()).pipe(
-      timeout(8000),
-      catchError(this.handleError('Get RFQ By ID'))
-    );
-  }
-
   createRFQ(data: any): Observable<any> {
     console.log('📤 Creating RFQ with payload:', JSON.stringify(data, null, 2));
     
@@ -1564,7 +1557,7 @@ export class AuthService {
       params: query as any
     }).pipe(
       timeout(10000),
-      catchError(() => of({ success: true, data: [] }))
+      catchError(this.handleError('Search NPP Forms'))
     );
   }
 
@@ -2050,83 +2043,6 @@ export class AuthService {
   getRememberedEmail(): string | null {
     if (!this.isBrowser) return null;
     return localStorage.getItem(this.REMEMBER_EMAIL_KEY);
-  }
-
-  getStatusSummary(type: string = 'all'): Observable<any> {
-    const url = type && type !== 'all'
-      ? `${this.API_URL}/approvals/status-summary/${type}`
-      : `${this.API_URL}/approvals/status-summary/all`;
-    return this.http.get<any>(url, this.getHttpOptions()).pipe(
-      timeout(8000),
-      catchError(() => of({ success: true, data: { approved: 0, pending: 0, rejected: 0, inProcess: 0, total: 0 } }))
-    );
-  }
-
-  getPrComparison(prId: string): Observable<any> {
-    const id = encodeURIComponent(prId || 'latest');
-    return this.http.get<any>(`${this.API_URL}/pr/${id}/comparison`, this.getHttpOptions()).pipe(
-      timeout(15000),
-      catchError(() => of({ success: true, items: [], recommendedVendor: null }))
-    );
-  }
-
-  getQuotationComparisonAuto(rfqNo?: string): Observable<any> {
-    const params: any = {};
-    if (rfqNo) params.rfqNo = rfqNo;
-    return this.http.get<any>(`${this.API_URL}/npp-forms/quotation-comparison/auto`, {
-      ...this.getHttpOptions(),
-      params
-    }).pipe(
-      timeout(15000),
-      catchError(() => this.searchNppForms({ type: 'quotation-comparison', status: 'Submitted' }))
-    );
-  }
-
-  bulkApproveRequests(ids: string[], type: string, comments = ''): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/approvals/bulk-action`, {
-      ids, action: 'approve', type, comments
-    }, this.getHttpOptions()).pipe(catchError(this.handleError('Bulk Approve')));
-  }
-
-  bulkRejectRequests(ids: string[], type: string, comments = ''): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/approvals/bulk-action`, {
-      ids, action: 'reject', type, comments
-    }, this.getHttpOptions()).pipe(catchError(this.handleError('Bulk Reject')));
-  }
-
-  approveUnifiedRequest(type: string, id: string, comments = ''): Observable<any> {
-    return this.http.patch<any>(`${this.API_URL}/approvals/${type}/${id}/approve`, { comments }, this.getHttpOptions()).pipe(
-      catchError(this.handleError('Approve Request'))
-    );
-  }
-
-  rejectUnifiedRequest(type: string, id: string, comments = ''): Observable<any> {
-    return this.http.patch<any>(`${this.API_URL}/approvals/${type}/${id}/reject`, { comments }, this.getHttpOptions()).pipe(
-      catchError(this.handleError('Reject Request'))
-    );
-  }
-
-  getDashboardNotifications(): Observable<any> {
-    return this.getUnifiedApprovals().pipe(
-      map((res: any) => {
-        const rows = res?.data || [];
-        return rows.slice(0, 8).map((r: any) => ({
-          icon: r.status === 'Approved' ? '✅' : r.status === 'Rejected' ? '❌' : '⏳',
-          text: `${this.getRequestTypeLabel(r.type)} ${r.serialNo || r.uniqueSerialNo || ''}`.trim(),
-          time: r.requestDate || r.createdAt || '',
-          type: (r.status || 'pending').toLowerCase(),
-          color: r.status === 'Approved' ? '#10b981' : r.status === 'Rejected' ? '#ef4444' : '#f59e0b'
-        }));
-      }),
-      catchError(() => of([]))
-    );
-  }
-
-  private getRequestTypeLabel(type: string): string {
-    const map: Record<string, string> = {
-      ep: 'EP Approval', rfq: 'RFQ', pr: 'PR', po: 'PO', payment: 'Payment', wcc: 'WCC', comparison: 'Quotation'
-    };
-    return map[type] || String(type || 'Request').toUpperCase();
   }
 
   logout(): void {

@@ -32,17 +32,9 @@
     <!-- NON BOM label -->
     <div class="sidebar-section-lbl">NON BOM</div>
 
-    <button
-      *ngIf="navService.isFiltered()"
-      class="back-main-btn"
-      type="button"
-      (click)="backToMainMenu()">
-      ← Back To Main Menu
-    </button>
-
     <!-- Accordion Nav -->
     <nav class="sidebar-accordion" role="navigation" aria-label="Main navigation">
-      <div class="acc-group" *ngFor="let group of visibleNavGroups">
+      <div class="acc-group" *ngFor="let group of navGroups">
 
         <!-- Parent Row -->
         <button
@@ -126,10 +118,6 @@
         </nav>
       </div>
       <div class="top-bar-right">
-        <button class="tb-btn tb-btn--ghost" type="button" (click)="openStatusModal(getStatusTypeForActiveTab())">
-          <span class="tb-btn-icon">📊</span>
-          <span class="tb-btn-label">Check Status</span>
-        </button>
         <button class="tb-btn tb-btn--ghost" (click)="refreshData()" [disabled]="isLoading">
           <span class="tb-btn-icon" [class.spinning]="isLoading">↻</span>
           <span class="tb-btn-label">{{ isLoading ? 'Loading…' : 'Refresh' }}</span>
@@ -137,10 +125,14 @@
       </div>
     </div>
 
-    <!-- Context Strip (hidden on full-page forms) -->
-    <div class="context-strip" *ngIf="!isFormTab()">
+    <!-- Context Strip -->
+    <div class="context-strip">
       <div class="cs-left">
+        <span class="cs-dot"></span>
         <span class="cs-title">{{ getActiveWorkflowLabel() }}</span>
+      </div>
+      <div class="cs-right">
+        <span class="cs-badge">{{ getActiveGroupLabel() }}</span>
       </div>
     </div>
 
@@ -155,16 +147,10 @@
 
       <app-cash-purchase        *ngIf="activeTab === 'cash-purchase'"        (onSubmit)="handleSubmit($event)"></app-cash-purchase>
       <app-new-vendor           *ngIf="activeTab === 'new-vendor'"           (onSubmit)="handleSubmit($event)"></app-new-vendor>
-      <app-rfq-requisition      *ngIf="activeTab === 'rfq-npp-form'"         [initialSubMenu]="'create-rfq'" [hideInternalSidebar]="true" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
-      <app-rfq-vendor           *ngIf="activeTab === 'rfq-vendor-requisition'" (onSubmit)="handleSubmit($event)"></app-rfq-vendor>
+      <!-- <app-rfq-requisition      *ngIf="activeTab === 'rfq-npp-form'"         (onSubmit)="handleSubmit($event)"></app-rfq-requisition> -->
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-requisition'"      [initialSubMenu]="'rfq-list'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-approvals'"        [initialSubMenu]="'approvals'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-status'"           [initialSubMenu]="'status'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
-      <app-ep-approval          *ngIf="activeTab === 'ep-request' || activeTab === 'ep-approvals' || activeTab === 'ep-status'"
-        [initialTab]="epApprovalTab"
-        [requestView]="activeTab === 'ep-request' ? 'form' : 'list'"
-        [hideInternalSidebar]="true">
-      </app-ep-approval>
       <app-rfq-vendor           *ngIf="activeTab === 'quotation-submission'" (onSubmit)="handleSubmit($event)"></app-rfq-vendor>
       <app-vendor-list          *ngIf="activeTab === 'vendor-list'"></app-vendor-list>
       <app-employee-detail      *ngIf="activeTab === 'employee-detail'"></app-employee-detail>
@@ -385,12 +371,5 @@
       </div>
     </div>
   </div>
-
-  <app-status-modal
-    [open]="showStatusModal"
-    [title]="'Approval Status — ' + getActiveGroupLabel()"
-    [requestType]="statusModalType"
-    (closed)="closeStatusModal()">
-  </app-status-modal>
 
 </div>

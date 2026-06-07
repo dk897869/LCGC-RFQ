@@ -1,8 +1,0 @@
-<div class="form-status-bar">
-  <button type="button" class="fsb-check" (click)="checkStatus.emit()">Check Status</button>
-  <span class="fsb-pill" [ngClass]="statusClass">{{ status || 'Pending' }}</span>
-  <ng-container *ngIf="showActions && canApprove">
-    <button type="button" class="fsb-btn fsb-btn--approve" (click)="approve.emit()">Approve</button>
-    <button type="button" class="fsb-btn fsb-btn--reject" (click)="reject.emit()">Reject</button>
-  </ng-container>
-</div>

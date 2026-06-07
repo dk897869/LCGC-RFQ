@@ -1,9 +1,8 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
-import { CreateEPRequestModalComponent } from '../../modals Screen/Create Ep Request/create-ep-request-modal.component';
 
 interface Approver {
   id?: number;
@@ -52,16 +51,11 @@ interface EPRequest {
 @Component({
   selector: 'app-ep-approval',
   standalone: true,
-  imports: [CommonModule, FormsModule, CreateEPRequestModalComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './ep-approval.html',
   styleUrls: ['./ep-approval.scss']
 })
-export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
-  @Input() initialTab: 'requests' | 'approvals' | 'status' = 'requests';
-  /** When 'form', Request tab shows full-page create form instead of list */
-  @Input() requestView: 'form' | 'list' = 'list';
-  @Input() hideInternalSidebar = false;
-
+export class EPApprovalComponent implements OnInit, OnDestroy {
   activeTab: 'requests' | 'approvals' | 'status' = 'requests';
   
   // Data arrays
@@ -90,13 +84,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   filterDepartment = '';
   filterDate = '';
   filterVendor = '';
-
-  statusFilterPriority = '';
-  statusFilterStatus = '';
-  statusFilterDepartment = '';
-  statusFilterSearch = '';
-  filteredStatusList: EPRequest[] = [];
-
+  
   // Create Form Data
   formData = {
     requesterName: '',
@@ -190,7 +178,6 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   ) {}
   
   ngOnInit() {
-    this.activeTab = this.initialTab;
     this.currentUser = this.authService.getUser() || {
       name: 'Deepak Kumar',
       email: 'dk897869@gmail.com',
@@ -201,40 +188,6 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     };
     this.initializeForm();
     this.loadRequests();
-    if (this.showInlineCreateForm) {
-      this.initInlineCreateForm();
-    }
-  }
-
-  get showInlineCreateForm(): boolean {
-    return this.requestView === 'form' || (this.hideInternalSidebar && this.activeTab === 'requests');
-  }
-
-  initInlineCreateForm(): void {
-    this.initializeForm();
-    this.approvers = [{
-      id: 1, line: 'Parallel', managerName: '', email: '', designation: '',
-      status: 'pending', dateTime: '', remarks: ''
-    }];
-    this.attachments = [
-      { id: 1, name: 'Attachment 1', fileSize: '', file: null, preview: '', remark: '' },
-      { id: 2, name: 'Attachment 2', fileSize: '', file: null, preview: '', remark: '' },
-      { id: 3, name: 'Attachment 3', fileSize: '', file: null, preview: '', remark: '' }
-    ];
-    this.ccList = [];
-    this.ccInput = '';
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['initialTab'] && this.initialTab) {
-      this.activeTab = this.initialTab;
-      if (this.activeTab === 'approvals' || this.activeTab === 'status') {
-        this.loadRequests();
-      }
-      if (this.showInlineCreateForm) {
-        this.initInlineCreateForm();
-      }
-    }
   }
   
   ngOnDestroy() {
@@ -369,9 +322,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     this.filteredRequests = list;
     
     // For approvals tab
-    let approvalList = this.allRequests.filter(r =>
-      r.status === 'Pending' || r.status === 'In Process'
-    );
+    let approvalList = [...this.allRequests];
     if (this.filterPriority) {
       approvalList = approvalList.filter(r => r.priority === this.filterPriority);
     }
@@ -391,48 +342,12 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     
     // For status tab
     this.statusList = this.allRequests;
-    this.applyStatusFilters();
     
     this.cdr.detectChanges();
-  }
-
-  applyStatusFilters(): void {
-    let list = [...this.allRequests];
-    if (this.statusFilterPriority) {
-      list = list.filter(r => r.priority === this.statusFilterPriority);
-    }
-    if (this.statusFilterStatus) {
-      list = list.filter(r => r.status === this.statusFilterStatus);
-    }
-    if (this.statusFilterDepartment) {
-      list = list.filter(r => r.department === this.statusFilterDepartment);
-    }
-    const term = this.statusFilterSearch.trim().toLowerCase();
-    if (term) {
-      list = list.filter(r =>
-        [r.title, r.requester, r.email, r.department, r.description].join(' ').toLowerCase().includes(term)
-      );
-    }
-    this.filteredStatusList = list;
-  }
-
-  getRequestAgeDays(req: EPRequest): number {
-    const d = req.requestDate || req.createdAt;
-    if (!d) return 0;
-    const diff = Date.now() - new Date(d).getTime();
-    return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
-  }
-
-  getPriorityShort(p: string): string {
-    const map: Record<string, string> = { High: 'H', Medium: 'M', Low: 'L', Urgent: 'H' };
-    return map[p] || (p?.charAt(0)?.toUpperCase() || 'M');
   }
   
   setTab(tab: 'requests' | 'approvals' | 'status') {
     this.activeTab = tab;
-    if (tab === 'requests' && this.showInlineCreateForm) {
-      this.initInlineCreateForm();
-    }
     this.applyFilters();
   }
   
@@ -466,19 +381,29 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   // ====================== CREATE MODAL METHODS ======================
   
   openCreateModal() {
-    this.initInlineCreateForm();
-    if (!this.showInlineCreateForm) {
-      this.showCreateModal = true;
-    }
+    this.initializeForm();
+    this.approvers = [{
+      id: 1,
+      line: 'Parallel',
+      managerName: '',
+      email: '',
+      designation: '',
+      status: 'pending',
+      dateTime: '',
+      remarks: ''
+    }];
+    this.attachments = [
+      { id: 1, name: 'Attachment 1', fileSize: '', file: null, preview: '', remark: '' },
+      { id: 2, name: 'Attachment 2', fileSize: '', file: null, preview: '', remark: '' },
+      { id: 3, name: 'Attachment 3', fileSize: '', file: null, preview: '', remark: '' }
+    ];
+    this.ccList = [];
+    this.ccInput = '';
+    this.showCreateModal = true;
   }
   
   closeCreateModal() {
     this.showCreateModal = false;
-  }
-
-  onInlineFormSaved(event: any): void {
-    this.loadRequests();
-    this.showToast('EP request submitted successfully', 'success');
   }
   
   // Approval Chain Methods

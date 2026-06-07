@@ -1,5 +1,5 @@
-<div class="ep-page-wrapper" [class.ep-page-wrapper--embedded]="hideInternalSidebar">
-
+<div class="ep-page-wrapper">
+  
   <!-- Toast Notification -->
   <div class="global-toast" *ngIf="toast" [ngClass]="'toast-' + toast.type">
     <span class="toast-icon">{{ toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️' }}</span>
@@ -8,7 +8,7 @@
   </div>
   
   <!-- Sidebar -->
-  <div class="ep-sidebar" *ngIf="!hideInternalSidebar">
+  <div class="ep-sidebar">
     <div class="sidebar-brand">📋 LCGC</div>
     <div class="sidebar-section-label">EP APPROVAL</div>
     <div class="sidebar-menu">
@@ -25,17 +25,16 @@
   </div>
   
   <!-- Main Content -->
-  <div class="ep-main" [class.ep-main--full]="hideInternalSidebar">
+  <div class="ep-main">
     
     <!-- Header -->
     <div class="ep-topbar">
       <div class="topbar-title">
-        <div class="ep-breadcrumb" *ngIf="hideInternalSidebar">NON BOM › Approvals › {{ activeTab === 'requests' ? 'Request' : activeTab === 'approvals' ? 'Approval' : 'Status' }}</div>
-        <h2>EP Approval <span class="topbar-sub">› {{ activeTab === 'requests' ? 'Request' : activeTab === 'approvals' ? 'Approval' : 'Status' }}</span></h2>
+        <h2>EP Approval <span class="topbar-sub">› {{ activeTab === 'requests' ? 'Requests' : activeTab === 'approvals' ? 'Approvals' : 'Status' }}</span></h2>
       </div>
       <div class="topbar-actions">
         <button class="refresh-btn" (click)="loadRequests()" [disabled]="isLoading">🔄 Refresh</button>
-        <button class="create-btn" *ngIf="activeTab === 'requests' && !showInlineCreateForm" (click)="openCreateModal()">+ Create New EP Request</button>
+        <button class="create-btn" (click)="openCreateModal()">+ Create New EP Request</button>
       </div>
     </div>
     
@@ -45,17 +44,8 @@
       <p>Loading EP requests...</p>
     </div>
     
-    <!-- ==================== REQUESTS TAB (Full-page form OR list) ==================== -->
-    <ng-container *ngIf="!isLoading && activeTab === 'requests' && showInlineCreateForm">
-      <app-create-ep-request-modal
-        [currentUser]="currentUser"
-        [fullPage]="true"
-        (save)="onInlineFormSaved($event)"
-        (close)="initInlineCreateForm()">
-      </app-create-ep-request-modal>
-    </ng-container>
-
-    <ng-container *ngIf="!isLoading && activeTab === 'requests' && !showInlineCreateForm">
+    <!-- ==================== REQUESTS TAB ==================== -->
+    <ng-container *ngIf="!isLoading && activeTab === 'requests'">
       
       <div class="search-bar-wrap">
         <span class="search-icon">🔍</span>
@@ -227,78 +217,55 @@
     
     <!-- ==================== STATUS TAB ==================== -->
     <ng-container *ngIf="!isLoading && activeTab === 'status'">
-      <div class="approval-status-card status-dashboard-card">
-        <div class="approval-status-title">Approval Status</div>
-        <div class="filter-grid status-filter-grid">
-          <div class="filter-field">
-            <label>Priority</label>
-            <select [(ngModel)]="statusFilterPriority" (ngModelChange)="applyStatusFilters()">
-              <option value="">All</option>
-              <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
-            </select>
-          </div>
-          <div class="filter-field">
-            <label>Status</label>
-            <select [(ngModel)]="statusFilterStatus" (ngModelChange)="applyStatusFilters()">
-              <option value="">All</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Reject</option>
-              <option value="Pending">In-Process</option>
-              <option value="In Process">In Process</option>
-            </select>
-          </div>
-          <div class="filter-field">
-            <label>Department</label>
-            <select [(ngModel)]="statusFilterDepartment" (ngModelChange)="applyStatusFilters()">
-              <option value="">All Departments</option>
-              <option *ngFor="let d of getUniqueDepartments()" [value]="d">{{ d }}</option>
-            </select>
-          </div>
-          <div class="filter-field">
-            <label>Search</label>
-            <input type="search" [(ngModel)]="statusFilterSearch" (input)="applyStatusFilters()" placeholder="Search purpose, email...">
-          </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{ countByStatus('All') }}</div>
+          <div class="stat-label">Total Requests</div>
         </div>
-      </div>
-
-      <div class="stats-grid stats-grid--compact">
-        <div class="stat-card approved"><div class="stat-value">{{ countByStatus('Approved') }}</div><div class="stat-label">Approved</div></div>
-        <div class="stat-card rejected"><div class="stat-value">{{ countByStatus('Rejected') }}</div><div class="stat-label">Rejected</div></div>
-        <div class="stat-card pending"><div class="stat-value">{{ countByStatus('Pending') + countByStatus('In Process') }}</div><div class="stat-label">In-Process</div></div>
+        <div class="stat-card approved">
+          <div class="stat-value">{{ countByStatus('Approved') }}</div>
+          <div class="stat-label">Approved</div>
+        </div>
+        <div class="stat-card rejected">
+          <div class="stat-value">{{ countByStatus('Rejected') }}</div>
+          <div class="stat-label">Rejected</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-value">{{ countByStatus('Pending') + countByStatus('In Process') }}</div>
+          <div class="stat-label">Pending</div>
+        </div>
       </div>
       
       <div class="table-container">
         <div class="table-header-row">
-          <h3>Approval Status</h3>
-          <span class="stat-badge">Total: {{ filteredStatusList.length }}</span>
+          <h3>Status Overview</h3>
+          <span class="stat-badge">Total: {{ statusList.length }}</span>
         </div>
         
-        <ng-container *ngIf="filteredStatusList.length > 0; else noStatusData">
-          <table class="ep-table status-overview-table">
+        <ng-container *ngIf="statusList.length > 0; else noStatusData">
+          <table class="ep-table">
             <thead>
               <tr>
+                <th>Title</th>
+                <th>Requester</th>
                 <th>Department</th>
-                <th>Date</th>
-                <th>Purpose / Objectives</th>
-                <th>Email ID</th>
-                <th>Phone No.</th>
+                <th>Amount</th>
                 <th>Priority</th>
-                <th>Days</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th>Current Approver</th>
+                <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let req of filteredStatusList; trackBy: trackById">
+              <tr *ngFor="let req of statusList; trackBy: trackById">
+                <td class="title-cell" [title]="req.title">{{ req.title }}</td>
+                <td>{{ req.requester }}</td>
                 <td>{{ req.department }}</td>
+                <td class="amount">{{ formatAmount(req.amount) }}</td>
+                <td><span class="priority-badge" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
+                <td><span class="status-badge" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
+                <td>{{ req.currentApprover || '—' }}</td>
                 <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
-                <td class="title-cell" [title]="req.title">{{ req.title || req.description }}</td>
-                <td>{{ req.email || '—' }}</td>
-                <td>{{ req.contactNo || '—' }}</td>
-                <td><span class="priority-short">{{ getPriorityShort(req.priority) }}</span></td>
-                <td><span class="days-cell" [class.days-overdue]="getRequestAgeDays(req) > 30">{{ getRequestAgeDays(req) }}</span></td>
-                <td><span class="status-badge" [ngClass]="getStatusClass(req.status)">{{ req.status === 'Pending' ? 'In-Process' : req.status }}</span></td>
-                <td><button class="btn-icon view-btn" (click)="viewRequest(req)">View</button></td>
                </tr>
             </tbody>
           </table>
@@ -306,7 +273,7 @@
         <ng-template #noStatusData>
           <div class="no-data">
             <div class="no-data-icon">📊</div>
-            <h3>No requests match filters</h3>
+            <h3>No pending requests</h3>
           </div>
         </ng-template>
       </div>

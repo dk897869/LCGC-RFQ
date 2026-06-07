@@ -1,8 +1,45 @@
 .ep-page-wrapper {
   display: flex;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100%;
+
+  &--embedded {
+    display: block;
+    .ep-main--full {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+}
+
+.ep-breadcrumb {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.status-dashboard-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 42, 94, 0.06);
+}
+
+.status-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stats-grid--compact {
+  margin: 12px 0;
+}
+
+.status-overview-table {
+  .days-cell.days-overdue { color: #dc2626; font-weight: 700; }
+  .priority-short {
+    display: inline-block;
+    min-width: 24px;
+    text-align: center;
+    font-weight: 700;
+  }
 }
 
 // ====================== SIDEBAR ======================

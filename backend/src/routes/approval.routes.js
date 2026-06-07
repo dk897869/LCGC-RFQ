@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middlewares/auth');
 const { sendMail } = require('../services/mail.service');
+const prComparisonCtrl = require('../controllers/prComparison.controller');
 
 const getModel = (path) => {
   try {
@@ -61,6 +62,40 @@ const getModelsByType = (type) => {
   const models = (map[type] || ['../models/nppRequest.model']).map(getModel).filter(Boolean);
   return npp && models.length === 0 ? [npp] : models;
 };
+
+router.get('/status-summary', verifyToken, prComparisonCtrl.getStatusSummary);
+router.get('/status-summary/:type', verifyToken, prComparisonCtrl.getStatusSummary);
+
+router.post('/bulk-action', verifyToken, async (req, res) => {
+  try {
+    const { ids = [], action, type = 'npp', comments = '' } = req.body;
+    if (!Array.isArray(ids) || !ids.length) {
+      return res.status(400).json({ success: false, message: 'No request ids provided' });
+    }
+    const results = [];
+    for (const requestId of ids) {
+      req.params.type = type;
+      req.params.requestId = requestId;
+      req.body.comments = comments;
+      const models = getModelsByType(type);
+      let data = null;
+      for (const model of models) {
+        data = await model.findByIdAndUpdate(
+          requestId,
+          action === 'reject'
+            ? { status: 'Rejected', rejectedAt: new Date(), rejectedBy: req.user?.name || 'Approver', rejectionComments: comments }
+            : { status: 'Approved', approvedAt: new Date(), approvedBy: req.user?.name || 'Approver', approvalComments: comments },
+          { new: true }
+        );
+        if (data) break;
+      }
+      if (data) results.push(normalizeRequest(data, type));
+    }
+    res.status(200).json({ success: true, message: `Bulk ${action} completed`, data: results, count: results.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 router.get('/unified', verifyToken, async (req, res) => {
   try {

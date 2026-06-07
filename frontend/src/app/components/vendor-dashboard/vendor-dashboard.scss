@@ -1,0 +1,164 @@
+.vdash { padding: 0 4px 32px; font-family: 'Inter', system-ui, sans-serif; }
+
+.vd-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  background: linear-gradient(135deg, #0f2a5e, #1e40af);
+  color: #fff;
+  border-radius: 18px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+
+  h1 { margin: 0 0 8px; font-size: 1.5rem; }
+  p { margin: 0 0 14px; opacity: .9; }
+}
+
+.vd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.82rem;
+  opacity: .95;
+}
+
+.vd-hero-right { text-align: right; }
+.vd-clock { font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.vd-date { font-size: 0.82rem; opacity: .85; margin: 4px 0 10px; }
+.vd-verified { background: rgba(16,185,129,.2); color: #6ee7b7; padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+
+.vd-loader {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 48px; color: #64748b;
+}
+
+.vd-spin {
+  width: 28px; height: 28px; border: 3px solid #e2e8f0;
+  border-top-color: #3b82f6; border-radius: 50%;
+  animation: vdspin .8s linear infinite;
+}
+
+@keyframes vdspin { to { transform: rotate(360deg); } }
+
+.vd-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+
+  @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.vd-kpi {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  border-top: 3px solid #3b82f6;
+
+  &--orange { border-top-color: #f59e0b; }
+  &--blue { border-top-color: #3b82f6; }
+  &--green { border-top-color: #10b981; }
+  &--purple { border-top-color: #8b5cf6; }
+}
+
+.vd-kpi-lbl { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+.vd-kpi-val { font-size: 1.5rem; font-weight: 800; color: #0f2a5e; margin: 4px 0; }
+
+.vd-body { display: grid; grid-template-columns: 280px 1fr; gap: 16px; @media (max-width: 900px) { grid-template-columns: 1fr; } }
+
+.vd-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px;
+
+  h3 { margin: 0 0 14px; color: #0f2a5e; font-size: 1rem; }
+}
+
+.vd-donut {
+  width: 120px; height: 120px; margin: 0 auto 16px;
+  border-radius: 50%;
+  background: conic-gradient(#f59e0b 0 32%, #3b82f6 32% 78%, #8b5cf6 78% 92%, #10b981 92% 100%);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 22px;
+    background: #fff;
+    border-radius: 50%;
+  }
+}
+
+.vd-donut-center {
+  position: relative;
+  z-index: 1;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f2a5e;
+}
+
+.vd-legend { list-style: none; padding: 0; margin: 0; font-size: 0.82rem; color: #475569; }
+.vd-legend li { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-p { background: #f59e0b; }
+.dot-s { background: #3b82f6; }
+.dot-sh { background: #8b5cf6; }
+.dot-a { background: #10b981; }
+
+.vd-table-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.vd-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.vd-filters select, .vd-filters input { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; }
+
+.vd-btn {
+  padding: 7px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.vd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+  th { background: #f8fafc; color: #64748b; font-size: 0.72rem; text-transform: uppercase; }
+}
+
+.vd-st {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.st-pending { background: #ffedd5; color: #c2410c; }
+  &.st-submitted { background: #dbeafe; color: #1d4ed8; }
+  &.st-shortlisted { background: #ede9fe; color: #6d28d9; }
+  &.st-awarded { background: #d1fae5; color: #065f46; }
+  &.st-rejected { background: #fee2e2; color: #b91c1c; }
+}
+
+.vd-empty { text-align: center; color: #94a3b8; padding: 28px !important; }
+
+.vd-pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  font-size: 0.82rem;
+  color: #64748b;
+}

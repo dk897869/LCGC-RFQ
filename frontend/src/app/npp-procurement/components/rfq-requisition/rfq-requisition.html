@@ -1,4 +1,4 @@
-<div class="ep-page-wrapper">
+<div class="ep-page-wrapper" [class.ep-page-wrapper--inline]="hideInternalSidebar">
 
   <!-- Toast Notification -->
   <div class="global-toast" *ngIf="toast" [ngClass]="'toast-' + toast.type">
@@ -8,7 +8,7 @@
   </div>
 
   <!-- Sidebar -->
-  <div class="ep-sidebar">
+  <div class="ep-sidebar" *ngIf="!hideInternalSidebar">
     <div class="sidebar-brand">📋 RFQ Dashboard</div>
     <div class="sidebar-section-label">Menu</div>
     <div class="sidebar-menu">
@@ -24,7 +24,14 @@
     </div>
   </div>
 
-  <div class="ep-main">
+  <div class="ep-main" [class.ep-main--full]="hideInternalSidebar" [class.ep-main--form]="activeSubMenu === 'create-rfq'">
+
+    <!-- CREATE RFQ (inline full-page) -->
+    <ng-container *ngIf="activeSubMenu === 'create-rfq' && !showCreateModal">
+      <div class="rfq-create-card inline-form-card full-page-form">
+        <ng-container *ngTemplateOutlet="rfqCreateShell"></ng-container>
+      </div>
+    </ng-container>
 
     <!-- RFQ LIST VIEW -->
     <ng-container *ngIf="activeSubMenu === 'rfq-list'">
@@ -33,7 +40,6 @@
           <h2>RFQ <span class="topbar-sub">› Requests</span></h2>
         </div>
         <div class="topbar-actions">
-          <button class="refresh-btn" (click)="loadRFQs()" [disabled]="isLoading">🔄 Refresh</button>
           <button class="create-btn" (click)="openCreate()">+ Create New RFQ</button>
         </div>
       </div>
@@ -186,15 +192,19 @@
   </div>
 </div>
 
-<!-- ====================== CREATE RFQ MODAL ====================== -->
+<!-- ====================== CREATE RFQ (Modal or Inline) ====================== -->
 <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
-  <div class="rfq-create-card" (click)="$event.stopPropagation()">
+  <div class="rfq-create-card full-page-form" (click)="$event.stopPropagation()">
+    <ng-container *ngTemplateOutlet="rfqCreateShell"></ng-container>
+  </div>
+</div>
 
+<ng-template #rfqCreateShell>
     <!-- Header -->
-    <div class="rfq-create-hdr">
+    <div class="rfq-create-hdr" *ngIf="showCreateModal">
       <div>
         <div class="rfq-module-label">NPP PROCUREMENT (NON-BOM)</div>
-        <div class="rfq-create-title">Requisition RFQ (NPP)</div>
+        <div class="rfq-create-title">RFQ (NPP)</div>
       </div>
       <button type="button" class="rfq-close-btn" (click)="closeCreateModal()">×</button>
     </div>
@@ -304,7 +314,6 @@
             Import Excel
             <input type="file" accept=".xlsx,.xls,.csv" (change)="importRfqExcel($event)">
           </label>
-          <button type="button" class="excel-btn" (click)="exportCurrentRfqExcel()">Export Excel</button>
           <span class="import-name" *ngIf="importFileName">{{ importFileName }}</span>
         </div>
         <table class="rfq-items-table">
@@ -315,7 +324,7 @@
               <th>Qty</th>
               <th>Make</th>
               <th>Alt / Similar</th>
-              <th>Picture &amp; vendor ref</th>
+              <th>Photo Upload</th>
               <th>Remark</th>
               <th></th>
             </tr>
@@ -337,7 +346,6 @@
                   <label class="photo-btn" [attr.for]="'rfqPhoto'+i">Upload</label>
                   <button type="button" class="photo-btn view" *ngIf="item.photoPreview" (click)="viewPhoto(item.photoPreview)">View</button>
                   <span class="photo-name" *ngIf="item.photoName">{{ item.photoName }}</span>
-                  <input type="text" [(ngModel)]="item.vendorRef" placeholder="Vendor ref">
                 </div>
                 </td>
               <td><input type="text" [(ngModel)]="item.remark" placeholder="Remark"></td>
@@ -359,6 +367,21 @@
       <textarea class="rfq-textarea" [(ngModel)]="formData.description" rows="3" placeholder="Purpose"></textarea>
       <textarea class="rfq-textarea" [(ngModel)]="formData.objective" rows="3" placeholder="Objective" style="margin-top:10px;"></textarea>
 
+      <!-- ATTACHMENTS -->
+      <div class="rfq-section-hdr" style="margin-top:20px;">
+        <span class="rfq-section-dot"></span>
+        <strong>ATTACHMENTS</strong>
+      </div>
+      <div class="rfq-attachment-list">
+        <div class="rfq-attachment-row" *ngFor="let attachment of rfqAttachments; let i = index">
+          <input type="text" [(ngModel)]="attachment.name" placeholder="Attachment name">
+          <input type="file" (change)="onRfqAttachmentSelected(attachment, $event)">
+          <span>{{ attachment.fileName || 'No file selected' }}</span>
+          <button type="button" class="rfq-remove-row-btn" (click)="removeRfqAttachment(i)" [disabled]="rfqAttachments.length <= 1">×</button>
+        </div>
+        <button type="button" class="rfq-add-row-btn" (click)="addRfqAttachment()">+ Add Attachment</button>
+      </div>
+
       <!-- APPROVAL CHAIN -->
       <div class="rfq-section-hdr" style="margin-top:20px;">
         <span class="rfq-section-dot"></span>
@@ -375,10 +398,7 @@
             <tr *ngFor="let row of rfqApprovers; let i = index">
               <td>{{ i + 1 }}</td>
               <td>
-                <select [(ngModel)]="row.managerName" (ngModelChange)="onManagerChange(row, $event)">
-                  <option value="">Select Manager</option>
-                  <option *ngFor="let m of managerOptions" [value]="m.name">{{ m.name }} ({{ m.designation }})</option>
-                </select>
+                <input type="text" [(ngModel)]="row.managerName" (ngModelChange)="onManagerLookup(row, $event)" placeholder="Type name or email">
                 </td>
               <td><input type="email" [(ngModel)]="row.email" (blur)="onApproverEmailChange(row, row.email)" placeholder="manager@company.com"></td>
               <td><input type="text" [(ngModel)]="row.designation" placeholder="Designation"></td>
@@ -418,20 +438,21 @@
 
     <!-- Footer -->
     <div class="rfq-create-ftr">
-      <select class="draft-select" [(ngModel)]="selectedDraftKey">
-        <option value="">Select saved draft</option>
-        <option *ngFor="let draft of draftOptions" [value]="draft.key">{{ draft.title }} - {{ draft.serialNo }}</option>
-      </select>
-      <button type="button" class="btn-cancel" (click)="loadSelectedDraft()">Load Draft</button>
-      <button type="button" class="btn-cancel" (click)="saveDraft()" [disabled]="isSubmitting">Save Draft</button>
-      <button type="button" class="btn-cancel" (click)="closeCreateModal()">Cancel</button>
+      <ng-container *ngIf="!hideInternalSidebar">
+        <select class="draft-select" [(ngModel)]="selectedDraftKey">
+          <option value="">Select saved draft</option>
+          <option *ngFor="let draft of draftOptions" [value]="draft.key">{{ draft.title }} - {{ draft.serialNo }}</option>
+        </select>
+        <button type="button" class="btn-cancel" (click)="loadSelectedDraft()">Load Draft</button>
+      </ng-container>
+      <button type="button" class="btn-cancel" (click)="saveDraft()" [disabled]="isSubmitting">Save</button>
+      <button type="button" class="btn-cancel" (click)="showCreateModal ? closeCreateModal() : (activeSubMenu = 'rfq-list')">Cancel</button>
       <button type="button" class="create-btn" (click)="submitRFQ()" [disabled]="isSubmitting">
         <span class="btn-spin" *ngIf="isSubmitting"></span>
         {{ isSubmitting ? 'Submitting...' : 'Submit' }}
       </button>
     </div>
-  </div>
-</div>
+</ng-template>
 
 <div class="modal-overlay" *ngIf="showPhotoModal" (click)="closePhotoModal()">
   <div class="photo-modal-card" (click)="$event.stopPropagation()">
@@ -442,19 +463,42 @@
 
 <!-- ====================== VIEW MODAL ====================== -->
 <div class="modal-overlay" *ngIf="showViewModal" (click)="closeViewModal()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
+  <div class="modal-card rfq-view-card" (click)="$event.stopPropagation()">
     <div class="modal-hdr">
       <h3>RFQ Details</h3>
       <button (click)="closeViewModal()">×</button>
     </div>
     <div class="modal-body" *ngIf="selectedItem">
-      <div class="detail-row"><label>Title:</label><span>{{ selectedItem.title }}</span></div>
-      <div class="detail-row"><label>Requester:</label><span>{{ selectedItem.requester }}</span></div>
-      <div class="detail-row"><label>Email:</label><span>{{ selectedItem.email }}</span></div>
-      <div class="detail-row"><label>Department:</label><span>{{ selectedItem.department }}</span></div>
-      <div class="detail-row"><label>Priority:</label><span class="priority-badge" [ngClass]="getPriorityClass(selectedItem.priority)">{{ selectedItem.priority }}</span></div>
-      <div class="detail-row"><label>Status:</label><span class="status-badge" [ngClass]="getEpStatusClass(selectedItem.status)">{{ selectedItem.status }}</span></div>
-      <div class="detail-row"><label>Description:</label><span>{{ selectedItem.description || '—' }}</span></div>
+      <div class="rfq-view-grid">
+        <div class="detail-row"><label>RFQ No:</label><span>{{ selectedItem.uniqueSerialNo || '—' }}</span></div>
+        <div class="detail-row"><label>Title:</label><span>{{ selectedItem.title }}</span></div>
+        <div class="detail-row"><label>Requester:</label><span>{{ selectedItem.requester }}</span></div>
+        <div class="detail-row"><label>Email:</label><span>{{ selectedItem.email }}</span></div>
+        <div class="detail-row"><label>Department:</label><span>{{ selectedItem.department }}</span></div>
+        <div class="detail-row"><label>Request Date:</label><span>{{ formatDate(selectedItem.requestDate) }}</span></div>
+        <div class="detail-row"><label>Contact:</label><span>{{ selectedItem.contactNo || '—' }}</span></div>
+        <div class="detail-row"><label>Organization:</label><span>{{ selectedItem.organization || '—' }}</span></div>
+        <div class="detail-row"><label>Priority:</label><span class="priority-badge" [ngClass]="getPriorityClass(selectedItem.priority)">{{ selectedItem.priority }}</span></div>
+        <div class="detail-row"><label>Status:</label><span class="status-badge" [ngClass]="getEpStatusClass(selectedItem.status)">{{ selectedItem.status }}</span></div>
+        <div class="detail-row full"><label>Description:</label><span>{{ selectedItem.description || '—' }}</span></div>
+        <div class="detail-row full"><label>Objective:</label><span>{{ selectedItem.objective || '—' }}</span></div>
+      </div>
+      <div class="view-section" *ngIf="selectedItem.items?.length">
+        <h4>Items</h4>
+        <table class="rfq-items-table">
+          <thead><tr><th>Description</th><th>UOM</th><th>Qty</th><th>Make</th><th>Alt / Similar</th><th>Remark</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of selectedItem.items">
+              <td>{{ $any(item).itemDescription || item.description }}</td>
+              <td>{{ item.uom }}</td>
+              <td>{{ $any(item).quantity || item.qty }}</td>
+              <td>{{ item.make }}</td>
+              <td>{{ $any(item).alternativeSimilar || item.altSimilar }}</td>
+              <td>{{ item.remark }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <div class="modal-ftr">
       <button class="btn-cancel" (click)="closeViewModal()">Close</button>

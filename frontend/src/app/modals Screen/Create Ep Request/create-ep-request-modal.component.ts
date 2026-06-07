@@ -1,6 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../core/services/auth';
 
 interface Approver {
   id?: number;
@@ -31,6 +32,7 @@ interface Attachment {
 })
 export class CreateEPRequestModalComponent implements OnInit {
   @Input() currentUser: any = null;
+  @Input() fullPage = false;
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
 
@@ -118,10 +120,11 @@ export class CreateEPRequestModalComponent implements OnInit {
   toast: { message: string; type: 'success' | 'error' | 'info' } | null = null;
   private toastTimer: any;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef, private authService: AuthService) {}
 
   ngOnInit() {
     this.initializeForm();
+    this.loadManagerOptions();
   }
 
   private initializeForm() {
@@ -166,16 +169,27 @@ export class CreateEPRequestModalComponent implements OnInit {
     }
   }
 
-  onManagerChange(approver: Approver, managerName: string) {
-    const manager = this.managerOptions.find(m => m.name === managerName);
+  private loadManagerOptions() {
+    this.authService.getManagers().subscribe({
+      next: (res: any) => {
+        const list = res?.managers || res?.defaultApprovers || [];
+        if (Array.isArray(list) && list.length) this.managerOptions = list;
+      },
+      error: () => {}
+    });
+  }
+
+  onManagerLookup(approver: Approver, value: string) {
+    const term = (value || '').trim().toLowerCase();
+    const manager = this.managerOptions.find(m =>
+      (m.name || '').toLowerCase() === term || (m.email || '').toLowerCase() === term
+    );
+    approver.managerName = value;
     if (manager) {
       approver.managerName = manager.name;
       approver.email = manager.email;
       approver.designation = manager.designation;
-    } else {
-      approver.managerName = managerName;
     }
-    // Update date/time when manager is selected
     if (approver.managerName) {
       approver.dateTime = new Date().toLocaleString();
     }
@@ -412,8 +426,6 @@ export class CreateEPRequestModalComponent implements OnInit {
               <div class="section-body">
                 <div class="info-grid">
                   <div class="info-item"><label>Title of Activity</label><span>${this.formData.titleOfActivity}</span></div>
-                  <div class="info-item"><label>Vendor / Supplier</label><span>${this.formData.vendor}</span></div>
-                  <div class="info-item"><label>Amount / Cost</label><span class="amount">₹${this.formData.amount.toLocaleString('en-IN')}</span></div>
                   <div class="info-item"><label>Priority Level</label><span>${this.formData.priority}</span></div>
                 </div>
                 ${this.formData.description ? `<p style="margin-top:16px;"><strong>Description:</strong><br>${this.formData.description}</p>` : ''}
@@ -489,8 +501,6 @@ export class CreateEPRequestModalComponent implements OnInit {
       ['Organization', this.formData.organization],
       ['Request Date', this.formData.requestDate],
       ['Title of Activity', this.formData.titleOfActivity],
-      ['Vendor', this.formData.vendor],
-      ['Amount', this.formData.amount],
       ['Priority', this.formData.priority],
       ['Description', this.formData.description],
       ['Objective', this.formData.objective],
@@ -530,15 +540,6 @@ export class CreateEPRequestModalComponent implements OnInit {
       this.showToast('Title of Activity is required', 'error');
       return false;
     }
-    if (!this.formData.vendor?.trim()) {
-      this.showToast('Vendor/Supplier is required', 'error');
-      return false;
-    }
-    if (!this.formData.amount || this.formData.amount <= 0) {
-      this.showToast('Valid amount is required', 'error');
-      return false;
-    }
-    
     const validApprovers = this.approvers.filter(a => a.managerName);
     if (validApprovers.length === 0) {
       this.showToast('At least one approver is required', 'error');
@@ -554,9 +555,10 @@ export class CreateEPRequestModalComponent implements OnInit {
     if (!this.validateForm()) return;
     
     this.isSubmitting = true;
+    const { vendor, amount, ...requestData } = this.formData;
     
     const payload = {
-      ...this.formData,
+      ...requestData,
       stakeholders: this.approvers.filter(a => a.managerName).map((a, idx) => ({
         line: a.line,
         name: a.managerName,
@@ -578,6 +580,30 @@ export class CreateEPRequestModalComponent implements OnInit {
     };
     
     this.save.emit(payload);
+  }
+
+  saveDraft() {
+    const { vendor, amount, ...requestData } = this.formData;
+    const payload = {
+      ...requestData,
+      approvers: this.approvers,
+      attachments: this.attachments.map(a => ({
+        id: a.id,
+        name: a.name,
+        fileSize: a.fileSize,
+        fileName: a.file?.name || '',
+        remark: a.remark
+      })),
+      ccList: this.ccList,
+      status: 'Draft',
+      savedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(`ep_request_draft_${Date.now()}`, JSON.stringify(payload));
+      this.showToast('EP request saved as draft.', 'success');
+    } catch {
+      this.showToast('Unable to save draft locally.', 'error');
+    }
   }
 
   // ====================== TOAST ======================

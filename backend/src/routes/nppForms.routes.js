@@ -39,6 +39,15 @@ const validateType = (req, res, next) => {
 };
 
 router.get('/search', authMiddleware, nppController.searchNppRequests);
+router.get('/quotation-comparison/auto', authMiddleware, async (req, res) => {
+  try {
+    const prComparisonCtrl = require('../controllers/prComparison.controller');
+    req.params.prId = req.query.rfqNo || 'latest';
+    return prComparisonCtrl.getComparison(req, res);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 router.get('/serial/:serialNo', authMiddleware, nppController.getNppRequestBySerialNo);
 router.get('/rfq/:rfqNo', authMiddleware, nppController.getNppRequestsByRfqNo);
 router.get('/', authMiddleware, nppController.getAllNppRequests);

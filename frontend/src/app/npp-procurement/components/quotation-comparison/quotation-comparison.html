@@ -36,6 +36,19 @@
         <input class="meta-input" type="text" [(ngModel)]="rfqNo" placeholder="RFQ-2026-XXX">
       </div>
       <div class="meta-field">
+        <label class="meta-label">Requester Email</label>
+        <input class="meta-input" type="email" [(ngModel)]="requesterEmail" placeholder="requester@company.com">
+      </div>
+      <div class="meta-field">
+        <label class="meta-label">Status</label>
+        <select class="meta-input" [(ngModel)]="comparisonStatus">
+          <option>Draft</option>
+          <option>Submitted</option>
+          <option>Under Review</option>
+          <option>Approved</option>
+        </select>
+      </div>
+      <div class="meta-field">
         <label class="meta-label">Date</label>
         <div class="meta-value">{{ requestDate }}</div>
       </div>
@@ -95,6 +108,10 @@
       <button class="add-row-btn" (click)="addRow()">
         <span>＋</span> Add Row
       </button>
+      <div class="comparison-mode">
+        <button type="button" [class.active]="comparisonMode === 'auto'" (click)="loadAutoComparison()">Auto (API)</button>
+        <button type="button" [class.active]="comparisonMode === 'manual'" (click)="switchToManual()">Manual</button>
+      </div>
     </div>
 
     <div class="table-scroll">
@@ -152,7 +169,7 @@
               <input class="cell-input cell-num" type="number" min="0"
                 [(ngModel)]="item.supplier1Price" (input)="calcAmounts(item)">
             </td>
-            <td class="td-amount" [class.td-best]="isBestSupplier(1)">
+            <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 1)" [class.td-preferred]="selectedSupplierIndex === 1">
               ₹ {{ item.supplier1Amount | number:'1.2-2' }}
             </td>
 
@@ -161,7 +178,7 @@
               <input class="cell-input cell-num" type="number" min="0"
                 [(ngModel)]="item.supplier2Price" (input)="calcAmounts(item)">
             </td>
-            <td class="td-amount" [class.td-best]="isBestSupplier(2)">
+            <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 2)" [class.td-preferred]="selectedSupplierIndex === 2">
               ₹ {{ item.supplier2Amount | number:'1.2-2' }}
             </td>
 
@@ -170,7 +187,7 @@
               <input class="cell-input cell-num" type="number" min="0"
                 [(ngModel)]="item.supplier3Price" (input)="calcAmounts(item)">
             </td>
-            <td class="td-amount" [class.td-best]="isBestSupplier(3)">
+            <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 3)" [class.td-preferred]="selectedSupplierIndex === 3">
               ₹ {{ item.supplier3Amount | number:'1.2-2' }}
             </td>
 
@@ -216,13 +233,11 @@
 
       <div class="terms-col terms-col-label">
         <div class="terms-header-cell label-head">Condition</div>
-        <div class="terms-row-label">1 · GST</div>
-        <div class="terms-row-label">2 · Transport</div>
-        <div class="terms-row-label">3 · Payment Terms</div>
-        <div class="terms-row-label">· Lead Time</div>
-        <div class="terms-row-label">· Attachment 1</div>
-        <div class="terms-row-label">· Attachment 2</div>
-        <div class="terms-row-label">· Attachment 3</div>
+        <div class="terms-row-label" *ngFor="let condition of conditionRows">
+          <select class="tc-input" [(ngModel)]="condition.label">
+            <option *ngFor="let option of conditionOptions" [value]="option">{{ option }}</option>
+          </select>
+        </div>
       </div>
 
       <!-- Supplier 1 Terms -->
@@ -232,13 +247,7 @@
           <span class="tc-name">{{ supplier1Name }}</span>
           <span class="tc-best-badge" *ngIf="isBestSupplier(1)">★</span>
         </div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.gst" placeholder="GST"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.transport" placeholder="Transport"></div>
-        <div class="terms-cell"><textarea class="tc-textarea" rows="2" [(ngModel)]="terms1.paymentTerms"></textarea></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.leadTime" placeholder="Lead time"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.attachment1" placeholder="Attachment"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.attachment2" placeholder="Attachment"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms1.attachment3" placeholder="Attachment"></div>
+        <div class="terms-cell" *ngFor="let condition of conditionRows"><input class="tc-input" [(ngModel)]="condition.s1" placeholder="Value"></div>
       </div>
 
       <!-- Supplier 2 Terms -->
@@ -248,13 +257,7 @@
           <span class="tc-name">{{ supplier2Name }}</span>
           <span class="tc-best-badge" *ngIf="isBestSupplier(2)">★</span>
         </div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.gst" placeholder="GST"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.transport" placeholder="Transport"></div>
-        <div class="terms-cell"><textarea class="tc-textarea" rows="2" [(ngModel)]="terms2.paymentTerms"></textarea></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.leadTime" placeholder="Lead time"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.attachment1" placeholder="Attachment"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.attachment2" placeholder="Attachment"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms2.attachment3" placeholder="Attachment"></div>
+        <div class="terms-cell" *ngFor="let condition of conditionRows"><input class="tc-input" [(ngModel)]="condition.s2" placeholder="Value"></div>
       </div>
 
       <!-- Supplier 3 Terms -->
@@ -264,16 +267,11 @@
           <span class="tc-name">{{ supplier3Name }}</span>
           <span class="tc-best-badge" *ngIf="isBestSupplier(3)">★</span>
         </div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.gst" placeholder="GST"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.transport" placeholder="Transport"></div>
-        <div class="terms-cell"><textarea class="tc-textarea" rows="2" [(ngModel)]="terms3.paymentTerms"></textarea></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.leadTime" placeholder="Lead time"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.attachment1" placeholder="Attachment"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.attachment2" placeholder="Attachment"></div>
-        <div class="terms-cell"><input class="tc-input" [(ngModel)]="terms3.attachment3" placeholder="Attachment"></div>
+        <div class="terms-cell" *ngFor="let condition of conditionRows"><input class="tc-input" [(ngModel)]="condition.s3" placeholder="Value"></div>
       </div>
 
     </div>
+    <button class="add-row-btn terms-add-row" type="button" (click)="addConditionRow()">+ Add condition</button>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -321,10 +319,8 @@
        FOOTER ACTIONS
   ══════════════════════════════════════════ -->
   <div class="footer-actions">
-    <button class="action-btn secondary" (click)="addRow()">
-      <span>＋</span> Add Row
-    </button>
     <div class="action-right">
+      <button class="action-btn secondary" type="button" (click)="saveDraft()">Save Draft</button>
       <button class="action-btn ghost" type="button">
         🖨 Print
       </button>
@@ -332,7 +328,7 @@
         (click)="submitQuotation()"
         [disabled]="isSubmitting">
         <span class="btn-spinner" *ngIf="isSubmitting">⟳</span>
-        <span *ngIf="!isSubmitting">✓ Submit Quotation</span>
+        <span *ngIf="!isSubmitting">Submit</span>
         <span *ngIf="isSubmitting">Submitting…</span>
       </button>
     </div>

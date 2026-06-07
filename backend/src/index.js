@@ -1305,6 +1305,7 @@ app.use("/api/request", requestRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/rfq", rfqRoutes);
 app.use("/api/pr-npp", prNppRoutes);
+app.use("/api/pr", prNppRoutes);
 app.use("/api/po-npp", poNppRoutes);
 app.use("/api/payment-npp", paymentNppRoutes);
 app.use("/api/order-history", orderHistoryRoutes);

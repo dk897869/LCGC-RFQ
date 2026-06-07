@@ -3,6 +3,36 @@
   min-height: 100%;
   background: transparent;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  &--inline .ep-main--full {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.rfq-inline-shell {
+  padding: 0 4px 24px;
+}
+
+.rfq-page-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+
+  h2 { margin: 4px 0 0; color: #0f2a5e; }
+}
+
+.rfq-breadcrumb {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.inline-form-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 42, 94, 0.08);
+  border: 1px solid #e8edf5;
 }
 
 // Sidebar Styles
@@ -73,6 +103,16 @@
   padding: 0;
   overflow-y: auto;
   min-height: 100%;
+
+  &--form {
+    min-height: auto;
+  }
+}
+
+.inline-form-card.full-page-form {
+  max-width: 100%;
+  max-height: none;
+  width: 100%;
 }
 
 // Topbar
@@ -383,6 +423,11 @@
     background: #cbd5e1;
     border-radius: 10px;
   }
+}
+
+.rfq-create-card.full-page-form {
+  max-width: min(1500px, 98vw);
+  max-height: 96vh;
 }
 
 .rfq-create-hdr {
@@ -1015,6 +1060,10 @@
   }
 }
 
+.modal-card.rfq-view-card {
+  max-width: min(1200px, 96vw);
+}
+
 .detail-row {
   display: flex;
   padding: 12px 0;
@@ -1303,6 +1352,54 @@
   flex-direction: column;
   gap: 6px;
   min-width: 180px;
+}
+
+.rfq-attachment-list {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 20px;
+  background: #f8fafc;
+}
+
+.rfq-attachment-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.4fr) minmax(160px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+
+  input {
+    min-height: 36px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: white;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 12px;
+  }
+}
+
+.rfq-view-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 18px;
+
+  .full {
+    grid-column: 1 / -1;
+  }
+}
+
+.view-section {
+  margin-top: 18px;
+
+  h4 {
+    margin: 0 0 10px;
+    color: #0f172a;
+  }
 }
 
 .photo-btn {

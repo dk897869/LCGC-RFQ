@@ -1,3 +1,17 @@
+.ep-fullpage-wrap {
+  position: relative;
+  width: 100%;
+  padding: 0;
+}
+
+.create-ep-modal--fullpage {
+  max-width: 100%;
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 42, 94, 0.08);
+  border: 1px solid #e8edf5;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;

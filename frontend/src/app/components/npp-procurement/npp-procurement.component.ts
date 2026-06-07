@@ -70,18 +70,18 @@ export interface Certificate {
   styleUrls: ['./npp-procurement.scss'],
 })
 export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() initialTab: string = 'rfq-requisition';
+  @Input() initialTab: string = 'rfq-npp-form';
 
-  activeTab: string = 'rfq-requisition';
+  activeTab: string = 'rfq-npp-form';
   isLoading = false;
   sidebarOpen = false;
   toast: Toast | null = null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   currentUser: any = null;
-  activeGroupId = 'approvals';
+  activeGroupId = 'rfq-request';
 
   // Track which groups are expanded in the accordion
-  expandedGroups: Set<string> = new Set(['approvals', 'rfq-request']);
+  expandedGroups: Set<string> = new Set(['rfq-request']);
 
   // Report properties
   reportFilter = { type: 'all', fromDate: '', toDate: '', search: '' };
@@ -107,17 +107,6 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
   private quickToastTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly navGroups: NavGroup[] = [
-    {
-      id: 'approvals',
-      label: 'Approvals',
-      icon: 'OK',
-      dotClass: 'dot-g',
-      steps: [
-        { id: 'rfq-requisition', label: 'Request', icon: 'REQ', groupId: 'approvals' },
-        { id: 'rfq-approvals', label: 'Approval', icon: 'APR', groupId: 'approvals' },
-        { id: 'rfq-status', label: 'Status', icon: 'STS', groupId: 'approvals' },
-      ]
-    },
     {
       id: 'rfq-request',
       label: 'RFQ Request',

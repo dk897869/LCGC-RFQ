@@ -482,6 +482,11 @@
     white-space: nowrap;
 
     &.td-best {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    &.td-preferred {
       background: var(--gold-light);
       color: var(--gold-dark);
     }
@@ -600,6 +605,32 @@
     color: var(--navy-600);
     background: var(--navy-50);
   }
+}
+
+.comparison-mode {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+
+  button {
+    border: 1px solid var(--border-dark);
+    background: var(--surface-0);
+    padding: 7px 12px;
+    border-radius: var(--r-sm);
+    font-family: 'Sora', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+
+    &.active {
+      background: var(--navy-900);
+      color: white;
+      border-color: var(--navy-900);
+    }
+  }
+}
+
+.terms-add-row {
+  margin: 12px 24px 18px;
 }
 
 // ── Terms & Conditions ────────────────────────────────────────

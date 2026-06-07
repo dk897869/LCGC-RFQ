@@ -46,6 +46,7 @@ export class RfqVendorComponent implements OnInit {
     organization: 'Radiant Appliances',
     titleOfActivity: '',
     purposeAndObjective: '',
+    quotationStatus: 'Draft',
     priority: 'M'
   };
   
@@ -64,6 +65,7 @@ export class RfqVendorComponent implements OnInit {
 
   ngOnInit() {
     this.loadUserInfo();
+    this.loadManagers();
   }
 
   loadUserInfo() {
@@ -74,6 +76,16 @@ export class RfqVendorComponent implements OnInit {
       this.rfqVendorForm.department = user.department || 'Purchase';
       this.rfqVendorForm.contactNo = user.contactNo || '';
     }
+  }
+
+  loadManagers() {
+    this.authService.getManagers().subscribe({
+      next: (res: any) => {
+        const list = res?.managers || res?.defaultApprovers || [];
+        if (Array.isArray(list) && list.length) this.managerOptions = list;
+      },
+      error: () => {}
+    });
   }
 
   addRfqVendorItem() {
@@ -104,8 +116,12 @@ export class RfqVendorComponent implements OnInit {
     }
   }
 
-  onManagerChange(approver: ApproverRow, name: string) {
-    const manager = this.managerOptions.find(m => m.name === name);
+  onManagerLookup(approver: ApproverRow, value: string) {
+    const term = (value || '').trim().toLowerCase();
+    approver.managerName = value;
+    const manager = this.managerOptions.find(m =>
+      (m.name || '').toLowerCase() === term || (m.email || '').toLowerCase() === term
+    );
     if (manager) {
       approver.email = manager.email;
       approver.designation = manager.designation;

@@ -1,8 +1,9 @@
-import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { timeout } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth';
+import { NonBomNavService, NonBomNavMode } from '../../services/non-bom-nav.service';
 import { CashPurchaseComponent } from '../../npp-procurement/components/cash-purchase/cash-purchase';
 import { NewVendorComponent } from '../../npp-procurement/components/new-vendor/new-vendor';
 import { RfqVendorComponent } from '../../npp-procurement/components/rfq-vendor/rfq-vendor';
@@ -16,6 +17,8 @@ import { EmployeeDetailComponent } from '../../npp-procurement/components/employ
 import { WccNppComponent } from '../../npp-procurement/components/wcc-npp/wcc-npp';
 import { PaymentAdviseComponent } from '../../npp-procurement/components/payment-advise/payment-advise';
 import { RfqRequisitionComponent } from "../../npp-procurement/components/rfq-requisition/rfq-requisition";
+import { EPApprovalComponent } from '../ep-approval/ep-approval';
+import { StatusModalComponent } from '../../shared/status-modal/status-modal.component';
 
 export interface WorkflowStep {
   id: string;
@@ -64,7 +67,9 @@ export interface Certificate {
     EmployeeDetailComponent,
     WccNppComponent,
     PaymentAdviseComponent,
-    RfqRequisitionComponent
+    RfqRequisitionComponent,
+    EPApprovalComponent,
+    StatusModalComponent
 ],
   templateUrl: './npp-procurement.html',
   styleUrls: ['./npp-procurement.scss'],
@@ -98,6 +103,9 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
 
   // Quotation Comparison
   showQuotationModal = false;
+  showStatusModal = false;
+  statusModalType = 'all';
+  epApprovalTab: 'requests' | 'approvals' | 'status' = 'requests';
   vendorSuggestionsList: any[] = [];
   selectedVendor: any = null;
   quotationItems: any[] = [];
@@ -108,14 +116,25 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
 
   readonly navGroups: NavGroup[] = [
     {
+      id: 'approvals',
+      label: 'Approvals',
+      icon: 'OK',
+      dotClass: 'dot-g',
+      steps: [
+        { id: 'ep-request', label: 'Request', icon: 'REQ', groupId: 'approvals' },
+        { id: 'ep-approvals', label: 'Approval', icon: 'APR', groupId: 'approvals' },
+        { id: 'ep-status', label: 'Status', icon: 'STS', groupId: 'approvals' },
+      ]
+    },
+    {
       id: 'rfq-request',
       label: 'RFQ Request',
       icon: '🔍',
       dotClass: 'dot-b',
       steps: [
         { id: 'rfq-npp-form',          label: 'RFQ (Request for Quotation)',                         icon: 'RFQ', groupId: 'rfq-request' },
-        { id: 'rfq-requisition',       label: 'Requisition to vendor (Request for Quotation)',        icon: 'REQ', groupId: 'rfq-request' },
-        { id: 'quotation-submission',  label: 'Quotation Submission by Vendor',                       icon: 'QSV', groupId: 'rfq-request' },
+        { id: 'rfq-vendor-requisition', label: 'Requisition To Vendor',                              icon: 'RTV', groupId: 'rfq-request' },
+        { id: 'quotation-submission',  label: 'Quotation Status',                                     icon: 'QST', groupId: 'rfq-request' },
         { id: 'quotation-comparison',  label: 'Quotation Collection and Cost Comparison',             icon: 'QC',  groupId: 'rfq-request' },
       ]
     },
@@ -125,8 +144,8 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
       icon: '📋',
       dotClass: 'dot-g',
       steps: [
-        { id: 'pr-request', label: 'PR process for Approval',    icon: 'PR', groupId: 'pr-process' },
-        { id: 'po-npp',     label: 'PO approval and Generation', icon: 'PO', groupId: 'pr-process' },
+        { id: 'pr-request', label: 'PR Process for Approval',    icon: 'PR', groupId: 'pr-process' },
+        { id: 'po-npp',     label: 'PO Approval and Generation', icon: 'PO', groupId: 'pr-process' },
       ]
     },
     {
@@ -218,6 +237,13 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {}
 
+  readonly navService = inject(NonBomNavService);
+
+  /** Nav groups visible based on smart navigation mode */
+  get visibleNavGroups(): NavGroup[] {
+    return this.navGroups.filter(g => this.navService.isGroupVisible(g.id));
+  }
+
   ngOnInit(): void {
     this.loadUserInfo();
     this.setInitialTab();
@@ -250,26 +276,49 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private setInitialTab(): void {
+    const mode = this.navService.resolveModeFromTab(this.initialTab);
+    if (mode !== 'all') {
+      this.navService.setMode(mode);
+      this.setActiveGroupExpand(mode);
+      return;
+    }
     const requestedGroup = this.navGroups.find(g => g.id === this.initialTab);
     if (requestedGroup) {
+      this.navService.setMode(requestedGroup.id as NonBomNavMode);
       this.setActiveGroupExpand(requestedGroup.id);
       return;
     }
     const requestedStep = this.workflowSteps.find(s => s.id === this.initialTab);
     if (requestedStep) {
+      this.navService.setMode(requestedStep.groupId as NonBomNavMode);
       this.activeGroupId = requestedStep.groupId;
       this.activeTab = requestedStep.id;
       this.expandedGroups.add(requestedStep.groupId);
+      this.syncEpTabFromActive();
     }
+  }
+
+  private syncEpTabFromActive(): void {
+    if (this.activeTab === 'ep-request') this.epApprovalTab = 'requests';
+    if (this.activeTab === 'ep-approvals') this.epApprovalTab = 'approvals';
+    if (this.activeTab === 'ep-status') this.epApprovalTab = 'status';
   }
 
   // ─── Accordion / Nav ─────────────────────────────────────────────────────────
 
   toggleGroup(groupId: string): void {
+    this.navService.setMode(groupId as NonBomNavMode);
     if (this.expandedGroups.has(groupId)) {
       this.expandedGroups.delete(groupId);
     } else {
+      this.expandedGroups.clear();
       this.expandedGroups.add(groupId);
+    }
+    this.activeGroupId = groupId;
+    const group = this.navGroups.find(g => g.id === groupId);
+    if (group?.steps?.length) {
+      this.activeTab = group.steps[0].id;
+      this.syncEpTabFromActive();
     }
   }
 
@@ -280,16 +329,48 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
   setActiveGroupExpand(groupId: string): void {
     const group = this.navGroups.find(g => g.id === groupId);
     if (!group) return;
+    this.navService.setMode(groupId as NonBomNavMode);
     this.activeGroupId = group.id;
     this.activeTab = group.steps[0]?.id || this.activeTab;
+    this.expandedGroups.clear();
     this.expandedGroups.add(groupId);
+    this.sidebarOpen = false;
+    this.syncEpTabFromActive();
+  }
+
+  backToMainMenu(): void {
+    this.navService.showAll();
+    this.expandedGroups = new Set(this.navGroups.map(g => g.id));
+    this.activeGroupId = 'rfq-request';
+    this.activeTab = 'rfq-npp-form';
     this.sidebarOpen = false;
   }
 
   setActiveTab(tabId: string, groupId: string): void {
+    this.navService.setMode(groupId as NonBomNavMode);
     this.activeGroupId = groupId;
     this.activeTab = tabId;
     this.sidebarOpen = false;
+    this.syncEpTabFromActive();
+  }
+
+  openStatusModal(type = 'all'): void {
+    this.statusModalType = type;
+    this.showStatusModal = true;
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal = false;
+  }
+
+  getStatusTypeForActiveTab(): string {
+    const map: Record<string, string> = {
+      'rfq-npp-form': 'rfq', 'rfq-vendor-requisition': 'rfq', 'quotation-submission': 'comparison',
+      'quotation-comparison': 'comparison', 'pr-request': 'pr', 'po-npp': 'po',
+      'payment-advise': 'payment', 'wcc-npp': 'wcc', 'cash-purchase': 'cash-purchase',
+      'ep-request': 'ep', 'ep-approvals': 'ep', 'ep-status': 'ep'
+    };
+    return map[this.activeTab] || 'all';
   }
 
   toggleSidebar(): void {
@@ -298,6 +379,10 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
 
   getActiveWorkflowLabel(): string {
     return this.workflowSteps.find(s => s.id === this.activeTab)?.label ?? 'NPP Procurement';
+  }
+
+  isFormTab(): boolean {
+    return ['rfq-npp-form', 'ep-request', 'quotation-comparison', 'pr-request'].includes(this.activeTab);
   }
 
   getActiveGroup(): NavGroup {

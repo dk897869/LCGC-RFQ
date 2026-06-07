@@ -1,0 +1,42 @@
+.form-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fsb-check {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e40af;
+  cursor: pointer;
+}
+
+.fsb-pill {
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fsb-approved { background: #d1fae5; color: #065f46; }
+.fsb-pending { background: #ffedd5; color: #c2410c; }
+.fsb-rejected { background: #fee2e2; color: #b91c1c; }
+.fsb-inprocess { background: #dbeafe; color: #1d4ed8; }
+
+.fsb-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--approve { background: #059669; color: #fff; }
+  &--reject { background: #fee2e2; color: #b91c1c; }
+}

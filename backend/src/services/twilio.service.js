@@ -1,5 +1,6 @@
 // services/twilio.service.js
 const twilio = require('twilio');
+const { sendSmsOtp: sendFast2SmsOtp } = require('./fast2sms.service');
 
 // Twilio configuration
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -75,13 +76,23 @@ const sendSmsOtp = async (mobileNumber) => {
       };
     }
     
-    // PRODUCTION MODE - Send real SMS
+    // PRODUCTION MODE - Send real SMS via Twilio, fallback to Fast2SMS
     if (!client) {
-      console.error('❌ Twilio client not initialized');
+      console.warn('⚠️ Twilio not configured, falling back to Fast2SMS');
+      const fast2Result = await sendFast2SmsOtp(recipientNumber.replace('+91', ''));
+      if (fast2Result.success) {
+        return {
+          success: true,
+          status: 'sent',
+          otp: fast2Result.otp,
+          provider: 'fast2sms',
+          message: 'OTP sent successfully via Fast2SMS'
+        };
+      }
       return {
         success: false,
-        error: 'SMS service not configured. Please check Twilio credentials.',
-        otp: otp // Return OTP for fallback
+        error: fast2Result.error || 'SMS service not configured. Set TWILIO_* or FAST2SMS_API_KEY.',
+        otp: fast2Result.otp || otp
       };
     }
     

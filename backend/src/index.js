@@ -1,4 +1,4 @@
-require("dotenv").config();  // ✅ MUST BE FIRST!
+﻿require("dotenv").config();  // âœ… MUST BE FIRST!
 
 const express = require("express");
 const path = require("path");
@@ -20,7 +20,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
-    // ✅ Require User model HERE - not at the top level
+    // âœ… Require User model HERE - not at the top level
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
@@ -65,7 +65,7 @@ const safeRequire = (routePath, defaultValue) => {
     }
     return module;
   } catch (err) {
-    console.warn(`⚠️ Could not load ${routePath}: ${err.message}`);
+    console.warn(`âš ï¸ Could not load ${routePath}: ${err.message}`);
     return defaultValue || ((req, res) => res.status(501).json({
       success: false,
       message: `${routePath} API not available yet`
@@ -152,7 +152,7 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    console.log(`⚠️ CORS request from: ${origin}`);
+    console.log(`âš ï¸ CORS request from: ${origin}`);
     // Allow it anyway for production
     return callback(null, true);
   },
@@ -204,7 +204,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Custom logging middleware
 app.use((req, res, next) => {
-  console.log(`📌 ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`);
+  console.log(`ðŸ“Œ ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`);
   next();
 });
 
@@ -222,46 +222,12 @@ const generateToken = (user) => {
   );
 };
 
-// ==================== FAST2SMS SERVICE ====================
-const FAST2SMS_API_KEY = 'xWX9L0fUhYl1cg5vw7NFnRjs3kAp2GqybiHTrzSmBIDJt4Kud8yDa6epRdYAtxPjvIriZohgm1cOfE35';
 
-const sendSmsViaFast2SMS = async (mobileNumber, otp) => {
-  try {
-    let cleanNumber = mobileNumber.replace(/\D/g, '');
-    if (cleanNumber.startsWith('91')) cleanNumber = cleanNumber.substring(2);
-    if (cleanNumber.startsWith('0')) cleanNumber = cleanNumber.substring(1);
-
-    if (cleanNumber.length !== 10) {
-      return { success: false, error: 'Invalid mobile number' };
-    }
-
-    const response = await axios({
-      method: 'GET',
-      url: 'https://www.fast2sms.com/dev/bulkV2',
-      params: {
-        authorization: FAST2SMS_API_KEY,
-        route: 'q',
-        message: `${otp} is your OTP for LCGC RFQ. Valid for 10 minutes.`,
-        numbers: cleanNumber,
-        flash: 0
-      },
-      timeout: 10000
-    });
-
-    if (response.data && response.data.return === true) {
-      return { success: true };
-    } else {
-      return { success: false, error: response.data?.message || 'SMS failed' };
-    }
-  } catch (error) {
-    console.error('Fast2SMS Error:', error.message);
-    return { success: false, error: error.message };
-  }
-};
+// Mobile SMS handled by auth.routes -> twilio.service (Fast2SMS fallback)
 
 // ==================== AVATAR UPLOAD ROUTE ====================
 app.post('/api/auth/upload-avatar', (req, res) => {
-  console.log('📍 /api/auth/upload-avatar route hit');
+  console.log('ðŸ“ /api/auth/upload-avatar route hit');
 
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
@@ -273,7 +239,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 
   uploadAvatar.any()(req, res, async (err) => {
     if (err) {
-      console.error('❌ Upload error:', err);
+      console.error('âŒ Upload error:', err);
       return res.status(400).json({
         success: false,
         message: err.message
@@ -290,7 +256,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
         });
       }
 
-      console.log('✅ File received:', {
+      console.log('âœ… File received:', {
         fieldname: uploadedFile.fieldname,
         originalname: uploadedFile.originalname,
         mimetype: uploadedFile.mimetype,
@@ -323,7 +289,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
       });
 
     } catch (error) {
-      console.error('❌ Avatar upload error:', error);
+      console.error('âŒ Avatar upload error:', error);
 
       if (error.name === 'JsonWebTokenError') {
         return res.status(401).json({
@@ -342,7 +308,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 
 // ==================== GOOGLE LOGIN API ====================
 app.post('/api/auth/google', async (req, res) => {
-  console.log('📥 Google login endpoint hit');
+  console.log('ðŸ“¥ Google login endpoint hit');
 
   try {
     const { credential } = req.body;
@@ -365,7 +331,7 @@ app.post('/api/auth/google', async (req, res) => {
     });
 
     if (!user) {
-      console.log('👤 Creating new user from Google login');
+      console.log('ðŸ‘¤ Creating new user from Google login');
       const randomPassword = crypto.randomBytes(20).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
@@ -382,9 +348,9 @@ app.post('/api/auth/google', async (req, res) => {
       });
 
       await user.save();
-      console.log('✅ New user created:', user.email);
+      console.log('âœ… New user created:', user.email);
     } else if (!user.googleId) {
-      console.log('🔗 Linking Google account to existing user');
+      console.log('ðŸ”— Linking Google account to existing user');
       user.googleId = googleId;
       if (picture && !user.profileImage) user.profileImage = picture;
       await user.save();
@@ -414,20 +380,29 @@ app.post('/api/auth/google', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Google login error:', error);
+    console.error('âŒ Google login error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 // ==================== HEALTH CHECK ====================
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  const { verifySmtpConnection } = require('./services/mail.service');
+  let smtpStatus = { configured: false, ready: false };
+  try {
+    smtpStatus = await verifySmtpConnection();
+  } catch (e) {
+    smtpStatus = { configured: false, ready: false, error: e.message };
+  }
   res.json({
     success: true,
     status: 'ok',
     message: 'LCGC RFQ Server is running',
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
-    environment: process.env.NODE_ENV || 'production'
+    environment: process.env.NODE_ENV || 'production',
+    smtp: smtpStatus,
+    frontendUrl: process.env.FRONTEND_URL || null
   });
 });
 
@@ -435,582 +410,8 @@ app.get('/health', (req, res) => {
   res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ==================== EMAIL OTP ROUTES (FULLY WORKING) ====================
-
-// ==================== OTP ROUTE WITH NEW APP PASSWORD ====================
-app.post('/api/auth/send-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/send-otp');
-  console.log('📦 Request body:', req.body);
-  
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required'
-      });
-    }
-    
-    const cleanEmail = email.trim().toLowerCase();
-    console.log('📧 Sending OTP via SMTP to:', cleanEmail);
-    
-    // Import required modules
-    const User = require('./models/user.model');
-    const OTP = require('./models/otp.model');
-    const nodemailer = require('nodemailer');
-    
-    // Check if user exists
-    const user = await User.findOne({ email: cleanEmail });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'No account found with this email address'
-      });
-    }
-    
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`🔐 Generated OTP: ${otp}`);
-    
-    // Save OTP to database
-    await OTP.deleteMany({ email: cleanEmail, type: 'login' });
-    await OTP.create({
-      email: cleanEmail,
-      otp: otp,
-      type: 'login',
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-    });
-    
-    // Send success response immediately (don't wait for email)
-    res.json({
-      success: true,
-      message: `OTP sent successfully to ${cleanEmail}`,
-      note: "Check your email inbox or spam folder"
-    });
-    
-    // Send email in background with NEW password
-    sendEmailInBackground(cleanEmail, otp, user.name);
-    
-  } catch (error) {
-    console.error('❌ Send OTP error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to send OTP'
-    });
-  }
-});
-
-// Background email sending function with UPDATED password
-async function sendEmailInBackground(email, otp, name) {
-  try {
-    const nodemailer = require('nodemailer');
-    
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'dk897869@gmail.com',
-        pass: 'snaq ptsl yqpm hufr'  // Your NEW app password WITH spaces (as generated by Google)
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-    
-    console.log(`📧 Sending email to ${email}...`);
-    
-    const info = await transporter.sendMail({
-      from: '"LCGC System" <dk897869@gmail.com>',
-      to: email,
-      subject: 'Your Login OTP - LCGC System',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Login OTP - LCGC</title>
-          <style>
-            body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-            .header { background: #0f2a5e; padding: 20px; text-align: center; }
-            .header h1 { color: white; margin: 0; font-size: 24px; }
-            .content { padding: 30px; text-align: center; }
-            .otp-code { font-size: 48px; font-weight: bold; letter-spacing: 5px; background: #f0f4f8; padding: 20px; border-radius: 12px; margin: 20px 0; font-family: monospace; color: #0f2a5e; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #eee; }
-            .warning { background: #fff3cd; padding: 12px; border-radius: 8px; font-size: 12px; color: #856404; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>LCGC System</h1>
-            </div>
-            <div class="content">
-              <h2>Your Login Verification Code</h2>
-              <div class="otp-code">${otp}</div>
-              <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-              <div class="warning">
-                ⚠️ Never share this OTP with anyone.
-              </div>
-            </div>
-            <div class="footer">
-              <p>This is an automated message, please do not reply.</p>
-              <p>&copy; ${new Date().getFullYear()} LCGC System</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    });
-    
-    console.log(`✅ Email sent successfully to ${email}! Message ID: ${info.messageId}`);
-  } catch (error) {
-    console.error(`❌ Failed to send email to ${email}:`, error.message);
-  }
-}
-
-// Send Registration OTP (email)
-app.post('/api/auth/send-registration-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/send-registration-otp - Registration OTP route hit');
-  console.log('📦 Request body:', req.body);
-  
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required'
-      });
-    }
-    
-    const cleanEmail = email.trim().toLowerCase();
-    console.log('📧 Sending registration OTP to email:', cleanEmail);
-    
-    const User = require('./models/user.model');
-    const OTP = require('./models/otp.model');
-    const { sendMail } = require('./services/mail.service');
-    
-    const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email already registered. Please login instead.'
-      });
-    }
-    
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`🔐 Generated registration OTP for ${cleanEmail}: ${otp}`);
-    
-    await OTP.deleteMany({ email: cleanEmail, type: 'registration' });
-    
-    await OTP.create({
-      email: cleanEmail,
-      otp: otp,
-      type: 'registration',
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-    });
-    
-    const emailResult = await sendMail({
-      to: cleanEmail,
-      subject: 'Verify Your Email - LCGC Registration',
-      type: 'otp',
-      data: {
-        name: cleanEmail.split('@')[0],
-        otp: otp,
-        otpType: 'registration'
-      }
-    });
-    
-    if (emailResult.success) {
-      res.json({
-        success: true,
-        message: `Verification OTP sent to ${cleanEmail}`,
-        method: 'email'
-      });
-    } else {
-      console.error('Email send failed but OTP generated:', emailResult.error);
-      res.json({
-        success: true,
-        message: `OTP generated. Check your email (might be in spam)`,
-        method: 'email',
-        devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
-      });
-    }
-    
-  } catch (error) {
-    console.error('Send registration OTP error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to send OTP'
-    });
-  }
-});
-
-// Verify Registration OTP
-app.post('/api/auth/verify-registration-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/verify-registration-otp - Verify OTP route hit');
-  console.log('📦 Request body:', req.body);
-  
-  try {
-    const { email, otp } = req.body;
-    
-    if (!email || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and OTP are required'
-      });
-    }
-    
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanOtp = otp.trim();
-    
-    const OTP = require('./models/otp.model');
-    
-    const otpRecord = await OTP.findOne({
-      email: cleanEmail,
-      otp: cleanOtp,
-      type: 'registration'
-    });
-    
-    if (!otpRecord) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP'
-      });
-    }
-    
-    if (new Date() > otpRecord.expiresAt) {
-      await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({
-        success: false,
-        message: 'OTP has expired. Please request a new one.'
-      });
-    }
-    
-    await OTP.deleteOne({ _id: otpRecord._id });
-    
-    res.json({
-      success: true,
-      message: 'OTP verified successfully'
-    });
-    
-  } catch (error) {
-    console.error('Verify OTP error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to verify OTP'
-    });
-  }
-});
-
-// Verify OTP for login
-app.post('/api/auth/verify-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/verify-otp - Verify Login OTP route hit');
-  console.log('📦 Request body:', req.body);
-  
-  try {
-    const { email, otp, method, type } = req.body;
-    
-    if (!email || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and OTP are required'
-      });
-    }
-    
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanOtp = otp.trim();
-    
-    const OTP = require('./models/otp.model');
-    const User = require('./models/user.model');
-
-    const otpRecord = await OTP.findOne({
-      email: cleanEmail,
-      otp: cleanOtp,
-      type: type || 'login'
-    });
-    
-    if (!otpRecord) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP'
-      });
-    }
-    
-    if (new Date() > otpRecord.expiresAt) {
-      await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({
-        success: false,
-        message: 'OTP has expired. Please request a new one.'
-      });
-    }
-    
-    const user = await User.findOne({ email: cleanEmail });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-    
-    await OTP.deleteOne({ _id: otpRecord._id });
-    
-    user.lastLogin = new Date();
-    await user.save();
-    
-    const token = generateToken(user);
-    
-    res.json({
-      success: true,
-      message: 'OTP verified successfully',
-      token: token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department || 'Purchase',
-        contactNo: user.contactNo || '',
-        organization: user.organization || 'Radiant Appliances',
-        rights: user.rights || {}
-      }
-    });
-    
-  } catch (error) {
-    console.error('Verify OTP error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to verify OTP'
-    });
-  }
-});
-
-// Resend OTP
-app.post('/api/auth/resend-otp', async (req, res) => {
-  console.log('📍 POST /api/auth/resend-otp - Resend OTP route hit');
-  console.log('📦 Request body:', req.body);
-  
-  try {
-    const { email, type = 'login' } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required'
-      });
-    }
-    
-    const cleanEmail = email.trim().toLowerCase();
-    const User = require('./models/user.model');
-    const OTP = require('./models/otp.model');
-    const { sendMail } = require('./services/mail.service');
-    
-    if (type === 'login') {
-      const user = await User.findOne({ email: cleanEmail });
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'No account found with this email address'
-        });
-      }
-    }
-    
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`🔐 Generated new OTP for ${cleanEmail}: ${otp}`);
-    
-    await OTP.deleteMany({ email: cleanEmail, type: type });
-    
-    await OTP.create({
-      email: cleanEmail,
-      otp: otp,
-      type: type,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-    });
-    
-    const emailResult = await sendMail({
-      to: cleanEmail,
-      subject: type === 'login' ? 'Login OTP - LCGC System' : 'Verification OTP - LCGC Registration',
-      type: 'otp',
-      data: {
-        name: cleanEmail.split('@')[0],
-        otp: otp,
-        otpType: type
-      }
-    });
-    
-    if (emailResult.success) {
-      res.json({
-        success: true,
-        message: `New OTP sent to ${cleanEmail}`,
-        method: 'email'
-      });
-    } else {
-      res.json({
-        success: true,
-        message: `OTP generated. Check your email (might be in spam)`,
-        method: 'email',
-        devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
-      });
-    }
-    
-  } catch (error) {
-    console.error('Resend OTP error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to resend OTP'
-    });
-  }
-});
-
-// ==================== DIRECT MOBILE OTP ROUTES WITH FAST2SMS ====================
-
-// Send Mobile OTP
-app.post('/api/auth/send-mobile-otp', async (req, res) => {
-  console.log('📍 DIRECT /send-mobile-otp route hit');
-  console.log('📦 Request body:', req.body);
-
-  try {
-    const { mobile, type = 'registration' } = req.body;
-
-    if (!mobile) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mobile number is required'
-      });
-    }
-
-    let cleanMobile = mobile.replace(/\D/g, '');
-    if (cleanMobile.startsWith('91')) cleanMobile = cleanMobile.substring(2);
-    if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
-
-    if (cleanMobile.length !== 10) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please enter a valid 10-digit mobile number'
-      });
-    }
-
-    const User = require('./models/user.model');
-    const OTP = require('./models/otp.model');
-
-    if (type === 'registration') {
-      const existingUser = await User.findOne({
-        contactNo: { $regex: cleanMobile + '$', $options: 'i' }
-      });
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: 'Mobile number already registered'
-        });
-      }
-    }
-
-    if (type === 'login') {
-      const existingUser = await User.findOne({
-        contactNo: { $regex: cleanMobile + '$', $options: 'i' }
-      });
-      if (!existingUser) {
-        return res.status(404).json({
-          success: false,
-          message: 'Mobile number not registered'
-        });
-      }
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`🔐 OTP for ${cleanMobile}: ${otp}`);
-
-    await OTP.deleteMany({ mobile: cleanMobile, type: type });
-    await OTP.create({
-      mobile: cleanMobile,
-      otp: otp,
-      type: type,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-    });
-
-    const smsResult = await sendSmsViaFast2SMS(cleanMobile, otp);
-
-    if (smsResult.success) {
-      res.json({
-        success: true,
-        message: `OTP sent successfully to ${mobile}`,
-        method: 'mobile',
-        provider: 'fast2sms'
-      });
-    } else {
-      res.json({
-        success: true,
-        message: `OTP generated. SMS delivery issue: ${smsResult.error || 'Unknown error'}`,
-        method: 'mobile',
-        devOTP: otp,
-        note: 'Use this OTP for testing'
-      });
-    }
-
-  } catch (error) {
-    console.error('Send Mobile OTP error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Verify Mobile OTP
-app.post('/api/auth/verify-mobile-otp', async (req, res) => {
-  console.log('📍 DIRECT /verify-mobile-otp route hit');
-  console.log('📦 Request body:', req.body);
-
-  try {
-    const { mobile, otp, type = 'registration' } = req.body;
-
-    if (!mobile || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mobile number and OTP are required'
-      });
-    }
-
-    let cleanMobile = mobile.replace(/\D/g, '');
-    if (cleanMobile.startsWith('91')) cleanMobile = cleanMobile.substring(2);
-    if (cleanMobile.startsWith('0')) cleanMobile = cleanMobile.substring(1);
-
-    const OTP = require('./models/otp.model');
-
-    const otpRecord = await OTP.findOne({
-      mobile: cleanMobile,
-      otp: otp,
-      type: type
-    });
-
-    if (!otpRecord) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP'
-      });
-    }
-
-    if (new Date() > otpRecord.expiresAt) {
-      await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({
-        success: false,
-        message: 'OTP has expired'
-      });
-    }
-
-    await OTP.deleteOne({ _id: otpRecord._id });
-
-    res.json({
-      success: true,
-      message: 'OTP verified successfully',
-      verified: true
-    });
-
-  } catch (error) {
-    console.error('Verify Mobile OTP error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+// OTP, registration OTP, mobile OTP, verify/resend OTP routes are handled by
+// auth.routes.js â†’ auth.controller.js using env-based mail.service (SMTP) and Fast2SMS/Twilio.
 
 // ==================== PASSWORD RESET ROUTES ====================
 
@@ -1242,9 +643,9 @@ app.delete('/api/auth/avatar', async (req, res) => {
 let nppController;
 try {
   nppController = require('./controllers/npp.controller');
-  console.log('✅ NPP Controller loaded');
+  console.log('âœ… NPP Controller loaded');
 } catch (err) {
-  console.warn('⚠️ NPP Controller not found, creating fallback');
+  console.warn('âš ï¸ NPP Controller not found, creating fallback');
   nppController = {
     createNppRequest: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
     getAllNppRequests: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
@@ -1286,7 +687,7 @@ app.patch('/api/npp/request/:id/reject', authMiddleware, moduleAccessMiddleware,
 app.post('/api/npp/request/:id/send-email', authMiddleware, moduleAccessMiddleware, nppController.sendNppRequestEmail);
 app.use('/api/certificates', certificateRoutes);
 
-console.log('✅ NPP Procurement routes loaded');
+console.log('âœ… NPP Procurement routes loaded');
 
 // ==================== API ROUTES ====================
 app.use([
@@ -1321,7 +722,7 @@ app.use('/api/ep-approval', requestRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "LCGC RFQ API Running Successfully 🚀",
+    message: "LCGC RFQ API Running Successfully ðŸš€",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
     availableApis: {
@@ -1361,7 +762,7 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error("🔥 Server Error:", err.message);
+  console.error("ðŸ”¥ Server Error:", err.message);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error"
@@ -1370,7 +771,7 @@ app.use((err, req, res, next) => {
 
 // Simple SMTP test endpoint
 app.post('/api/test-email-direct', async (req, res) => {
-  console.log('📍 Direct email test endpoint');
+  console.log('ðŸ“ Direct email test endpoint');
   
   try {
     const { email } = req.body;
@@ -1403,7 +804,7 @@ app.post('/api/test-email-direct', async (req, res) => {
       to: testEmail,
       subject: 'Direct SMTP Test from LCGC',
       html: `
-        <h1>✅ SMTP Working!</h1>
+        <h1>âœ… SMTP Working!</h1>
         <p>This email was sent directly from your backend.</p>
         <p>Time: ${new Date().toLocaleString()}</p>
         <p>If you received this, your SMTP configuration is correct!</p>
@@ -1431,15 +832,15 @@ app.post('/api/test-email-direct', async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
-  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ Avatar upload: POST /api/auth/upload-avatar`);
-  console.log(`✅ Email OTP: POST /api/auth/send-otp`);
-  console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
-  console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
-  console.log(`✅ Google Login: POST /api/auth/google`);
-  console.log(`✅ CORS: Configured for all origins`);
+  console.log(`\nðŸš€ Server running on port ${PORT}`);
+  console.log(`âœ… Health check: http://localhost:${PORT}/api/health`);
+  console.log(`âœ… Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`âœ… Avatar upload: POST /api/auth/upload-avatar`);
+  console.log(`âœ… Email OTP: POST /api/auth/send-otp`);
+  console.log(`âœ… Mobile OTP: POST /api/auth/send-mobile-otp`);
+  console.log(`âœ… Password Reset: POST /api/auth/forgot-password-link`);
+  console.log(`âœ… Google Login: POST /api/auth/google`);
+  console.log(`âœ… CORS: Configured for all origins`);
 });
 
 module.exports = app;

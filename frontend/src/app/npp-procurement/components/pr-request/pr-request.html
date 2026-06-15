@@ -1,65 +1,64 @@
-<div class="pr-approval-page">
-  <div class="pr-page-top">
+<div class="pr-sheet">
+  <div class="sheet-title">
     <div>
-      <div class="pr-breadcrumb">NON BOM › PR Process › PR Process for Approval</div>
-      <h2>PR Process for Approval</h2>
-      <p>Create and manage Purchase Requisition (PR) and submit for approval.</p>
+      <h2>NPP - PR Request</h2>
+      <span>Approval for operational support and action plan</span>
     </div>
-    <div class="pr-top-actions">
-      <app-form-status-bar
-        [status]="form.status"
-        [showActions]="isAdmin"
-        [canApprove]="form.status === 'Pending'"
-        (checkStatus)="openStatusModal()"
-        (approve)="approvePr()"
-        (reject)="rejectPr()">
-      </app-form-status-bar>
-    </div>
+    <button class="home-mark" type="button">⌂</button>
   </div>
 
-  <div class="pr-serial-banner">
-    <div>
-      <span class="lbl">Current PR Serial No</span>
-      <strong>{{ prSerialNo }}</strong>
-    </div>
-    <span class="note">Draft serial no (Auto will submit)</span>
-  </div>
-
-  <section class="pr-card">
-    <h3>Requester Information</h3>
-    <div class="pr-grid">
+  <section class="grid-section">
+    <div class="side-label">Requester Information</div>
+    <div class="form-grid">
       <label>Name <input [(ngModel)]="form.requesterName"></label>
-      <label>Request Date <input type="date" [(ngModel)]="form.requestDate"></label>
       <label>Department <input [(ngModel)]="form.department"></label>
-      <label>Contact No. <input [(ngModel)]="form.contactNo"></label>
       <label>Email ID <input [(ngModel)]="form.emailId"></label>
+      <label>Request Date <input type="date" [(ngModel)]="form.requestDate"></label>
+      <label>Contact No. <input [(ngModel)]="form.contactNo"></label>
       <label>Organization <input [(ngModel)]="form.organization"></label>
       <label>Department Budget <input [(ngModel)]="form.departmentBudget"></label>
       <label>Cost Center <input [(ngModel)]="form.costCenter"></label>
-      <label>RFQ No. <input [(ngModel)]="form.rfqNo" placeholder="Linked RFQ"></label>
-      <label>Title of Activity <input [(ngModel)]="form.titleOfActivity"></label>
     </div>
   </section>
 
-  <section class="pr-card">
-    <div class="card-hdr">
-      <h3>MPP PR Request Grid</h3>
-      <button type="button" class="btn-outline" (click)="addItem()">+ Add Row</button>
+  <section class="activity-row">
+    <strong>NPP - PR Request</strong>
+    <input [(ngModel)]="form.titleOfActivity" placeholder="Title of Activity">
+    <input [(ngModel)]="form.purposeAndObjective" placeholder="Purpose & objectives">
+  </section>
+
+  <section class="sheet-table">
+    <div class="table-top">
+      <h3>PR Items</h3>
+      <button type="button" (click)="addItem()">+ Add Item</button>
     </div>
     <div class="table-scroll">
-      <table class="pr-table">
+      <table>
         <thead>
           <tr>
-            <th>RFQ No.</th><th>Supplier Name</th><th>Part Code</th><th>Part Description</th>
-            <th>CNDT</th><th>UOM</th><th>QTY</th><th>Currency</th><th>Unit Price</th><th>Value</th><th></th>
+            <th>S. No.</th>
+            <th>RFQ No.</th>
+            <th>Supplier Name</th>
+            <th>Part Code</th>
+            <th>Part Description</th>
+            <th>Specification</th>
+            <th>CMDT</th>
+            <th>UOM</th>
+            <th>Qty</th>
+            <th>Currency</th>
+            <th>Unit Price</th>
+            <th>Value</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let item of items; let i = index">
+            <td>{{ i + 1 }}</td>
             <td><input [(ngModel)]="item.rfqNo"></td>
             <td><input [(ngModel)]="item.supplierName"></td>
             <td><input [(ngModel)]="item.partCode"></td>
             <td><input [(ngModel)]="item.partDescription"></td>
+            <td><input [(ngModel)]="item.specification"></td>
             <td><input [(ngModel)]="item.cmdt"></td>
             <td><input [(ngModel)]="item.uom"></td>
             <td><input type="number" [(ngModel)]="item.qty" (input)="calculateItem(item)"></td>
@@ -70,134 +69,37 @@
           </tr>
         </tbody>
         <tfoot>
-          <tr><td colspan="9">Total Value (INR)</td><td colspan="2"><strong>{{ getTotalValue() | number:'1.2-2' }}</strong></td></tr>
+          <tr>
+            <td colspan="11">Total Value (INR)</td>
+            <td colspan="2">{{ getTotalValue() | number:'1.2-2' }}</td>
+          </tr>
         </tfoot>
       </table>
     </div>
   </section>
 
-  <section class="pr-card">
-    <div class="card-hdr">
-      <h3>Quotation Cost Comparison</h3>
-      <div class="mode-toggle">
-        <button type="button" [class.active]="comparisonMode === 'auto'" (click)="loadComparisonAuto()">Auto (API)</button>
-        <button type="button" [class.active]="comparisonMode === 'manual'" (click)="comparisonMode = 'manual'">Manual</button>
-        <button type="button" class="btn-outline" (click)="loadComparisonAuto()" [disabled]="isComparisonLoading">
-          {{ isComparisonLoading ? 'Loading…' : 'Refresh Comparison' }}
-        </button>
-      </div>
-    </div>
-    <div class="table-scroll" *ngIf="comparisonItems.length; else noComparison">
-      <table class="pr-table comparison-table">
-        <thead>
-          <tr>
-            <th>Part Code</th><th>Description</th><th>Qty</th>
-            <th *ngFor="let h of supplierHeaders; let si = index" colspan="2">{{ h }}</th>
-            <th>Lowest Cost</th><th>Selected Vendor</th>
-          </tr>
-          <tr class="sub-head">
-            <th colspan="3"></th>
-            <ng-container *ngFor="let h of supplierHeaders">
-              <th>Price</th><th>Amount</th>
-            </ng-container>
-            <th colspan="2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of comparisonItems">
-            <td>{{ row.partCode }}</td>
-            <td>{{ row.description }}</td>
-            <td>{{ row.qty }}</td>
-            <ng-container *ngFor="let h of supplierHeaders; let si = index">
-              <td>{{ getSupplierPrice(row, si) | number:'1.2-2' }}</td>
-              <td>{{ getSupplierAmount(row, si) | number:'1.2-2' }}</td>
-            </ng-container>
-            <td>{{ row.lowestCostVendor?.vendorName || '—' }}</td>
-            <td>
-              <select [(ngModel)]="row.selectedVendor" (change)="selectVendorManual(row, row.selectedVendor || '')">
-                <option value="">Select</option>
-                <option *ngFor="let s of row.suppliers" [value]="s.vendorName">{{ s.vendorName }}</option>
-              </select>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="recommend" *ngIf="recommendedVendor">Recommended Vendor: <strong>{{ recommendedVendor }}</strong></p>
-    </div>
-    <ng-template #noComparison>
-      <div class="empty-comparison">
-        <p>No comparison data yet. Link an RFQ and click <strong>Auto (API)</strong> to load vendor quotations.</p>
-        <button type="button" class="btn-primary" (click)="loadComparisonAuto()">Load Comparison</button>
-      </div>
-    </ng-template>
+  <section class="approval-table">
+    <div class="side-label">Approval</div>
+    <table>
+      <thead>
+        <tr><th>Line</th><th>Stakeholder</th><th>Email</th><th>Designation</th><th>Status</th><th>Remarks</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let approver of approvers">
+          <td>{{ approver.line }}</td>
+          <td><input [(ngModel)]="approver.managerName"></td>
+          <td><input [(ngModel)]="approver.email"></td>
+          <td><input [(ngModel)]="approver.designation"></td>
+          <td>{{ approver.status }}</td>
+          <td><input [(ngModel)]="approver.remarks"></td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 
-  <div class="pr-split">
-    <section class="pr-card">
-      <h3>Approval Workflow</h3>
-      <table class="pr-table">
-        <thead><tr><th>Line</th><th>Stakeholder</th><th>Designation</th><th>Comments</th><th>Status</th><th>Date / Time</th><th></th></tr></thead>
-        <tbody>
-          <tr *ngFor="let a of approvers; let i = index">
-            <td class="line-cell"><select [(ngModel)]="a.line"><option value="Parallel">Parallel</option><option value="Sequential">Sequential</option></select></td>
-            <td><input [(ngModel)]="a.managerName"></td>
-            <td><input [(ngModel)]="a.designation"></td>
-            <td><input [(ngModel)]="a.remarks"></td>
-            <td><span class="status-pill" [class.approved]="a.status === 'Approved'" [class.pending]="a.status === 'Pending'">{{ a.status }}</span></td>
-            <td>{{ a.dateTime || '—' }}</td>
-            <td><button type="button" class="remove-btn" (click)="removeApprover(i)">×</button></td>
-          </tr>
-        </tbody>
-      </table>
-      <button type="button" class="btn-outline" (click)="addApprover()">+ Add Approver</button>
-    </section>
-
-    <section class="pr-card">
-      <h3>Attachments</h3>
-      <div class="upload-zone" (click)="fileInput.click()">
-        <input #fileInput type="file" multiple hidden (change)="onFileSelected($event)">
-        <span>Drag & drop files or click to upload</span>
-        <small>PDF, JPG, PNG (Max 5MB each)</small>
-      </div>
-      <table class="pr-table" *ngIf="attachments.length">
-        <thead><tr><th>File Name</th><th>Size</th><th>Remark</th><th>Download</th></tr></thead>
-        <tbody>
-          <tr *ngFor="let att of attachments">
-            <td>{{ att.name }}</td><td>{{ att.size }}</td>
-            <td><input [(ngModel)]="att.remark" placeholder="Remark"></td>
-            <td><button type="button" class="btn-outline">⬇</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-  </div>
-
-  <section class="pr-card">
-    <h3>CC Recipients</h3>
-    <div class="cc-row">
-      <input [(ngModel)]="ccInput" placeholder="Provide multiple emails with comma, semicolon, space, or new line">
-      <button type="button" class="btn-outline" (click)="addCc()">+ Add</button>
-    </div>
-    <div class="cc-chips">
-      <span class="chip" *ngFor="let cc of ccRecipients">{{ cc }}</span>
-    </div>
-  </section>
-
-  <div class="pr-footer">
-    <button type="button" class="btn-outline" (click)="downloadPdf()">Download PDF</button>
-    <button type="button" class="btn-warn" (click)="sendBack()">Send Back</button>
-    <button type="button" class="btn-reject" (click)="rejectPr()">Reject</button>
-    <button type="button" class="btn-approve" (click)="approvePr()">Approve</button>
-    <button type="button" class="btn-primary" (click)="submitForm()" [disabled]="isSubmitting">
-      {{ isSubmitting ? 'Submitting…' : 'Submit for Approval' }}
+  <div class="form-actions">
+    <button type="button" class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Submitting...' : 'Submit PR Request' }}
     </button>
   </div>
-
-  <app-status-modal
-    [open]="showStatusModal"
-    title="PR Approval Status"
-    requestType="pr"
-    [summary]="statusSummary"
-    (closed)="showStatusModal = false">
-  </app-status-modal>
 </div>

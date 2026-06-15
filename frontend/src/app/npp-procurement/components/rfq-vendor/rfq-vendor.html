@@ -2,7 +2,7 @@
   <div class="form-header">
     <div class="header-badges">
       <span class="badge primary">NPP PROCUREMENT</span>
-      <span class="badge rfq">Quotation status</span>
+      <span class="badge rfq">📋 Request for Quotation-NPP</span>
     </div>
   </div>
 
@@ -37,16 +37,6 @@
       <div class="field-group">
         <label>Title of Activity *</label>
         <input class="form-input" [(ngModel)]="rfqVendorForm.titleOfActivity" placeholder="Enter title">
-      </div>
-      <div class="field-group">
-        <label>Quotation Status</label>
-        <select class="form-input" [(ngModel)]="rfqVendorForm.quotationStatus">
-          <option>Draft</option>
-          <option>Submitted</option>
-          <option>Under Review</option>
-          <option>Accepted</option>
-          <option>Rejected</option>
-        </select>
       </div>
       <div class="field-group">
         <label>Priority</label>
@@ -149,7 +139,10 @@
               </select>
             </td>
             <td>
-              <input class="form-input" [(ngModel)]="approver.managerName" (ngModelChange)="onManagerLookup(approver, $event)" placeholder="Type name or email">
+              <select class="form-input" [(ngModel)]="approver.managerName" (change)="onManagerChange(approver, approver.managerName)">
+                <option value="">Select Manager</option>
+                <option *ngFor="let m of managerOptions" [value]="m.name">{{m.name}}</option>
+              </select>
             </td>
             <td><input class="form-input" [(ngModel)]="approver.email" placeholder="Email"></td>
             <td><input class="form-input" [(ngModel)]="approver.designation" placeholder="Designation"></td>
@@ -164,7 +157,7 @@
   <!-- Actions -->
   <div class="form-actions">
     <button class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
-      {{ isSubmitting ? 'Submitting...' : 'Submit Quotation Status' }}
+      {{ isSubmitting ? 'Submitting...' : '✅ Submit Request for Quotation' }}
     </button>
   </div>
 </div>

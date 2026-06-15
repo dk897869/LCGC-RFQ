@@ -31,8 +31,6 @@ import { VendorsComponent } from '../vendors/VendorsComponent';
 import { ApprovalsComponent } from '../approvals/approvals';
 import { PoNpp } from '../po-npp/po-npp';
 import { WccCertificate } from '../wcc-certificate/wcc-certificate';
-import { ReportsDashboardComponent } from '../reports-dashboard/reports-dashboard';
-import { VendorDashboardComponent } from '../vendor-dashboard/vendor-dashboard';
 
 interface Toast {
   id: number;
@@ -90,8 +88,7 @@ interface ActivityItem {
     Bidding, PaymentRequest, Dqms, Npi, SystemBom, BomForecast,
     PriceApproval, PlanStock, SupplierPerformance, VehicularMs,
     ProfileComponent, PartsComponent, VendorsComponent, ApprovalsComponent,
-    PoNpp, WccCertificate, NppProcurementComponent,
-    ReportsDashboardComponent, VendorDashboardComponent
+    PoNpp, WccCertificate, NppProcurementComponent
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
@@ -105,12 +102,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showMobileMenu: boolean = false;
   openDropdown: string | null = null;
   showUserMenu: boolean = false;
-  epApprovalInitialTab: 'requests' | 'approvals' | 'status' = 'requests';
   activeSection: 'requests' | 'approvals' | 'status' = 'requests';
-
-  get isFocusMode(): boolean {
-    return this.activeTab === 'npp-procurement' || this.activeTab === 'ep-approval';
-  }
   showApprovalsSection: boolean = false;
   selectedNppTab: string = 'rfq-npp-form';
 
@@ -222,7 +214,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   unifiedSearchTerm = '';
   unifiedTypeFilter: 'all' | 'ep' | 'rfq' | 'npp' | 'pr' | 'po' | 'payment' | 'wcc' | 'comparison' = 'all';
   unifiedStats = { total: 0, pending: 0, approved: 0, rejected: 0, inProcess: 0 };
-  selectedRequestIds = new Set<string>();
 
   private readonly demoUnifiedRequests: UnifiedRequest[] = [
     {
@@ -397,13 +388,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     switch(action) {
       case 'approvals-request':
-        this.navigateToEpApproval('requests');
+        this.openApprovalSection('requests');
         break;
       case 'approvals-approval':
-        this.navigateToEpApproval('approvals');
+        this.openApprovalSection('approvals');
         break;
       case 'approvals-status':
-        this.navigateToEpApproval('status');
+        this.openApprovalSection('status');
         break;
       case 'nonbom-rfq-request':
         this.navigateToNppTab('rfq-request');
@@ -514,16 +505,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.openDropdown = null;
   }
 
-  navigateToEpApproval(tab: 'requests' | 'approvals' | 'status' = 'requests') {
-    this.epApprovalInitialTab = tab;
-    this.navigateToModule('ep-approval');
-  }
-
-  backToDashboardFromFocus() {
-    this.setActiveTab('dashboard');
-    this.loadAllParallel();
-  }
-
   navigateToNppTab(tabId: string) {
     const validTabs = [
       'rfq-npp-form', 'pr-request', 'new-vendor', 'rfq-request',
@@ -574,7 +555,8 @@ openApprovalSection(section: 'requests' | 'approvals' | 'status') {
 }
 
   openReportsModal() {
-    this.setActiveTab('reports');
+    this.showReportsModal = true;
+    this.generateReport();
     this.openDropdown = null;
   }
 
@@ -746,44 +728,11 @@ openApprovalSection(section: 'requests' | 'approvals' | 'status') {
   }
 
   loadUnifiedData() {
-    this.isLoading = true;
-    this.authService.getUnifiedApprovals().subscribe({
-      next: (res: any) => {
-        const rows = res?.data || [];
-        this.unifiedRequests = rows.map((r: any) => this.mapUnifiedRow(r));
-        this.updateUnifiedStats();
-        this.updateApprovalStatsByType();
-        this.applyUnifiedFilters();
-        this.isLoading = false;
-        this.showToast('Data loaded successfully', 'success');
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.unifiedRequests = [];
-        this.updateUnifiedStats();
-        this.applyUnifiedFilters();
-        this.isLoading = false;
-        this.showToast('Could not load requests from API', 'error');
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  private mapUnifiedRow(r: any): UnifiedRequest {
-    return {
-      id: String(r.id || r._id || ''),
-      type: (r.type || 'npp') as UnifiedRequest['type'],
-      uniqueSerialNo: r.serialNo || r.uniqueSerialNo || '',
-      title: r.title || r.titleOfActivity || 'Untitled',
-      requester: r.requester || r.requesterName || '',
-      email: r.email || r.emailId || '',
-      department: r.department || '',
-      priority: r.priority || 'Medium',
-      status: r.status || 'Pending',
-      amount: Number(r.amount || 0),
-      requestDate: r.requestDate || r.createdAt || '',
-      vendor: r.vendor || r.vendorName || ''
-    };
+    this.unifiedRequests = [...this.demoUnifiedRequests];
+    this.updateUnifiedStats();
+    this.updateApprovalStatsByType();
+    this.applyUnifiedFilters();
+    this.isLoading = false;
   }
 
   applyUnifiedFilters() {
@@ -839,84 +788,35 @@ openApprovalSection(section: 'requests' | 'approvals' | 'status') {
   }
 
   loadAllParallel() {
-    this.isStatsLoading = true;
-    const started = Date.now();
-    this.authService.getDashboardData().subscribe({
-      next: (res: any) => {
-        const wait = Math.max(0, 2000 - (Date.now() - started));
-        setTimeout(() => {
-        const d = res?.data || {};
-        this.displayTotalRequests = d.totalRequests ?? 0;
-        this.displayPending = d.pending ?? 0;
-        this.displayApproved = d.approved ?? 0;
-        this.displaySuccessRate = d.successRate ?? 0;
-        this.vendorCount = d.vendorCount ?? 0;
-        this.partCount = d.partCount ?? 0;
-        this.isStatsLoading = false;
-        this.showToast(`Dashboard loaded: ${this.displayTotalRequests} total requests`, 'success');
-        this.cdr.detectChanges();
-        }, wait);
-      },
-      error: () => {
-        const wait = 2000;
-        setTimeout(() => {
-          this.displayTotalRequests = this.unifiedStats.total || 0;
-          this.displayPending = this.unifiedStats.pending || 0;
-          this.displayApproved = this.unifiedStats.approved || 0;
-          this.displaySuccessRate = 0;
-          this.isStatsLoading = false;
-          this.showToast('Dashboard stats unavailable', 'error');
-          this.cdr.detectChanges();
-        }, wait);
-      }
-    });
-
-    this.authService.getUnifiedApprovals().subscribe({
-      next: (res: any) => {
-        const rows = res?.data || [];
-        if (rows.length) {
-          this.unifiedRequests = rows.map((r: any) => this.mapUnifiedRow(r));
-          this.updateUnifiedStats();
-          this.applyUnifiedFilters();
-        }
-      }
-    });
-
-    this.authService.getDashboardNotifications().subscribe({
-      next: (feed: any) => {
-        if (Array.isArray(feed) && feed.length) {
-          this.activityFeed = feed.map((a: any) => ({
-            ...a,
-            time: a.time ? new Date(a.time).toLocaleString('en-IN') : 'Recently'
-          }));
-        }
-        this.isRecentLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => { this.isRecentLoading = false; }
-    });
-
+    // Mock data loading
+    this.isStatsLoading = false;
+    this.isRecentLoading = false;
     this.isVendorLoading = false;
     this.isPartLoading = false;
+    this.vendorCount = 24;
+    this.partCount = 156;
+    this.displayTotalRequests = 156;
+    this.displayPending = 23;
+    this.displayApproved = 89;
+    this.displaySuccessRate = 57;
+
+    this.activityFeed = [
+      { icon: '✅', text: 'RFQ Request #RFQ/2026/0010', time: '10 min ago', type: 'approved', color: '#10b981' },
+      { icon: '⏳', text: 'PR Request #PR/2026/0126', time: '45 min ago', type: 'pending', color: '#f59e0b' },
+      { icon: '📦', text: 'PO Generated #PO/2026/0008', time: '2 hrs ago', type: 'approved', color: '#10b981' },
+      { icon: '🏢', text: 'Vendor Added: Radiant Appliances', time: '3 hrs ago', type: 'info', color: '#3b82f6' }
+    ];
   }
 
   generateReport() {
     this.isLoadingReport = true;
-    this.authService.getReports('', '', this.reportType, '').subscribe({
-      next: (res: any) => {
-        const report = res?.data || res || {};
-        this.reportData = {
-          summary: report.summary || { total: 0, approved: 0, rejected: 0, pending: 0 },
-          details: report.details || report.data || []
-        };
-        this.isLoadingReport = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.isLoadingReport = false;
-        this.reportData = { summary: { total: 0, approved: 0, rejected: 0, pending: 0 }, details: [] };
-      }
-    });
+    setTimeout(() => {
+      this.reportData = {
+        summary: { total: 156, approved: 89, rejected: 44, pending: 23 },
+        details: []
+      };
+      this.isLoadingReport = false;
+    }, 500);
   }
 
   exportReportToExcel() {
@@ -948,81 +848,25 @@ openApprovalSection(section: 'requests' | 'approvals' | 'status') {
   }
 
   approveUnifiedRequest(req: UnifiedRequest) {
-    this.authService.approveUnifiedRequest(req.type, req.id, this.approvalRemarks).subscribe({
-      next: () => {
-        req.status = 'Approved';
-        const request = this.unifiedRequests.find(item => item.id === req.id);
-        if (request) request.status = 'Approved';
-        this.updateUnifiedStats();
-        this.updateApprovalStatsByType();
-        this.applyUnifiedFilters();
-        this.showToast(`${req.type.toUpperCase()} approved!`, 'success');
-        this.closeUnifiedViewModal();
-      },
-      error: () => this.showToast('Approval failed', 'error')
-    });
+    req.status = 'Approved';
+    const request = this.unifiedRequests.find(item => item.id === req.id);
+    if (request) request.status = 'Approved';
+    this.updateUnifiedStats();
+    this.updateApprovalStatsByType();
+    this.applyUnifiedFilters();
+    this.showToast(`${req.type.toUpperCase()} approved!`, 'success');
+    this.closeUnifiedViewModal();
   }
 
   rejectUnifiedRequest(req: UnifiedRequest) {
-    this.authService.rejectUnifiedRequest(req.type, req.id, this.approvalRemarks).subscribe({
-      next: () => {
-        req.status = 'Rejected';
-        const request = this.unifiedRequests.find(item => item.id === req.id);
-        if (request) request.status = 'Rejected';
-        this.updateUnifiedStats();
-        this.updateApprovalStatsByType();
-        this.applyUnifiedFilters();
-        this.showToast(`${req.type.toUpperCase()} rejected`, 'info');
-        this.closeUnifiedViewModal();
-      },
-      error: () => this.showToast('Rejection failed', 'error')
-    });
-  }
-
-  toggleRequestSelection(id: string): void {
-    if (this.selectedRequestIds.has(id)) this.selectedRequestIds.delete(id);
-    else this.selectedRequestIds.add(id);
-  }
-
-  isRequestSelected(id: string): boolean {
-    return this.selectedRequestIds.has(id);
-  }
-
-  toggleSelectAllRequests(): void {
-    const pending = this.filteredUnifiedRequests.filter(r => r.status === 'Pending');
-    if (pending.every(r => this.selectedRequestIds.has(r.id))) {
-      pending.forEach(r => this.selectedRequestIds.delete(r.id));
-    } else {
-      pending.forEach(r => this.selectedRequestIds.add(r.id));
-    }
-  }
-
-  bulkApproveSelected(): void {
-    const ids = Array.from(this.selectedRequestIds);
-    if (!ids.length) { this.showToast('Select at least one request', 'warning'); return; }
-    const type = this.unifiedTypeFilter === 'all' ? 'npp' : this.unifiedTypeFilter;
-    this.authService.bulkApproveRequests(ids, type).subscribe({
-      next: () => {
-        this.loadUnifiedData();
-        this.selectedRequestIds.clear();
-        this.showToast('Bulk approval completed', 'success');
-      },
-      error: () => this.showToast('Bulk approval failed', 'error')
-    });
-  }
-
-  bulkRejectSelected(): void {
-    const ids = Array.from(this.selectedRequestIds);
-    if (!ids.length) { this.showToast('Select at least one request', 'warning'); return; }
-    const type = this.unifiedTypeFilter === 'all' ? 'npp' : this.unifiedTypeFilter;
-    this.authService.bulkRejectRequests(ids, type, 'Bulk rejection from dashboard').subscribe({
-      next: () => {
-        this.loadUnifiedData();
-        this.selectedRequestIds.clear();
-        this.showToast('Bulk rejection completed', 'info');
-      },
-      error: () => this.showToast('Bulk rejection failed', 'error')
-    });
+    req.status = 'Rejected';
+    const request = this.unifiedRequests.find(item => item.id === req.id);
+    if (request) request.status = 'Rejected';
+    this.updateUnifiedStats();
+    this.updateApprovalStatsByType();
+    this.applyUnifiedFilters();
+    this.showToast(`${req.type.toUpperCase()} rejected`, 'info');
+    this.closeUnifiedViewModal();
   }
 
   openCertificateModal(req: UnifiedRequest) {
@@ -1096,12 +940,8 @@ openApprovalSection(section: 'requests' | 'approvals' | 'status') {
     this.setGreeting();
     this.checkBirthday();
     this.startClock();
-    if (this.userRole === 'Vendor') {
-      this.activeTab = 'vendor-dashboard';
-    } else {
-      this.loadAllParallel();
-      this.loadUnifiedData();
-    }
+    this.loadAllParallel();
+    this.loadUnifiedData();
   }
 
   ngOnDestroy() {

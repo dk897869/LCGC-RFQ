@@ -50,11 +50,6 @@ interface RFQApprover {
   remarks: string;
 }
 
-interface RFQAttachment {
-  name: string;
-  fileName: string;
-}
-
 @Component({
   selector: 'app-rfq-requisition',
   standalone: true,
@@ -65,16 +60,11 @@ interface RFQAttachment {
 export class RfqRequisitionComponent implements OnInit {
   activeSubMenu: 'rfq-list' | 'create-rfq' | 'approvals' | 'status' = 'rfq-list';
 
-  @Input() hideInternalSidebar = false;
-
-  @Input() set initialSubMenu(value: 'rfq-list' | 'create-rfq' | 'approvals' | 'status' | undefined) {
+  @Input() set initialSubMenu(value: 'rfq-list' | 'approvals' | 'status' | undefined) {
     if (!value) return;
     this.activeSubMenu = value;
-    if (value === 'approvals' || value === 'status') {
+    if (value === 'approvals') {
       this.loadRFQs();
-    }
-    if (value === 'create-rfq') {
-      this.initCreateForm();
     }
   }
 
@@ -93,7 +83,6 @@ export class RfqRequisitionComponent implements OnInit {
   ccList: string[] = [];
   managerOptions: { name: string; email: string; designation?: string; role?: string }[] = [];
   rfqApprovers: RFQApprover[] = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
-  rfqAttachments: RFQAttachment[] = [{ name: 'Attachment 1', fileName: '' }];
 
   // Line items for the RFQ form
   rfqLineItems: RFQLineItem[] = [
@@ -155,11 +144,7 @@ export class RfqRequisitionComponent implements OnInit {
     this.formData.department  = this.currentUser?.department || 'Purchase';
     this.formData.contactNo   = this.currentUser?.contactNo || '';
     this.formData.organization = this.currentUser?.organization || '';
-    if (this.hideInternalSidebar && this.activeSubMenu === 'create-rfq') {
-      this.initCreateForm();
-    } else if (this.activeSubMenu !== 'create-rfq') {
-      this.loadRFQs();
-    }
+    this.loadRFQs();
     this.loadManagerOptions();
     this.loadAllSerialNumbers();
   }
@@ -468,10 +453,6 @@ export class RfqRequisitionComponent implements OnInit {
   // ====================== CREATE MODAL METHODS ======================
   
   openCreate() {
-    this.initCreateForm(true);
-  }
-
-  initCreateForm(openModal = false) {
     this.isPrefillLoading = true;
     this.authService.getLoggedInUser().subscribe({
       next: (res: any) => {
@@ -480,8 +461,7 @@ export class RfqRequisitionComponent implements OnInit {
         this.prepareDraftSerial();
         this.loadDraftOptions();
         this.isPrefillLoading = false;
-        if (openModal) this.showCreateModal = true;
-        this.activeSubMenu = 'create-rfq';
+        this.showCreateModal = true;
         this.showToast('success', 'Form prefilled from API profile data.');
       },
       error: () => {
@@ -489,8 +469,7 @@ export class RfqRequisitionComponent implements OnInit {
         this.prepareDraftSerial();
         this.loadDraftOptions();
         this.isPrefillLoading = false;
-        if (openModal) this.showCreateModal = true;
-        this.activeSubMenu = 'create-rfq';
+        this.showCreateModal = true;
         this.showToast('info', 'Prefilled from local session.');
       }
     });
@@ -521,7 +500,6 @@ export class RfqRequisitionComponent implements OnInit {
     this.ccInput = '';
     this.ccList = [];
     this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
-    this.rfqAttachments = [{ name: 'Attachment 1', fileName: '' }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
   }
@@ -548,7 +526,6 @@ export class RfqRequisitionComponent implements OnInit {
     this.ccInput = '';
     this.ccList = [];
     this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
-    this.rfqAttachments = [{ name: 'Attachment 1', fileName: '' }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
   }
@@ -619,12 +596,9 @@ export class RfqRequisitionComponent implements OnInit {
     if (!this.rfqApprovers.length) this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' });
   }
 
-  onManagerLookup(row: RFQApprover, value: string) {
-    const term = (value || '').trim().toLowerCase();
-    const manager = this.managerOptions.find(m =>
-      (m.name || '').toLowerCase() === term || (m.email || '').toLowerCase() === term
-    );
-    row.managerName = value;
+  onManagerChange(row: RFQApprover, selectedName: string) {
+    const manager = this.managerOptions.find(m => m.name === selectedName);
+    row.managerName = selectedName;
     row.email = manager?.email || '';
     row.designation = manager?.designation || manager?.role || '';
   }
@@ -680,19 +654,6 @@ export class RfqRequisitionComponent implements OnInit {
   closePhotoModal() {
     this.showPhotoModal = false;
     this.selectedPhotoPreview = '';
-  }
-
-  addRfqAttachment() {
-    this.rfqAttachments.push({ name: `Attachment ${this.rfqAttachments.length + 1}`, fileName: '' });
-  }
-
-  removeRfqAttachment(index: number) {
-    if (this.rfqAttachments.length > 1) this.rfqAttachments.splice(index, 1);
-  }
-
-  onRfqAttachmentSelected(attachment: RFQAttachment, event: Event) {
-    const input = event.target as HTMLInputElement;
-    attachment.fileName = input.files?.[0]?.name || '';
   }
 
   downloadExcelTemplate() {
@@ -761,7 +722,6 @@ export class RfqRequisitionComponent implements OnInit {
       rfqLineItems: this.rfqLineItems,
       ccList: this.ccList,
       rfqApprovers: this.rfqApprovers,
-      rfqAttachments: this.rfqAttachments,
       rfqDraftSerialNo: this.rfqDraftSerialNo || this.generateLocalSerial('RFQ-DRAFT'),
       savedAt: new Date().toISOString()
     };
@@ -784,7 +744,6 @@ export class RfqRequisitionComponent implements OnInit {
       this.rfqLineItems = draft.rfqLineItems || this.rfqLineItems;
       this.ccList = draft.ccList || [];
       this.rfqApprovers = draft.rfqApprovers || [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
-      this.rfqAttachments = draft.rfqAttachments || [{ name: 'Attachment 1', fileName: '' }];
       this.rfqDraftSerialNo = this.generateLocalSerial('RFQ-DRAFT');
       this.rfqSerialFixed = false;
       this.showToast('success', 'Draft loaded. Serial number refreshed until final submit.');
@@ -868,7 +827,6 @@ export class RfqRequisitionComponent implements OnInit {
       purposeAndObjective: this.formData.description || '',
       items: validItems,
       ccTo: this.ccList,
-      attachments: this.rfqAttachments.filter(a => a.fileName),
       status: 'Pending',
       requestDate: new Date().toISOString()
     };
@@ -904,36 +862,9 @@ export class RfqRequisitionComponent implements OnInit {
 
   // ====================== VIEW METHODS ======================
   
-  viewItem(item: RFQItem) {
-    const id = item._id || item.id;
-    if (id) {
-      this.isPrefillLoading = true;
-      this.authService.getRFQById(String(id)).subscribe({
-        next: (res: any) => {
-          const data = res?.data || res?.rfq || item;
-          this.prefillFormFromData(data);
-          this.activeSubMenu = 'create-rfq';
-          this.showViewModal = false;
-          this.showCreateModal = false;
-          this.isPrefillLoading = false;
-          this.showToast('success', 'RFQ loaded for viewing.');
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.prefillFormFromData(item);
-          this.activeSubMenu = 'create-rfq';
-          this.showViewModal = false;
-          this.isPrefillLoading = false;
-          this.cdr.detectChanges();
-        }
-      });
-      return;
-    }
-    this.prefillFormFromData(item);
-    this.activeSubMenu = 'create-rfq';
-    this.showViewModal = false;
-    this.showCreateModal = false;
-    this.cdr.detectChanges();
+  viewItem(item: RFQItem) { 
+    this.selectedItem = item; 
+    this.showViewModal = true; 
   }
 
   closeViewModal() {

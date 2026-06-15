@@ -19,54 +19,6 @@ $navy: #0f2a5e;
 $shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
 $shadow-md: 0 6px 24px rgba(0, 0, 0, 0.12);
 
-.sidebar--focus {
-  .sb-logo { margin-bottom: 12px; }
-}
-
-.sb-focus-back {
-  padding: 12px 16px;
-
-  &__btn {
-    width: 100%;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.08);
-    color: #e2e8f0;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: left;
-  }
-}
-
-.tab-wrap--focus {
-  padding: 0;
-  min-height: calc(100vh - #{$topbar-h});
-}
-
-.recent-requests-panel {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #dbe3ef;
-  box-shadow: $shadow-md;
-  padding: 16px 20px;
-  margin-top: 16px;
-
-  &__hdr {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-
-    h3 { font-size: 1rem; color: $navy; }
-  }
-}
-
-.data-table--compact {
-  font-size: 0.85rem;
-}
-
 // Shell Layout
 .shell {
   display: flex;
@@ -82,32 +34,6 @@ $shadow-md: 0 6px 24px rgba(0, 0, 0, 0.12);
       margin-left: $sb-collapsed;
     }
   }
-
-  &.focus-mode .main {
-    margin-left: 0;
-    width: 100%;
-  }
-}
-
-.focus-back-float {
-  position: fixed;
-  top: 78px;
-  left: 16px;
-  z-index: 100;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #0f2a5e;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15,42,94,.1);
-}
-
-.main--focus {
-  margin-left: 0 !important;
-  width: 100%;
 }
 
 // Toast Notifications
@@ -1434,25 +1360,6 @@ $shadow-md: 0 6px 24px rgba(0, 0, 0, 0.12);
       border-color: $navy;
       box-shadow: 0 0 0 3px rgba(15, 42, 94, 0.08);
     }
-  }
-}
-
-.bulk-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  background: #eff6ff;
-  border-bottom: 1px solid #bfdbfe;
-  font-size: 0.85rem;
-
-  .mini--reject {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    cursor: pointer;
   }
 }
 

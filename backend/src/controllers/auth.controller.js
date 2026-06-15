@@ -2025,11 +2025,11 @@ exports.createEPRequest = async (req, res) => {
   try {
     const {
       requester, department, email, contactNo, organization,
-      title, amount, vendor, priority, description, objective,
+      title, amount, priority, description, objective,
       requestDate, stakeholders, ccList, attachments
     } = req.body;
 
-    if (!title || !amount || !vendor || !email) {
+    if (!title || !amount || !email) {
       return res.status(400).json({ success: false, message: "Title, amount, vendor and email are required" });
     }
 
@@ -2046,7 +2046,6 @@ exports.createEPRequest = async (req, res) => {
         organization: organization || 'Radiant Appliances',
         title,
         amount: Number(amount),
-        vendor,
         priority: priority || 'Medium',
         description: description || '',
         objective: objective || '',
@@ -2099,13 +2098,13 @@ exports.createEPRequest = async (req, res) => {
 
 exports.getAllEPRequests = async (req, res) => {
   try {
-    const { department, status, priority, startDate, endDate, vendor } = req.query;
+    const { department, status, priority, startDate, endDate } = req.query;
 
     let filter = {};
     if (department) filter.department = { $regex: department, $options: 'i' };
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
-    if (vendor) filter.vendor = { $regex: vendor, $options: 'i' };
+    // if (vendor) filter.vendor = { $regex: vendor, $options: 'i' };
     if (startDate || endDate) {
       filter.requestDate = {};
       if (startDate) filter.requestDate.$gte = startDate;

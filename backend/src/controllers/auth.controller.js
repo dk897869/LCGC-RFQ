@@ -2029,12 +2029,8 @@ exports.createEPRequest = async (req, res) => {
       requestDate, stakeholders, ccList, attachments
     } = req.body;
 
-    // ✅ Remove 'vendor' from required fields
     if (!title || !amount || !email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Title, amount and email are required"  // Updated message
-      });
+      return res.status(400).json({ success: false, message: "Title, amount, vendor and email are required" });
     }
 
     const validStakeholders = (stakeholders || []).filter(s => s.name && s.email);
@@ -2049,7 +2045,6 @@ exports.createEPRequest = async (req, res) => {
         contactNo: contactNo || '',
         organization: organization || 'Radiant Appliances',
         title,
-        vendor: vendor || '',  // Allow empty vendor
         amount: Number(amount),
         priority: priority || 'Medium',
         description: description || '',
@@ -2100,6 +2095,7 @@ exports.createEPRequest = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 exports.getAllEPRequests = async (req, res) => {
   try {
     const { department, status, priority, startDate, endDate } = req.query;

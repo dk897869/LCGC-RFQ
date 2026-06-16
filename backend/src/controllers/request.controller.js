@@ -97,6 +97,12 @@ const createRequest = async (req, res) => {
     // ====================== SEND EMAILS (AFTER savedRequest is created) ======================
     
     // 1. Send email to requester
+    res.status(201).json({
+      success: true,
+      message: 'EP Request created successfully',
+      data: savedRequest
+    });
+
     await epNotify.sendEPRequestCreatedEmail(savedRequest);
     console.log(`📧 Created email sent to requester: ${savedRequest.email}`);
     
@@ -115,14 +121,17 @@ const createRequest = async (req, res) => {
       }
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'EP Request created successfully',
-      data: savedRequest
-    });
+    if (!res.headersSent) {
+      res.status(201).json({
+        success: true,
+        message: 'EP Request created successfully',
+        data: savedRequest
+      });
+    }
 
   } catch (err) {
     console.error("❌ Error in createRequest:", err);
+    if (res.headersSent) return;
     res.status(500).json({
       success: false,
       message: err.message || "Failed to create EP Request"

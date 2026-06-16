@@ -264,18 +264,24 @@ exports.createNppRequest = async (req, res) => {
     
     await nppRequest.save();
     
-    // Send email notifications
-    await sendNppEmail(nppRequest, `New ${type} Request - ${serialNo}`, `A new request has been created and is pending your approval.`);
-    
     res.status(201).json({
       success: true,
       message: `${type} request created successfully`,
       data: nppRequest,
       serialNo: serialNo
     });
+
+    setImmediate(async () => {
+      try {
+        await sendNppEmail(nppRequest, `New ${type} Request - ${serialNo}`, `A new request has been created and is pending your approval.`);
+      } catch (emailError) {
+        console.error('NPP notification error after save:', emailError.message);
+      }
+    });
     
   } catch (error) {
     console.error('Create NPP request error:', error);
+    if (res.headersSent) return;
     res.status(500).json({ success: false, message: error.message });
   }
 };

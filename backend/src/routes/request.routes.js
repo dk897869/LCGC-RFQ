@@ -8,6 +8,7 @@ router.use(verifyToken);
 
 // Dashboard & Stats
 router.get('/stats/dashboard', requestController.getDashboardStats);
+router.get('/stats', requestController.getRequestStats);
 router.get('/departments', requestController.getDepartments);
 
 // User specific
@@ -20,6 +21,7 @@ router.get('/department/:department', requestController.getRequestsByDepartment)
 // CRUD operations
 router.get('/', requestController.getRequests);
 router.post('/', requestController.createRequest);
+router.get('/:id/full', requestController.getRequestFull);
 router.get('/:id', requestController.getRequestById);
 router.put('/:id', requestController.updateRequest);
 router.delete('/:id', requestController.deleteRequest);

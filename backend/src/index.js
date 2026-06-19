@@ -320,6 +320,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 });
 
 // ==================== GOOGLE LOGIN API ====================
+// In index.js - make sure this route is before any middleware that might interfere
 app.post('/api/auth/google', async (req, res) => {
   console.log('📥 Google login endpoint hit');
 
@@ -372,7 +373,16 @@ app.post('/api/auth/google', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    const token = generateToken(user);
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        rights: user.rights || {}
+      },
+      process.env.JWT_SECRET || 'fallback_secret_change_me',
+      { expiresIn: process.env.JWT_EXPIRES || "7d" }
+    );
 
     res.json({
       success: true,
@@ -397,7 +407,6 @@ app.post('/api/auth/google', async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
 // ==================== HEALTH CHECK ====================
 app.get('/api/health', async (req, res) => {
   const { verifySmtpConnection } = require('./services/mail.service');

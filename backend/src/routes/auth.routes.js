@@ -77,30 +77,37 @@ const generateToken = (user) => {
   );
 };
 
-// ==================== GOOGLE LOGIN ROUTE ====================
+// ==================== GOOGLE LOGIN ROUTE - FIXED ====================
 router.post('/google', async (req, res) => {
+  console.log('📥 Google login endpoint hit');
+  
   try {
     const { credential } = req.body;
-    
+
     if (!credential) {
       return res.status(400).json({ success: false, message: 'Google credential is required' });
     }
-    
+
+    // Decode the Google credential
     const decoded = jwt.decode(credential);
     
     if (!decoded || !decoded.email) {
       return res.status(400).json({ success: false, message: 'Invalid Google credential' });
     }
-    
+
     const { email, name, picture, sub: googleId } = decoded;
     const User = require('../models/user.model');
-    
-    let user = await User.findOne({ $or: [{ googleId: googleId }, { email: email.toLowerCase() }] });
-    
+
+    // Find existing user or create new one
+    let user = await User.findOne({
+      $or: [{ googleId: googleId }, { email: email.toLowerCase() }]
+    });
+
     if (!user) {
+      console.log('👤 Creating new user from Google login');
       const randomPassword = crypto.randomBytes(20).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
-      
+
       user = new User({
         name: name || email.split('@')[0],
         email: email.toLowerCase(),
@@ -112,17 +119,32 @@ router.post('/google', async (req, res) => {
         rights: {},
         isActive: true
       });
-      
+
       await user.save();
+      console.log('✅ New user created:', user.email);
     } else if (!user.googleId) {
+      console.log('🔗 Linking Google account to existing user');
       user.googleId = googleId;
       if (picture && !user.profileImage) user.profileImage = picture;
       await user.save();
     }
-    
-    const token = generateToken(user);
-    await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
-    
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        rights: user.rights || {}
+      },
+      process.env.JWT_SECRET || 'fallback_secret_change_me',
+      { expiresIn: process.env.JWT_EXPIRES || "7d" }
+    );
+
     res.json({
       success: true,
       message: 'Google login successful',
@@ -132,20 +154,20 @@ router.post('/google', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        department: user.department,
-        contactNo: user.contactNo,
-        organization: user.organization,
+        department: user.department || 'Purchase',
+        contactNo: user.contactNo || '',
+        organization: user.organization || 'Radiant Appliances',
         profileImage: user.profileImage || '',
         emailVerified: user.emailVerified,
         rights: user.rights || {}
       }
     });
+
   } catch (error) {
-    console.error('Google login error:', error);
+    console.error('❌ Google login error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
 // ==================== GOOGLE LOGIN WITH ID TOKEN ====================
 router.post('/google-idtoken', async (req, res) => {
   try {

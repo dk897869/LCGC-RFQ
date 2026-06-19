@@ -45,7 +45,7 @@ const authMiddleware = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'lcgc-secret-key-2024');
     req.user = await User.findById(decoded.id).select('-password') || decoded;
     next();
   } catch (error) {
@@ -72,7 +72,7 @@ const moduleAccessMiddleware = (req, res, next) => {
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role, rights: user.rights || {} },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET || 'lcgc-secret-key-2024',
     { expiresIn: process.env.JWT_EXPIRES || "7d" }
   );
 };

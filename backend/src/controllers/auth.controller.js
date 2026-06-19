@@ -78,7 +78,7 @@ function canActOnEpRequest(user, epDoc) {
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role, rights: user.rights || {} },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET || 'lcgc-secret-key-2024',
     { expiresIn: process.env.JWT_EXPIRES || "7d" }
   );
 };
@@ -1453,7 +1453,7 @@ exports.socialLoginCallback = async (req, res) => {
     
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role, rights: user.rights || {} },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'lcgc-secret-key-2024',
       { expiresIn: process.env.JWT_EXPIRES || "7d" }
     );
     
@@ -1944,6 +1944,7 @@ exports.sendSmsOTP = async (req, res) => {
   }
 };
 
+// ==================== SEND SMS OTP (OVERLOADED - KEEP BOTH) ====================
 exports.sendSmsOTP = async (req, res) => {
   try {
     const { mobile, type = 'login' } = req.body;

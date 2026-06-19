@@ -1,4 +1,4 @@
-﻿require("dotenv").config();  // âœ… MUST BE FIRST!
+﻿require("dotenv").config();  // ✅ MUST BE FIRST!
 
 const express = require("express");
 const path = require("path");
@@ -20,7 +20,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
-    // âœ… Require User model HERE - not at the top level
+    // ✅ Require User model HERE - not at the top level
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
@@ -65,7 +65,7 @@ const safeRequire = (routePath, defaultValue) => {
     }
     return module;
   } catch (err) {
-    console.warn(`âš ï¸ Could not load ${routePath}: ${err.message}`);
+    console.warn(`⚠️ Could not load ${routePath}: ${err.message}`);
     return defaultValue || ((req, res) => res.status(501).json({
       success: false,
       message: `${routePath} API not available yet`
@@ -152,7 +152,7 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    console.log(`âš ï¸ CORS request from: ${origin}`);
+    console.log(`⚠️ CORS request from: ${origin}`);
     // Allow it anyway for production
     return callback(null, true);
   },
@@ -204,7 +204,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Custom logging middleware
 app.use((req, res, next) => {
-  console.log(`ðŸ“Œ ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`);
+  console.log(`📌 ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`);
   next();
 });
 
@@ -227,7 +227,7 @@ const generateToken = (user) => {
 
 // ==================== AVATAR UPLOAD ROUTE ====================
 app.post('/api/auth/upload-avatar', (req, res) => {
-  console.log('ðŸ“ /api/auth/upload-avatar route hit');
+  console.log('📍 /api/auth/upload-avatar route hit');
 
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
@@ -239,7 +239,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 
   uploadAvatar.any()(req, res, async (err) => {
     if (err) {
-      console.error('âŒ Upload error:', err);
+      console.error('❌ Upload error:', err);
       return res.status(400).json({
         success: false,
         message: err.message
@@ -256,14 +256,14 @@ app.post('/api/auth/upload-avatar', (req, res) => {
         });
       }
 
-      console.log('âœ… File received:', {
+      console.log('✅ File received:', {
         fieldname: uploadedFile.fieldname,
         originalname: uploadedFile.originalname,
         mimetype: uploadedFile.mimetype,
         size: uploadedFile.size
       });
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
       const User = require('./models/user.model');
 
       const avatarUrl = `/uploads/avatars/${uploadedFile.filename}`;
@@ -289,7 +289,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
       });
 
     } catch (error) {
-      console.error('âŒ Avatar upload error:', error);
+      console.error('❌ Avatar upload error:', error);
 
       if (error.name === 'JsonWebTokenError') {
         return res.status(401).json({
@@ -308,7 +308,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 
 // ==================== GOOGLE LOGIN API ====================
 app.post('/api/auth/google', async (req, res) => {
-  console.log('ðŸ“¥ Google login endpoint hit');
+  console.log('📥 Google login endpoint hit');
 
   try {
     const { credential } = req.body;
@@ -331,7 +331,7 @@ app.post('/api/auth/google', async (req, res) => {
     });
 
     if (!user) {
-      console.log('ðŸ‘¤ Creating new user from Google login');
+      console.log('👤 Creating new user from Google login');
       const randomPassword = crypto.randomBytes(20).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
@@ -348,9 +348,9 @@ app.post('/api/auth/google', async (req, res) => {
       });
 
       await user.save();
-      console.log('âœ… New user created:', user.email);
+      console.log('✅ New user created:', user.email);
     } else if (!user.googleId) {
-      console.log('ðŸ”— Linking Google account to existing user');
+      console.log('🔗 Linking Google account to existing user');
       user.googleId = googleId;
       if (picture && !user.profileImage) user.profileImage = picture;
       await user.save();
@@ -380,7 +380,7 @@ app.post('/api/auth/google', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('âŒ Google login error:', error);
+    console.error('❌ Google login error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -411,7 +411,7 @@ app.get('/health', (req, res) => {
 });
 
 // OTP, registration OTP, mobile OTP, verify/resend OTP routes are handled by
-// auth.routes.js â†’ auth.controller.js using env-based mail.service (SMTP) and Fast2SMS/Twilio.
+// auth.routes.js → auth.controller.js using env-based mail.service (SMTP) and Fast2SMS/Twilio.
 
 // ==================== PASSWORD RESET ROUTES ====================
 
@@ -529,7 +529,7 @@ app.get('/api/auth/me', async (req, res) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
 
@@ -550,7 +550,7 @@ app.get('/api/auth/profile', async (req, res) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id).select('-password');
 
@@ -567,7 +567,7 @@ app.patch('/api/auth/profile', async (req, res) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
     const User = require('./models/user.model');
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -595,7 +595,7 @@ app.post('/api/auth/change-password', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Passwords do not match' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
     const User = require('./models/user.model');
     const user = await User.findById(decoded.id);
 
@@ -624,7 +624,7 @@ app.delete('/api/auth/avatar', async (req, res) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_change_me');
     const User = require('./models/user.model');
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -643,9 +643,9 @@ app.delete('/api/auth/avatar', async (req, res) => {
 let nppController;
 try {
   nppController = require('./controllers/npp.controller');
-  console.log('âœ… NPP Controller loaded');
+  console.log('✅ NPP Controller loaded');
 } catch (err) {
-  console.warn('âš ï¸ NPP Controller not found, creating fallback');
+  console.warn('⚠️ NPP Controller not found, creating fallback');
   nppController = {
     createNppRequest: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
     getAllNppRequests: (req, res) => res.status(501).json({ success: false, message: 'NPP API coming soon' }),
@@ -687,7 +687,7 @@ app.patch('/api/npp/request/:id/reject', authMiddleware, moduleAccessMiddleware,
 app.post('/api/npp/request/:id/send-email', authMiddleware, moduleAccessMiddleware, nppController.sendNppRequestEmail);
 app.use('/api/certificates', certificateRoutes);
 
-console.log('âœ… NPP Procurement routes loaded');
+console.log('✅ NPP Procurement routes loaded');
 
 // ==================== API ROUTES ====================
 app.use([
@@ -723,7 +723,7 @@ app.use('/api/ep-approval', requestRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "LCGC RFQ API Running Successfully ðŸš€",
+    message: "LCGC RFQ API Running Successfully 🚀",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
     availableApis: {
@@ -763,7 +763,7 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error("ðŸ”¥ Server Error:", err.message);
+  console.error("🔥 Server Error:", err.message);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error"
@@ -772,7 +772,7 @@ app.use((err, req, res, next) => {
 
 // Simple SMTP test endpoint
 app.post('/api/test-email-direct', async (req, res) => {
-  console.log('ðŸ“ Direct email test endpoint');
+  console.log('📍 Direct email test endpoint');
   
   try {
     const { email } = req.body;
@@ -805,7 +805,7 @@ app.post('/api/test-email-direct', async (req, res) => {
       to: testEmail,
       subject: 'Direct SMTP Test from LCGC',
       html: `
-        <h1>âœ… SMTP Working!</h1>
+        <h1>✅ SMTP Working!</h1>
         <p>This email was sent directly from your backend.</p>
         <p>Time: ${new Date().toLocaleString()}</p>
         <p>If you received this, your SMTP configuration is correct!</p>
@@ -833,15 +833,15 @@ app.post('/api/test-email-direct', async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`\nðŸš€ Server running on port ${PORT}`);
-  console.log(`âœ… Health check: http://localhost:${PORT}/api/health`);
-  console.log(`âœ… Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`âœ… Avatar upload: POST /api/auth/upload-avatar`);
-  console.log(`âœ… Email OTP: POST /api/auth/send-otp`);
-  console.log(`âœ… Mobile OTP: POST /api/auth/send-mobile-otp`);
-  console.log(`âœ… Password Reset: POST /api/auth/forgot-password-link`);
-  console.log(`âœ… Google Login: POST /api/auth/google`);
-  console.log(`âœ… CORS: Configured for all origins`);
+  console.log(`\n🚀 Server running on port ${PORT}`);
+  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
+  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ Avatar upload: POST /api/auth/upload-avatar`);
+  console.log(`✅ Email OTP: POST /api/auth/send-otp`);
+  console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
+  console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
+  console.log(`✅ Google Login: POST /api/auth/google`);
+  console.log(`✅ CORS: Configured for all origins`);
 });
 
 module.exports = app;

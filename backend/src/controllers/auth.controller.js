@@ -2025,17 +2025,12 @@ exports.createEPRequest = async (req, res) => {
   try {
     const {
       requester, department, email, contactNo, organization,
-      title, amount, priority, description, objective,
+      title, amount, vendor, priority, description, objective,
       requestDate, stakeholders, ccList, attachments
     } = req.body;
 
-<<<<<<< HEAD
     if (!title || !email) {
       return res.status(400).json({ success: false, message: "Title and email are required" });
-=======
-    if (!title || !amount || !email) {
-      return res.status(400).json({ success: false, message: "Title, amount, vendor and email are required" });
->>>>>>> 3e9cdaa74bbd7443ac27133979f06bcd3760e8c7
     }
 
     const validStakeholders = (stakeholders || []).filter(s => s.name && s.email);
@@ -2050,12 +2045,8 @@ exports.createEPRequest = async (req, res) => {
         contactNo: contactNo || '',
         organization: organization || 'Radiant Appliances',
         title,
-<<<<<<< HEAD
         amount: Number(amount) || 0,
         vendor: vendor || '',
-=======
-        amount: Number(amount),
->>>>>>> 3e9cdaa74bbd7443ac27133979f06bcd3760e8c7
         priority: priority || 'Medium',
         description: description || '',
         objective: objective || '',
@@ -2108,13 +2099,13 @@ exports.createEPRequest = async (req, res) => {
 
 exports.getAllEPRequests = async (req, res) => {
   try {
-    const { department, status, priority, startDate, endDate } = req.query;
+    const { department, status, priority, startDate, endDate, vendor } = req.query;
 
     let filter = {};
     if (department) filter.department = { $regex: department, $options: 'i' };
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
-    // if (vendor) filter.vendor = { $regex: vendor, $options: 'i' };
+    if (vendor) filter.vendor = { $regex: vendor, $options: 'i' };
     if (startDate || endDate) {
       filter.requestDate = {};
       if (startDate) filter.requestDate.$gte = startDate;

@@ -8,8 +8,8 @@
     </div>
   </div>
 
-  <!-- SIDEBAR (hidden in NON BOM / EP focus mode) -->
-  <aside class="sidebar" *ngIf="!isFocusMode" [class.collapsed]="sidebarCollapsed">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
     <div class="sb-logo">
       <div class="sb-logo__icon">
         <svg viewBox="0 0 36 36" fill="none">
@@ -23,14 +23,18 @@
       </div>
     </div>
 
-    <nav class="sb-nav" *ngIf="!isFocusMode">
+    <div class="sb-user-profile" *ngIf="!sidebarCollapsed">
+      <div class="sb-user-profile__avatar">{{ userInitials }}</div>
+      <div class="sb-user-profile__info">
+        <div class="sb-user-profile__name">{{ userName }}</div>
+        <div class="sb-user-profile__role">{{ userRole }}</div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
       <div class="sb-nav-item">
-        <button class="sb-item" [class.active]="activeTab === 'vendor-dashboard'" (click)="setActiveTab('vendor-dashboard')" *ngIf="isAdminView">
-          <span class="sb-item__icon">🏪</span>
-          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Vendor Portal</span>
-        </button>
         <button class="sb-item" [class.active]="activeTab === 'dashboard' && !showApprovalsSection" (click)="setActiveTab('dashboard')">
-          <span class="sb-item__icon">🏠</span>
+          <span class="sb-item__icon">📊</span>
           <span class="sb-item__label" *ngIf="!sidebarCollapsed">Dashboard</span>
         </button>
       </div>
@@ -66,45 +70,83 @@
       </div>
 
       <div class="sb-nav-item sb-nav-item--has-dropdown">
-        <button class="sb-item" [class.active]="activeTab === 'payment-request'" (click)="toggleDropdown('payment', $event)">
-          <span class="sb-item__icon">💰</span>
-          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Payment</span>
+        <button class="sb-item" (click)="toggleDropdown('master', $event)">
+          <span class="sb-item__icon">📁</span>
+          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Master Data</span>
           <span class="sb-item__chevron" *ngIf="!sidebarCollapsed">▼</span>
         </button>
-        <div class="sb-dropdown" [class.show]="openDropdown === 'payment'">
-          <button *ngFor="let item of paymentDropdownItems; trackBy: trackByDropdownItem" class="sb-dropdown__item" (click)="handleDropdownAction(item.action)">
-            <span class="sb-dropdown__icon">{{ item.icon }}</span>
-            <span class="sb-dropdown__label">{{ item.label }}</span>
+        <div class="sb-dropdown" [class.show]="openDropdown === 'master'">
+          <button class="sb-dropdown__item" (click)="navigateToModule('vendors')">
+            <span class="sb-dropdown__icon">🏢</span>
+            <span class="sb-dropdown__label">Vendors</span>
+          </button>
+          <button class="sb-dropdown__item" (click)="navigateToModule('parts')">
+            <span class="sb-dropdown__icon">🔧</span>
+            <span class="sb-dropdown__label">Parts</span>
+          </button>
+          <button class="sb-dropdown__item" (click)="navigateToModule('item-master')">
+            <span class="sb-dropdown__icon">📦</span>
+            <span class="sb-dropdown__label">Item Master</span>
           </button>
         </div>
       </div>
 
       <div class="sb-nav-item sb-nav-item--has-dropdown">
-        <button class="sb-item" (click)="toggleDropdown('budget', $event)">
-          <span class="sb-item__icon">🏦</span>
-          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Budget</span>
+        <button class="sb-item" (click)="toggleDropdown('quality', $event)">
+          <span class="sb-item__icon">✅</span>
+          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Quality</span>
           <span class="sb-item__chevron" *ngIf="!sidebarCollapsed">▼</span>
         </button>
-        <div class="sb-dropdown" [class.show]="openDropdown === 'budget'">
-          <button *ngFor="let item of budgetDropdownItems; trackBy: trackByDropdownItem" class="sb-dropdown__item" (click)="handleDropdownAction(item.action)">
-            <span class="sb-dropdown__icon">{{ item.icon }}</span>
-            <span class="sb-dropdown__label">{{ item.label }}</span>
+        <div class="sb-dropdown" [class.show]="openDropdown === 'quality'">
+          <button class="sb-dropdown__item" (click)="navigateToModule('dqms')">
+            <span class="sb-dropdown__icon">📊</span>
+            <span class="sb-dropdown__label">DQMS</span>
+          </button>
+          <button class="sb-dropdown__item" (click)="navigateToModule('npi')">
+            <span class="sb-dropdown__icon">🔬</span>
+            <span class="sb-dropdown__label">NPI</span>
           </button>
         </div>
       </div>
 
-      <div class="sb-nav-item">
-        <button class="sb-item" (click)="navigateToModule('parts')">
-          <span class="sb-item__icon">📁</span>
-          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Master Data</span>
+      <div class="sb-nav-item sb-nav-item--has-dropdown">
+        <button class="sb-item" (click)="toggleDropdown('logistics', $event)">
+          <span class="sb-item__icon">🚗</span>
+          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Logistics</span>
+          <span class="sb-item__chevron" *ngIf="!sidebarCollapsed">▼</span>
         </button>
+        <div class="sb-dropdown" [class.show]="openDropdown === 'logistics'">
+          <button class="sb-dropdown__item" (click)="navigateToModule('vehicular-ms')">
+            <span class="sb-dropdown__icon">🚚</span>
+            <span class="sb-dropdown__label">Vehicular - MS</span>
+          </button>
+          <button class="sb-dropdown__item" (click)="navigateToModule('plan-stock')">
+            <span class="sb-dropdown__icon">📦</span>
+            <span class="sb-dropdown__label">Plan Vs Stock</span>
+          </button>
+        </div>
       </div>
 
-      <div class="sb-nav-item">
-        <button class="sb-item" *ngIf="userRole === 'Admin'" [class.active]="activeTab === 'user-management'" (click)="navigateToModule('user-management')">
+      <div class="sb-nav-item sb-nav-item--has-dropdown" *ngIf="userRole === 'Admin'">
+        <button class="sb-item" [class.active]="activeTab === 'user-management'" (click)="toggleDropdown('admin', $event)">
           <span class="sb-item__icon">⚙️</span>
           <span class="sb-item__label" *ngIf="!sidebarCollapsed">Administration</span>
+          <span class="sb-item__chevron" *ngIf="!sidebarCollapsed">▼</span>
         </button>
+        <div class="sb-dropdown" [class.show]="openDropdown === 'admin'">
+          <button class="sb-dropdown__item" (click)="navigateToModule('user-management')">
+            <span class="sb-dropdown__icon">👥</span>
+            <span class="sb-dropdown__label">User Management</span>
+          </button>
+          <button class="sb-dropdown__item" (click)="navigateToModule('roles')">
+            <span class="sb-dropdown__icon">🔑</span>
+            <span class="sb-dropdown__label">Roles & Permissions</span>
+          </button>
+          <button class="sb-dropdown__item" (click)="openRightsRequests()">
+            <span class="sb-dropdown__icon">📋</span>
+            <span class="sb-dropdown__label">Manage Access Requests</span>
+          </button>
+        </div>
       </div>
 
       <div class="sb-nav-item">
@@ -112,23 +154,11 @@
           <span class="sb-item__icon">📊</span>
           <span class="sb-item__label" *ngIf="!sidebarCollapsed">Reports</span>
         </button>
-        <button class="sb-item" *ngIf="userRole === 'Vendor'" [class.active]="activeTab === 'vendor-dashboard'" (click)="setActiveTab('vendor-dashboard')">
-          <span class="sb-item__icon">🏪</span>
-          <span class="sb-item__label" *ngIf="!sidebarCollapsed">Vendor Portal</span>
-        </button>
       </div>
     </nav>
 
-    <div class="sb-user" *ngIf="!sidebarCollapsed">
-      <div class="sb-user__avatar">{{ userInitials }}</div>
-      <div class="sb-user__info">
-        <div class="sb-user__name">{{ userName }}</div>
-        <div class="sb-user__role">{{ userRole }}</div>
-      </div>
-      <div class="sb-user__dot"></div>
-    </div>
-    <div class="sb-user sb-user--collapsed" *ngIf="sidebarCollapsed">
-      <div class="sb-user__avatar">{{ userInitials }}</div>
+    <div class="sb-footer" *ngIf="!sidebarCollapsed">
+      <div class="sb-footer__version">v2.0.1</div>
     </div>
   </aside>
 
@@ -141,10 +171,56 @@
         <span></span><span></span><span></span>
       </button>
       <div class="topbar__right">
-        <button class="topbar__bell" (click)="openApprovalSection('approvals'); $event.stopPropagation()" title="Pending Approvals">
-          🔔
-          <span class="topbar__badge" *ngIf="unifiedStats.pending > 0">{{ unifiedStats.pending }}</span>
-        </button>
+        <!-- Notification Bell with Dropdown -->
+        <div class="topbar__notification-wrapper">
+          <button class="topbar__bell" (click)="toggleNotificationPanel($event)" title="Notifications">
+            🔔
+            <span class="topbar__badge" *ngIf="unifiedStats.pending > 0">{{ unifiedStats.pending }}</span>
+          </button>
+          
+          <!-- Notification Dropdown Panel -->
+          <div class="notification-panel" [class.show]="showNotificationPanel">
+            <div class="notification-panel__header">
+              <span class="notification-panel__title">Notifications</span>
+              <button class="notification-panel__close" (click)="closeNotificationPanel()">✕</button>
+            </div>
+            <div class="notification-panel__body">
+              <!-- Error Message -->
+              <div class="notification-panel__error" *ngIf="notificationError">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text">{{ notificationError }}</span>
+              </div>
+              
+              <!-- Notification List -->
+              <div class="notification-list">
+                <div class="notification-item" *ngFor="let notif of notificationList" (click)="handleNotificationClick(notif)">
+                  <div class="notification-item__icon" [style.background]="notif.color + '20'" [style.color]="notif.color">
+                    {{ notif.icon }}
+                  </div>
+                  <div class="notification-item__content">
+                    <div class="notification-item__title">{{ notif.title }}</div>
+                    <div class="notification-item__subtitle" *ngIf="notif.subtitle">{{ notif.subtitle }}</div>
+                    <div class="notification-item__time">{{ notif.time }}</div>
+                  </div>
+                  <div class="notification-item__status" *ngIf="!notif.isRead">
+                    <span class="notif-dot"></span>
+                  </div>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="notification-empty" *ngIf="!notificationList.length && !notificationError">
+                  <span>🔕</span>
+                  <p>No notifications</p>
+                </div>
+              </div>
+            </div>
+            <div class="notification-panel__footer" *ngIf="notificationList.length">
+              <button class="notification-panel__mark-all" (click)="markAllNotificationsRead()">Mark all as read</button>
+              <button class="notification-panel__view-all" (click)="viewAllNotifications()">View all</button>
+            </div>
+          </div>
+        </div>
+
         <div class="topbar__user" (click)="toggleUserMenu($event)">
           <div class="topbar__avatar" [style.backgroundImage]="getUserAvatar() ? 'url(' + getUserAvatar() + ')' : 'none'">
             <span *ngIf="!getUserAvatar()">{{ userInitials }}</span>
@@ -188,7 +264,6 @@
       <div *ngIf="activeTab === 'supplier-performance'" class="tab-wrap"><app-supplier-performance></app-supplier-performance></div>
       <div *ngIf="activeTab === 'vehicular-ms'" class="tab-wrap"><app-vehicular-ms></app-vehicular-ms></div>
       <div *ngIf="activeTab === 'reports'" class="tab-wrap"><app-reports-dashboard></app-reports-dashboard></div>
-      <div *ngIf="activeTab === 'vendor-dashboard'" class="tab-wrap"><app-vendor-dashboard></app-vendor-dashboard></div>
 
       <div *ngIf="activeTab === 'coming-soon'" class="coming-soon">
         <div class="coming-soon__inner">
@@ -201,12 +276,14 @@
 
       <!-- DASHBOARD -->
       <div *ngIf="activeTab === 'dashboard'" class="dash">
+        <!-- Birthday Banner -->
         <div class="birthday-bar" *ngIf="showBirthdayBanner">
           <span class="birthday-bar__icon">🎂</span>
           <div><strong>Happy Birthday!</strong><p>{{ birthdayMessage }}</p></div>
           <button (click)="dismissBirthdayBanner()">✕</button>
         </div>
 
+        <!-- Hero Section -->
         <div class="hero">
           <div class="hero__left">
             <h1>{{ greeting }}, {{ getFirstName() }}! 👋</h1>
@@ -221,6 +298,7 @@
           </div>
         </div>
 
+        <!-- Stats Row -->
         <div class="stats-row">
           <div class="scard scard--blue" (click)="navigateToEpApproval('requests')">
             <div class="scard__top"><div><div class="scard__label">TOTAL REQUESTS</div><div class="scard__val">{{ isStatsLoading ? '—' : (displayTotalRequests ?? unifiedStats.total) }}</div><div class="scard__sub">All time requests</div></div><div class="scard__icon scard__icon--blue">📋</div></div>
@@ -240,6 +318,7 @@
           </div>
         </div>
 
+        <!-- Action Row -->
         <div class="action-row">
           <button class="action-btn action-btn--primary" (click)="navigateToNppTab('rfq-npp-form')"><span>＋</span> Create RFQ</button>
           <button class="action-btn action-btn--outline" (click)="navigateToNppTab('pr-request')"><span>📋</span> Create PR</button>
@@ -247,6 +326,7 @@
           <button class="action-btn action-btn--purple" (click)="openReportsModal()"><span>📊</span> Reports</button>
         </div>
 
+        <!-- Request Statistics -->
         <div class="section-title"><span class="section-title__icon">📊</span> Request Statistics by Type</div>
         <div class="type-cards">
           <div class="tcard tcard--ep" (click)="navigateToModule('ep-approval')">
@@ -266,6 +346,7 @@
           </div>
         </div>
 
+        <!-- Mid Row -->
         <div class="mid-row">
           <div class="chart-panel">
             <div class="chart-panel__hdr"><span>📈</span> Request Trends (Last 6 Months)<div class="chart-legend"><span class="cl cl--blue">Total</span><span class="cl cl--green">Approved</span><span class="cl cl--amber">Pending</span></div></div>
@@ -280,6 +361,7 @@
           </div>
         </div>
 
+        <!-- Recent Requests -->
         <div class="recent-requests-panel" *ngIf="filteredUnifiedRequests.length">
           <div class="recent-requests-panel__hdr">
             <h3>Recent Requests</h3>
@@ -300,6 +382,7 @@
           </table>
         </div>
 
+        <!-- Counters -->
         <div class="counters-row" *ngIf="isAdminView">
           <div class="counter" (click)="navigateToModule('vendors')"><span class="counter__icon">🏢</span><div><div class="counter__lbl">Vendors</div><div class="counter__val">{{ vendorCount ?? 0 }}</div></div></div>
           <div class="counter" (click)="navigateToModule('parts')"><span class="counter__icon">🔧</span><div><div class="counter__lbl">Parts</div><div class="counter__val">{{ partCount ?? 0 }}</div></div></div>

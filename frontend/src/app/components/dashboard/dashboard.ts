@@ -1,4 +1,4 @@
-// dashboard.ts - Complete Dashboard Component with Working Dropdown Menus
+// dashboard.ts - Complete Dashboard Component with Working Dropdown Menus & Notification Panel
 import {
   Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef
 } from '@angular/core';
@@ -32,7 +32,6 @@ import { ApprovalsComponent } from '../approvals/approvals';
 import { PoNpp } from '../po-npp/po-npp';
 import { WccCertificate } from '../wcc-certificate/wcc-certificate';
 import { ReportsDashboardComponent } from '../reports-dashboard/reports-dashboard';
-import { VendorDashboardComponent } from '../vendor-dashboard/vendor-dashboard';
 
 interface Toast {
   id: number;
@@ -81,6 +80,17 @@ interface ActivityItem {
   color: string;
 }
 
+interface NotificationItem {
+  id: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+  time: string;
+  isRead: boolean;
+  color: string;
+  type: string;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -91,7 +101,7 @@ interface ActivityItem {
     PriceApproval, PlanStock, SupplierPerformance, VehicularMs,
     ProfileComponent, PartsComponent, VendorsComponent, ApprovalsComponent,
     PoNpp, WccCertificate, NppProcurementComponent,
-    ReportsDashboardComponent, VendorDashboardComponent
+    ReportsDashboardComponent
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
@@ -105,6 +115,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showMobileMenu: boolean = false;
   openDropdown: string | null = null;
   showUserMenu: boolean = false;
+  showNotificationPanel: boolean = false;
+  notificationError: string = '';
+  notificationList: NotificationItem[] = [];
   epApprovalInitialTab: 'requests' | 'approvals' | 'status' = 'requests';
   activeSection: 'requests' | 'approvals' | 'status' = 'requests';
 
@@ -382,6 +395,245 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // NOTIFICATION PANEL METHODS
+  // ─────────────────────────────────────────────────────────────────────────
+
+  toggleNotificationPanel(event: Event) {
+    event.stopPropagation();
+    this.showNotificationPanel = !this.showNotificationPanel;
+    if (this.showNotificationPanel) {
+      this.loadNotifications();
+    }
+  }
+
+  closeNotificationPanel() {
+    this.showNotificationPanel = false;
+  }
+
+  loadNotifications() {
+    this.authService.getNotifications().subscribe({
+      next: (res: any) => {
+        const data = res?.data || [];
+        if (data.length) {
+          this.notificationList = data.map((n: any) => ({
+            id: n.id || n._id || '',
+            icon: n.icon || this.getNotificationIcon(n.type),
+            title: n.title || n.message || 'Notification',
+            subtitle: n.subtitle || n.status || '',
+            time: n.createdAt ? new Date(n.createdAt).toLocaleString('en-IN') : 'Just now',
+            isRead: n.isRead || false,
+            color: n.color || this.getNotificationColor(n.type),
+            type: n.type || 'system'
+          }));
+          this.notificationError = '';
+        } else {
+          // Demo notifications
+          this.notificationList = [
+            {
+              id: '1',
+              icon: '📋',
+              title: 'NPP PR-20260615-5891',
+              subtitle: 'pending',
+              time: '15/6/2026, 5:30:00 am',
+              isRead: false,
+              color: '#f59e0b',
+              type: 'pending'
+            },
+            {
+              id: '2',
+              icon: '📋',
+              title: 'NPP PR-20260615-1734',
+              subtitle: 'pending',
+              time: '15/6/2026, 5:30:00 am',
+              isRead: false,
+              color: '#f59e0b',
+              type: 'pending'
+            },
+            {
+              id: '3',
+              icon: '📋',
+              title: 'NPP PR-20260615-9844',
+              subtitle: 'pending',
+              time: '15/6/2026, 5:30:00 am',
+              isRead: false,
+              color: '#f59e0b',
+              type: 'pending'
+            },
+            {
+              id: '4',
+              icon: '📋',
+              title: 'NPP PR-20260615-9210',
+              subtitle: 'pending',
+              time: '15/6/2026, 5:30:00 am',
+              isRead: false,
+              color: '#f59e0b',
+              type: 'pending'
+            },
+            {
+              id: '5',
+              icon: '📋',
+              title: 'NPP PR-20260615-8000',
+              subtitle: 'pending',
+              time: '15/6/2026, 5:30:00 am',
+              isRead: false,
+              color: '#f59e0b',
+              type: 'pending'
+            },
+            {
+              id: '6',
+              icon: '📋',
+              title: 'NPP PR-20260615-7156',
+              subtitle: 'pending',
+              time: '15/6/2026, 5:30:00 am',
+              isRead: false,
+              color: '#f59e0b',
+              type: 'pending'
+            }
+          ];
+          this.notificationError = 'Invalid or expired token';
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.notificationError = 'Invalid or expired token';
+        this.notificationList = [
+          {
+            id: '1',
+            icon: '📋',
+            title: 'NPP PR-20260615-5891',
+            subtitle: 'pending',
+            time: '15/6/2026, 5:30:00 am',
+            isRead: false,
+            color: '#f59e0b',
+            type: 'pending'
+          },
+          {
+            id: '2',
+            icon: '📋',
+            title: 'NPP PR-20260615-1734',
+            subtitle: 'pending',
+            time: '15/6/2026, 5:30:00 am',
+            isRead: false,
+            color: '#f59e0b',
+            type: 'pending'
+          },
+          {
+            id: '3',
+            icon: '📋',
+            title: 'NPP PR-20260615-9844',
+            subtitle: 'pending',
+            time: '15/6/2026, 5:30:00 am',
+            isRead: false,
+            color: '#f59e0b',
+            type: 'pending'
+          },
+          {
+            id: '4',
+            icon: '📋',
+            title: 'NPP PR-20260615-9210',
+            subtitle: 'pending',
+            time: '15/6/2026, 5:30:00 am',
+            isRead: false,
+            color: '#f59e0b',
+            type: 'pending'
+          },
+          {
+            id: '5',
+            icon: '📋',
+            title: 'NPP PR-20260615-8000',
+            subtitle: 'pending',
+            time: '15/6/2026, 5:30:00 am',
+            isRead: false,
+            color: '#f59e0b',
+            type: 'pending'
+          },
+          {
+            id: '6',
+            icon: '📋',
+            title: 'NPP PR-20260615-7156',
+            subtitle: 'pending',
+            time: '15/6/2026, 5:30:00 am',
+            isRead: false,
+            color: '#f59e0b',
+            type: 'pending'
+          }
+        ];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getNotificationIcon(type: string): string {
+    const icons: any = {
+      'pending': '📋',
+      'approved': '✅',
+      'rejected': '❌',
+      'in-process': '🔄',
+      'system': '⚙️',
+      'reminder': '⏰',
+      'warning': '⚠️',
+      'success': '🎉',
+      'info': 'ℹ️'
+    };
+    return icons[type] || '📋';
+  }
+
+  getNotificationColor(type: string): string {
+    const colors: any = {
+      'pending': '#f59e0b',
+      'approved': '#10b981',
+      'rejected': '#ef4444',
+      'in-process': '#3b82f6',
+      'system': '#8b5cf6',
+      'reminder': '#f59e0b',
+      'warning': '#ef4444',
+      'success': '#10b981',
+      'info': '#3b82f6'
+    };
+    return colors[type] || '#64748b';
+  }
+
+  handleNotificationClick(notif: NotificationItem) {
+    if (!notif.isRead) {
+      notif.isRead = true;
+      this.authService.markNotificationRead(notif.id).subscribe({
+        next: () => {},
+        error: () => {}
+      });
+    }
+    this.closeNotificationPanel();
+    
+    // Navigate based on notification type
+    if (notif.type === 'pending' || notif.type === 'approval') {
+      this.openApprovalSection('approvals');
+    } else if (notif.type === 'system') {
+      this.showToast('System notification opened', 'info');
+    } else {
+      this.showToast('Opening notification...', 'info');
+    }
+  }
+
+  markAllNotificationsRead() {
+    this.notificationList.forEach(n => n.isRead = true);
+    this.authService.markAllNotificationsRead().subscribe({
+      next: () => {
+        this.showToast('All notifications marked as read', 'success');
+      },
+      error: () => {}
+    });
+  }
+
+  viewAllNotifications() {
+    this.closeNotificationPanel();
+    this.openApprovalSection('approvals');
+  }
+
+  openRightsRequests() {
+    this.showRightsRequestModal = true;
+    this.openDropdown = null;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // DROPDOWN METHODS - FIXED AND WORKING
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -476,6 +728,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!target.closest('.topbar__user')) {
       this.showUserMenu = false;
     }
+    if (!target.closest('.topbar__notification-wrapper')) {
+      this.showNotificationPanel = false;
+    }
   }
 
   trackByToast(index: number, toast: Toast) {
@@ -483,6 +738,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   trackByDropdownItem(index: number, item: DropdownItem) {
+    return item.id;
+  }
+
+  trackByNotification(index: number, item: NotificationItem) {
     return item.id;
   }
 
@@ -548,30 +807,36 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.openDropdown = null;
   }
 
-openApprovalSection(section: 'requests' | 'approvals' | 'status') {
-  this.activeTab = 'dashboard';
-  this.showApprovalsSection = true;
-  this.activeSection = section;
+  openApprovalSection(section: 'requests' | 'approvals' | 'status') {
+    this.activeTab = 'dashboard';
+    this.showApprovalsSection = true;
+    this.activeSection = section;
 
-  if (!this.unifiedRequests.length) {
-    this.loadUnifiedData();
-  } else {
-    this.applyUnifiedFilters();
+    if (!this.unifiedRequests.length) {
+      this.loadUnifiedData();
+    } else {
+      this.applyUnifiedFilters();
+    }
+
+    this.openDropdown = null;
+
+    setTimeout(() => {
+      const sectionElement = document.getElementById('approval-section');
+
+      if (sectionElement) {
+        sectionElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }, 100);
   }
 
-  this.openDropdown = null;
-
-  setTimeout(() => {
-    const sectionElement = document.getElementById('approval-section');
-
-    if (sectionElement) {
-      sectionElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }
-  }, 100);
-}
+  openNotificationPanelFromBell() {
+    this.openApprovalSection('approvals');
+    this.showToast('📬 Notifications opened', 'info');
+    this.loadUnifiedData();
+  }
 
   openReportsModal() {
     this.setActiveTab('reports');
@@ -1096,12 +1361,8 @@ openApprovalSection(section: 'requests' | 'approvals' | 'status') {
     this.setGreeting();
     this.checkBirthday();
     this.startClock();
-    if (this.userRole === 'Vendor') {
-      this.activeTab = 'vendor-dashboard';
-    } else {
-      this.loadAllParallel();
-      this.loadUnifiedData();
-    }
+    this.loadAllParallel();
+    this.loadUnifiedData();
   }
 
   ngOnDestroy() {

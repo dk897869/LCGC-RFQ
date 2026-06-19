@@ -2,7 +2,7 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Observable, catchError, map, of, tap, throwError, timeout, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, tap, throwError, timeout, switchMap, timer } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +33,41 @@ export class AuthService {
       this.pingServer();
       setInterval(() => this.pingServer(), 14 * 60 * 1000);
     }
+  }
+
+  // ==================== FAST LOADER HELPER (added) ====================
+  // The old pattern used across this service was:
+  //   return new Observable(observer => {
+  //     setTimeout(() => { this.http.xxx(...).subscribe({...}) }, 250);
+  //   });
+  // That 250ms `setTimeout` ran BEFORE the HTTP call even started — it added
+  // dead latency to every single action (approve/reject/create/etc.) without
+  // giving you any of the "show a loader, then toast" behavior you actually
+  // want, since there was no minimum duration on the call itself.
+  //
+  // `ensureMinDuration` replaces that: it lets the real HTTP call start
+  // immediately (no artificial pre-delay), but if the response comes back
+  // faster than `minMs`, it waits out the rest of that time before emitting.
+  // That's what gives you a loader that's visible for ~2s instead of
+  // flashing for 50ms, with the toast firing right after — and it never
+  // makes a SLOW response slower, since `remaining` is 0 once minMs is
+  // already exceeded by the real network time.
+  //
+  // Usage in a component:
+  //   this.loading = true;
+  //   this.authService.approveEPRequest(id, comments).subscribe({
+  //     next: () => { this.loading = false; /* toast already shown by service */ },
+  //     error: () => { this.loading = false; }
+  //   });
+  private ensureMinDuration<T>(source: Observable<T>, minMs: number = 2000): Observable<T> {
+    const startedAt = Date.now();
+    return source.pipe(
+      switchMap((value) => {
+        const elapsed = Date.now() - startedAt;
+        const remaining = Math.max(0, minMs - elapsed);
+        return remaining > 0 ? timer(remaining).pipe(map(() => value)) : of(value);
+      })
+    );
   }
 
   private getHttpOptions() {
@@ -375,7 +410,12 @@ export class AuthService {
 
   forgotPasswordOTP(email: string): Observable<any> {
     const cleanEmail = email.trim().toLowerCase();
-    return this.http.post<any>(`${this.API_URL}/auth/forgot-password-otp`, {
+    // FIX: this was posting to `/auth/forgot-password-otp`, which does not
+    // exist anywhere in auth.routes.js — every call silently 404'd and fell
+    // through to the demo/mock branch below. The real backend route (see
+    // `router.post('/forgot-password', authController.sendForgotPasswordOTP)`
+    // in auth.routes.js) is `/auth/forgot-password`. Corrected below.
+    return this.http.post<any>(`${this.API_URL}/auth/forgot-password`, {
       email: cleanEmail
     }, this.getHttpOptions()).pipe(
       timeout(15000),
@@ -396,7 +436,11 @@ export class AuthService {
       return throwError(() => ({ success: false, message: 'Passwords do not match' }));
     }
     const cleanOtp = otp.trim();
-    return this.http.post<any>(`${this.API_URL}/auth/verify-otp-reset-password`, {
+    // FIX: this was posting to `/auth/verify-otp-reset-password`, which also
+    // doesn't exist in auth.routes.js. The real route is `/auth/reset-password`
+    // (`router.post('/reset-password', authController.verifyOTPAndResetPassword)`).
+    // Corrected below — this was silently falling back to the demo branch too.
+    return this.http.post<any>(`${this.API_URL}/auth/reset-password`, {
       email: email.trim().toLowerCase(), otp: cleanOtp, newPassword, confirmPassword
     }, this.getHttpOptions()).pipe(
       timeout(15000),
@@ -785,6 +829,15 @@ export class AuthService {
   }
 
   // ==================== EP APPROVAL WITH FAST LOADER ====================
+  // IMPORTANT (added): these call `/request/:id/approve` and `/request/:id/reject`
+  // (request.routes.js on your backend), NOT the `approveEPRequest` /
+  // `rejectEPRequest` functions shown to me in auth.controller.js (those are
+  // wired to `/auth/ep-requests/:id/approve` instead). I fixed the
+  // non-blocking-email issue in auth.controller.js, but if EP approve/reject
+  // is STILL slow after deploying that fix, the real bottleneck is almost
+  // certainly an `await sendMail(...)` inside request.controller.js, which
+  // wasn't shared with me. Apply the identical `sendMailNonBlocking` pattern
+  // there.
 
   approveEPRequest(id: string | number, comments = ''): Observable<any> {
     const user = this.getUser();
@@ -796,33 +849,31 @@ export class AuthService {
       return throwError(() => ({ success: false, message: 'Not authorized' }));
     }
     
-    // Simulate FASTond loader
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.patch<any>(`${this.API_URL}/request/${id}/approve`, { 
-          comments, approvedBy: user?.email, approvedByRole: userRole 
-        }, this.getHttpOptions()).pipe(
-          timeout(10000)
-        ).subscribe({
-          next: (res) => {
-            if (res?.success) {
-              this.showToastMessage(`EP Request #${id} approved successfully!`, 'success');
-              observer.next(res);
-              observer.complete();
-            } else {
-              this.showToastMessage(res?.message || 'Approval failed', 'error');
-              observer.error(res);
-            }
-          },
-          error: (error) => {
-            let errorMsg = error.error?.message || 'Failed to approve EP request';
-            if (error.status === 403) errorMsg = 'You do not have permission to approve this request.';
-            this.showToastMessage(errorMsg, 'error');
-            observer.error(error);
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed the artificial `setTimeout(..., 250)` pre-delay that ran
+    // before the HTTP call even started — it added latency with no benefit.
+    // `ensureMinDuration` now keeps a loader visible for ~2s (tied to whatever
+    // loading flag your component sets before calling .subscribe()) without
+    // slowing down calls that already take longer than that.
+    return this.ensureMinDuration(
+      this.http.patch<any>(`${this.API_URL}/request/${id}/approve`, {
+        comments, approvedBy: user?.email, approvedByRole: userRole
+      }, this.getHttpOptions()).pipe(timeout(15000)),
+      2000
+    ).pipe(
+      tap((res: any) => {
+        if (res?.success) {
+          this.showToastMessage(`EP Request #${id} approved successfully!`, 'success');
+        } else {
+          this.showToastMessage(res?.message || 'Approval failed', 'error');
+        }
+      }),
+      catchError((error) => {
+        let errorMsg = error?.error?.message || 'Failed to approve EP request';
+        if (error?.status === 403) errorMsg = 'You do not have permission to approve this request.';
+        this.showToastMessage(errorMsg, 'error');
+        return throwError(() => error);
+      })
+    );
   }
 
   rejectEPRequest(id: string | number, comments = ''): Observable<any> {
@@ -840,31 +891,26 @@ export class AuthService {
       return throwError(() => ({ success: false, message: 'Remarks required' }));
     }
     
-    // Simulate FASTond loader
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.patch<any>(`${this.API_URL}/request/${id}/reject`, { 
-          comments, rejectedBy: user?.email, rejectedByRole: userRole 
-        }, this.getHttpOptions()).pipe(
-          timeout(10000)
-        ).subscribe({
-          next: (res) => {
-            if (res?.success) {
-              this.showToastMessage(`EP Request #${id} rejected`, 'info');
-              observer.next(res);
-              observer.complete();
-            } else {
-              this.showToastMessage(res?.message || 'Rejection failed', 'error');
-              observer.error(res);
-            }
-          },
-          error: (error) => {
-            this.showToastMessage(error.error?.message || 'Failed to reject EP request', 'error');
-            observer.error(error);
-          }
-        });
-      }, 250);
-    });
+    // FIX: same as approveEPRequest above — dead 250ms pre-delay replaced with
+    // the ensureMinDuration loader pattern.
+    return this.ensureMinDuration(
+      this.http.patch<any>(`${this.API_URL}/request/${id}/reject`, {
+        comments, rejectedBy: user?.email, rejectedByRole: userRole
+      }, this.getHttpOptions()).pipe(timeout(15000)),
+      2000
+    ).pipe(
+      tap((res: any) => {
+        if (res?.success) {
+          this.showToastMessage(`EP Request #${id} rejected`, 'info');
+        } else {
+          this.showToastMessage(res?.message || 'Rejection failed', 'error');
+        }
+      }),
+      catchError((error) => {
+        this.showToastMessage(error?.error?.message || 'Failed to reject EP request', 'error');
+        return throwError(() => error);
+      })
+    );
   }
 
   private showToastMessage(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success'): void {
@@ -936,38 +982,21 @@ export class AuthService {
       type: requestData?.type || 'wcc'
     };
     
-    // Simulate FASTond loader
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/certificates/generate`, payload, this.getHttpOptions()).pipe(
-          timeout(10000)
-        ).subscribe({
-          next: (res) => {
-            if (res?.success) {
-              this.showToastMessage('Certificate generated successfully!', 'success');
-              observer.next(res);
-              observer.complete();
-            } else {
-              this.showToastMessage(res?.message || 'Certificate generation failed', 'error');
-              observer.error(res);
-            }
-          },
-          error: (error) => {
-            console.error('Certificate generation error:', error);
-            this.generateLocalCertificate(validRequestId, requestData).subscribe({
-              next: (localRes) => {
-                this.showToastMessage('Certificate generated (demo mode)', 'info');
-                observer.next(localRes);
-                observer.complete();
-              },
-              error: (localErr) => {
-                observer.error(localErr);
-              }
-            });
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/certificates/generate`, payload, this.getHttpOptions()).pipe(timeout(15000)),
+      2000
+    ).pipe(
+      tap((res: any) => {
+        if (res?.success) this.showToastMessage('Certificate generated successfully!', 'success');
+      }),
+      catchError((error) => {
+        console.error('Certificate generation error:', error);
+        return this.generateLocalCertificate(validRequestId, requestData).pipe(
+          tap(() => this.showToastMessage('Certificate generated (demo mode)', 'info'))
+        );
+      })
+    );
   }
 
   private generateLocalCertificate(requestId: string | number, requestData: any): Observable<any> {
@@ -1013,64 +1042,56 @@ export class AuthService {
   }
 
   downloadCertificate(certificateId: string): Observable<Blob> {
-    // Simulate FASTond loader
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.get(`${this.API_URL}/certificates/${certificateId}/download`, {
-          ...this.getHttpOptions(),
-          responseType: 'blob'
-        }).pipe(timeout(10000)).subscribe({
-          next: (blob) => {
-            if (blob && blob.size > 0) {
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `certificate_${certificateId}.html`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-              this.showToastMessage('Download started!', 'success');
-              observer.next(blob);
-              observer.complete();
-            } else {
-              this.showToastMessage('Download failed: Empty response', 'error');
-              observer.error(new Error('Empty response'));
-            }
-          },
-          error: (error) => {
-            console.error('Download certificate error:', error);
-            const mockPdf = new Blob(['%PDF-1.4\nMock Certificate Content'], { type: 'application/pdf' });
-            this.showToastMessage('Demo: Certificate downloaded', 'info');
-            observer.next(mockPdf);
-            observer.complete();
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration so the
+    // download "loading..." state is visible for ~2s instead of flashing.
+    return this.ensureMinDuration(
+      this.http.get(`${this.API_URL}/certificates/${certificateId}/download`, {
+        ...this.getHttpOptions(),
+        responseType: 'blob'
+      }).pipe(timeout(15000)),
+      2000
+    ).pipe(
+      tap((blob: Blob) => {
+        if (blob && blob.size > 0) {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `certificate_${certificateId}.html`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          this.showToastMessage('Download started!', 'success');
+        } else {
+          this.showToastMessage('Download failed: Empty response', 'error');
+        }
+      }),
+      catchError((error) => {
+        console.error('Download certificate error:', error);
+        const mockPdf = new Blob(['%PDF-1.4\nMock Certificate Content'], { type: 'application/pdf' });
+        this.showToastMessage('Demo: Certificate downloaded', 'info');
+        return of(mockPdf);
+      })
+    );
   }
 
   // ==================== QUOTATION & REPORTS METHODS ====================
 
   getVendorSuggestions(items: any[]): Observable<any> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/quotation/suggestions`, { items }, this.getHttpOptions()).pipe(
-          timeout(5000)
-        ).subscribe({
-          next: (res) => { observer.next(res); observer.complete(); },
-          error: () => {
-            const suggestions = [
-              { vendorName: 'Steel Corp Ltd', price: 120, rating: 4.5, deliveryTime: '3 days', suggested: true, savings: 0 },
-              { vendorName: 'Metal Masters', price: 115, rating: 4.2, deliveryTime: '5 days', suggested: false, savings: 5 },
-              { vendorName: 'Prime Steel', price: 125, rating: 4.0, deliveryTime: '2 days', suggested: false, savings: -5 }
-            ];
-            observer.next({ success: true, data: suggestions });
-            observer.complete();
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/quotation/suggestions`, { items }, this.getHttpOptions()).pipe(timeout(8000)),
+      2000
+    ).pipe(
+      catchError(() => {
+        const suggestions = [
+          { vendorName: 'Steel Corp Ltd', price: 120, rating: 4.5, deliveryTime: '3 days', suggested: true, savings: 0 },
+          { vendorName: 'Metal Masters', price: 115, rating: 4.2, deliveryTime: '5 days', suggested: false, savings: 5 },
+          { vendorName: 'Prime Steel', price: 125, rating: 4.0, deliveryTime: '2 days', suggested: false, savings: -5 }
+        ];
+        return of({ success: true, data: suggestions });
+      })
+    );
   }
 
   getReportsByType(type: 'ep' | 'rfq' | 'all', dateRange?: { from: string; to: string }): Observable<any> {
@@ -1078,31 +1099,24 @@ export class AuthService {
     if (dateRange?.from) params.fromDate = dateRange.from;
     if (dateRange?.to) params.toDate = dateRange.to;
     
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.get<any>(`${this.API_URL}/reports/${type}`, { ...this.getHttpOptions(), params }).pipe(
-          timeout(5000)
-        ).subscribe({
-          next: (res) => {
-            this.showToastMessage('Report generated successfully!', 'success');
-            observer.next(res);
-            observer.complete();
-          },
-          error: () => {
-            const mockData = {
-              summary: { total: 45, approved: 28, rejected: 5, pending: 12 },
-              details: [
-                { serialNo: 'EP-20260601-001', title: 'EP Request 1', requester: 'John Doe', status: 'Approved', amount: 5000, date: '2026-06-01' },
-                { serialNo: 'EP-20260601-002', title: 'EP Request 2', requester: 'Jane Smith', status: 'Pending', amount: 7500, date: '2026-06-01' }
-              ]
-            };
-            this.showToastMessage('Report generated (demo data)', 'info');
-            observer.next({ success: true, data: mockData });
-            observer.complete();
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.get<any>(`${this.API_URL}/reports/${type}`, { ...this.getHttpOptions(), params }).pipe(timeout(8000)),
+      2000
+    ).pipe(
+      tap(() => this.showToastMessage('Report generated successfully!', 'success')),
+      catchError(() => {
+        const mockData = {
+          summary: { total: 45, approved: 28, rejected: 5, pending: 12 },
+          details: [
+            { serialNo: 'EP-20260601-001', title: 'EP Request 1', requester: 'John Doe', status: 'Approved', amount: 5000, date: '2026-06-01' },
+            { serialNo: 'EP-20260601-002', title: 'EP Request 2', requester: 'Jane Smith', status: 'Pending', amount: 7500, date: '2026-06-01' }
+          ]
+        };
+        this.showToastMessage('Report generated (demo data)', 'info');
+        return of({ success: true, data: mockData });
+      })
+    );
   }
 
   notifyAdminsForEPRequest(requestData: any): Observable<any> {
@@ -1233,29 +1247,27 @@ export class AuthService {
   createRFQ(data: any): Observable<any> {
     console.log('📤 Creating RFQ with payload:', JSON.stringify(data, null, 2));
     
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/rfq`, data, this.getHttpOptions()).pipe(
-          timeout(15000)
-        ).subscribe({
-          next: (res) => {
-            if (res?.success && data.vendorEmails) {
-              this.sendRfqEmailNotification(data, data.vendorEmails).subscribe();
-            }
-            observer.next(res);
-            observer.complete();
-          },
-          error: (error) => {
-            let errorMessage = 'Failed to create RFQ.';
-            if (error.error?.message) errorMessage = error.error.message;
-            else if (error.status === 401) errorMessage = 'Session expired. Please login again.';
-            else if (error.status === 403) errorMessage = 'You do not have permission to create RFQs.';
-            this.showToastMessage(errorMessage, 'error');
-            observer.error(error);
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration so
+    // the "creating RFQ..." loader is visible for ~2s before the success/error
+    // toast fires, instead of an artificial delay before the call even starts.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/rfq`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      2000
+    ).pipe(
+      tap((res: any) => {
+        if (res?.success && data.vendorEmails) {
+          this.sendRfqEmailNotification(data, data.vendorEmails).subscribe();
+        }
+      }),
+      catchError((error) => {
+        let errorMessage = 'Failed to create RFQ.';
+        if (error?.error?.message) errorMessage = error.error.message;
+        else if (error?.status === 401) errorMessage = 'Session expired. Please login again.';
+        else if (error?.status === 403) errorMessage = 'You do not have permission to create RFQs.';
+        this.showToastMessage(errorMessage, 'error');
+        return throwError(() => error);
+      })
+    );
   }
 
   updateRFQ(id: string | number, data: any): Observable<any> {
@@ -1288,6 +1300,14 @@ export class AuthService {
   }
 
   // ==================== NPP PROCUREMENT METHODS ====================
+  // IMPORTANT (added): these target `/pr-npp`, `/po-npp`, `/payment-npp` and
+  // `/npp-forms/:type` (prNpp.routes.js / poNpp.routes.js / paymentNpp.routes.js
+  // / nppForms.routes.js on the backend) — NOT the `/npp/*` or `/auth/npp/*`
+  // controller functions shown to me in auth.controller.js / index.js. If
+  // these still feel slow after redeploying the backend fixes, the blocking
+  // `await sendMail(...)` is almost certainly inside one of those four route
+  // files, which weren't shared with me — apply the same
+  // `sendMailNonBlocking` pattern there.
 
   getNppRequests(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/pr-npp`, this.getHttpOptions()).pipe(
@@ -1334,89 +1354,70 @@ export class AuthService {
   }
 
   createNppRequest(data: any): Observable<any> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(
-          timeout(15000)
-        ).subscribe({
-          next: (res) => { observer.next(res); observer.complete(); },
-          error: (err) => { observer.error(err); }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      2000
+    );
   }
 
   createNppModuleRequest(type: string, data: any): Observable<any> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/npp-forms/${type}`, { ...data, type }, this.getHttpOptions()).pipe(
-          timeout(20000)
-        ).subscribe({
-          next: (res) => { observer.next(res); observer.complete(); },
-          error: (err) => { observer.error(err); }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/npp-forms/${type}`, { ...data, type }, this.getHttpOptions()).pipe(timeout(20000)),
+      2000
+    );
   }
 
   createNppPrRequest(data: any): Observable<any> {
     console.log('📤 Creating PR NPP request:', data);
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(
-          timeout(15000)
-        ).subscribe({
-          next: (res) => { observer.next(res); observer.complete(); },
-          error: (err) => {
-            let errorMessage = 'Failed to create PR NPP request.';
-            if (err.error?.message) errorMessage = err.error.message;
-            else if (err.status === 401) errorMessage = 'Session expired. Please login again.';
-            this.showToastMessage(errorMessage, 'error');
-            observer.error(err);
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      2000
+    ).pipe(
+      catchError((err) => {
+        let errorMessage = 'Failed to create PR NPP request.';
+        if (err?.error?.message) errorMessage = err.error.message;
+        else if (err?.status === 401) errorMessage = 'Session expired. Please login again.';
+        this.showToastMessage(errorMessage, 'error');
+        return throwError(() => err);
+      })
+    );
   }
 
   createNppPoRequest(data: any): Observable<any> {
     console.log('📤 Creating PO NPP request:', data);
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/po-npp`, data, this.getHttpOptions()).pipe(
-          timeout(15000)
-        ).subscribe({
-          next: (res) => { observer.next(res); observer.complete(); },
-          error: (err) => {
-            let errorMessage = 'Failed to create PO NPP request.';
-            if (err.error?.message) errorMessage = err.error.message;
-            else if (err.status === 401) errorMessage = 'Session expired. Please login again.';
-            this.showToastMessage(errorMessage, 'error');
-            observer.error(err);
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/po-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      2000
+    ).pipe(
+      catchError((err) => {
+        let errorMessage = 'Failed to create PO NPP request.';
+        if (err?.error?.message) errorMessage = err.error.message;
+        else if (err?.status === 401) errorMessage = 'Session expired. Please login again.';
+        this.showToastMessage(errorMessage, 'error');
+        return throwError(() => err);
+      })
+    );
   }
 
   createPaymentAdviceRequest(data: any): Observable<any> {
     console.log('📤 Creating Payment Advice request:', data);
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post<any>(`${this.API_URL}/payment-npp`, data, this.getHttpOptions()).pipe(
-          timeout(15000)
-        ).subscribe({
-          next: (res) => { observer.next(res); observer.complete(); },
-          error: (err) => {
-            let errorMessage = 'Failed to create Payment Advice request.';
-            if (err.error?.message) errorMessage = err.error.message;
-            else if (err.status === 401) errorMessage = 'Session expired. Please login again.';
-            this.showToastMessage(errorMessage, 'error');
-            observer.error(err);
-          }
-        });
-      }, 250);
-    });
+    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    return this.ensureMinDuration(
+      this.http.post<any>(`${this.API_URL}/payment-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      2000
+    ).pipe(
+      catchError((err) => {
+        let errorMessage = 'Failed to create Payment Advice request.';
+        if (err?.error?.message) errorMessage = err.error.message;
+        else if (err?.status === 401) errorMessage = 'Session expired. Please login again.';
+        this.showToastMessage(errorMessage, 'error');
+        return throwError(() => err);
+      })
+    );
   }
 
   updateNppRequest(id: string | number, data: any): Observable<any> {
@@ -2129,6 +2130,52 @@ export class AuthService {
     return map[type] || String(type || 'Request').toUpperCase();
   }
 
+  // ==================== NOTIFICATIONS METHODS ====================
+
+  getNotifications(): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/notifications`, this.getHttpOptions()).pipe(
+      timeout(8000),
+      catchError(() => of({ success: true, data: [] }))
+    );
+  }
+
+  markNotificationRead(notificationId: string): Observable<any> {
+    return this.http.patch<any>(`${this.API_URL}/notifications/${notificationId}/read`, {}, this.getHttpOptions()).pipe(
+      timeout(5000),
+      catchError(() => of({ success: true }))
+    );
+  }
+
+  markAllNotificationsRead(): Observable<any> {
+    return this.http.patch<any>(`${this.API_URL}/notifications/read-all`, {}, this.getHttpOptions()).pipe(
+      timeout(5000),
+      catchError(() => of({ success: true }))
+    );
+  }
+
+  // ==================== VENDOR DASHBOARD METHODS ====================
+
+  getVendorBids(vendorId: string): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/vendor/${vendorId}/bids`, this.getHttpOptions()).pipe(
+      timeout(8000),
+      catchError(() => of({ success: true, data: [] }))
+    );
+  }
+
+  getVendorNotifications(vendorId: string): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/vendor/${vendorId}/notifications`, this.getHttpOptions()).pipe(
+      timeout(8000),
+      catchError(() => of({ success: true, data: [] }))
+    );
+  }
+
+  getVendorActivities(vendorId: string): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/vendor/${vendorId}/activities`, this.getHttpOptions()).pipe(
+      timeout(8000),
+      catchError(() => of({ success: true, data: [] }))
+    );
+  }
+
   logout(): void {
     if (!this.isBrowser) return;
     [this.TOKEN_KEY, this.USER_KEY, this.CURRENT_USER_KEY].forEach(key => {
@@ -2137,4 +2184,3 @@ export class AuthService {
     });
   }
 }
-

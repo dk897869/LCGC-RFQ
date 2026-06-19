@@ -1,8 +1,12 @@
 // controllers/npp.controller.js
+const mongoose = require('mongoose');
 const NPPRequest = require('../models/nppRequest.model');
 const User = require('../models/user.model');
 const { sendMail } = require('../services/mail.service');
 const { generateBeautifulPDF } = require('../services/pdf.service');
+
+const memoryNppRequests = [];
+const isDbConnected = () => mongoose.connection.readyState === 1;
 
 // Helper function to generate serial number
 const generateNppSerialNumber = (type) => {
@@ -214,6 +218,62 @@ exports.createNppRequest = async (req, res) => {
     }
     
     const serialNo = generateNppSerialNumber(type);
+
+    if (!isDbConnected()) {
+      const now = new Date();
+      const fallbackRequest = {
+        _id: `mem-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        id: `mem-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        type,
+        uniqueSerialNo: serialNo,
+        rfqNo: deriveRfqNo(requestData),
+        formData: requestData,
+        status: 'Pending',
+        requesterName: requestData.requesterName || req.user?.name,
+        department: requestData.department,
+        emailId: requestData.emailId || req.user?.email,
+        requestDate: requestData.requestDate || now,
+        contactNo: requestData.contactNo,
+        organization: requestData.organization,
+        titleOfActivity: requestData.titleOfActivity,
+        priority: requestData.priority || 'M',
+        purposeAndObjective: requestData.purposeAndObjective,
+        amount: requestData.amount || requestData.estimatedAmount || requestData.paymentDetails?.expenseAmount || 0,
+        vendorEmail: requestData.vendorEmail,
+        stakeholders: requestData.stakeholders || [],
+        ccList: requestData.ccList || [],
+        attachments: requestData.attachments || [],
+        cashPurchaseItems: requestData.cashPurchaseItems,
+        vendorDetails: requestData.vendorDetails,
+        rfqVendorItems: requestData.rfqVendorItems,
+        rfqItems: requestData.rfqItems,
+        vendorList: requestData.vendorList,
+        employeeDetails: requestData.employeeDetails,
+        itemMasterList: requestData.itemMasterList,
+        quotationSubmissionItems: requestData.quotationSubmissionItems,
+        quotationItems: requestData.quotationItems,
+        supplierNames: requestData.supplierNames,
+        quotationTerms: requestData.quotationTerms,
+        recommendation: requestData.recommendation,
+        prItems: requestData.prItems,
+        poItems: requestData.poItems,
+        poVendorDetails: requestData.poVendorDetails,
+        paymentInvoices: requestData.paymentInvoices,
+        paymentDetails: requestData.paymentDetails,
+        wccDetails: requestData.wccDetails,
+        wccEvaluationRows: requestData.wccEvaluationRows,
+        createdAt: now,
+        updatedAt: now,
+        fromMemoryFallback: true
+      };
+      memoryNppRequests.unshift(fallbackRequest);
+      return res.status(201).json({
+        success: true,
+        message: `${type} request created successfully`,
+        data: fallbackRequest,
+        serialNo
+      });
+    }
     
     const nppRequest = new NPPRequest({
       type,
@@ -305,6 +365,18 @@ exports.getAllNppRequests = async (req, res) => {
       filter = { ...filter, ...buildSearchFilter({ serialNo, rfqNo, q }) };
     }
     
+    if (!isDbConnected()) {
+      let requests = [...memoryNppRequests];
+      if (type) requests = requests.filter(r => r.type === normalizeType(type));
+      if (status) requests = requests.filter(r => r.status === status);
+      if (department) requests = requests.filter(r => r.department === department);
+      if (serialNo || rfqNo || q) {
+        const term = String(serialNo || rfqNo || q || '').toLowerCase();
+        requests = requests.filter(r => JSON.stringify(r).toLowerCase().includes(term));
+      }
+      return res.json({ success: true, count: requests.length, data: requests });
+    }
+
     const requests = await NPPRequest.find(filter).sort({ createdAt: -1 });
     
     res.json({
@@ -553,6 +625,14 @@ exports.sendNppRequestEmail = async (req, res) => {
 
 exports.searchNppRequests = async (req, res) => {
   try {
+    if (!isDbConnected()) {
+      const term = String(req.query.serialNo || req.query.rfqNo || req.query.q || '').toLowerCase();
+      let requests = [...memoryNppRequests];
+      if (req.query.type) requests = requests.filter(r => r.type === normalizeType(req.query.type));
+      if (req.query.status) requests = requests.filter(r => r.status === req.query.status);
+      if (term) requests = requests.filter(r => JSON.stringify(r).toLowerCase().includes(term));
+      return res.json({ success: true, count: requests.length, data: requests.slice(0, Number(req.query.limit) || 100) });
+    }
     const filter = buildSearchFilter(req.query);
     const requests = await NPPRequest.find(filter).sort({ createdAt: -1 }).limit(Number(req.query.limit) || 100);
     res.json({
@@ -569,6 +649,14 @@ exports.searchNppRequests = async (req, res) => {
 exports.getNppRequestsByRfqNo = async (req, res) => {
   try {
     const rfqNo = req.params.rfqNo;
+    if (!isDbConnected()) {
+      const term = String(rfqNo || '').toLowerCase();
+      const requests = memoryNppRequests.filter(r => JSON.stringify(r).toLowerCase().includes(term));
+      if (!requests.length) {
+        return res.status(404).json({ success: false, message: 'No requests found for this RFQ number' });
+      }
+      return res.json({ success: true, count: requests.length, data: requests });
+    }
     const requests = await NPPRequest.find(buildSearchFilter({ rfqNo })).sort({ createdAt: -1 });
     if (!requests.length) {
       return res.status(404).json({ success: false, message: 'No requests found for this RFQ number' });

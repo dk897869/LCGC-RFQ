@@ -10,6 +10,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const axios = require("axios");
+const mongoose = require("mongoose");
 
 const connectDB = require("./config/db");
 // ==================== DEFINE AUTH MIDDLEWARE FIRST ====================
@@ -127,6 +128,17 @@ const uploadAvatar = multer({
 
 // Database connection
 connectDB();
+
+// ✅ Add connection check middleware
+app.use((req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database is connecting. Please try again in a moment.'
+    });
+  }
+  next();
+});
 
 // Update CORS configuration in index.js
 const allowedOrigins = [
@@ -832,18 +844,33 @@ app.post('/api/test-email-direct', async (req, res) => {
   }
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
-  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ Avatar upload: POST /api/auth/upload-avatar`);
-  console.log(`✅ Email OTP: POST /api/auth/send-otp`);
-  console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
-  console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
-  console.log(`✅ Google Login: POST /api/auth/google`);
-  console.log(`✅ CORS: Configured for all origins`);
-});
+// ✅ Wait for MongoDB connection before starting server
+const startServer = async () => {
+  try {
+    // Wait for database connection
+    await mongoose.connection.asPromise();
+    console.log('✅ MongoDB connected successfully!');
+    
+    // Start server
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`\n🚀 Server running on port ${PORT}`);
+      console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
+      console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`✅ Avatar upload: POST /api/auth/upload-avatar`);
+      console.log(`✅ Email OTP: POST /api/auth/send-otp`);
+      console.log(`✅ Mobile OTP: POST /api/auth/send-mobile-otp`);
+      console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
+      console.log(`✅ Google Login: POST /api/auth/google`);
+      console.log(`✅ CORS: Configured for all origins`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    console.log('⚠️ API server kept alive. Check Atlas network access/DNS or MONGO_URI, then restart when fixed.');
+  }
+};
+
+// Start the server
+startServer();
 
 module.exports = app;

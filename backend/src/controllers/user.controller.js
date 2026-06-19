@@ -314,6 +314,49 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+// Generate new password for user/vendor (Admin only)
+exports.generateUserPassword = async (req, res) => {
+  try {
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ success: false, message: "Access denied. Admin only." });
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
+    let newPassword = '';
+    for (let i = 0; i < 10; i++) {
+      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    user.password = newPassword;
+    await user.save();
+
+    await sendMail({
+      to: user.email,
+      subject: 'Your New LCGC RFQ Password',
+      html: `<p>Hello ${user.name},</p><p>Your password has been reset by an administrator.</p><p><strong>New Password:</strong> ${newPassword}</p><p>Please log in and change your password immediately.</p>`,
+      text: `Your new LCGC RFQ password is: ${newPassword}`
+    });
+
+    res.json({
+      success: true,
+      message: "New password generated and emailed",
+      data: { id: user._id, email: user.email, password: newPassword }
+    });
+  } catch (error) {
+    console.error("Generate password error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.requestModuleAccess = async (req, res) => {
   try {
     const requesterId = req.user.id || req.user._id;

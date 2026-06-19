@@ -2029,8 +2029,8 @@ exports.createEPRequest = async (req, res) => {
       requestDate, stakeholders, ccList, attachments
     } = req.body;
 
-    if (!title || !amount || !vendor || !email) {
-      return res.status(400).json({ success: false, message: "Title, amount, vendor and email are required" });
+    if (!title || !email) {
+      return res.status(400).json({ success: false, message: "Title and email are required" });
     }
 
     const validStakeholders = (stakeholders || []).filter(s => s.name && s.email);
@@ -2045,8 +2045,8 @@ exports.createEPRequest = async (req, res) => {
         contactNo: contactNo || '',
         organization: organization || 'Radiant Appliances',
         title,
-        amount: Number(amount),
-        vendor,
+        amount: Number(amount) || 0,
+        vendor: vendor || '',
         priority: priority || 'Medium',
         description: description || '',
         objective: objective || '',

@@ -6,6 +6,7 @@ const {
   getAllRFQs,
   createRFQ,
   getRFQById,
+  getRFQBySerial,
   updateRFQ,
   deleteRFQ,
   approveRFQ,
@@ -21,6 +22,7 @@ router.get('/vendors', getVendors);
 // Protected routes (require authentication)
 router.get('/', authMiddleware, getAllRFQs);
 router.post('/', authMiddleware, createRFQ);
+router.get('/serial/:serialNumber', authMiddleware, getRFQBySerial);
 router.get('/:id', authMiddleware, getRFQById);
 router.put('/:id', authMiddleware, updateRFQ);
 router.delete('/:id', authMiddleware, deleteRFQ);

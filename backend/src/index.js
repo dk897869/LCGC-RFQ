@@ -91,6 +91,7 @@ const reportRoutes = safeRequire("./routes/report.routes");
 const approvalRoutes = safeRequire("./routes/approval.routes");
 const serialNumberRoutes = safeRequire("./routes/serialNumber.routes");
 const nppFormsRoutes = safeRequire("./routes/nppForms.routes");
+const notificationRoutes = safeRequire("./routes/notifications.routes");
 
 const app = express();
 
@@ -1316,6 +1317,7 @@ app.use("/api/serial-number", serialNumberRoutes);
 app.use("/api/part", partRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/ep-approval', requestRoutes);
+app.use('/api/notifications', authMiddleware, moduleAccessMiddleware, notificationRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

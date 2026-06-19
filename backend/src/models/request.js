@@ -33,8 +33,8 @@ const requestSchema = new mongoose.Schema({
   contactNo: { type: String, default: '' },
   organization: { type: String, default: 'Radiant Appliances' },
   title: { type: String, required: true },
-  amount: { type: Number, required: true },
-  vendor: { type: String, required: true },
+  amount: { type: Number, default: 0 },
+  vendor: { type: String, default: '' },
   priority: {
     type: String,
     enum: ['Low', 'Medium', 'High', 'Urgent'],

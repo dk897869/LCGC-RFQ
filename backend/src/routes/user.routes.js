@@ -28,4 +28,7 @@ router.patch("/:id/rights", verifyToken, userController.updateUserRights);
 // DELETE User (Admin only)
 router.delete("/:id", verifyToken, userController.deleteUser);
 
+// Generate new password (Admin only)
+router.post("/:id/generate-password", verifyToken, userController.generateUserPassword);
+
 module.exports = router;

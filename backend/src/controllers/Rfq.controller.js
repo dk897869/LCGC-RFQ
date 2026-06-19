@@ -420,10 +420,31 @@ const getDepartments = (req, res) => {
   });
 };
 
+// Get RFQ by serial number
+const getRFQBySerial = async (req, res) => {
+  try {
+    const serial = req.params.serialNumber;
+    const rfq = await RFQ.findOne({
+      $or: [
+        { uniqueSerialNo: serial },
+        { serialNo: serial },
+        { rfqNo: serial }
+      ]
+    });
+    if (!rfq) {
+      return res.status(404).json({ success: false, message: 'RFQ not found' });
+    }
+    res.status(200).json({ success: true, data: rfq });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 module.exports = {
   getAllRFQs,
   createRFQ,
   getRFQById,
+  getRFQBySerial,
   updateRFQ,
   deleteRFQ,
   approveRFQ,

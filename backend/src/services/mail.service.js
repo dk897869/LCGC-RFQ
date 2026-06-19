@@ -28,7 +28,7 @@ function getSMTPTransporter() {
       connectionTimeout: 30000,
       greetingTimeout: 30000,
       socketTimeout: 30000,
-      debug: process.env.SMTP_DEBUG === 'true'
+      debug: true
     });
     
     // Verify connection immediately
@@ -48,13 +48,11 @@ function getSMTPTransporter() {
 }
 
 function getFromAddress() {
-  if (process.env.SMTP_USER) {
+  // Always use SMTP_USER as the from address for Gmail
+  if (process.env.SMTP_ENABLED !== 'false' && process.env.SMTP_USER) {
     return process.env.SMTP_USER;
   }
-  if (process.env.SMTP_ENABLED === 'false') {
-    return process.env.MAIL_FROM || 'noreply@lcgc-rfq.com';
-  }
-  return null;
+  return 'dk897869@gmail.com';
 }
 
 function getFromName() {
@@ -1115,10 +1113,6 @@ async function sendMail(opts) {
   // For SMTP (Gmail), the "from" address MUST exactly match SMTP_USER
   // This is a Gmail requirement - the authenticated user must match the from address
   const fromEmail = getFromAddress();
-  if (!fromEmail) {
-    console.error('❌ SMTP_USER not configured');
-    return { success: false, error: 'SMTP not configured. Set SMTP_USER, SMTP_PASS, SMTP_HOST in Render environment.' };
-  }
   const fromName = getFromName();
   const fromString = `"${fromName}" <${fromEmail}>`;
   
@@ -1160,36 +1154,9 @@ async function sendMail(opts) {
   }
 }
 
-async function verifySmtpConnection() {
-  const transporter = getSMTPTransporter();
-  if (!transporter) {
-    return {
-      configured: false,
-      ready: false,
-      error: 'SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS in environment.'
-    };
-  }
-  try {
-    await transporter.verify();
-    return {
-      configured: true,
-      ready: true,
-      host: process.env.SMTP_HOST,
-      user: process.env.SMTP_USER
-    };
-  } catch (error) {
-    return {
-      configured: true,
-      ready: false,
-      error: error.message
-    };
-  }
-}
-
 module.exports = { 
   sendMail, 
-  getFromAddress,
-  verifySmtpConnection,
+  getFromAddress, 
   getOTPEmailHTML, 
   getEmailVerificationLinkHTML,
   getWelcomeEmailHTML,

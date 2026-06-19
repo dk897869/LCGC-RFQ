@@ -1,19 +1,13 @@
 // backend/src/services/fast2sms.service.js
 const axios = require('axios');
 
-const FAST2SMS_API_KEY = process.env.FAST2SMS_API_KEY || '';
+const FAST2SMS_API_KEY = 'xWX9L0fUhYl1cg5vw7NFnRjs3kAp2GqybiHTrzSmBIDJt4Kud8yDa6epRdYAtxPjvIriZohgm1cOfE35';
 
 /**
  * Send SMS using Fast2SMS API
  */
 const sendSmsOtp = async (mobileNumber) => {
   try {
-    if (!FAST2SMS_API_KEY) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      console.warn('⚠️ FAST2SMS_API_KEY not set in environment');
-      return { success: false, error: 'SMS service not configured. Set FAST2SMS_API_KEY in environment.', otp };
-    }
-
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     

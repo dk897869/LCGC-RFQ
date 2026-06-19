@@ -147,13 +147,10 @@
 
       <app-cash-purchase        *ngIf="activeTab === 'cash-purchase'"        (onSubmit)="handleSubmit($event)"></app-cash-purchase>
       <app-new-vendor           *ngIf="activeTab === 'new-vendor'"           (onSubmit)="handleSubmit($event)"></app-new-vendor>
-      <app-rfq-requisition      *ngIf="activeTab === 'rfq-npp-form'"         (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
-      <app-rfq-vendor           *ngIf="activeTab === 'rfq-vendor-requisition'" (onSubmit)="handleSubmit($event)"></app-rfq-vendor>
+      <!-- <app-rfq-requisition      *ngIf="activeTab === 'rfq-npp-form'"         (onSubmit)="handleSubmit($event)"></app-rfq-requisition> -->
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-requisition'"      [initialSubMenu]="'rfq-list'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-approvals'"        [initialSubMenu]="'approvals'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-status'"           [initialSubMenu]="'status'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
-      <app-ep-approval          *ngIf="activeTab === 'ep-request' || activeTab === 'ep-approvals' || activeTab === 'ep-status'">
-      </app-ep-approval>
       <app-rfq-vendor           *ngIf="activeTab === 'quotation-submission'" (onSubmit)="handleSubmit($event)"></app-rfq-vendor>
       <app-vendor-list          *ngIf="activeTab === 'vendor-list'"></app-vendor-list>
       <app-employee-detail      *ngIf="activeTab === 'employee-detail'"></app-employee-detail>

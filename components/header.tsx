@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Search, ChevronDown } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import { useStore } from '@/lib/store';
 
 export function Header() {

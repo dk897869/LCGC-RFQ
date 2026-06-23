@@ -86,7 +86,7 @@ export function Sidebar() {
                   onClick={() => setIsOpen(false)}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon size={20} />
+                    <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.name}</span>
                   </div>
                   {item.badge && (

@@ -10,8 +10,6 @@ import {
   RFQFilter,
   POFilter,
   ApprovalFilter,
-  OTPRequest,
-  OTPVerify,
   AuthResponse,
 } from './types';
 

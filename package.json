@@ -19,7 +19,9 @@
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@tailwindcss/postcss": "^4.3.1",
+    "axios": "^1.18.1",
     "clsx": "^2.1.1",
+    "lucide-angular": "^1.0.0",
     "lucide-react": "^0.457.0",
     "next": "^16.2.0",
     "react": "^19.2.0",
@@ -32,11 +34,11 @@
     "@types/node": "^20.17.0",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.2",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.5.1",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.2.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^4.0.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.1",
     "typescript": "^5.7.2"
   }
 }

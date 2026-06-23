@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #1e5a6b;
+    --color-primary-light: #2878a0;
+    --color-accent: #06a0d8;
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-destructive: #ef4444;
+    --color-bg: #f8f9fa;
+    --color-fg: #1e293b;
+    --color-card: #ffffff;
+    --color-border: #e2e8f0;
+    --color-muted: #94a3b8;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #0f1419;
+      --color-fg: #e2e8f0;
+      --color-card: #1e293b;
+      --color-border: #475569;
+      --color-muted: #64748b;
+    }
+  }
+
+  body {
+    @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  .section-card {
+    @apply bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-200 hover:shadow-md;
+  }
+
+  .section-header {
+    @apply text-2xl font-bold mb-6 flex items-center gap-2;
+  }
+
+  .stat-card {
+    @apply bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 rounded-md bg-blue-600 text-white font-medium transition-all duration-200 hover:bg-blue-700 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 rounded-md bg-slate-600 text-white font-medium transition-all duration-200 hover:bg-slate-700 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply px-4 py-2 rounded-md border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 font-medium transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300;
+  }
+
+  .badge-destructive {
+    @apply bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300;
+  }
+
+  .badge-muted {
+    @apply bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400;
+  }
+
+  .fade-in-up {
+    animation: fadeIn 0.3s ease-in;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    @apply shadow-sm;
+  }
+}

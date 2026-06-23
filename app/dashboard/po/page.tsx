@@ -1,287 +1,224 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
-import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Download, AlertCircle, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { apiClient } from '@/lib/api-client';
+import { LoadingSpinner } from '@/components/loading-spinner';
+import { Search, Plus, Eye, CheckCircle, Clock } from 'lucide-react';
+import Link from 'next/link';
+
+const STATUS_COLORS: Record<string, string> = {
+  approved: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200',
+  draft: 'bg-slate-100 dark:bg-slate-700/30 text-slate-800 dark:text-slate-200',
+  in_delivery: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200',
+  received: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200',
+  cancelled: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200',
+  rejected: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200',
+};
 
 export default function POPage() {
-  const { pos, deletePO } = useStore();
+  const router = useRouter();
+  const { isAuthenticated, pos, setPOs, addToast } = useStore();
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth');
+      return;
+    }
+
+    const fetchPOs = async () => {
+      try {
+        const response = await apiClient.getPOList({ status: statusFilter === 'all' ? undefined : (statusFilter as any) });
+        if (response.data?.data) {
+          setPOs(response.data.data);
+        }
+      } catch (err) {
+        addToast('Failed to load purchase orders', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPOs();
+  }, [isAuthenticated, router, statusFilter, setPOs, addToast]);
+
   const filteredPOs = pos.filter((po) => {
     const matchesSearch =
-      po.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      po.vendor.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || po.status === statusFilter;
-    return matchesSearch && matchesStatus;
+      po.poNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      po.vendorName?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
+
+  if (isLoading) {
+    return <LoadingSpinner fullScreen size="lg" message="Loading purchase orders..." />;
+  }
 
   const stats = {
     total: pos.length,
     approved: pos.filter((p) => p.status === 'approved').length,
-    pending: pos.filter((p) => p.status === 'pending_approval').length,
+    pending: pos.filter((p) => p.status === 'draft').length,
     totalValue: pos.reduce((sum, p) => sum + p.totalAmount, 0),
   };
 
   return (
-    <div className="space-y-6 fade-in-up">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Purchase Orders</h1>
-          <p className="text-muted-foreground mt-1">Manage and track purchase orders</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Purchase Orders</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">Manage and track purchase orders</p>
         </div>
-        <button className="btn-primary flex items-center justify-center gap-2 w-full md:w-auto">
-          <Plus size={20} />
+        <Link
+          href="/dashboard/po/create"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+        >
+          <Plus className="w-5 h-5" />
           Create PO
-        </button>
+        </Link>
       </div>
 
-      {/* Quick Stats */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatBox label="Total POs" value={stats.total} color="primary" />
-        <StatBox label="Pending Approvals" value={stats.pending} color="warning" />
-        <StatBox label="Approved" value={stats.approved} color="success" />
-        <StatBox label="Total Value" value={formatCurrency(stats.totalValue)} color="accent" />
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Total POs</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{stats.total}</p>
+            </div>
+            <CheckCircle className="w-12 h-12 text-blue-500 opacity-20" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Pending</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{stats.pending}</p>
+            </div>
+            <Clock className="w-12 h-12 text-amber-500 opacity-20" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Approved</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{stats.approved}</p>
+            </div>
+            <CheckCircle className="w-12 h-12 text-green-500 opacity-20" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Total Value</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">${(stats.totalValue / 1000).toFixed(0)}K</p>
+            </div>
+            <CheckCircle className="w-12 h-12 text-purple-500 opacity-20" />
+          </div>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+      {/* Search and Filters */}
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Search</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search by PO number or vendor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-10"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter size={20} className="text-muted-foreground" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="input-field"
-              >
-                <option value="all">All Status</option>
-                <option value="draft">Draft</option>
-                <option value="pending_approval">Pending Approval</option>
-                <option value="approved">Approved</option>
-                <option value="received">Received</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* PO Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>All Purchase Orders</CardTitle>
-              <CardDescription>{filteredPOs.length} PO(s) found</CardDescription>
-            </div>
-            <Download size={20} className="text-muted-foreground cursor-pointer hover:text-foreground" />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status Filter</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All</option>
+              <option value="draft">Draft</option>
+              <option value="approved">Approved</option>
+              <option value="in_delivery">In Delivery</option>
+              <option value="received">Received</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">PO Number</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Vendor</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Amount</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Delivery</th>
-                  <th className="px-4 py-3 text-right font-semibold text-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPOs.map((po) => (
-                  <tr key={po.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <span className="font-semibold text-primary">{po.number}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-foreground">{po.vendor}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-semibold">{formatCurrency(po.totalAmount)}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`badge badge-${getStatusColor(po.status)}`}>
-                        {po.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-muted-foreground">{formatDate(po.deliveryDate)}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button className="p-2 hover:bg-muted rounded-lg transition-colors" title="View">
-                          <Eye size={18} className="text-muted-foreground" />
-                        </button>
-                        <button className="p-2 hover:bg-muted rounded-lg transition-colors" title="Edit">
-                          <Edit size={18} className="text-muted-foreground" />
-                        </button>
-                        <button
-                          onClick={() => deletePO(po.id)}
-                          className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} className="text-destructive" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filteredPOs.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No purchase orders found</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* PO Detail Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredPOs.slice(0, 2).map((po) => (
-          <Card key={po.id} className="overflow-hidden">
-            <CardHeader className="border-b border-border">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{po.number}</CardTitle>
-                  <CardDescription>{po.vendor}</CardDescription>
-                </div>
-                <span className={`badge badge-${getStatusColor(po.status)}`}>
-                  {po.status}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                {/* Items */}
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-3">Items</p>
-                  <div className="space-y-2">
-                    {po.items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground truncate">{item.description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.quantity} x {formatCurrency(item.unitPrice)}
-                          </p>
-                        </div>
-                        <p className="text-sm font-semibold text-foreground">
-                          {formatCurrency(item.totalPrice)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-foreground">Total Amount</span>
-                    <span className="text-xl font-bold text-primary">
-                      {formatCurrency(po.totalAmount)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Timeline */}
-                <div className="pt-4 border-t border-border space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-success" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Created</p>
-                      <p className="text-sm font-medium text-foreground">{formatDate(po.createdDate)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        po.status === 'received' ? 'bg-success' : 'bg-warning'
-                      }`}
-                    />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Delivery Expected</p>
-                      <p className="text-sm font-medium text-foreground">{formatDate(po.deliveryDate)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Approvals */}
-                {po.approvals.length > 0 && (
-                  <div className="pt-4 border-t border-border">
-                    <p className="text-sm font-semibold text-foreground mb-2">Approvals</p>
-                    <div className="space-y-2">
-                      {po.approvals.map((approval) => (
-                        <div
-                          key={approval.id}
-                          className="flex items-center gap-2 p-2 bg-muted/30 rounded"
-                        >
-                          {approval.status === 'approved' ? (
-                            <CheckCircle size={16} className="text-success" />
-                          ) : (
-                            <AlertCircle size={16} className="text-warning" />
-                          )}
-                          <span className="text-sm text-foreground flex-1">{approval.approver}</span>
-                          <span
-                            className={`text-xs font-semibold ${
-                              approval.status === 'approved'
-                                ? 'text-success'
-                                : 'text-warning'
-                            }`}
-                          >
-                            {approval.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        </div>
       </div>
-    </div>
-  );
-}
 
-interface StatBoxProps {
-  label: string;
-  value: string | number;
-  color: 'primary' | 'secondary' | 'accent' | 'success' | 'warning';
-}
+      {/* POs Table */}
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">PO Number</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Vendor</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Amount</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Items</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Date</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              {filteredPOs.length > 0 ? (
+                filteredPOs.map((po) => {
+                  const statusColor = STATUS_COLORS[po.status] || 'bg-slate-100 dark:bg-slate-700/30 text-slate-800 dark:text-slate-200';
+                  return (
+                    <tr key={po.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">{po.poNo}</td>
+                      <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">{po.vendorName || 'N/A'}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">${po.totalAmount.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{po.items.length} items</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+                          {po.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(po.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <Link
+                          href={`/dashboard/po/${po.id}`}
+                          className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <p className="font-medium">No purchase orders found</p>
+                    <p className="text-sm">Try adjusting your search or filters</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-function StatBox({ label, value, color }: StatBoxProps) {
-  const colorMap = {
-    primary: 'bg-primary/10 text-primary border-primary/20',
-    secondary: 'bg-secondary/10 text-secondary border-secondary/20',
-    accent: 'bg-accent/10 text-accent border-accent/20',
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning border-warning/20',
-  };
-
-  return (
-    <div className={`p-4 rounded-lg border ${colorMap[color]}`}>
-      <p className="text-xs font-medium opacity-70 mb-1">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
+      {/* Total Count */}
+      <div className="text-sm text-slate-600 dark:text-slate-400">
+        Total: <span className="font-semibold">{filteredPOs.length}</span> purchase orders
+      </div>
     </div>
   );
 }

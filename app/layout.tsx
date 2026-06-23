@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { ToastContainer } from '@/components/toast-container';
 import './globals.css';
 
 const geistSans = Geist({
@@ -37,6 +38,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-slate-50 dark:bg-slate-950`}>
         {children}
+        <ToastContainer />
       </body>
     </html>
   );

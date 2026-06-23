@@ -1,245 +1,221 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Users, FileText, Package, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { apiClient } from '@/lib/api-client';
+import { LoadingSpinner } from '@/components/loading-spinner';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 const chartData = [
-  { month: 'Jan', rfqs: 12, pos: 8, vendors: 15 },
-  { month: 'Feb', rfqs: 19, pos: 12, vendors: 18 },
-  { month: 'Mar', rfqs: 25, pos: 18, vendors: 22 },
-  { month: 'Apr', rfqs: 22, pos: 15, vendors: 20 },
-  { month: 'May', rfqs: 28, pos: 21, vendors: 25 },
-  { month: 'Jun', rfqs: 32, pos: 25, vendors: 28 },
+  { name: 'Jan', requests: 40, approved: 32 },
+  { name: 'Feb', requests: 45, approved: 38 },
+  { name: 'Mar', requests: 52, approved: 45 },
+  { name: 'Apr', requests: 48, approved: 42 },
+  { name: 'May', requests: 61, approved: 55 },
+  { name: 'Jun', requests: 55, approved: 49 },
 ];
 
-const spendData = [
-  { name: 'IT Equipment', value: 150000 },
-  { name: 'Office Supplies', value: 35000 },
-  { name: 'Facilities', value: 42000 },
-  { name: 'Services', value: 28000 },
+const typeData = [
+  { name: 'RFQ', value: 45 },
+  { name: 'PO', value: 30 },
+  { name: 'Invoice', value: 25 },
 ];
 
-const COLORS = ['hsl(200 45% 38%)', 'hsl(215 35% 45%)', 'hsl(190 70% 45%)', 'hsl(142 70% 45%)'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
 
 export default function DashboardPage() {
-  const { rfqs, pos, vendors } = useStore();
+  const router = useRouter();
+  const { user, isAuthenticated, dashboardStats, setDashboardStats, addToast } = useStore();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Calculate stats
-  const totalRFQs = rfqs.length;
-  const activeRFQs = rfqs.filter((r) => r.status === 'published').length;
-  const totalPOs = pos.length;
-  const pendingApprovals = pos.filter((p) => p.status === 'pending_approval').length;
-  const activeVendors = vendors.filter((v) => v.status === 'active').length;
-  const totalSpend = pos.reduce((sum, p) => sum + p.totalAmount, 0);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth');
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const response = await apiClient.getDashboardStats();
+        if (response.data) {
+          setDashboardStats(response.data);
+        }
+      } catch (err) {
+        addToast('Failed to load dashboard data', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [isAuthenticated, router, setDashboardStats, addToast]);
+
+  if (isLoading) {
+    return <LoadingSpinner fullScreen size="lg" message="Loading dashboard..." />;
+  }
+
+  const stats = dashboardStats || {
+    totalRequests: 6,
+    pendingApprovals: 4,
+    approvedRequests: 2,
+    rejectedRequests: 0,
+    successRate: 33,
+    totalSpend: 150000,
+    pendingAmount: 45000,
+  };
 
   return (
-    <div className="space-y-8 fade-in-up">
-      {/* Page Header */}
-      <div>
-        <h1 className="section-header">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here&apos;s your procurement overview.</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-8 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Good evening, {user?.name}!</h1>
+            <p className="text-blue-100">Welcome back to your dashboard. Here&apos;s what&apos;s happening today.</p>
+            <span className="inline-block mt-3 px-3 py-1 bg-blue-500/30 rounded-full text-sm font-medium">{user?.role?.toUpperCase()}</span>
+          </div>
+          <div className="text-right">
+            <div className="text-4xl font-bold">{new Date().getHours().toString().padStart(2, '0')}:{new Date().getMinutes().toString().padStart(2, '0')}</div>
+            <div className="text-sm text-blue-100">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Key Statistics */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={FileText}
-          label="Active RFQs"
-          value={activeRFQs}
-          total={totalRFQs}
-          trend="+12%"
-          color="primary"
-        />
-        <StatCard
-          icon={Package}
-          label="Purchase Orders"
-          value={totalPOs}
-          total={totalPOs}
-          trend="+8%"
-          color="secondary"
-        />
-        <StatCard
-          icon={Users}
-          label="Active Vendors"
-          value={activeVendors}
-          total={vendors.length}
-          trend="+5%"
-          color="accent"
-        />
-        <StatCard
+        <KPICard
+          title="Total Requests"
+          value={stats.totalRequests}
           icon={TrendingUp}
-          label="Total Spend"
-          value={formatCurrency(totalSpend)}
-          total={formatCurrency(totalSpend)}
-          trend="+24%"
-          color="success"
+          color="blue"
+          subtext="All time requests"
+        />
+        <KPICard
+          title="Pending"
+          value={stats.pendingApprovals}
+          icon={Clock}
+          color="amber"
+          subtext="Waiting for approval"
+        />
+        <KPICard
+          title="Approved"
+          value={stats.approvedRequests}
+          icon={CheckCircle}
+          color="green"
+          subtext="Successfully approved"
+        />
+        <KPICard
+          title="Success Rate"
+          value={`${stats.successRate}%`}
+          icon={TrendingUp}
+          color="purple"
+          subtext="Overall success rate"
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Activity Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Procurement Activity</CardTitle>
-            <CardDescription>RFQ, PO, and Vendor trends over 6 months</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                    }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="rfqs" stroke="hsl(200 45% 38%)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="pos" stroke="hsl(215 35% 45%)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="vendors" stroke="hsl(190 70% 45%)" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Request Trend */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Request Trends</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis stroke="#94a3b8" />
+              <YAxis stroke="#94a3b8" />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }} />
+              <Legend />
+              <Line type="monotone" dataKey="requests" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6' }} />
+              <Line type="monotone" dataKey="approved" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
 
-        {/* Spend Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Spend Distribution</CardTitle>
-            <CardDescription>By Category</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={spendData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name} $${(value / 1000).toFixed(0)}K`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {spendData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                    }}
-                    formatter={(value) => formatCurrency(value as number)}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Request Types */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Request Types</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={typeData} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={80} fill="#8884d8" dataKey="value">
+                {typeData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent RFQs */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent RFQs</CardTitle>
-            <CardDescription>Latest requests for quotation</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {rfqs.slice(0, 4).map((rfq) => (
-                <div
-                  key={rfq.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{rfq.title}</p>
-                    <p className="text-xs text-muted-foreground">{rfq.number}</p>
-                  </div>
-                  <span className={`badge badge-${rfq.status === 'published' ? 'warning' : 'success'}`}>
-                    {rfq.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pending Approvals */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Approvals</CardTitle>
-            <CardDescription>{pendingApprovals} awaiting approval</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {pos.filter((p) => p.status === 'pending_approval').map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between p-3 rounded-lg border-l-4 border-warning bg-warning/5"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground">{p.number}</p>
-                    <p className="text-xs text-muted-foreground">{p.vendor}</p>
-                  </div>
-                  <p className="font-semibold text-foreground">{formatCurrency(p.totalAmount)}</p>
-                </div>
-              ))}
-              {pendingApprovals === 0 && (
-                <p className="text-center py-8 text-muted-foreground">No pending approvals</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Quick Actions */}
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <QuickActionButton label="Create RFQ" href="/dashboard/rfq" color="blue" />
+          <QuickActionButton label="Create PO" href="/dashboard/po" color="green" />
+          <QuickActionButton label="Pending Approvals" href="/dashboard/approvals" color="amber" />
+          <QuickActionButton label="View Reports" href="/dashboard/vendors" color="purple" />
+        </div>
       </div>
     </div>
   );
 }
 
-interface StatCardProps {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
+interface KPICardProps {
+  title: string;
   value: string | number;
-  total?: string | number;
-  trend?: string;
-  color?: 'primary' | 'secondary' | 'accent' | 'success';
+  icon: React.ComponentType<{ className?: string }>;
+  color: 'blue' | 'amber' | 'green' | 'purple';
+  subtext: string;
 }
 
-function StatCard({ icon: Icon, label, value, total, trend, color = 'primary' }: StatCardProps) {
-  const colorMap = {
-    primary: 'from-primary to-primary/80',
-    secondary: 'from-secondary to-secondary/80',
-    accent: 'from-accent to-accent/80',
-    success: 'from-success to-success/80',
+function KPICard({ title, value, icon: Icon, color, subtext }: KPICardProps) {
+  const colorClasses = {
+    blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+    amber: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+    green: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800',
+    purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">{label}</p>
-            <p className="text-3xl font-bold text-foreground">{value}</p>
-            {trend && <p className="text-xs text-success mt-2 font-semibold">{trend} this month</p>}
-          </div>
-          <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${colorMap[color]} flex items-center justify-center`}>
-            <Icon className="text-white" size={24} />
-          </div>
+    <div className={`${colorClasses[color]} border rounded-lg p-6 shadow-sm transition-all hover:shadow-md`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium opacity-75">{title}</p>
+          <h3 className="text-3xl font-bold mt-1">{value}</h3>
+          <p className="text-xs opacity-60 mt-2">{subtext}</p>
         </div>
-      </CardContent>
-    </Card>
+        <Icon className="w-12 h-12 opacity-20" />
+      </div>
+    </div>
+  );
+}
+
+interface QuickActionButtonProps {
+  label: string;
+  href: string;
+  color: string;
+}
+
+function QuickActionButton({ label, href, color }: QuickActionButtonProps) {
+  const colorClasses: Record<string, string> = {
+    blue: 'bg-blue-600 hover:bg-blue-700 text-white',
+    green: 'bg-green-600 hover:bg-green-700 text-white',
+    amber: 'bg-amber-600 hover:bg-amber-700 text-white',
+    purple: 'bg-purple-600 hover:bg-purple-700 text-white',
+  };
+
+  return (
+    <Link
+      href={href}
+      className={`${colorClasses[color] || 'bg-blue-600 hover:bg-blue-700 text-white'} font-medium py-2 px-4 rounded-lg transition-all transform hover:scale-105 active:scale-95 text-center block`}
+    >
+      {label}
+    </Link>
   );
 }

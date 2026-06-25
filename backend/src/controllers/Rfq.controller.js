@@ -22,7 +22,6 @@ const sendRFQCreatedEmail = async (rfqData) => {
     console.log(`📧 Sending RFQ creation email to: ${rfqData.emailId}`);
     console.log(`📧 CC recipients: ${rfqData.ccTo?.join(', ') || 'None'}`);
     
-    // Send to requester with CC
     await sendMail({
       to: rfqData.emailId,
       cc: rfqData.ccTo || [],
@@ -36,7 +35,6 @@ const sendRFQCreatedEmail = async (rfqData) => {
       `
     });
     
-    // Send to all stakeholders (approvers)
     if (rfqData.stakeholders && rfqData.stakeholders.length > 0) {
       for (const approver of rfqData.stakeholders) {
         if (approver.email && approver.email !== rfqData.emailId) {
@@ -99,7 +97,6 @@ const createRFQ = async (req, res) => {
       stakeholders
     } = req.body;
 
-    // Validate required fields
     if (!titleOfActivity) {
       return res.status(400).json({
         success: false,
@@ -121,7 +118,6 @@ const createRFQ = async (req, res) => {
       });
     }
 
-    // Process items
     let processedItems = [];
     if (items && Array.isArray(items)) {
       processedItems = items.map(item => ({
@@ -144,7 +140,6 @@ const createRFQ = async (req, res) => {
       });
     }
 
-    // Process stakeholders
     let processedStakeholders = [];
     if (stakeholders && Array.isArray(stakeholders)) {
       processedStakeholders = stakeholders.map(s => ({
@@ -158,7 +153,6 @@ const createRFQ = async (req, res) => {
       })).filter(s => s.email);
     }
 
-    // Generate unique serial number
     const uniqueSerialNo = generateSerialNumber();
     console.log(`📋 Generated RFQ Serial Number: ${uniqueSerialNo}`);
 
@@ -177,28 +171,19 @@ const createRFQ = async (req, res) => {
       stakeholders: processedStakeholders,
       ccTo: ccTo || [],
       status: 'Pending',
-      createdBy: req.user?.id,
-      // RFQ Workflow fields
       currentStage: 'RFQ',
       vendorRequestCreated: false,
       quotationCompleted: false,
       approvalDate: null,
       approvedBy: null,
-      rejectedBy: null,
-      rejectedReason: null,
-      rejectedDate: null,
-      winnerVendorId: null,
-      winnerVendorName: null,
-      winnerPrice: null
+      createdBy: req.user?.id
     };
 
     const newRFQ = new RFQ(rfqData);
     const savedRFQ = await newRFQ.save();
 
     console.log("✅ RFQ saved successfully:", savedRFQ._id);
-    console.log(`📋 RFQ Serial Number: ${savedRFQ.uniqueSerialNo}`);
 
-    // Send emails (non-blocking)
     try {
       await sendRFQCreatedEmail(savedRFQ);
       console.log("📧 RFQ creation emails sent successfully");
@@ -318,7 +303,6 @@ const approveRFQ = async (req, res) => {
       });
     }
     
-    // Update RFQ with approval
     rfq.status = 'Approved';
     rfq.approvalDate = new Date();
     rfq.approvedBy = userName;
@@ -333,7 +317,6 @@ const approveRFQ = async (req, res) => {
     
     await rfq.save();
     
-    // Send approval email (non-blocking)
     try {
       await sendMail({
         to: rfq.emailId,
@@ -383,7 +366,6 @@ const rejectRFQ = async (req, res) => {
       });
     }
     
-    // Update RFQ with rejection
     rfq.status = 'Rejected';
     rfq.rejectedBy = userName;
     rfq.rejectedReason = comments || 'No reason provided';
@@ -397,7 +379,6 @@ const rejectRFQ = async (req, res) => {
     
     await rfq.save();
     
-    // Send rejection email (non-blocking)
     try {
       await sendMail({
         to: rfq.emailId,
@@ -426,6 +407,87 @@ const rejectRFQ = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: err.message || 'Failed to reject RFQ'
+    });
+  }
+};
+
+// Get Approved RFQs (for vendor request)
+const getApprovedRFQs = async (req, res) => {
+  try {
+    const rfqs = await RFQ.find({
+      status: 'Approved',
+      vendorRequestCreated: false,
+      currentStage: { $ne: 'Rejected' }
+    }).sort({ approvalDate: -1 });
+
+    console.log(`✅ Found ${rfqs.length} approved RFQs ready for vendor request`);
+
+    res.status(200).json({
+      success: true,
+      count: rfqs.length,
+      data: rfqs
+    });
+  } catch (err) {
+    console.error("Error in getApprovedRFQs:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to fetch approved RFQs'
+    });
+  }
+};
+
+// Get RFQs by vendor request status
+const getRFQsByVendorStatus = async (req, res) => {
+  try {
+    const { vendorRequestCreated } = req.query;
+    let filter = { status: 'Approved' };
+    
+    if (vendorRequestCreated === 'true') {
+      filter.vendorRequestCreated = true;
+    } else if (vendorRequestCreated === 'false') {
+      filter.vendorRequestCreated = false;
+    }
+
+    const rfqs = await RFQ.find(filter).sort({ approvalDate: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: rfqs.length,
+      data: rfqs
+    });
+  } catch (err) {
+    console.error("Error in getRFQsByVendorStatus:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+// Get RFQ workflow status
+const getRFQWorkflowStatus = async (req, res) => {
+  try {
+    const rfq = await RFQ.findById(req.params.id).select(
+      'uniqueSerialNo status currentStage vendorRequestCreated quotationCompleted ' +
+      'approvalDate approvedBy rejectedDate rejectedBy winnerVendorId winnerVendorName'
+    );
+
+    if (!rfq) {
+      return res.status(404).json({
+        success: false,
+        message: 'RFQ not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: rfq
+    });
+  } catch (err) {
+    console.error("Error in getRFQWorkflowStatus:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
     });
   }
 };
@@ -474,131 +536,6 @@ const getRFQBySerial = async (req, res) => {
   }
 };
 
-// Get approved RFQs for vendor request
-const getApprovedRFQs = async (req, res) => {
-  try {
-    const rfqs = await RFQ.find({
-      status: 'Approved',
-      vendorRequestCreated: false,
-      currentStage: { $ne: 'Rejected' }
-    }).sort({ approvedDate: -1 });
-    
-    res.status(200).json({
-      success: true,
-      count: rfqs.length,
-      data: rfqs
-    });
-  } catch (err) {
-    console.error("Error in getApprovedRFQs:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
-  }
-};
-
-// Update vendor request status for RFQ
-const updateVendorRequestStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { vendorRequestCreated, currentStage } = req.body;
-    
-    const rfq = await RFQ.findById(id);
-    if (!rfq) {
-      return res.status(404).json({ success: false, message: 'RFQ not found' });
-    }
-    
-    if (vendorRequestCreated !== undefined) {
-      rfq.vendorRequestCreated = vendorRequestCreated;
-    }
-    if (currentStage) {
-      rfq.currentStage = currentStage;
-    }
-    
-    await rfq.save();
-    
-    res.status(200).json({
-      success: true,
-      message: 'RFQ vendor request status updated',
-      data: rfq
-    });
-  } catch (err) {
-    console.error("Error in updateVendorRequestStatus:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
-  }
-};
-
-// Update quotation status for RFQ
-const updateQuotationStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { quotationCompleted, currentStage } = req.body;
-    
-    const rfq = await RFQ.findById(id);
-    if (!rfq) {
-      return res.status(404).json({ success: false, message: 'RFQ not found' });
-    }
-    
-    if (quotationCompleted !== undefined) {
-      rfq.quotationCompleted = quotationCompleted;
-    }
-    if (currentStage) {
-      rfq.currentStage = currentStage;
-    }
-    
-    await rfq.save();
-    
-    res.status(200).json({
-      success: true,
-      message: 'RFQ quotation status updated',
-      data: rfq
-    });
-  } catch (err) {
-    console.error("Error in updateQuotationStatus:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
-  }
-};
-
-// Select winner for RFQ
-const selectWinner = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { winnerVendorId, winnerVendorName, winnerPrice } = req.body;
-    
-    const rfq = await RFQ.findById(id);
-    if (!rfq) {
-      return res.status(404).json({ success: false, message: 'RFQ not found' });
-    }
-    
-    rfq.winnerVendorId = winnerVendorId;
-    rfq.winnerVendorName = winnerVendorName;
-    rfq.winnerPrice = winnerPrice;
-    rfq.status = 'Vendor Finalized';
-    rfq.currentStage = 'Completed';
-    rfq.updatedAt = new Date();
-    
-    await rfq.save();
-    
-    res.status(200).json({
-      success: true,
-      message: 'Winner selected successfully',
-      data: rfq
-    });
-  } catch (err) {
-    console.error("Error in selectWinner:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
-  }
-};
-
 module.exports = {
   getAllRFQs,
   createRFQ,
@@ -611,7 +548,6 @@ module.exports = {
   getVendors,
   getDepartments,
   getApprovedRFQs,
-  updateVendorRequestStatus,
-  updateQuotationStatus,
-  selectWinner
+  getRFQsByVendorStatus,
+  getRFQWorkflowStatus
 };

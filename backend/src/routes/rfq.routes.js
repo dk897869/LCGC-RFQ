@@ -14,16 +14,19 @@ const {
   getVendors,
   getDepartments,
   getApprovedRFQs,
-  updateVendorRequestStatus,
-  updateQuotationStatus,
-  selectWinner
+  getRFQsByVendorStatus,
+  getRFQWorkflowStatus
 } = require('../controllers/Rfq.controller');
 
-// Public routes
+// Public routes (no auth required)
 router.get('/departments', getDepartments);
 router.get('/vendors', getVendors);
 
-// Protected routes (require authentication)
+// Protected routes - IMPORTANT: Specific routes BEFORE parameterized routes
+router.get('/approved', authMiddleware, getApprovedRFQs);  // ✅ MUST come before /:id
+router.get('/vendor-status', authMiddleware, getRFQsByVendorStatus);
+
+// Parameterized routes
 router.get('/', authMiddleware, getAllRFQs);
 router.post('/', authMiddleware, createRFQ);
 router.get('/serial/:serialNumber', authMiddleware, getRFQBySerial);
@@ -35,10 +38,7 @@ router.delete('/:id', authMiddleware, deleteRFQ);
 router.patch('/:id/approve', authMiddleware, approveRFQ);
 router.patch('/:id/reject', authMiddleware, rejectRFQ);
 
-// Vendor Request routes
-router.get('/approved', authMiddleware, getApprovedRFQs);
-router.patch('/:id/vendor-request', authMiddleware, updateVendorRequestStatus);
-router.patch('/:id/quotation-status', authMiddleware, updateQuotationStatus);
-router.post('/:id/select-winner', authMiddleware, selectWinner);
+// Workflow routes
+router.get('/:id/workflow', authMiddleware, getRFQWorkflowStatus);
 
 module.exports = router;

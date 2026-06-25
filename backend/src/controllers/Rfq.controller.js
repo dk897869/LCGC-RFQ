@@ -14,45 +14,49 @@ const generateSerialNumber = () => {
   return `RFQ-${year}${month}${day}${hours}${minutes}${seconds}-${random}`;
 };
 
-// Send RFQ Created Email
+// Send RFQ Created Email (Non-blocking)
 const sendRFQCreatedEmail = async (rfqData) => {
-  const subject = `📋 New RFQ Created: ${rfqData.titleOfActivity} (${rfqData.uniqueSerialNo})`;
-  
-  console.log(`📧 Sending RFQ creation email to: ${rfqData.emailId}`);
-  console.log(`📧 CC recipients: ${rfqData.ccTo?.join(', ') || 'None'}`);
-  
-  // Send to requester with CC
-  await sendMail({
-    to: rfqData.emailId,
-    cc: rfqData.ccTo || [],
-    subject: subject,
-    html: `
-      <h2>RFQ Created Successfully</h2>
-      <p><strong>Serial Number:</strong> ${rfqData.uniqueSerialNo}</p>
-      <p><strong>Title:</strong> ${rfqData.titleOfActivity}</p>
-      <p><strong>Status:</strong> Pending Approval</p>
-      <p>Your RFQ has been submitted for approval. You will be notified once it is processed.</p>
-    `
-  });
-  
-  // Send to all stakeholders (approvers)
-  if (rfqData.stakeholders && rfqData.stakeholders.length > 0) {
-    for (const approver of rfqData.stakeholders) {
-      if (approver.email && approver.email !== rfqData.emailId) {
-        await sendMail({
-          to: approver.email,
-          subject: `🔔 Approval Required: ${rfqData.titleOfActivity} (${rfqData.uniqueSerialNo})`,
-          html: `
-            <h2>RFQ Approval Required</h2>
-            <p><strong>Requester:</strong> ${rfqData.requesterName}</p>
-            <p><strong>Title:</strong> ${rfqData.titleOfActivity}</p>
-            <p><strong>Serial Number:</strong> ${rfqData.uniqueSerialNo}</p>
-            <p>Please login to review and approve this RFQ.</p>
-          `
-        });
-        console.log(`📧 Approval request sent to: ${approver.email}`);
+  try {
+    const subject = `📋 New RFQ Created: ${rfqData.titleOfActivity} (${rfqData.uniqueSerialNo})`;
+    
+    console.log(`📧 Sending RFQ creation email to: ${rfqData.emailId}`);
+    console.log(`📧 CC recipients: ${rfqData.ccTo?.join(', ') || 'None'}`);
+    
+    // Send to requester with CC
+    await sendMail({
+      to: rfqData.emailId,
+      cc: rfqData.ccTo || [],
+      subject: subject,
+      html: `
+        <h2>RFQ Created Successfully</h2>
+        <p><strong>Serial Number:</strong> ${rfqData.uniqueSerialNo}</p>
+        <p><strong>Title:</strong> ${rfqData.titleOfActivity}</p>
+        <p><strong>Status:</strong> Pending Approval</p>
+        <p>Your RFQ has been submitted for approval. You will be notified once it is processed.</p>
+      `
+    });
+    
+    // Send to all stakeholders (approvers)
+    if (rfqData.stakeholders && rfqData.stakeholders.length > 0) {
+      for (const approver of rfqData.stakeholders) {
+        if (approver.email && approver.email !== rfqData.emailId) {
+          await sendMail({
+            to: approver.email,
+            subject: `🔔 Approval Required: ${rfqData.titleOfActivity} (${rfqData.uniqueSerialNo})`,
+            html: `
+              <h2>RFQ Approval Required</h2>
+              <p><strong>Requester:</strong> ${rfqData.requesterName}</p>
+              <p><strong>Title:</strong> ${rfqData.titleOfActivity}</p>
+              <p><strong>Serial Number:</strong> ${rfqData.uniqueSerialNo}</p>
+              <p>Please login to review and approve this RFQ.</p>
+            `
+          });
+          console.log(`📧 Approval request sent to: ${approver.email}`);
+        }
       }
     }
+  } catch (error) {
+    console.error('⚠️ Email sending error (non-blocking):', error.message);
   }
 };
 
@@ -173,7 +177,19 @@ const createRFQ = async (req, res) => {
       stakeholders: processedStakeholders,
       ccTo: ccTo || [],
       status: 'Pending',
-      createdBy: req.user?.id
+      createdBy: req.user?.id,
+      // RFQ Workflow fields
+      currentStage: 'RFQ',
+      vendorRequestCreated: false,
+      quotationCompleted: false,
+      approvalDate: null,
+      approvedBy: null,
+      rejectedBy: null,
+      rejectedReason: null,
+      rejectedDate: null,
+      winnerVendorId: null,
+      winnerVendorName: null,
+      winnerPrice: null
     };
 
     const newRFQ = new RFQ(rfqData);
@@ -182,12 +198,12 @@ const createRFQ = async (req, res) => {
     console.log("✅ RFQ saved successfully:", savedRFQ._id);
     console.log(`📋 RFQ Serial Number: ${savedRFQ.uniqueSerialNo}`);
 
-    // Send emails
+    // Send emails (non-blocking)
     try {
       await sendRFQCreatedEmail(savedRFQ);
       console.log("📧 RFQ creation emails sent successfully");
     } catch (emailErr) {
-      console.error('⚠️ Email sending error:', emailErr.message);
+      console.error('⚠️ Email sending error (non-blocking):', emailErr.message);
     }
 
     res.status(201).json({
@@ -302,30 +318,40 @@ const approveRFQ = async (req, res) => {
       });
     }
     
+    // Update RFQ with approval
     rfq.status = 'Approved';
+    rfq.approvalDate = new Date();
+    rfq.approvedBy = userName;
+    rfq.currentStage = 'Vendor Request';
+    rfq.vendorRequestCreated = false;
+    rfq.quotationCompleted = false;
+    
     if (comments) {
       rfq.approvalComments = comments;
     }
-    rfq.approvedAt = new Date();
-    rfq.approvedBy = userName;
     rfq.updatedAt = new Date();
     
     await rfq.save();
     
-    // Send approval email
-    await sendMail({
-      to: rfq.emailId,
-      cc: rfq.ccTo || [],
-      subject: `✅ RFQ Approved: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
-      html: `
-        <h2>RFQ Approved</h2>
-        <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
-        <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
-        <p><strong>Status:</strong> Approved</p>
-        <p><strong>Approved By:</strong> ${userName}</p>
-        ${comments ? `<p><strong>Comments:</strong> ${comments}</p>` : ''}
-      `
-    });
+    // Send approval email (non-blocking)
+    try {
+      await sendMail({
+        to: rfq.emailId,
+        cc: rfq.ccTo || [],
+        subject: `✅ RFQ Approved: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
+        html: `
+          <h2>RFQ Approved</h2>
+          <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
+          <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
+          <p><strong>Status:</strong> Approved</p>
+          <p><strong>Approved By:</strong> ${userName}</p>
+          ${comments ? `<p><strong>Comments:</strong> ${comments}</p>` : ''}
+          <p>The RFQ will now be sent to vendors for quotation.</p>
+        `
+      });
+    } catch (emailErr) {
+      console.error('⚠️ Approval email error (non-blocking):', emailErr.message);
+    }
     
     res.status(200).json({
       success: true,
@@ -357,30 +383,38 @@ const rejectRFQ = async (req, res) => {
       });
     }
     
+    // Update RFQ with rejection
     rfq.status = 'Rejected';
+    rfq.rejectedBy = userName;
+    rfq.rejectedReason = comments || 'No reason provided';
+    rfq.rejectedDate = new Date();
+    rfq.currentStage = 'Rejected';
+    
     if (comments) {
       rfq.rejectionComments = comments;
     }
-    rfq.rejectedAt = new Date();
-    rfq.rejectedBy = userName;
     rfq.updatedAt = new Date();
     
     await rfq.save();
     
-    // Send rejection email
-    await sendMail({
-      to: rfq.emailId,
-      cc: rfq.ccTo || [],
-      subject: `❌ RFQ Rejected: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
-      html: `
-        <h2>RFQ Rejected</h2>
-        <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
-        <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
-        <p><strong>Status:</strong> Rejected</p>
-        <p><strong>Rejected By:</strong> ${userName}</p>
-        ${comments ? `<p><strong>Reason:</strong> ${comments}</p>` : ''}
-      `
-    });
+    // Send rejection email (non-blocking)
+    try {
+      await sendMail({
+        to: rfq.emailId,
+        cc: rfq.ccTo || [],
+        subject: `❌ RFQ Rejected: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
+        html: `
+          <h2>RFQ Rejected</h2>
+          <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
+          <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
+          <p><strong>Status:</strong> Rejected</p>
+          <p><strong>Rejected By:</strong> ${userName}</p>
+          ${comments ? `<p><strong>Reason:</strong> ${comments}</p>` : ''}
+        `
+      });
+    } catch (emailErr) {
+      console.error('⚠️ Rejection email error (non-blocking):', emailErr.message);
+    }
     
     res.status(200).json({
       success: true,
@@ -440,6 +474,131 @@ const getRFQBySerial = async (req, res) => {
   }
 };
 
+// Get approved RFQs for vendor request
+const getApprovedRFQs = async (req, res) => {
+  try {
+    const rfqs = await RFQ.find({
+      status: 'Approved',
+      vendorRequestCreated: false,
+      currentStage: { $ne: 'Rejected' }
+    }).sort({ approvedDate: -1 });
+    
+    res.status(200).json({
+      success: true,
+      count: rfqs.length,
+      data: rfqs
+    });
+  } catch (err) {
+    console.error("Error in getApprovedRFQs:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+// Update vendor request status for RFQ
+const updateVendorRequestStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { vendorRequestCreated, currentStage } = req.body;
+    
+    const rfq = await RFQ.findById(id);
+    if (!rfq) {
+      return res.status(404).json({ success: false, message: 'RFQ not found' });
+    }
+    
+    if (vendorRequestCreated !== undefined) {
+      rfq.vendorRequestCreated = vendorRequestCreated;
+    }
+    if (currentStage) {
+      rfq.currentStage = currentStage;
+    }
+    
+    await rfq.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'RFQ vendor request status updated',
+      data: rfq
+    });
+  } catch (err) {
+    console.error("Error in updateVendorRequestStatus:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+// Update quotation status for RFQ
+const updateQuotationStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quotationCompleted, currentStage } = req.body;
+    
+    const rfq = await RFQ.findById(id);
+    if (!rfq) {
+      return res.status(404).json({ success: false, message: 'RFQ not found' });
+    }
+    
+    if (quotationCompleted !== undefined) {
+      rfq.quotationCompleted = quotationCompleted;
+    }
+    if (currentStage) {
+      rfq.currentStage = currentStage;
+    }
+    
+    await rfq.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'RFQ quotation status updated',
+      data: rfq
+    });
+  } catch (err) {
+    console.error("Error in updateQuotationStatus:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+// Select winner for RFQ
+const selectWinner = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { winnerVendorId, winnerVendorName, winnerPrice } = req.body;
+    
+    const rfq = await RFQ.findById(id);
+    if (!rfq) {
+      return res.status(404).json({ success: false, message: 'RFQ not found' });
+    }
+    
+    rfq.winnerVendorId = winnerVendorId;
+    rfq.winnerVendorName = winnerVendorName;
+    rfq.winnerPrice = winnerPrice;
+    rfq.status = 'Vendor Finalized';
+    rfq.currentStage = 'Completed';
+    rfq.updatedAt = new Date();
+    
+    await rfq.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Winner selected successfully',
+      data: rfq
+    });
+  } catch (err) {
+    console.error("Error in selectWinner:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
 module.exports = {
   getAllRFQs,
   createRFQ,
@@ -450,5 +609,9 @@ module.exports = {
   approveRFQ,
   rejectRFQ,
   getVendors,
-  getDepartments
+  getDepartments,
+  getApprovedRFQs,
+  updateVendorRequestStatus,
+  updateQuotationStatus,
+  selectWinner
 };

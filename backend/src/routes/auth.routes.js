@@ -77,7 +77,7 @@ const generateToken = (user) => {
   );
 };
 
-// ==================== GOOGLE LOGIN ROUTE - FIXED ====================
+// ==================== GOOGLE LOGIN ROUTE - COMPLETE FIX ====================
 router.post('/google', async (req, res) => {
   console.log('📥 Google login endpoint hit');
   
@@ -129,11 +129,9 @@ router.post('/google', async (req, res) => {
       await user.save();
     }
 
-    // Update last login
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate JWT token
     const token = jwt.sign(
       {
         id: user._id,
@@ -168,6 +166,7 @@ router.post('/google', async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
 // ==================== GOOGLE LOGIN WITH ID TOKEN ====================
 router.post('/google-idtoken', async (req, res) => {
   try {

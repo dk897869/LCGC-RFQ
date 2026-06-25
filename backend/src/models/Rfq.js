@@ -46,18 +46,33 @@ const rfqSchema = new mongoose.Schema({
   stakeholders: [approverSchema],
   ccTo: [{ type: String }],
   attachments: [attachmentSchema],
-  status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In-Process'], default: 'Pending' },
+  
+  // RFQ Workflow fields
+  status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In-Process', 'Vendor Finalized'], default: 'Pending' },
+  currentStage: { type: String, enum: ['RFQ', 'Vendor Request', 'Vendor Request Sent', 'Quotation Status', 'Completed', 'Rejected'], default: 'RFQ' },
+  vendorRequestCreated: { type: Boolean, default: false },
+  quotationCompleted: { type: Boolean, default: false },
+  
+  // Approval fields
+  approvalDate: { type: Date },
+  approvedBy: { type: String },
+  approvalComments: { type: String },
+  rejectedBy: { type: String },
+  rejectedReason: { type: String },
+  rejectedDate: { type: Date },
+  rejectionComments: { type: String },
+  
+  // Winner fields
+  winnerVendorId: { type: String },
+  winnerVendorName: { type: String },
+  winnerPrice: { type: Number },
+  
+  // Audit fields
   currentApprover: { type: String, default: '' },
   source: { type: String, default: 'RFQ-NPP' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-  approvedAt: { type: Date },
-  approvedBy: { type: String },
-  approvalComments: { type: String },
-  rejectedAt: { type: Date },
-  rejectedBy: { type: String },
-  rejectionComments: { type: String }
+  updatedAt: { type: Date, default: Date.now }
 });
 
 // Create indexes
@@ -65,6 +80,8 @@ rfqSchema.index({ uniqueSerialNo: 1 });
 rfqSchema.index({ emailId: 1 });
 rfqSchema.index({ status: 1 });
 rfqSchema.index({ createdAt: -1 });
+rfqSchema.index({ currentStage: 1 });
+rfqSchema.index({ vendorRequestCreated: 1 });
 
 // Virtual for formatted priority
 rfqSchema.virtual('priorityFormatted').get(function() {
@@ -78,7 +95,8 @@ rfqSchema.virtual('statusFormatted').get(function() {
     'Pending': 'Pending', 
     'Approved': 'Approved', 
     'Rejected': 'Rejected', 
-    'In-Process': 'In Process' 
+    'In-Process': 'In Process',
+    'Vendor Finalized': 'Vendor Finalized'
   };
   return map[this.status] || this.status;
 });

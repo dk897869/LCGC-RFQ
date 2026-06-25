@@ -741,6 +741,11 @@ app.use("/api/part", partRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/ep-approval', requestRoutes);
 app.use('/api/notifications', authMiddleware, moduleAccessMiddleware, notificationRoutes);
+const vendorRequestRoutes = require('./routes/vendorRequest.routes');
+const quotationRoutes = require('./routes/quotation.routes');
+
+app.use('/api/vendor-requests', vendorRequestRoutes);
+app.use('/api/quotations', quotationRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

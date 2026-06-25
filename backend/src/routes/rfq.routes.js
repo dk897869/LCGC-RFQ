@@ -13,6 +13,10 @@ const {
   rejectRFQ,
   getVendors,
   getDepartments,
+  getApprovedRFQs,
+  updateVendorRequestStatus,
+  updateQuotationStatus,
+  selectWinner
 } = require('../controllers/Rfq.controller');
 
 // Public routes
@@ -30,5 +34,11 @@ router.delete('/:id', authMiddleware, deleteRFQ);
 // Approval routes
 router.patch('/:id/approve', authMiddleware, approveRFQ);
 router.patch('/:id/reject', authMiddleware, rejectRFQ);
+
+// Vendor Request routes
+router.get('/approved', authMiddleware, getApprovedRFQs);
+router.patch('/:id/vendor-request', authMiddleware, updateVendorRequestStatus);
+router.patch('/:id/quotation-status', authMiddleware, updateQuotationStatus);
+router.post('/:id/select-winner', authMiddleware, selectWinner);
 
 module.exports = router;

@@ -1,31 +1,34 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
+const authMiddleware = require('../middlewares/auth.middleware');
+const vendorController = require('../controllers/vendor.controller');
 
-const vendorController = require("../controllers/vendor.controller");
-const { verifyToken } = require("../middlewares/auth");
+// All routes require authentication
+router.use(authMiddleware);
 
-// ====================== FULL CRUD ======================
+// GET routes - IMPORTANT: Specific routes BEFORE parameterized routes
+router.get('/search', vendorController.searchVendors);
+router.get('/stats', vendorController.getVendorStats);
+router.get('/my-rfqs', vendorController.getMyVendorRfqs);
+router.get('/findByEmail', vendorController.findVendorByEmail);  // ✅ ADD THIS
+router.get('/', vendorController.getVendors);
 
-router.get("/dashboard/rfqs", verifyToken, vendorController.getMyVendorRfqs);
-router.post("/temporary-account", verifyToken, vendorController.createTemporaryVendorAccount);
-router.patch("/temporary-account/:id/deactivate", verifyToken, vendorController.deactivateTemporaryVendorAccount);
+// GET by ID - MUST come AFTER specific routes
+router.get('/:id', vendorController.getVendorById);
 
-// GET All Vendors
-router.get("/", verifyToken, vendorController.getVendors);
+// POST routes
+router.post('/', vendorController.addVendor);
+router.post('/temporary-account', vendorController.createTemporaryVendorAccount);
 
-// GET Single Vendor by ID
-router.get("/:id", verifyToken, vendorController.getVendorById);
+// PUT/PATCH routes
+router.put('/:id', vendorController.updateVendor);
+router.patch('/:id', vendorController.updateVendor);
+router.patch('/:id/status', vendorController.updateVendorStatus);
 
-// CREATE New Vendor
-router.post("/", verifyToken, vendorController.addVendor);
+// DELETE routes
+router.delete('/:id', vendorController.deleteVendor);
 
-// UPDATE Vendor (Full Update)
-router.put("/:id", verifyToken, vendorController.updateVendor);
-
-// PATCH - Update Vendor Status
-router.patch("/:id/status", verifyToken, vendorController.updateVendorStatus);
-
-// DELETE Vendor
-router.delete("/:id", verifyToken, vendorController.deleteVendor);
+// Deactivate temporary vendor account
+router.patch('/temporary-account/:id/deactivate', vendorController.deactivateTemporaryVendorAccount);
 
 module.exports = router;

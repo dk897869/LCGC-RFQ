@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const Vendor = require("../models/vendor");
 const User = require("../models/user.model");
 const NPPRequest = require("../models/nppRequest.model");
@@ -29,11 +30,10 @@ exports.getVendorById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Invalid vendor ID format. ID must be a valid MongoDB ObjectId." 
+        message: "Invalid vendor ID format." 
       });
     }
     
@@ -57,7 +57,6 @@ exports.getVendorById = async (req, res) => {
 // CREATE Vendor
 exports.addVendor = async (req, res) => {
   try {
-    // Validate required fields
     const { name, email, phone } = req.body;
     
     if (!name) {
@@ -81,7 +80,6 @@ exports.addVendor = async (req, res) => {
       });
     }
     
-    // Check for duplicate email
     const existingVendor = await Vendor.findOne({ email: email.toLowerCase() });
     if (existingVendor) {
       return res.status(400).json({ 
@@ -127,11 +125,10 @@ exports.updateVendor = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Invalid vendor ID format. ID must be a valid MongoDB ObjectId." 
+        message: "Invalid vendor ID format." 
       });
     }
     
@@ -182,7 +179,6 @@ exports.updateVendorStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ 
         success: false, 
@@ -225,11 +221,10 @@ exports.deleteVendor = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Invalid vendor ID format. ID must be a valid MongoDB ObjectId." 
+        message: "Invalid vendor ID format." 
       });
     }
     
@@ -253,37 +248,141 @@ exports.deleteVendor = async (req, res) => {
   }
 };
 
-// Search Vendors
+// ==================== SEARCH METHODS ====================
+
+// Search Vendors - supports both 'query' and 'search' parameter
 exports.searchVendors = async (req, res) => {
   try {
-    const { query } = req.query;
+    const { query, search } = req.query;
+    const searchTerm = query || search;
     
-    if (!query) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Search query is required" 
+    if (!searchTerm) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required"
       });
     }
     
-    const vendors = await Vendor.find({
+    console.log('🔍 Searching vendors with term:', searchTerm);
+    
+    let vendors = await Vendor.find({
       $or: [
-        { name: { $regex: query, $options: "i" } },
-        { email: { $regex: query, $options: "i" } },
-        { company: { $regex: query, $options: "i" } },
-        { gst: { $regex: query, $options: "i" } }
+        { name: { $regex: searchTerm, $options: "i" } },
+        { email: { $regex: searchTerm, $options: "i" } },
+        { company: { $regex: searchTerm, $options: "i" } },
+        { gst: { $regex: searchTerm, $options: "i" } },
+        { phone: { $regex: searchTerm, $options: "i" } }
       ]
     }).sort({ name: 1 });
     
+    const users = await User.find({
+      role: 'Vendor',
+      $or: [
+        { name: { $regex: searchTerm, $options: "i" } },
+        { email: { $regex: searchTerm, $options: "i" } },
+        { contactNo: { $regex: searchTerm, $options: "i" } }
+      ]
+    }).select('name email contactNo organization');
+    
+    const userVendors = users.map(u => ({
+      _id: u._id,
+      name: u.name,
+      email: u.email,
+      phone: u.contactNo || '',
+      company: u.organization || '',
+      vendorName: u.name,
+      vendorEmail: u.email,
+      isUser: true
+    }));
+    
+    const allVendors = [...vendors, ...userVendors];
+    const uniqueVendors = allVendors.filter((v, index, self) => 
+      index === self.findIndex(t => t.email?.toLowerCase() === v.email?.toLowerCase())
+    );
+    
     res.json({
       success: true,
-      data: vendors,
-      count: vendors.length
+      data: uniqueVendors,
+      count: uniqueVendors.length
     });
   } catch (err) {
     console.error("Search Vendors Error:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: err.message 
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+// Find vendor by email - for auto-fetch in RFQ vendor form
+exports.findVendorByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email parameter is required"
+      });
+    }
+
+    console.log('🔍 Searching vendor by email:', email);
+
+    let vendor = await Vendor.findOne({ 
+      email: { $regex: `^${email.trim()}$`, $options: 'i' } 
+    });
+
+    if (!vendor) {
+      const user = await User.findOne({ 
+        email: { $regex: `^${email.trim()}$`, $options: 'i' },
+        role: 'Vendor'
+      }).select('name email contactNo organization');
+      
+      if (user) {
+        return res.json({
+          success: true,
+          data: [{
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.contactNo,
+            company: user.organization,
+            vendorName: user.name,
+            vendorEmail: user.email
+          }]
+        });
+      }
+    }
+
+    if (!vendor) {
+      return res.json({
+        success: true,
+        data: [],
+        message: 'Vendor not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: [{
+        id: vendor._id,
+        name: vendor.name,
+        email: vendor.email,
+        phone: vendor.phone,
+        company: vendor.company || vendor.organization,
+        vendorName: vendor.name,
+        vendorEmail: vendor.email,
+        gst: vendor.gst,
+        address: vendor.address,
+        vendorId: vendor._id
+      }]
+    });
+
+  } catch (err) {
+    console.error("Find Vendor By Email Error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Failed to find vendor'
     });
   }
 };
@@ -319,19 +418,29 @@ exports.getVendorStats = async (req, res) => {
   }
 };
 
-// CREATE temporary vendor login for an RFQ/work package.
+// CREATE temporary vendor login
 exports.createTemporaryVendorAccount = async (req, res) => {
   try {
+    console.log('📤 Creating temporary vendor account');
+
     if (!isAdminUser(req.user)) {
-      return res.status(403).json({ success: false, message: "Only admin/manager can create vendor login" });
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only admin/manager can create vendor login" 
+      });
     }
 
     const { name, email, phone, company, gst, rfqNos = [], expiresAt, password } = req.body;
+    
     if (!name || !email) {
-      return res.status(400).json({ success: false, message: "Vendor name and email are required" });
+      return res.status(400).json({ 
+        success: false, 
+        message: "Vendor name and email are required" 
+      });
     }
 
     let vendor = await Vendor.findOne({ email: String(email).toLowerCase() });
+    
     if (!vendor) {
       vendor = await Vendor.create({
         name,
@@ -344,10 +453,12 @@ exports.createTemporaryVendorAccount = async (req, res) => {
     }
 
     const tempPassword = password || makeTempPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    
     const accountData = {
       name,
       email: String(email).toLowerCase(),
-      password: tempPassword,
+      password: hashedPassword,
       role: 'Vendor',
       contactNo: phone || '',
       department: 'Vendor',
@@ -355,7 +466,7 @@ exports.createTemporaryVendorAccount = async (req, res) => {
       organization: company || vendor.company || name,
       isActive: true,
       emailVerified: true,
-      rights: { nppProcurement: true },
+      rights: { nppProcurement: true, vendors: true, rfq: true },
       vendorAccount: {
         isTemporary: true,
         vendorId: vendor._id,
@@ -367,11 +478,46 @@ exports.createTemporaryVendorAccount = async (req, res) => {
     };
 
     let user = await User.findOne({ email: accountData.email });
+    
     if (user) {
       Object.assign(user, accountData);
       await user.save();
     } else {
       user = await User.create(accountData);
+    }
+
+    // Send welcome email (non-blocking)
+    try {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER || 'dk897869@gmail.com',
+          pass: process.env.SMTP_PASS || 'snaq ptsl yqpm hufr'
+        }
+      });
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+      
+      await transporter.sendMail({
+        from: `"LCGC RFQ System" <${process.env.SMTP_USER || 'dk897869@gmail.com'}>`,
+        to: email,
+        subject: 'Vendor Account Created - LCGC Portal',
+        html: `
+          <h2>Welcome to LCGC Vendor Portal</h2>
+          <p>Dear ${name || 'Vendor'},</p>
+          <p>Your vendor account has been created successfully.</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+          <p><a href="${frontendUrl}/login">Login Here</a></p>
+          <p>Please change your password after first login.</p>
+        `
+      });
+      console.log(`✅ Welcome email sent to ${email}`);
+    } catch (emailErr) {
+      console.error('⚠️ Welcome email error (non-blocking):', emailErr.message);
     }
 
     res.status(201).json({
@@ -392,14 +538,20 @@ exports.createTemporaryVendorAccount = async (req, res) => {
     });
   } catch (err) {
     console.error("Create Temporary Vendor Account Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
   }
 };
 
 exports.deactivateTemporaryVendorAccount = async (req, res) => {
   try {
     if (!isAdminUser(req.user)) {
-      return res.status(403).json({ success: false, message: "Only admin/manager can deactivate vendor login" });
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only admin/manager can deactivate vendor login" 
+      });
     }
     const { id } = req.params;
     const { reason = 'Work completed' } = req.body || {};
@@ -412,11 +564,23 @@ exports.deactivateTemporaryVendorAccount = async (req, res) => {
       },
       { new: true }
     );
-    if (!user) return res.status(404).json({ success: false, message: "Vendor account not found" });
-    res.json({ success: true, message: "Vendor login deactivated", data: user });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Vendor account not found" 
+      });
+    }
+    res.json({ 
+      success: true, 
+      message: "Vendor login deactivated", 
+      data: user 
+    });
   } catch (err) {
     console.error("Deactivate Vendor Account Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
   }
 };
 
@@ -424,22 +588,36 @@ exports.getMyVendorRfqs = async (req, res) => {
   try {
     const isVendor = req.user?.role === 'Vendor';
     const isAdminPreview = isAdminUser(req.user);
+    
     if (!isVendor && !isAdminPreview) {
-      return res.status(403).json({ success: false, message: "Vendor login required" });
+      return res.status(403).json({ 
+        success: false, 
+        message: "Vendor login required" 
+      });
     }
+    
     if (!isVendor && isAdminPreview) {
       const requests = await NPPRequest.find({
         type: { $in: ['rfq-vendor', 'rfq-requisition', 'quotation-submission', 'rfq'] }
       }).sort({ createdAt: -1 }).limit(100);
-      return res.json({ success: true, count: requests.length, data: requests, preview: true });
+      return res.json({ 
+        success: true, 
+        count: requests.length, 
+        data: requests, 
+        preview: true 
+      });
     }
+    
     if (req.user?.vendorAccount?.expiresAt && new Date(req.user.vendorAccount.expiresAt) < new Date()) {
       await User.findByIdAndUpdate(req.user.id || req.user._id, {
         isActive: false,
         'vendorAccount.deactivatedAt': new Date(),
         'vendorAccount.deactivatedReason': 'Temporary access expired'
       });
-      return res.status(403).json({ success: false, message: "Vendor access expired" });
+      return res.status(403).json({ 
+        success: false, 
+        message: "Vendor access expired" 
+      });
     }
 
     const email = String(req.user.email || '').toLowerCase();
@@ -455,9 +633,16 @@ exports.getMyVendorRfqs = async (req, res) => {
       ]
     };
     const requests = await NPPRequest.find(query).sort({ createdAt: -1 }).limit(100);
-    res.json({ success: true, count: requests.length, data: requests });
+    res.json({ 
+      success: true, 
+      count: requests.length, 
+      data: requests 
+    });
   } catch (err) {
     console.error("Vendor RFQ Dashboard Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
   }
 };

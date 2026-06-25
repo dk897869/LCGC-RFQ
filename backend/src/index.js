@@ -93,6 +93,8 @@ const approvalRoutes = safeRequire("./routes/approval.routes");
 const serialNumberRoutes = safeRequire("./routes/serialNumber.routes");
 const nppFormsRoutes = safeRequire("./routes/nppForms.routes");
 const notificationRoutes = safeRequire("./routes/notifications.routes");
+const vendorRequestRoutes = require('./routes/vendorRequest.routes');
+const quotationRoutes = require('./routes/quotation.routes');
 
 const app = express();
 
@@ -740,12 +742,18 @@ app.use("/api/serial-number", serialNumberRoutes);
 app.use("/api/part", partRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/ep-approval', requestRoutes);
-app.use('/api/notifications', authMiddleware, moduleAccessMiddleware, notificationRoutes);
-const vendorRequestRoutes = require('./routes/vendorRequest.routes');
-const quotationRoutes = require('./routes/quotation.routes');
+app.use('/api/vendor', authMiddleware, vendorRoutes);
+app.use('/api/vendors', authMiddleware, vendorRoutes);  // ✅ ADDED - For backward compatibility
 
-app.use('/api/vendor-requests', vendorRequestRoutes);
-app.use('/api/quotations', quotationRoutes);
+app.use('/api/notifications', authMiddleware, moduleAccessMiddleware, notificationRoutes);
+
+// ✅ ADDED - Vendor Request routes
+app.use('/api/vendor-request', authMiddleware, vendorRequestRoutes);
+app.use('/api/vendor-requests', authMiddleware, vendorRequestRoutes);  // Plural version
+
+// ✅ ADDED - Quotation routes
+app.use('/api/quotation', authMiddleware, quotationRoutes);
+app.use('/api/quotations', authMiddleware, quotationRoutes);  // Plural version
 
 // Root endpoint
 app.get("/", (req, res) => {
@@ -776,6 +784,21 @@ app.get("/", (req, res) => {
         getStats: "GET /api/npp/stats",
         approve: "PATCH /api/npp/request/:id/approve",
         reject: "PATCH /api/npp/request/:id/reject"
+      },
+      vendorRequest: {
+        create: "POST /api/vendor-request",
+        getAll: "GET /api/vendor-request",
+        getByRfq: "GET /api/vendor-request/rfq/:rfqId",
+        getById: "GET /api/vendor-request/:id",
+        update: "PATCH /api/vendor-request/:id",
+        delete: "DELETE /api/vendor-request/:id"
+      },
+      quotation: {
+        create: "POST /api/quotation",
+        getByRfq: "GET /api/quotation/rfq/:rfqId",
+        comparison: "GET /api/quotation/comparison/:rfqId",
+        updateStatus: "PATCH /api/quotation/:id/status",
+        selectWinner: "POST /api/quotation/:rfqId/winner"
       }
     }
   });
@@ -877,6 +900,8 @@ const startServer = async () => {
       console.log(`✅ Password Reset: POST /api/auth/forgot-password-link`);
       console.log(`✅ Google Login: POST /api/auth/google`);
       console.log(`✅ CORS: Configured for all origins`);
+      console.log(`✅ Vendor Request: POST /api/vendor-request`);
+      console.log(`✅ Quotation: POST /api/quotation`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);

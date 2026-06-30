@@ -8,8 +8,8 @@
     </div>
   </div>
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+  <!-- SIDEBAR (fully removed from the DOM in focus mode so it can never overlap a module's own UI) -->
+  <aside class="sidebar" *ngIf="!isFocusMode" [class.collapsed]="sidebarCollapsed">
     <div class="sb-logo">
       <div class="sb-logo__icon">
         <svg viewBox="0 0 36 36" fill="none">
@@ -162,14 +162,27 @@
     </div>
   </aside>
 
-  <button *ngIf="isFocusMode" type="button" class="focus-back-float" (click)="backToDashboardFromFocus()">← Back To Dashboard</button>
-
   <!-- MAIN AREA -->
   <div class="main" [class.main--focus]="isFocusMode">
-    <header class="topbar">
-      <button class="topbar__hamburger" (click)="toggleSidebar()">
-        <span></span><span></span><span></span>
-      </button>
+    <header class="topbar" [class.topbar--focus]="isFocusMode">
+      <div class="topbar__left">
+        <button *ngIf="!isFocusMode" class="topbar__hamburger" (click)="toggleSidebar()">
+          <span></span><span></span><span></span>
+        </button>
+
+        <ng-container *ngIf="isFocusMode">
+          <button class="topbar__back" (click)="backToDashboardFromFocus()" title="Back to Dashboard">
+            <span class="topbar__back-arrow">←</span>
+            <span class="topbar__back-text">Dashboard</span>
+          </button>
+          <span class="topbar__divider"></span>
+          <div class="topbar__module">
+            <span class="topbar__module-icon">{{ getCurrentModuleIcon() }}</span>
+            <span class="topbar__module-title">{{ getCurrentModuleTitle() }}</span>
+          </div>
+        </ng-container>
+      </div>
+
       <div class="topbar__right">
         <!-- Notification Bell with Dropdown -->
         <div class="topbar__notification-wrapper">
@@ -177,7 +190,7 @@
             🔔
             <span class="topbar__badge" *ngIf="unifiedStats.pending > 0">{{ unifiedStats.pending }}</span>
           </button>
-          
+
           <!-- Notification Dropdown Panel -->
           <div class="notification-panel" [class.show]="showNotificationPanel">
             <div class="notification-panel__header">
@@ -190,10 +203,10 @@
                 <span class="error-icon">⚠️</span>
                 <span class="error-text">{{ notificationError }}</span>
               </div>
-              
+
               <!-- Notification List -->
               <div class="notification-list">
-                <div class="notification-item" *ngFor="let notif of notificationList" (click)="handleNotificationClick(notif)">
+                <div class="notification-item" *ngFor="let notif of notificationList; trackBy: trackByNotification" (click)="handleNotificationClick(notif)">
                   <div class="notification-item__icon" [style.background]="notif.color + '20'" [style.color]="notif.color">
                     {{ notif.icon }}
                   </div>
@@ -206,7 +219,7 @@
                     <span class="notif-dot"></span>
                   </div>
                 </div>
-                
+
                 <!-- Empty State -->
                 <div class="notification-empty" *ngIf="!notificationList.length && !notificationError">
                   <span>🔕</span>
@@ -241,7 +254,7 @@
       </div>
     </header>
 
-    <div class="page">
+    <div class="page" [class.page--focus]="isFocusMode">
       <div *ngIf="activeTab === 'approvals'" class="tab-wrap"><app-approvals></app-approvals></div>
       <div *ngIf="activeTab === 'ep-approval'" class="tab-wrap tab-wrap--focus">
         <app-ep-approval

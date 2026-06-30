@@ -1,136 +1,298 @@
-<!-- pr-request.html -->
-<div class="pr-request-container">
-  <div class="form-header">
-    <div class="header-left">
-      <span class="header-icon">📋</span>
-      <h2>PR Request - NPP</h2>
-      <span class="badge" [ngClass]="'badge-' + prData.status">{{ prData.status | titlecase }}</span>
-    </div>
-    <div class="header-right">
-      <span class="required-note"><span class="asterisk">*</span> Required fields</span>
-    </div>
+<div class="pr-page">
+
+  <!-- Toast -->
+  <div class="app-toast" *ngIf="showToast" [ngClass]="'toast-' + toastType">
+    <span class="toast-icon">{{ toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️' }}</span>
+    <span class="toast-msg">{{ toastMessage }}</span>
+    <button class="toast-close" (click)="closeToast()">×</button>
   </div>
 
-  <div class="form-body">
-    <!-- Basic Information Section -->
-    <div class="form-section">
-      <div class="section-title">
-        <span class="section-icon">📝</span>
-        <h3>Basic Information</h3>
+  <!-- ===================== LIST VIEW ===================== -->
+  <div class="page-card" *ngIf="showListView">
+
+    <div class="page-head">
+      <div class="breadcrumb">
+        <span>NON BOM</span><span class="sep">›</span><span>PR Process</span><span class="sep">›</span>
+        <span class="active">PR Process for Approval</span>
       </div>
-      <div class="form-grid-2col">
-        <div class="form-field">
-          <label>Request Date <span class="asterisk">*</span></label>
-          <input type="date" [(ngModel)]="prData.requestDate" class="form-input" [disabled]="true">
+      <div class="head-row">
+        <div>
+          <h1>PR Process <span class="muted">› For Approval</span></h1>
+          <p class="head-sub">Create and manage Purchase Requisition (PR) and submit for approval</p>
         </div>
-        <div class="form-field">
-          <label>Requester Name <span class="asterisk">*</span></label>
-          <input type="text" [(ngModel)]="prData.requesterName" placeholder="Enter requester full name" class="form-input" [class.error-border]="showValidationErrors && !prData.requesterName">
-          <div class="error-msg" *ngIf="showValidationErrors && !prData.requesterName">Requester name is required</div>
-        </div>
-        <div class="form-field">
-          <label>Department</label>
-          <select [(ngModel)]="prData.department" class="form-input">
-            <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Cost Center</label>
-          <select [(ngModel)]="prData.costCenter" class="form-input">
-            <option *ngFor="let cc of costCenters" [value]="cc">{{ cc }}</option>
-          </select>
-        </div>
-<!-- pr-request.html (updated priority buttons section) -->
-<div class="form-field">
-  <label>Priority <span class="asterisk">*</span></label>
-  <div class="priority-group">
-    <button 
-      *ngFor="let p of priorities" 
-      type="button" 
-      class="priority-btn" 
-      [class.active]="prData.priority === p.value" 
-      [ngClass]="p.class" 
-      (click)="prData.priority = p.value">
-      {{ p.label }}
-    </button>
-  </div>
-</div>        <div class="form-field">
-          <label>Procurement Type</label>
-          <select [(ngModel)]="prData.procurementType" class="form-input">
-            <option *ngFor="let pt of procurementTypes" [value]="pt.value">{{ pt.label }}</option>
-          </select>
-        </div>
-        <div class="form-field full-width">
-          <label>Delivery Location</label>
-          <input type="text" [(ngModel)]="prData.deliveryLocation" placeholder="Complete delivery address" class="form-input">
-        </div>
-        <div class="form-field">
-          <label>Expected Delivery Date <span class="asterisk">*</span></label>
-          <input type="date" [(ngModel)]="prData.expectedDelivery" class="form-input" [class.error-border]="showValidationErrors && !prData.expectedDelivery">
-          <div class="error-msg" *ngIf="showValidationErrors && !prData.expectedDelivery">Delivery date is required</div>
-        </div>
+        <button class="btn-create" (click)="openForm()">
+          <span>＋</span> Create New PR
+        </button>
       </div>
     </div>
 
-    <!-- Items Section -->
-    <div class="form-section">
-      <div class="section-title">
-        <span class="section-icon">📦</span>
-        <h3>Items / Materials Required</h3>
-        <button type="button" class="btn-add-item" (click)="addItem()">+ Add Item</button>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" [(ngModel)]="searchTerm" (input)="refreshData()" placeholder="Search by PR No, Requester, Department, Title...">
+    </div>
+
+    <div class="filter-row">
+      <button class="filter-pill" [class.active]="activeFilter==='All'" (click)="setFilter('All')">
+        📋 All <span class="count">{{ countByStatus('All') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='Draft'" (click)="setFilter('Draft')">
+        📝 Draft <span class="count">{{ countByStatus('Draft') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='Pending'" (click)="setFilter('Pending')">
+        ⏳ Pending <span class="count">{{ countByStatus('Pending') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='Approved'" (click)="setFilter('Approved')">
+        ✅ Approved <span class="count">{{ countByStatus('Approved') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='Rejected'" (click)="setFilter('Rejected')">
+        ❌ Rejected <span class="count">{{ countByStatus('Rejected') }}</span>
+      </button>
+    </div>
+
+    <div class="table-card">
+      <div class="table-card-head">
+        <h3>Purchase Requisitions</h3>
+        <span class="badge-total">Total: {{ displayRows.length }}</span>
       </div>
 
-      <div class="items-table-wrapper">
-        <table class="items-table">
+      <div class="loading-state" *ngIf="isLoading">
+        <div class="spinner"></div><p>Loading PRs...</p>
+      </div>
+
+      <div class="table-scroll" *ngIf="!isLoading">
+        <table class="data-table" *ngIf="displayRows.length">
           <thead>
-            <tr><th>#</th><th>Item Code</th><th>Description <span class="asterisk">*</span></th><th>Qty</th><th>UOM</th><th>Est. Price (₹)</th><th>Total (₹)</th><th>Required By</th><th style="width: 40px"></th></tr>
+            <tr>
+              <th>PR No</th>
+              <th>Requester</th>
+              <th>Department</th>
+              <th>Title</th>
+              <th>RFQ No</th>
+              <th>Items</th>
+              <th>Total Value</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of prData.items; let i = index" [class.error-row]="showValidationErrors && (!item.description || item.quantity <= 0)">
-              <td>{{ i+1 }}</td>
-              <td><input type="text" [(ngModel)]="item.itemCode" placeholder="Code" class="item-input"></td>
-              <td><input type="text" [(ngModel)]="item.description" placeholder="Item description *" class="item-input" [class.error-border]="showValidationErrors && !item.description"></td>
-              <td><input type="number" [(ngModel)]="item.quantity" (change)="updateItemTotal(item)" class="item-input qty-input" min="0.01" step="any"></td>
-              <td><select [(ngModel)]="item.uom" class="item-input uom-select"><option *ngFor="let u of uomOptions" [value]="u">{{ u }}</option></select></td>
-              <td><input type="number" [(ngModel)]="item.estimatedPrice" (change)="updateItemTotal(item)" class="item-input price-input" min="0" step="any"></td>
-              <td class="total-cell">₹ {{ item.totalAmount | number:'1.2-2' }}</td>
-              <td><input type="date" [(ngModel)]="item.deliveryDate" class="item-input date-input"></td>
-              <td><button type="button" class="remove-item-btn" (click)="removeItem(i)" [disabled]="prData.items.length === 1">🗑️</button></td>
+            <tr *ngFor="let row of displayRows; trackBy: trackByPR">
+              <td><a class="pr-link" (click)="viewPR(row)">{{ row.serialNo }}</a></td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.department }}</td>
+              <td>{{ row.titleOfActivity }}</td>
+              <td>{{ row.rfqNo || '—' }}</td>
+              <td>{{ row.items.length }}</td>
+              <td><strong>{{ formatCurrency(row.totalValue) }}</strong></td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(row.status)">
+                  {{ getStatusIcon(row.status) }} {{ getStatusLabel(row.status) }}
+                </span>
+              </td>
+              <td>{{ row.requestDate | date:'dd MMM yy' }}</td>
+              <td class="actions-cell">
+                <button class="action-btn view" (click)="viewPR(row)">👁️ View</button>
+                <button class="action-btn edit" (click)="editPR(row)" *ngIf="row.status === 'Draft'">✏️ Edit</button>
+              </td>
             </tr>
           </tbody>
-          <tfoot>
-            <tr class="total-row"><td colspan="6" class="total-label">Total Estimated Value</td><td colspan="3" class="total-value">₹ {{ totalEstimatedValue | number:'1.2-2' }}</td></tr>
-          </tfoot>
         </table>
+
+        <div class="empty-state" *ngIf="!displayRows.length">
+          <span>📭</span>
+          <p>No PRs found. Click "Create New PR" to get started.</p>
+        </div>
+      </div>
+
+      <!-- Debug Info -->
+      <div class="debug-bar">
+        <span><strong>Total:</strong> {{ allPRs.length }}</span>
+        <span><strong>Draft:</strong> {{ allPRs.filter(r => r.status === 'Draft').length }}</span>
+        <span><strong>Pending:</strong> {{ allPRs.filter(r => r.status === 'Pending').length }}</span>
+        <span><strong>Approved:</strong> {{ allPRs.filter(r => r.status === 'Approved').length }}</span>
+        <span><strong>Rejected:</strong> {{ allPRs.filter(r => r.status === 'Rejected').length }}</span>
       </div>
     </div>
 
-    <!-- Additional Info Section -->
-    <div class="form-section">
-      <div class="section-title">
-        <span class="section-icon">💬</span>
-        <h3>Additional Information</h3>
+    <div class="bottom-bar">
+      <div class="weather">
+        <span class="temp">31°C</span>
+        <span class="cond">MOSTLY CLEAR</span>
       </div>
-      <div class="form-grid-2col">
-        <div class="form-field full-width">
-          <label>Justification / Business Need</label>
-          <textarea rows="3" [(ngModel)]="prData.justifications" placeholder="Explain why this purchase is required, expected benefits, urgency etc." class="form-textarea"></textarea>
-        </div>
-        <div class="form-field full-width">
-          <label>Additional Notes / Special Instructions</label>
-          <textarea rows="2" [(ngModel)]="prData.additionalNotes" placeholder="Any special delivery instructions, quality requirements, or compliance notes" class="form-textarea"></textarea>
-        </div>
+      <div class="clock">
+        <span class="lang">ENG</span><span class="sep">|</span><span class="lang">IN</span>
+        <span class="date">{{ currentDate | date:'dd-MM-yyyy' }}</span>
+        <span class="time">{{ currentTime }}</span>
       </div>
     </div>
   </div>
 
-  <!-- Form Actions -->
-  <div class="form-actions">
-    <button type="button" class="btn-secondary" (click)="resetForm()">Clear Form</button>
-    <button type="button" class="btn-primary" (click)="submitPr()" [disabled]="isSubmitting">
-      <span class="btn-spinner" *ngIf="isSubmitting"></span>
-      <span *ngIf="!isSubmitting">📤 Submit PR Request</span>
-      <span *ngIf="isSubmitting">Submitting...</span>
-    </button>
+  <!-- ===================== FORM VIEW ===================== -->
+  <div class="form-wrap" *ngIf="showFormView">
+
+    <div class="form-topbar">
+      <button class="btn-back" (click)="showListViewScreen()">← Back to List</button>
+      <span class="breadcrumb-mini">NON BOM › PR Process › PR Process for Approval</span>
+    </div>
+
+    <div class="form-container">
+
+      <!-- Success Banner -->
+      <div class="success-banner" *ngIf="submitSuccess">
+        <span class="success-icon">✓</span>
+        <span>{{ (currentPR ? currentPR.status : newPR.status) === 'Pending' ? 'PR submitted for approval!' : 'Draft saved successfully!' }}</span>
+        <button class="banner-close" (click)="submitSuccess = false">×</button>
+      </div>
+
+      <!-- Header -->
+      <div class="form-header">
+        <h2>PR Process for Approval</h2>
+        <p class="header-sub">Create and manage Purchase Requisition (PR) and submit for approval</p>
+      </div>
+
+      <div class="serial-section">
+        <div class="serial-display">
+          <label>Current PR Serial No</label>
+          <div class="serial-value">{{ currentPR ? currentPR.serialNo : currentSerialNo }}</div>
+        </div>
+        <div class="serial-hint">Draft serial no (Auto will submit)</div>
+      </div>
+
+      <!-- Requester Information -->
+      <div class="form-section">
+        <h3 class="section-title">REQUISER INFORMATION</h3>
+        <div class="requester-grid">
+          <div class="info-item">
+            <label>Name</label>
+            <span>{{ (currentPR || newPR).name }}</span>
+          </div>
+          <div class="info-item">
+            <label>Request Date</label>
+            <span>{{ (currentPR || newPR).requestDate | date:'dd-MM-yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Department</label>
+            <span>{{ (currentPR || newPR).department }}</span>
+          </div>
+          <div class="info-item">
+            <label>Contact No.</label>
+            <span>{{ (currentPR || newPR).contactNo || '—' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email ID</label>
+            <span>{{ (currentPR || newPR).emailId || '—' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Organization</label>
+            <span>{{ (currentPR || newPR).organization || 'Radiant Appliances' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Department Budget</label>
+            <span>{{ formatCurrency((currentPR || newPR).departmentBudget) }}</span>
+          </div>
+          <div class="info-item">
+            <label>Cost Center</label>
+            <span>{{ (currentPR || newPR).costCenter || 'Purchase Department' }}</span>
+          </div>
+          <div class="info-item">
+            <label>RFQ No.</label>
+            <span>{{ (currentPR || newPR).rfqNo || '—' }}</span>
+          </div>
+          <div class="info-item full-width">
+            <label>Title of Activity</label>
+            <span>{{ (currentPR || newPR).titleOfActivity || 'PR Process for Approval' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Grid -->
+      <div class="form-section">
+        <div class="section-header-inline">
+          <h3 class="section-title">MPP PR REQUEST GRID</h3>
+          <button class="add-row-btn" (click)="addItem()">＋ Add Item</button>
+        </div>
+
+        <div class="table-scroll">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>RFQ No.</th>
+                <th>Supplier Name</th>
+                <th>Part Code</th>
+                <th>Part Description</th>
+                <th>CNDT</th>
+                <th>UOM</th>
+                <th>QTY</th>
+                <th>Currency</th>
+                <th>Unit Price</th>
+                <th>Value</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of (currentPR || newPR).items; let i = index">
+                <td class="td-center">{{ i + 1 }}</td>
+                <td><input class="cell-input" [(ngModel)]="item.rfqNo" placeholder="RFQ"></td>
+                <td><input class="cell-input" [(ngModel)]="item.supplierName" placeholder="Supplier"></td>
+                <td><input class="cell-input" [(ngModel)]="item.partCode" placeholder="Code"></td>
+                <td><input class="cell-input" [(ngModel)]="item.partDescription" placeholder="Description"></td>
+                <td><input class="cell-input" [(ngModel)]="item.cndt" placeholder="CNDT"></td>
+                <td>
+                  <select class="cell-input" [(ngModel)]="item.uom">
+                    <option *ngFor="let u of uomOptions" [value]="u">{{ u }}</option>
+                  </select>
+                </td>
+                <td><input class="cell-input cell-num" type="number" min="0" [(ngModel)]="item.qty" (input)="calculateItemValue(item)"></td>
+                <td>
+                  <select class="cell-input" [(ngModel)]="item.currency">
+                    <option value="INR">INR</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                </td>
+                <td><input class="cell-input cell-num" type="number" min="0" [(ngModel)]="item.unitPrice" (input)="calculateItemValue(item)"></td>
+                <td class="td-amount">{{ formatCurrency(item.value) }}</td>
+                <td class="td-center">
+                  <button class="remove-btn" (click)="removeItem(i)" [disabled]="(currentPR || newPR).items.length === 1">✕</button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="10" class="total-label">Total Value (INR)</td>
+                <td class="total-value">{{ formatCurrency((currentPR || newPR).totalValue) }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="footer-actions">
+        <div class="action-right">
+          <button class="action-btn secondary" (click)="saveDraft()">💾 Save Draft</button>
+          <button class="action-btn primary" (click)="submitForApproval()" [disabled]="isSubmitting">
+            <span class="btn-spinner" *ngIf="isSubmitting">⟳</span>
+            <span *ngIf="!isSubmitting">📤 Submit for Approval</span>
+            <span *ngIf="isSubmitting">Submitting…</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar" *ngIf="currentPR">
+        <span class="status-label">Current Status:</span>
+        <span class="status-badge" [ngClass]="getStatusClass(currentPR.status)">
+          {{ getStatusIcon(currentPR.status) }} {{ getStatusLabel(currentPR.status) }}
+        </span>
+        <span class="status-date" *ngIf="currentPR.submittedDate">
+          Submitted: {{ currentPR.submittedDate | date:'dd MMM yyyy, hh:mm a' }}
+        </span>
+      </div>
+
+    </div>
   </div>
+
 </div>

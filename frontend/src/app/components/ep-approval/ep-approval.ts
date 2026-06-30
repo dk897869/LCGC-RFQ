@@ -3,7 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
-import { CreateEPRequestModalComponent } from '../../modals Screen/Create Ep Request/create-ep-request-modal.component';
+import { CreateEPRequestModalComponent } from "../../modals Screen/Create Ep Request/create-ep-request-modal.component";
 
 interface Approver {
   id?: number;
@@ -28,6 +28,7 @@ interface Attachment {
 interface EPRequest {
   _id?: string;
   id?: string;
+  requestId?: string;
   title: string;
   requester: string;
   email?: string;
@@ -58,7 +59,6 @@ interface EPRequest {
 })
 export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   @Input() initialTab: 'requests' | 'approvals' | 'status' = 'requests';
-  /** When 'form', Request tab shows full-page create form instead of list */
   @Input() requestView: 'form' | 'list' = 'list';
   @Input() hideInternalSidebar = false;
 
@@ -84,7 +84,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   approvalRemarks = '';
   isSubmitting = false;
   
-  // Filter states for approvals tab
+  // Filter states
   filterPriority = '';
   filterStatus = '';
   filterDepartment = '';
@@ -250,7 +250,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       emailId: this.currentUser?.email || 'dk897869@gmail.com',
       requestDate: today,
       contactNo: this.currentUser?.contactNo || '6239785524',
-      organization: this.currentUser?.organization || 'Updated Org',
+      organization: this.currentUser?.organization || 'Radiant Appliances',
       titleOfActivity: '',
       vendor: '',
       amount: 0,
@@ -268,27 +268,86 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     this.isLoading = true;
     this.authService.getAllEPApprovalRequests().subscribe({
       next: (res: any) => {
+        console.log('📥 EP Approval Response:', res);
         let data = [];
         if (res?.data && Array.isArray(res.data)) data = res.data;
         else if (Array.isArray(res)) data = res;
         else if (res?.requests && Array.isArray(res.requests)) data = res.requests;
+        else if (res?.result && Array.isArray(res.result)) data = res.result;
+        
+        console.log('📊 Data to map:', data);
         
         this.allRequests = data.map((r: any) => this.mapRecord(r));
+        console.log('✅ Mapped Requests:', this.allRequests);
+        
         this.applyFilters();
         this.isLoading = false;
         this.showToast(`${this.allRequests.length} EP requests loaded`, 'success');
         this.cdr.detectChanges();
       },
       error: (err: any) => {
-        console.error('Load error:', err);
+        console.error('❌ Load error:', err);
         this.isLoading = false;
-        this.showToast(err?.message || 'Failed to load EP requests', 'error');
+        // Load sample data for demo if API fails
+        this.loadSampleData();
+        this.showToast(err?.message || 'Failed to load EP requests, using sample data', 'error');
         this.cdr.detectChanges();
       }
     });
   }
+
+  loadSampleData() {
+    this.allRequests = [
+      {
+        requestId: 'EP-20260624-001',
+        title: 'Software License Purchase',
+        requester: 'Deepak Kumar',
+        email: 'deepak@company.com',
+        department: 'IT',
+        priority: 'High',
+        status: 'Pending',
+        amount: 150000,
+        requestDate: '2026-06-24',
+        vendor: 'Microsoft',
+        description: 'Annual software license renewal',
+        objective: 'Ensure compliance and continued access'
+      },
+      {
+        requestId: 'EP-20260623-002',
+        title: 'Office Equipment Procurement',
+        requester: 'Rahul Sharma',
+        email: 'rahul@company.com',
+        department: 'Purchase',
+        priority: 'Medium',
+        status: 'Pending',
+        amount: 75000,
+        requestDate: '2026-06-23',
+        vendor: 'XYZ Office Supplies',
+        description: 'New office furniture and equipment',
+        objective: 'Upgrade office infrastructure'
+      },
+      {
+        requestId: 'EP-20260622-003',
+        title: 'Marketing Campaign Budget',
+        requester: 'Priya Patel',
+        email: 'priya@company.com',
+        department: 'Marketing',
+        priority: 'High',
+        status: 'Approved',
+        amount: 200000,
+        requestDate: '2026-06-22',
+        vendor: 'Digital Media Agency',
+        description: 'Digital marketing campaign',
+        objective: 'Increase brand awareness'
+      }
+    ];
+    this.applyFilters();
+    this.cdr.detectChanges();
+  }
   
   private mapRecord(r: any): EPRequest {
+    console.log('🔍 Mapping record:', r);
+    
     let canApprove = false;
     let currentApprover = '';
     
@@ -303,12 +362,13 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     return {
       _id: r._id || r.id,
       id: r._id || r.id,
-      title: r.title || r.subject || '—',
-      requester: r.requester || r.requesterName || r.createdBy?.name || '—',
-      email: r.email || r.requesterEmail || '',
-      department: r.department || r.dept || '—',
+      requestId: r.requestId || r._id || r.id || `EP-${Date.now()}`,
+      title: r.title || r.subject || r.titleOfActivity || 'Untitled Request',
+      requester: r.requester || r.requesterName || r.createdBy?.name || this.currentUser?.name || 'Unknown',
+      email: r.email || r.requesterEmail || r.requester?.email || '',
+      department: r.department || r.dept || 'General',
       vendor: r.vendor || r.vendorName || '',
-      amount: Number(r.amount ?? r.estimatedAmount ?? 0),
+      amount: Number(r.amount ?? r.estimatedAmount ?? r.totalAmount ?? 0),
       priority: this.mapPriorityFromBackend(r.priority),
       status: this.normalizeStatus(r.status),
       description: r.description || r.remarks || '',
@@ -321,33 +381,27 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       stakeholders: r.stakeholders || [],
       attachments: r.attachments || [],
       createdAt: r.createdAt,
-      canApprove: canApprove
+      canApprove: canApprove || r.status === 'Pending'
     };
   }
   
   private mapPriorityFromBackend(priority: string): EPRequest['priority'] {
-    if (priority === 'H') return 'High';
-    if (priority === 'M') return 'Medium';
-    if (priority === 'L') return 'Low';
-    if (priority === 'High' || priority === 'Medium' || priority === 'Low' || priority === 'Urgent') return priority;
+    if (!priority) return 'Medium';
+    const p = priority.toString().toUpperCase();
+    if (p === 'H' || p === 'HIGH' || p === 'URGENT') return 'High';
+    if (p === 'M' || p === 'MEDIUM') return 'Medium';
+    if (p === 'L' || p === 'LOW') return 'Low';
+    if (p === 'High' || p === 'Medium' || p === 'Low' || p === 'Urgent') return p as EPRequest['priority'];
     return 'Medium';
   }
   
-  private mapPriorityToBackend(priority: string): string {
-    const priorityMap: { [key: string]: string } = {
-      'High': 'H',
-      'Medium': 'M',
-      'Low': 'L',
-      'Urgent': 'H'
-    };
-    return priorityMap[priority] || 'M';
-  }
-  
   private normalizeStatus(status: string): EPRequest['status'] {
-    const s = (status || 'Pending').toLowerCase();
-    if (s === 'approved') return 'Approved';
-    if (s === 'rejected') return 'Rejected';
-    if (s === 'in-process' || s === 'in process' || s === 'inprocess') return 'In Process';
+    if (!status) return 'Pending';
+    const s = status.toString().toLowerCase();
+    if (s === 'approved' || s === 'approve') return 'Approved';
+    if (s === 'rejected' || s === 'reject') return 'Rejected';
+    if (s === 'in-process' || s === 'in process' || s === 'inprocess' || s === 'in_progress') return 'In Process';
+    if (s === 'pending' || s === 'new' || s === 'submitted') return 'Pending';
     return 'Pending';
   }
   
@@ -363,7 +417,8 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
         r.title?.toLowerCase().includes(q) ||
         r.requester?.toLowerCase().includes(q) ||
         r.department?.toLowerCase().includes(q) ||
-        r.vendor?.toLowerCase().includes(q)
+        r.vendor?.toLowerCase().includes(q) ||
+        r.requestId?.toLowerCase().includes(q)
       );
     }
     this.filteredRequests = list;
@@ -410,7 +465,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     const term = this.statusFilterSearch.trim().toLowerCase();
     if (term) {
       list = list.filter(r =>
-        [r.title, r.requester, r.email, r.department, r.description].join(' ').toLowerCase().includes(term)
+        [r.title, r.requester, r.email, r.department, r.description, r.requestId].join(' ').toLowerCase().includes(term)
       );
     }
     this.filteredStatusList = list;
@@ -424,7 +479,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   getPriorityShort(p: string): string {
-    const map: Record<string, string> = { High: 'H', Medium: 'M', Low: 'L', Urgent: 'H' };
+    const map: Record<string, string> = { High: 'H', Medium: 'M', Low: 'L', Urgent: 'U' };
     return map[p] || (p?.charAt(0)?.toUpperCase() || 'M');
   }
   
@@ -767,7 +822,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
             <div class="section">
               <div class="section-title">📎 Attachments</div>
               <div class="section-body">
-                <tr>
+                <table>
                   <thead><tr><th>S.No.</th><th>Attachment</th><th>File Size</th><th>Remark</th></tr></thead>
                   <tbody>${attachmentsHtml}</tbody>
                 </table>
@@ -871,73 +926,79 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     return true;
   }
   
-  // ✅ FIXED: Submit Create Request with correct backend field names
-// In submitCreateRequest method, ensure ccList is sent as an array of strings
-submitCreateRequest() {
-  if (!this.validateForm()) return;
-  
-  this.isSubmitting = true;
-  
-  // ✅ Ensure ccList is properly formatted
-  const validCcList = this.ccList.filter(email => email && email.trim());
-  
-  const payload = {
-    requester: this.formData.requesterName,
-    department: this.formData.department,
-    email: this.formData.emailId,
-    requestDate: this.formData.requestDate,
-    contactNo: this.formData.contactNo,
-    organization: this.formData.organization,
-    title: this.formData.titleOfActivity,
-    vendor: this.formData.vendor,
-    amount: Number(this.formData.amount),
-    priority: this.formData.priority,  // Send "High", "Medium", "Low"
-    description: this.formData.description,
-    objective: this.formData.objective,
+  submitCreateRequest() {
+    if (!this.validateForm()) return;
     
-    stakeholders: this.approvers.filter(a => a.managerName).map((a, idx) => ({
-      line: a.line,
-      name: a.managerName,
-      email: a.email,
-      designation: a.designation,
-      approvalOrder: idx + 1,
-      status: 'Pending',
-      remarks: a.remarks,
-      dateTime: a.dateTime || new Date().toISOString()
-    })),
+    this.isSubmitting = true;
     
-    attachments: this.attachments.filter(a => a.file).map(a => ({
-      name: a.name,
-      fileName: a.file?.name,
-      fileSize: a.fileSize,
-      remark: a.remark
-    })),
+    const validCcList = this.ccList.filter(email => email && email.trim());
+    const user = this.authService.getUser() || this.currentUser;
     
-    // ✅ Send CC list as array of strings
-    ccList: validCcList,
+    const payload = {
+      title: this.formData.titleOfActivity,
+      requester: this.formData.requesterName,
+      department: this.formData.department,
+      email: this.formData.emailId,
+      requestDate: this.formData.requestDate,
+      contactNo: this.formData.contactNo,
+      organization: this.formData.organization,
+      vendor: this.formData.vendor,
+      amount: Number(this.formData.amount),
+      priority: this.formData.priority,
+      description: this.formData.description,
+      objective: this.formData.objective,
+      
+      stakeholders: this.approvers.filter(a => a.managerName).map((a, idx) => ({
+        line: a.line,
+        name: a.managerName,
+        email: a.email,
+        designation: a.designation,
+        approvalOrder: idx + 1,
+        status: 'Pending',
+        remarks: a.remarks,
+        dateTime: a.dateTime || new Date().toISOString()
+      })),
+      
+      attachments: this.attachments.filter(a => a.file).map(a => ({
+        name: a.name,
+        fileName: a.file?.name,
+        fileSize: a.fileSize,
+        remark: a.remark
+      })),
+      
+      ccList: validCcList,
+      requesterEmail: this.formData.emailId,
+      status: 'Pending'
+    };
     
-    status: 'Pending'
-  };
+    console.log('📤 Submitting payload:', JSON.stringify(payload, null, 2));
+    
+    this.authService.createEPRequest(payload).subscribe({
+      next: (res: any) => {
+        console.log('✅ Create response:', res);
+        this.showCreateModal = false;
+        this.isSubmitting = false;
+        this.showToast('EP Request created successfully!', 'success');
+        this.loadRequests();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('❌ Create error:', err);
+        this.isSubmitting = false;
+        
+        let errorMsg = 'Failed to create request';
+        if (err?.error?.message) {
+          errorMsg = err.error.message;
+        } else if (err?.message) {
+          errorMsg = err.message;
+        }
+        this.showToast(errorMsg, 'error');
+        this.cdr.detectChanges();
+      }
+    });
+  }
   
-  console.log('📤 Submitting payload with CC:', validCcList);
-  
-  this.authService.createEPRequest(payload).subscribe({
-    next: (res: any) => {
-      console.log('✅ Create response:', res);
-      this.showCreateModal = false;
-      this.isSubmitting = false;
-      this.showToast('EP Request created successfully!', 'success');
-      this.loadRequests();
-      this.cdr.detectChanges();
-    },
-    error: (err: any) => {
-      console.error('❌ Create error:', err);
-      this.isSubmitting = false;
-      this.showToast(err?.message || 'Failed to create request', 'error');
-      this.cdr.detectChanges();
-    }
-  });
-}  // View Request
+  // View Request
   viewRequest(request: EPRequest) {
     this.selectedRequest = request;
     this.showViewModal = true;
@@ -1030,7 +1091,7 @@ submitCreateRequest() {
   }
   
   canApprove(request: EPRequest): boolean {
-    return request.status === 'Pending' && request.canApprove === true;
+    return request.status === 'Pending' || request.status === 'In Process';
   }
   
   isAdminOrManager(): boolean {
@@ -1053,6 +1114,6 @@ submitCreateRequest() {
   }
   
   trackById(index: number, item: EPRequest) {
-    return item._id || item.id || index;
+    return item._id || item.id || item.requestId || index;
   }
 }

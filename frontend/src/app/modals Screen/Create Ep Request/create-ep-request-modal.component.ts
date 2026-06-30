@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
@@ -23,18 +23,39 @@ interface Attachment {
   remark: string;
 }
 
+interface EPRequest {
+  id: string;
+  requestId: string;
+  title: string;
+  requester: string;
+  department: string;
+  status: string;
+  date: string;
+  priority: string;
+  amount: number;
+}
+
 @Component({
-  selector: 'app-create-ep-request-modal',
+  selector: 'app-create-ep-request',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './create-ep-request.html',
   styleUrls: ['./create-ep-request.scss']
 })
 export class CreateEPRequestModalComponent implements OnInit {
-  @Input() currentUser: any = null;
-  @Input() fullPage = false;
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
+
+  // View states
+  showListView: boolean = true;
+  showFormView: boolean = false;
+  showSuccessView: boolean = false;
+  showDetailModal: boolean = false;
+  isLoading: boolean = false;
+  toastMessage: string = '';
+  toastType: 'success' | 'error' | 'info' = 'success';
+  showToast: boolean = false;
+  selectedRequest: EPRequest | null = null;
 
   // Form Data
   formData = {
@@ -99,6 +120,9 @@ export class CreateEPRequestModalComponent implements OnInit {
   ccInput = '';
   ccList: string[] = [];
 
+  // All Requests
+  allRequests: EPRequest[] = [];
+
   // Manager Options
   managerOptions = [
     { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
@@ -115,28 +139,29 @@ export class CreateEPRequestModalComponent implements OnInit {
   isSubmitting = false;
   showPreview = false;
   previewData: any = null;
-
-  // Toast
-  toast: { message: string; type: 'success' | 'error' | 'info' } | null = null;
   private toastTimer: any;
 
   constructor(private cdr: ChangeDetectorRef, private authService: AuthService) {}
 
   ngOnInit() {
     this.initializeForm();
+    this.loadRequestsFromStorage();
     this.loadManagerOptions();
+    this.showListView = true;
+    this.showFormView = false;
+    this.showSuccessView = false;
   }
 
   private initializeForm() {
     const today = new Date().toISOString().split('T')[0];
     
     this.formData = {
-      requesterName: this.currentUser?.name || 'Deepak Kumar',
-      department: this.currentUser?.department || 'IT',
-      emailId: this.currentUser?.email || 'dk897869@gmail.com',
+      requesterName: this.authService.getUser()?.name || 'Deepak Kumar',
+      department: this.authService.getUser()?.department || 'IT',
+      emailId: this.authService.getUser()?.email || 'dk897869@gmail.com',
       requestDate: today,
-      contactNo: this.currentUser?.contactNo || '6239785524',
-      organization: this.currentUser?.organization || 'Updated Org',
+      contactNo: this.authService.getUser()?.contactNo || '6239785524',
+      organization: 'Radiant Appliances',
       titleOfActivity: '',
       vendor: '',
       amount: 0,
@@ -145,6 +170,106 @@ export class CreateEPRequestModalComponent implements OnInit {
       objective: '',
       ccList: []
     };
+  }
+
+  loadRequestsFromStorage() {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('ep_approval_requests');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.allRequests = parsed;
+            return;
+          }
+        } catch (e) {
+          console.error('Error loading requests:', e);
+        }
+      }
+    }
+    // Load sample data if no requests exist
+    if (this.allRequests.length === 0) {
+      this.allRequests = [
+        {
+          id: 'EP-20260624-001',
+          requestId: 'EP-20260624-001',
+          title: 'Software License Purchase',
+          requester: 'Deepak Kumar',
+          department: 'IT',
+          status: 'Pending',
+          date: '2026-06-24',
+          priority: 'High',
+          amount: 150000
+        },
+        {
+          id: 'EP-20260623-002',
+          requestId: 'EP-20260623-002',
+          title: 'Office Equipment Procurement',
+          requester: 'Deepak Kumar',
+          department: 'Purchase',
+          status: 'Approved',
+          date: '2026-06-23',
+          priority: 'Medium',
+          amount: 75000
+        }
+      ];
+      this.saveRequestsToStorage();
+    }
+  }
+
+  saveRequestsToStorage() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('ep_approval_requests', JSON.stringify(this.allRequests));
+    }
+  }
+
+  private loadManagerOptions() {
+    this.authService.getManagers().subscribe({
+      next: (res: any) => {
+        const list = res?.managers || res?.defaultApprovers || [];
+        if (Array.isArray(list) && list.length) this.managerOptions = list;
+      },
+      error: () => {}
+    });
+  }
+
+  // Navigation methods
+  showListViewScreen() {
+    this.showListView = true;
+    this.showFormView = false;
+    this.showSuccessView = false;
+    this.showDetailModal = false;
+    this.loadRequestsFromStorage();
+  }
+
+  showFormScreen() {
+    this.showListView = false;
+    this.showFormView = true;
+    this.showSuccessView = false;
+    this.showDetailModal = false;
+    this.initializeForm();
+  }
+
+  showSuccessScreen() {
+    this.showListView = false;
+    this.showFormView = false;
+    this.showSuccessView = true;
+    this.showDetailModal = false;
+  }
+
+  // Toast methods
+  showToastMessage(message: string, type: 'success' | 'error' | 'info' = 'info') {
+    this.toastMessage = message;
+    this.toastType = type;
+    this.showToast = true;
+    
+    setTimeout(() => {
+      this.showToast = false;
+    }, 3000);
+  }
+
+  closeToast() {
+    this.showToast = false;
   }
 
   // ====================== APPROVAL CHAIN METHODS ======================
@@ -169,16 +294,6 @@ export class CreateEPRequestModalComponent implements OnInit {
     }
   }
 
-  private loadManagerOptions() {
-    this.authService.getManagers().subscribe({
-      next: (res: any) => {
-        const list = res?.managers || res?.defaultApprovers || [];
-        if (Array.isArray(list) && list.length) this.managerOptions = list;
-      },
-      error: () => {}
-    });
-  }
-
   onManagerLookup(approver: Approver, value: string) {
     const term = (value || '').trim().toLowerCase();
     const manager = this.managerOptions.find(m =>
@@ -189,8 +304,6 @@ export class CreateEPRequestModalComponent implements OnInit {
       approver.managerName = manager.name;
       approver.email = manager.email;
       approver.designation = manager.designation;
-    }
-    if (approver.managerName) {
       approver.dateTime = new Date().toLocaleString();
     }
   }
@@ -200,16 +313,15 @@ export class CreateEPRequestModalComponent implements OnInit {
   onFileSelected(attachment: Attachment, event: any) {
     const file = event.target.files[0];
     if (file) {
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
-        this.showToast('File size exceeds 5MB limit', 'error');
+        this.showToastMessage('File size exceeds 5MB limit', 'error');
         return;
       }
       
       attachment.file = file;
       attachment.fileSize = this.formatFileSize(file.size);
       
-      // Create preview for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e: any) => {
@@ -248,7 +360,7 @@ export class CreateEPRequestModalComponent implements OnInit {
       this.ccInput = '';
       this.formData.ccList = this.ccList;
     } else if (email && !this.validateEmail(email)) {
-      this.showToast('Invalid email format', 'error');
+      this.showToastMessage('Invalid email format', 'error');
     }
   }
 
@@ -381,11 +493,6 @@ export class CreateEPRequestModalComponent implements OnInit {
             padding: 10px 12px;
             border-bottom: 1px solid #f1f5f9;
           }
-          .amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e40af;
-          }
           .footer {
             background: #f8fafc;
             padding: 16px;
@@ -427,6 +534,8 @@ export class CreateEPRequestModalComponent implements OnInit {
                 <div class="info-grid">
                   <div class="info-item"><label>Title of Activity</label><span>${this.formData.titleOfActivity}</span></div>
                   <div class="info-item"><label>Priority Level</label><span>${this.formData.priority}</span></div>
+                  <div class="info-item"><label>Vendor</label><span>${this.formData.vendor || '—'}</span></div>
+                  <div class="info-item"><label>Amount</label><span>₹${this.formData.amount?.toLocaleString() || '0'}</span></div>
                 </div>
                 ${this.formData.description ? `<p style="margin-top:16px;"><strong>Description:</strong><br>${this.formData.description}</p>` : ''}
                 ${this.formData.objective ? `<p style="margin-top:12px;"><strong>Objective:</strong><br>${this.formData.objective}</p>` : ''}
@@ -488,64 +597,18 @@ export class CreateEPRequestModalComponent implements OnInit {
     this.previewData = null;
   }
 
-  // ====================== DOWNLOAD EXCEL ======================
-  
-  downloadExcel() {
-    const data = [
-      ['EP Request Details'],
-      ['Field', 'Value'],
-      ['Requester Name', this.formData.requesterName],
-      ['Department', this.formData.department],
-      ['Email ID', this.formData.emailId],
-      ['Contact No.', this.formData.contactNo],
-      ['Organization', this.formData.organization],
-      ['Request Date', this.formData.requestDate],
-      ['Title of Activity', this.formData.titleOfActivity],
-      ['Priority', this.formData.priority],
-      ['Description', this.formData.description],
-      ['Objective', this.formData.objective],
-      [],
-      ['Approval Chain'],
-      ['#', 'Line', 'Manager Name', 'Designation', 'Email', 'Status', 'Remarks']
-    ];
-    
-    this.approvers.filter(a => a.managerName).forEach((a, idx) => {
-      data.push([(idx + 1).toString(), a.line, a.managerName, a.designation, a.email, a.status, a.remarks]);
-    });
-    
-    data.push([], ['CC Recipients']);
-    this.ccList.forEach(cc => data.push([cc]));
-    
-    data.push([], ['Attachments']);
-    data.push(['S.No.', 'Attachment Name', 'File Size', 'Remark']);
-    this.attachments.filter(a => a.file).forEach((a, idx) => {
-      data.push([(idx + 1).toString(), a.name, a.fileSize, a.remark]);
-    });
-    
-    const wsData = data.map(row => row.join('\t')).join('\n');
-    const blob = new Blob([wsData], { type: 'text/tab-separated-values' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `EP_Request_${this.formData.titleOfActivity || 'Draft'}_${new Date().toISOString().split('T')[0]}.xls`;
-    a.click();
-    URL.revokeObjectURL(url);
-    this.showToast('Excel file downloaded', 'success');
-  }
-
   // ====================== FORM VALIDATION ======================
   
   private validateForm(): boolean {
     if (!this.formData.titleOfActivity?.trim()) {
-      this.showToast('Title of Activity is required', 'error');
+      this.showToastMessage('Title of Activity is required', 'error');
       return false;
     }
     const validApprovers = this.approvers.filter(a => a.managerName);
     if (validApprovers.length === 0) {
-      this.showToast('At least one approver is required', 'error');
+      this.showToastMessage('At least one approver is required', 'error');
       return false;
     }
-    
     return true;
   }
 
@@ -555,37 +618,95 @@ export class CreateEPRequestModalComponent implements OnInit {
     if (!this.validateForm()) return;
     
     this.isSubmitting = true;
-    const { vendor, amount, ...requestData } = this.formData;
+    this.showToastMessage('Submitting EP request...', 'info');
     
-    const payload = {
-      ...requestData,
-      stakeholders: this.approvers.filter(a => a.managerName).map((a, idx) => ({
-        line: a.line,
-        name: a.managerName,
-        email: a.email,
-        designation: a.designation,
-        approvalOrder: idx + 1,
+    setTimeout(() => {
+      this.isSubmitting = false;
+      
+      const requestId = `EP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(this.allRequests.length + 1).padStart(3, '0')}`;
+      
+      const newRequest: EPRequest = {
+        id: requestId,
+        requestId: requestId,
+        title: this.formData.titleOfActivity,
+        requester: this.formData.requesterName,
+        department: this.formData.department,
         status: 'Pending',
-        remarks: a.remarks,
-        dateTime: a.dateTime || new Date().toISOString()
-      })),
-      attachments: this.attachments.filter(a => a.file).map(a => ({
-        name: a.name,
-        fileName: a.file?.name,
-        fileSize: a.fileSize,
-        remark: a.remark
-      })),
-      ccList: this.ccList,
-      status: 'Pending'
-    };
-    
-    this.save.emit(payload);
+        date: this.formData.requestDate,
+        priority: this.formData.priority,
+        amount: this.formData.amount || 0
+      };
+      
+      this.allRequests.unshift(newRequest);
+      this.saveRequestsToStorage();
+      
+      const payload = {
+        ...this.formData,
+        requestId: requestId,
+        stakeholders: this.approvers.filter(a => a.managerName).map((a, idx) => ({
+          line: a.line,
+          name: a.managerName,
+          email: a.email,
+          designation: a.designation,
+          approvalOrder: idx + 1,
+          status: 'Pending',
+          remarks: a.remarks,
+          dateTime: a.dateTime || new Date().toISOString()
+        })),
+        attachments: this.attachments.filter(a => a.file).map(a => ({
+          name: a.name,
+          fileName: a.file?.name,
+          fileSize: a.fileSize,
+          remark: a.remark
+        })),
+        ccList: this.ccList,
+        status: 'Pending'
+      };
+      
+      this.save.emit(payload);
+      this.showToastMessage(`EP Request ${requestId} submitted successfully!`, 'success');
+      
+      // Navigate to list view after 2 seconds
+      setTimeout(() => {
+        this.showListViewScreen();
+        this.resetForm();
+      }, 2000);
+      
+    }, 1500);
+  }
+
+  resetForm() {
+    this.formData.titleOfActivity = '';
+    this.formData.vendor = '';
+    this.formData.amount = 0;
+    this.formData.description = '';
+    this.formData.objective = '';
+    this.formData.priority = 'High';
+    this.approvers = [
+      {
+        id: 1,
+        line: 'Parallel',
+        managerName: '',
+        email: '',
+        designation: '',
+        status: 'pending',
+        dateTime: '',
+        remarks: ''
+      }
+    ];
+    this.attachments = [
+      { id: 1, name: 'Attachment 1', fileSize: '', file: null, preview: '', remark: '' },
+      { id: 2, name: 'Attachment 2', fileSize: '', file: null, preview: '', remark: '' },
+      { id: 3, name: 'Attachment 3', fileSize: '', file: null, preview: '', remark: '' }
+    ];
+    this.ccList = [];
+    this.ccInput = '';
+    this.isSubmitting = false;
   }
 
   saveDraft() {
-    const { vendor, amount, ...requestData } = this.formData;
     const payload = {
-      ...requestData,
+      ...this.formData,
       approvers: this.approvers,
       attachments: this.attachments.map(a => ({
         id: a.id,
@@ -600,29 +721,54 @@ export class CreateEPRequestModalComponent implements OnInit {
     };
     try {
       localStorage.setItem(`ep_request_draft_${Date.now()}`, JSON.stringify(payload));
-      this.showToast('EP request saved as draft.', 'success');
+      this.showToastMessage('EP request saved as draft.', 'success');
     } catch {
-      this.showToast('Unable to save draft locally.', 'error');
+      this.showToastMessage('Unable to save draft locally.', 'error');
     }
   }
 
-  // ====================== TOAST ======================
-  
-  showToast(message: string, type: 'success' | 'error' | 'info') {
-    if (this.toastTimer) clearTimeout(this.toastTimer);
-    this.toast = { message, type };
-    this.toastTimer = setTimeout(() => {
-      this.toast = null;
-      this.cdr.detectChanges();
-    }, 5000);
+  // View request
+  viewRequest(request: EPRequest) {
+    this.selectedRequest = request;
+    this.showDetailModal = true;
   }
 
-  closeToast() {
-    this.toast = null;
-    if (this.toastTimer) clearTimeout(this.toastTimer);
+  closeDetailModal() {
+    this.showDetailModal = false;
+    this.selectedRequest = null;
   }
 
-  closeModal() {
-    this.close.emit();
+  // Helper methods
+  getPriorityLabel(priority: string): string {
+    return priority || 'Medium';
+  }
+
+  getPriorityClass(priority: string): string {
+    const map: any = { 'High': 'high', 'Medium': 'medium', 'Low': 'low', 'Urgent': 'urgent' };
+    return map[priority] || 'medium';
+  }
+
+  getStatusClass(status: string): string {
+    const map: any = { 'Approved': 'approved', 'Pending': 'pending', 'Rejected': 'rejected' };
+    return map[status] || 'pending';
+  }
+
+  getTotalRequests(): number {
+    return this.allRequests.length;
+  }
+
+  refreshData() {
+    this.isLoading = true;
+    this.showToastMessage('Refreshing data...', 'info');
+    
+    setTimeout(() => {
+      this.isLoading = false;
+      this.loadRequestsFromStorage();
+      this.showToastMessage(`${this.getTotalRequests()} request(s) found`, 'success');
+    }, 1000);
+  }
+
+  checkStatus() {
+    this.showToastMessage(`Total ${this.getTotalRequests()} EP request(s) found`, 'info');
   }
 }

@@ -121,9 +121,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   epApprovalInitialTab: 'requests' | 'approvals' | 'status' = 'requests';
   activeSection: 'requests' | 'approvals' | 'status' = 'requests';
 
+  // FULL-SCREEN FOCUS MODE
+  // Any tab other than the dashboard itself now opens in full-screen focus mode:
+  // the outer sidebar is removed from the DOM entirely (see dashboard.html, *ngIf="!isFocusMode")
+  // so it can never overlap a module's own UI, and the topbar shows a
+  // "← Dashboard" button + the module's name/icon instead of the hamburger.
   get isFocusMode(): boolean {
-    return this.activeTab === 'npp-procurement' || this.activeTab === 'ep-approval';
+    return this.activeTab !== 'dashboard';
   }
+
   showApprovalsSection: boolean = false;
   selectedNppTab: string = 'rfq-npp-form';
 
@@ -395,6 +401,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // FOCUS-MODE TOPBAR HELPERS
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getCurrentModuleIcon(): string {
+    if (this.activeTab === 'approvals') return '✅';
+    if (this.activeTab === 'reports') return '📊';
+    if (this.activeTab === 'coming-soon') return '🚧';
+    return this.allMenuItems.find(m => m.id === this.activeTab)?.icon || '📄';
+  }
+
+  getCurrentModuleTitle(): string {
+    if (this.activeTab === 'approvals') return 'Approvals';
+    if (this.activeTab === 'reports') return 'Reports';
+    if (this.activeTab === 'coming-soon') return this.getMenuName(this.activeSubTab);
+    return this.allMenuItems.find(m => m.id === this.activeTab)?.name || 'Module';
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // NOTIFICATION PANEL METHODS
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -602,7 +626,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
     }
     this.closeNotificationPanel();
-    
+
     // Navigate based on notification type
     if (notif.type === 'pending' || notif.type === 'approval') {
       this.openApprovalSection('approvals');

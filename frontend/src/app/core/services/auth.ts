@@ -646,6 +646,10 @@ export class AuthService {
     return token ? new HttpHeaders().set('Authorization', `Bearer ${token}`) : new HttpHeaders();
   }
 
+  getHeaders(): HttpHeaders {
+    return this.getAuthHeaders();
+  }
+
   getLoggedInUser(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/me`, this.getHttpOptions()).pipe(
       timeout(6000),
@@ -805,17 +809,89 @@ export class AuthService {
     );
   }
 
-  createEPRequest(data: any): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/request`, data, this.getHttpOptions()).pipe(
-      tap(res => {
-        if (res?.success && data.requesterEmail) {
-          this.sendApprovalEmailNotification(data, 'EP', [data.approverEmail]).subscribe();
-        }
-      }),
-      catchError(this.handleError('Create EP Request'))
-    );
-  }
+// auth.service.ts - Complete Fixed createEPRequest
 
+createEPRequest(data: any): Observable<any> {
+  console.log('📤 Creating EP Request with data:', JSON.stringify(data, null, 2));
+  
+  // ✅ Ensure the data has the correct structure
+  const payload = {
+    title: data.title || data.titleOfActivity,
+    requester: data.requester || data.requesterName,
+    department: data.department,
+    email: data.email || data.emailId,
+    requestDate: data.requestDate || new Date().toISOString().split('T')[0],
+    contactNo: data.contactNo || '',
+    organization: data.organization || 'Radiant Appliances',
+    vendor: data.vendor || '',
+    amount: Number(data.amount || 0),
+    priority: data.priority || 'Medium',
+    description: data.description || '',
+    objective: data.objective || '',
+    stakeholders: data.stakeholders || [],
+    attachments: data.attachments || [],
+    ccList: Array.isArray(data.ccList) ? data.ccList : [],
+    status: data.status || 'Pending',
+    requesterEmail: data.requesterEmail || data.email || data.emailId,
+    approverEmail: data.approverEmail || (data.stakeholders && data.stakeholders[0]?.email) || ''
+  };
+  
+  console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
+  
+  return this.http.post<any>(`${this.API_URL}/request`, payload, this.getHttpOptions()).pipe(
+    timeout(15000),
+    tap(res => {
+      console.log('✅ EP Request response:', res);
+      if (res?.success && payload.requesterEmail) {
+        // Send notification to requester
+        this.sendApprovalEmailNotification(payload, 'EP', [payload.requesterEmail]).subscribe({
+          next: () => console.log('✅ Notification sent to requester'),
+          error: (err) => console.warn('⚠️ Notification failed:', err)
+        });
+      }
+      if (res?.success && payload.approverEmail) {
+        // Send notification to approver
+        this.sendApprovalEmailNotification(payload, 'EP', [payload.approverEmail]).subscribe({
+          next: () => console.log('✅ Notification sent to approver'),
+          error: (err) => console.warn('⚠️ Notification failed:', err)
+        });
+      }
+    }),
+    catchError((error: HttpErrorResponse) => {
+      console.error('❌ Create EP Request error:', error);
+      let errorMessage = 'Failed to create EP request.';
+      
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.status === 0) {
+        errorMessage = 'Cannot connect to server. Please check your network connection.';
+      } else if (error.status === 401) {
+        errorMessage = 'Session expired. Please login again.';
+      } else if (error.status === 403) {
+        errorMessage = 'You do not have permission to create EP requests.';
+      } else if (error.status === 400) {
+        errorMessage = error.error?.message || 'Invalid data. Please check all fields.';
+      } else if (error.status === 404) {
+        errorMessage = 'API endpoint not found. Please contact support.';
+      } else if (error.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
+      // Show toast notification
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('app-toast', { 
+          detail: { message: errorMessage, type: 'error' } 
+        }));
+      }
+      
+      return throwError(() => ({ 
+        message: errorMessage, 
+        status: error.status, 
+        originalError: error 
+      }));
+    })
+  );
+}
   updateEPRequest(id: string | number, data: any): Observable<any> {
     return this.http.put<any>(`${this.API_URL}/request/${id}`, data, this.getHttpOptions()).pipe(
       catchError(this.handleError('Update EP Request'))
@@ -1157,12 +1233,17 @@ export class AuthService {
     );
   }
 
-  createTemporaryVendorAccount(data: any): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/vendor/temporary-account`, data, this.getHttpOptions()).pipe(
-      catchError(this.handleError('Create Temporary Vendor Account'))
-    );
-  }
-
+createTemporaryVendorAccount(data: any): Observable<any> {
+  return this.http.post<any>(`${this.API_URL}/vendor/temporary-account`, data, this.getHttpOptions()).pipe(
+    timeout(15000),
+    tap(res => {
+      if (res?.success) {
+        this.showToastMessage('Temporary vendor account created!', 'success');
+      }
+    }),
+    catchError(this.handleError('Create Temporary Vendor Account'))
+  );
+}
   deactivateTemporaryVendorAccount(id: string | number, reason = 'Work completed'): Observable<any> {
     return this.http.patch<any>(`${this.API_URL}/vendor/temporary-account/${id}/deactivate`, { reason }, this.getHttpOptions()).pipe(
       catchError(this.handleError('Deactivate Temporary Vendor Account'))
@@ -1174,7 +1255,31 @@ export class AuthService {
       catchError(this.handleError('Get Vendor RFQ Dashboard'))
     );
   }
+// ==================== VENDOR SEARCH METHODS ====================
 
+
+findVendorByEmail(email: string): Observable<any> {
+  return this.http.get<any>(`${this.API_URL}/vendors/findByEmail`, {
+    ...this.getHttpOptions(),
+    params: { email: email }
+  }).pipe(
+    timeout(10000),
+    map(res => {
+      if (res?.success) {
+        return res;
+      }
+      // Fallback: try the vendor endpoint
+      return this.http.get<any>(`${this.API_URL}/vendor/findByEmail`, {
+        ...this.getHttpOptions(),
+        params: { email: email }
+      });
+    }),
+    catchError((error) => {
+      console.error('Find vendor by email error:', error);
+      return of({ success: true, data: [] });
+    })
+  );
+}
   getParts(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/part`, this.getHttpOptions()).pipe(
       timeout(8000),
@@ -1201,6 +1306,229 @@ export class AuthService {
     );
   }
 
+// ==================== QUOTATION COMPARISON METHODS ====================
+
+// Get PR comparison
+getPrComparison(prId: string): Observable<any> {
+  const id = encodeURIComponent(prId || 'latest');
+  return this.http.get<any>(`${this.API_URL}/pr/${id}/comparison`, this.getHttpOptions()).pipe(
+    timeout(15000),
+    catchError(() => of({ success: true, items: [], recommendedVendor: null }))
+  );
+}
+
+// Get Quotation Comparison Auto
+getQuotationComparisonAuto(rfqNo?: string): Observable<any> {
+  const params: any = {};
+  if (rfqNo) params.rfqNo = rfqNo;
+  return this.http.get<any>(`${this.API_URL}/npp-forms/quotation-comparison/auto`, {
+    ...this.getHttpOptions(),
+    params
+  }).pipe(
+    timeout(15000),
+    catchError(() => this.searchNppForms({ type: 'quotation-comparison', status: 'Submitted' }))
+  );
+}
+
+// ✅ FIXED: Submit Quotation Comparison with proper headers
+submitQuotationComparison(data: any): Observable<any> {
+  console.log('📤 Submitting quotation comparison with token:', !!this.getToken());
+  const headers = this.getHeaders();
+  console.log('🔑 Headers:', headers);
+  
+  return this.http.post(`${this.API_URL}/quotation-comparison/submit`, data, { headers }).pipe(
+    timeout(15000),
+    tap((res: any) => {
+      if (res?.success) {
+        console.log('✅ Quotation comparison submitted successfully:', res);
+        this.showToastMessage(res.message || 'Quotation comparison submitted successfully!', 'success');
+      }
+    }),
+    catchError((error: HttpErrorResponse) => {
+      console.error('❌ Submit Quotation Comparison error:', error);
+      let errorMessage = 'Failed to submit quotation comparison.';
+      
+      if (error.status === 401) {
+        errorMessage = 'Session expired. Please login again.';
+      } else if (error.status === 403) {
+        errorMessage = 'You do not have permission to submit quotations.';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      this.showToastMessage(errorMessage, 'error');
+      return throwError(() => error);
+    })
+  );
+}
+
+// ✅ FIXED: Get all comparisons with proper headers
+getComparisons(): Observable<any> {
+  console.log('📥 Fetching comparisons with token:', !!this.getToken());
+  const headers = this.getHeaders();
+  
+  return this.http.get(`${this.API_URL}/quotation-comparison/list`, { headers }).pipe(
+    timeout(10000),
+    map((res: any) => {
+      if (res?.success) {
+        return res;
+      }
+      return { success: true, data: [], total: 0 };
+    }),
+    catchError((error: HttpErrorResponse) => {
+      console.error('❌ Get Comparisons error:', error);
+      return of({ success: true, data: [], total: 0 });
+    })
+  );
+}
+
+// ✅ FIXED: Get submitted comparisons with proper headers
+getSubmittedComparisons(): Observable<any> {
+  console.log('📥 Fetching submitted comparisons with token:', !!this.getToken());
+  const headers = this.getHeaders();
+  
+  return this.http.get(`${this.API_URL}/quotation-comparison/submitted`, { headers }).pipe(
+    timeout(10000),
+    map((res: any) => {
+      if (res?.success) {
+        return res;
+      }
+      return { success: true, data: [], total: 0 };
+    }),
+    catchError((error: HttpErrorResponse) => {
+      console.error('❌ Get Submitted Comparisons error:', error);
+      return of({ success: true, data: [], total: 0 });
+    })
+  );
+}
+
+// ✅ FIXED: Create PR from comparison with proper headers
+createPRFromComparison(data: any): Observable<any> {
+  console.log('📤 Creating PR from comparison with token:', !!this.getToken());
+  const headers = this.getHeaders();
+  
+  return this.http.post(`${this.API_URL}/pr/create-from-comparison`, data, { headers }).pipe(
+    timeout(15000),
+    tap((res: any) => {
+      if (res?.success) {
+        console.log('✅ PR created from comparison:', res);
+        this.showToastMessage(res.message || 'PR created from comparison successfully!', 'success');
+      }
+    }),
+    catchError((error: HttpErrorResponse) => {
+      console.error('❌ Create PR from comparison error:', error);
+      let errorMessage = 'Failed to create PR from comparison.';
+      
+      if (error.status === 401) {
+        errorMessage = 'Session expired. Please login again.';
+      } else if (error.status === 403) {
+        errorMessage = 'You do not have permission to create PRs.';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      this.showToastMessage(errorMessage, 'error');
+      return throwError(() => error);
+    })
+  );
+}
+
+// ====================== PR (Purchase Requisition) METHODS ======================
+
+  /**
+   * Get all PRs
+   */
+  getPrList(): Observable<any> {
+    console.log('📥 Fetching PR list...');
+    return this.http.get(`${this.API_URL}/pr/list`, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Get a single PR by ID
+   */
+  getPrById(id: string): Observable<any> {
+    return this.http.get(`${this.API_URL}/pr/${id}`, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Save PR as draft
+   */
+  savePR(data: any): Observable<any> {
+    console.log('💾 Saving PR draft:', data);
+    return this.http.post(`${this.API_URL}/pr/save`, data, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Submit PR for approval
+   */
+  submitPR(data: any): Observable<any> {
+    console.log('📤 Submitting PR:', data);
+    return this.http.post(`${this.API_URL}/pr/submit`, data, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Create PR (generic)
+   */
+  createPR(data: any): Observable<any> {
+    console.log('📤 Creating PR:', data);
+    return this.http.post(`${this.API_URL}/pr/create`, data, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Update PR
+   */
+  updatePR(id: string, data: any): Observable<any> {
+    console.log('📤 Updating PR:', id, data);
+    return this.http.put(`${this.API_URL}/pr/${id}`, data, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Approve PR
+   */
+  approvePR(id: string): Observable<any> {
+    console.log('✅ Approving PR:', id);
+    return this.http.post(`${this.API_URL}/pr/${id}/approve`, {}, { headers: this.getHeaders() });
+  }
+
+  /**
+   * Reject PR
+   */
+  rejectPR(id: string, comments?: string): Observable<any> {
+    console.log('❌ Rejecting PR:', id);
+    return this.http.post(`${this.API_URL}/pr/${id}/reject`, { comments }, { headers: this.getHeaders() });
+  }
+
+// Get quotation comparison by RFQ ID
+getQuotationComparisonByRfq(rfqId: string): Observable<any> {
+  return this.http.get<any>(`${this.API_URL}/quotation/comparison/rfq/${rfqId}`, this.getHttpOptions()).pipe(
+    timeout(15000),
+    catchError((error) => {
+      // Fallback: try to search by RFQ number
+      return this.searchNppForms({ rfqNo: rfqId, type: 'quotation-comparison' }).pipe(
+        map((res: any) => {
+          const forms = res?.data || [];
+          if (forms.length > 0) {
+            const data = forms[0];
+            return {
+              success: true,
+              data: {
+                rfqNo: data.rfqNo || data.uniqueSerialNo,
+                items: data.quotationItems || data.items || [],
+                recommendedVendor: data.recommendedVendor || {
+                  vendorName: data.bestSupplier || 'Recommended Vendor'
+                },
+                bestSupplier: data.bestSupplier || 'Recommended Vendor',
+                suppliers: data.suppliers || [],
+                recommendation: data.recommendation || ''
+              }
+            };
+          }
+          return { success: false, message: 'No comparison data found' };
+        })
+      );
+    })
+  );
+}
   // ==================== RFQ METHODS ====================
 
   getRFQs(): Observable<any> {
@@ -1236,7 +1564,158 @@ export class AuthService {
       catchError(this.handleError('Get RFQ Requests'))
     );
   }
+// Add these methods to the AuthService class
 
+// ==================== RFQ WORKFLOW METHODS ====================
+
+getApprovedRFQs(): Observable<any> {
+  return this.http.get<any>(`${this.API_URL}/rfq/approved`, this.getHttpOptions()).pipe(
+    timeout(10000),
+    map(res => {
+      let data = [];
+      if (res?.data && Array.isArray(res.data)) data = res.data;
+      else if (Array.isArray(res)) data = res;
+      
+      const mappedData = data.map((item: any) => ({
+        ...item,
+        id: item._id || item.id,
+        title: item.titleOfActivity || item.title,
+        requester: item.requesterName || item.requester,
+        email: item.emailId || item.email,
+        priority: this.mapPriorityFromBackend(item.priority),
+        status: this.mapStatusFromBackend(item.status),
+        currentStage: item.currentStage || 'Vendor Request',
+        vendorRequestCreated: item.vendorRequestCreated || false,
+        quotationCompleted: item.quotationCompleted || false,
+        approvalDate: item.approvalDate,
+        approvedBy: item.approvedBy,
+        requestDate: item.requestDate || item.createdAt
+      }));
+      
+      return { success: true, data: mappedData, count: mappedData.length };
+    }),
+    catchError(this.handleError('Get Approved RFQs'))
+  );
+}
+
+updateVendorRequestStatus(rfqId: string, data: { vendorRequestCreated?: boolean; currentStage?: string }): Observable<any> {
+  return this.http.patch<any>(`${this.API_URL}/rfq/${rfqId}/vendor-request`, data, this.getHttpOptions()).pipe(
+    timeout(10000),
+    catchError(this.handleError('Update Vendor Request Status'))
+  );
+}
+
+updateQuotationStatus(rfqId: string, data: { quotationCompleted?: boolean; currentStage?: string }): Observable<any> {
+  return this.http.patch<any>(`${this.API_URL}/rfq/${rfqId}/quotation-status`, data, this.getHttpOptions()).pipe(
+    timeout(10000),
+    catchError(this.handleError('Update Quotation Status'))
+  );
+}
+
+selectWinner(rfqId: string, data: { winnerVendorId: string; winnerVendorName: string; winnerPrice: number }): Observable<any> {
+  return this.http.post<any>(`${this.API_URL}/rfq/${rfqId}/select-winner`, data, this.getHttpOptions()).pipe(
+    timeout(10000),
+    tap(res => {
+      if (res?.success) {
+        this.showToastMessage(`Winner selected: ${data.winnerVendorName}`, 'success');
+      }
+    }),
+    catchError(this.handleError('Select Winner'))
+  );
+}
+
+getRFQWorkflowStatus(rfqId: string): Observable<any> {
+  return this.http.get<any>(`${this.API_URL}/rfq/${rfqId}/workflow`, this.getHttpOptions()).pipe(
+    timeout(8000),
+    catchError(() => {
+      // Fallback: get the RFQ and extract workflow info
+      return this.getRFQById(rfqId).pipe(
+        map(res => ({
+          success: true,
+          data: {
+            status: res?.data?.status,
+            currentStage: res?.data?.currentStage,
+            vendorRequestCreated: res?.data?.vendorRequestCreated,
+            quotationCompleted: res?.data?.quotationCompleted,
+            approvalDate: res?.data?.approvalDate,
+            approvedBy: res?.data?.approvedBy,
+            winnerVendorName: res?.data?.winnerVendorName
+          }
+        }))
+      );
+    }),
+    catchError(this.handleError('Get RFQ Workflow Status'))
+  );
+}
+
+// ==================== VENDOR REQUEST METHODS ====================
+
+createVendorRequest(data: any): Observable<any> {
+  return this.http.post<any>(`${this.API_URL}/vendor-request`, data, this.getHttpOptions()).pipe(
+    timeout(15000),
+    tap(res => {
+      if (res?.success) {
+        this.showToastMessage('Vendor request sent successfully!', 'success');
+      }
+    }),
+    catchError(this.handleError('Create Vendor Request'))
+  );
+}
+
+getVendorRequests(rfqId?: string): Observable<any> {
+  let url = `${this.API_URL}/vendor-request`;
+  if (rfqId) {
+    url += `?rfqId=${rfqId}`;
+  }
+  return this.http.get<any>(url, this.getHttpOptions()).pipe(
+    timeout(10000),
+    map(res => this.asListResponse(res)),
+    catchError(this.handleError('Get Vendor Requests'))
+  );
+}
+
+getVendorRequestByRfqId(rfqId: string): Observable<any> {
+  return this.http.get<any>(`${this.API_URL}/vendor-request/${rfqId}`, this.getHttpOptions()).pipe(
+    timeout(10000),
+    catchError(this.handleError('Get Vendor Request by RFQ'))
+  );
+}
+
+updateVendorRequest(id: string, data: any): Observable<any> {
+  return this.http.patch<any>(`${this.API_URL}/vendor-request/${id}`, data, this.getHttpOptions()).pipe(
+    timeout(10000),
+    catchError(this.handleError('Update Vendor Request'))
+  );
+}
+
+// ==================== QUOTATION METHODS ====================
+
+submitQuotation(data: any): Observable<any> {
+  return this.http.post<any>(`${this.API_URL}/quotation`, data, this.getHttpOptions()).pipe(
+    timeout(15000),
+    tap(res => {
+      if (res?.success) {
+        this.showToastMessage('Quotation submitted successfully!', 'success');
+      }
+    }),
+    catchError(this.handleError('Submit Quotation'))
+  );
+}
+
+getQuotations(rfqId: string): Observable<any> {
+  return this.http.get<any>(`${this.API_URL}/quotation/${rfqId}`, this.getHttpOptions()).pipe(
+    timeout(10000),
+    map(res => this.asListResponse(res)),
+    catchError(this.handleError('Get Quotations'))
+  );
+}
+
+getQuotationComparison(rfqId: string): Observable<any> {
+  return this.http.get<any>(`${this.API_URL}/quotation/comparison/${rfqId}`, this.getHttpOptions()).pipe(
+    timeout(15000),
+    catchError(this.handleError('Get Quotation Comparison'))
+  );
+}
   getRFQById(id: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/rfq/${id}`, this.getHttpOptions()).pipe(
       timeout(8000),
@@ -2060,26 +2539,6 @@ export class AuthService {
     return this.http.get<any>(url, this.getHttpOptions()).pipe(
       timeout(8000),
       catchError(() => of({ success: true, data: { approved: 0, pending: 0, rejected: 0, inProcess: 0, total: 0 } }))
-    );
-  }
-
-  getPrComparison(prId: string): Observable<any> {
-    const id = encodeURIComponent(prId || 'latest');
-    return this.http.get<any>(`${this.API_URL}/pr/${id}/comparison`, this.getHttpOptions()).pipe(
-      timeout(15000),
-      catchError(() => of({ success: true, items: [], recommendedVendor: null }))
-    );
-  }
-
-  getQuotationComparisonAuto(rfqNo?: string): Observable<any> {
-    const params: any = {};
-    if (rfqNo) params.rfqNo = rfqNo;
-    return this.http.get<any>(`${this.API_URL}/npp-forms/quotation-comparison/auto`, {
-      ...this.getHttpOptions(),
-      params
-    }).pipe(
-      timeout(15000),
-      catchError(() => this.searchNppForms({ type: 'quotation-comparison', status: 'Submitted' }))
     );
   }
 

@@ -32,13 +32,13 @@
     <!-- NON BOM label -->
     <div class="sidebar-section-lbl">NON BOM</div>
 
-    <button
+    <!-- <button
       *ngIf="navService.isFiltered()"
       class="back-main-btn"
       type="button"
       (click)="backToMainMenu()">
       ← Back To Main Menu
-    </button>
+    </button> -->
 
     <!-- Accordion Nav -->
     <nav class="sidebar-accordion" role="navigation" aria-label="Main navigation">
@@ -158,6 +158,7 @@
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-npp-form'"         (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
       <app-rfq-vendor           *ngIf="activeTab === 'rfq-vendor-requisition'" (onSubmit)="handleSubmit($event)"></app-rfq-vendor>
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-requisition'"      [initialSubMenu]="'rfq-list'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
+<app-quotation-status *ngIf="activeTab === 'quotation-status'"></app-quotation-status>
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-approvals'"        [initialSubMenu]="'approvals'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
       <app-rfq-requisition      *ngIf="activeTab === 'rfq-status'"           [initialSubMenu]="'status'" (onSubmit)="handleSubmit($event)"></app-rfq-requisition>
       <app-ep-approval          *ngIf="activeTab === 'ep-request' || activeTab === 'ep-approvals' || activeTab === 'ep-status'">

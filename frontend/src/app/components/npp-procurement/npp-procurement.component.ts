@@ -19,6 +19,7 @@ import { PaymentAdviseComponent } from '../../npp-procurement/components/payment
 import { RfqRequisitionComponent } from "../../npp-procurement/components/rfq-requisition/rfq-requisition";
 import { EPApprovalComponent } from '../ep-approval/ep-approval';
 import { StatusModalComponent } from '../../shared/status-modal/status-modal.component';
+import { QuotationStatusComponent } from "../quotation-status/quotation-status/quotation-status";
 
 export interface WorkflowStep {
   id: string;
@@ -69,7 +70,8 @@ export interface Certificate {
     PaymentAdviseComponent,
     RfqRequisitionComponent,
     EPApprovalComponent,
-    StatusModalComponent
+    StatusModalComponent,
+    QuotationStatusComponent
 ],
   templateUrl: './npp-procurement.html',
   styleUrls: ['./npp-procurement.scss'],
@@ -134,7 +136,7 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
       steps: [
         { id: 'rfq-npp-form',          label: 'RFQ (Request for Quotation)',                         icon: 'RFQ', groupId: 'rfq-request' },
         { id: 'rfq-vendor-requisition', label: 'Requisition To Vendor',                              icon: 'RTV', groupId: 'rfq-request' },
-        { id: 'quotation-submission',  label: 'Quotation Status',                                     icon: 'QST', groupId: 'rfq-request' },
+        { id: 'quotation-status',       label: 'Quotation Status',                                   icon: 'QST', groupId: 'rfq-request' },
         { id: 'quotation-comparison',  label: 'Quotation Collection and Cost Comparison',             icon: 'QC',  groupId: 'rfq-request' },
       ]
     },
@@ -338,13 +340,13 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
     this.syncEpTabFromActive();
   }
 
-  backToMainMenu(): void {
-    this.navService.showAll();
-    this.expandedGroups = new Set(this.navGroups.map(g => g.id));
-    this.activeGroupId = 'rfq-request';
-    this.activeTab = 'rfq-npp-form';
-    this.sidebarOpen = false;
-  }
+  // backToMainMenu(): void {
+  //   this.navService.showAll();
+  //   this.expandedGroups = new Set(this.navGroups.map(g => g.id));
+  //   this.activeGroupId = 'rfq-request';
+  //   this.activeTab = 'rfq-npp-form';
+  //   this.sidebarOpen = false;
+  // }
 
   setActiveTab(tabId: string, groupId: string): void {
     this.navService.setMode(groupId as NonBomNavMode);
@@ -365,7 +367,7 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
 
   getStatusTypeForActiveTab(): string {
     const map: Record<string, string> = {
-      'rfq-npp-form': 'rfq', 'rfq-vendor-requisition': 'rfq', 'quotation-submission': 'comparison',
+      'rfq-npp-form': 'rfq', 'rfq-vendor-requisition': 'rfq', 'quotation-status': 'quotation-status',
       'quotation-comparison': 'comparison', 'pr-request': 'pr', 'po-npp': 'po',
       'payment-advise': 'payment', 'wcc-npp': 'wcc', 'cash-purchase': 'cash-purchase',
       'ep-request': 'ep', 'ep-approvals': 'ep', 'ep-status': 'ep'

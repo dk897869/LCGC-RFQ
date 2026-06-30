@@ -1,170 +1,265 @@
-<div class="rfq-vendor-container">
-  <div class="form-header">
-    <div class="header-badges">
-      <span class="badge primary">NPP PROCUREMENT</span>
-      <span class="badge rfq">Quotation status</span>
+<div class="rfq-vendor-page">
+
+  <!-- Toast -->
+  <div class="app-toast" *ngIf="showToast" [ngClass]="'toast-' + toastType">
+    <span class="toast-icon">{{ toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️' }}</span>
+    <span class="toast-msg">{{ toastMessage }}</span>
+    <button class="toast-close" (click)="closeToast()">×</button>
+  </div>
+
+  <div class="page-card">
+
+    <!-- Breadcrumb + Title -->
+    <div class="page-head">
+      <div class="breadcrumb">
+        <span>NON BOM</span><span class="sep">›</span><span>RFQ Request</span><span class="sep">›</span>
+        <span class="active">Requisition To Vendor</span>
+      </div>
+      <div class="head-row">
+        <div>
+          <h1>Requisition <span class="muted">› To Vendor</span></h1>
+          <p class="head-sub">Send approved RFQs to vendors and track their responses</p>
+        </div>
+        <button class="btn-refresh" (click)="refreshData()" [disabled]="isLoading">
+          <span [class.spin]="isLoading">↻</span> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Search by RFQ no, title, requester, department...">
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-row">
+      <button class="filter-pill" [class.active]="activeFilter==='All'" (click)="setFilter('All')">
+        📋 All <span class="count">{{ countByStage('All') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='NotSent'" (click)="setFilter('NotSent')">
+        🕒 Not Sent <span class="count">{{ countByStage('NotSent') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='InProgress'" (click)="setFilter('InProgress')">
+        🔄 In Progress <span class="count">{{ countByStage('InProgress') }}</span>
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-card-head">
+        <h3>Approved RFQs Pending Vendor Action</h3>
+        <span class="badge-total">Total: {{ displayRows.length }}</span>
+      </div>
+
+      <div class="loading-state" *ngIf="isLoading">
+        <div class="spinner"></div><p>Loading approved RFQs...</p>
+      </div>
+
+      <div class="table-scroll" *ngIf="!isLoading">
+        <table class="data-table" *ngIf="displayRows.length">
+          <thead>
+            <tr>
+              <th>RFQ No</th><th>Title</th><th>Requester</th><th>Department</th>
+              <th>Priority</th><th>Vendor Status</th><th>Approved Date</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of displayRows; trackBy: trackByRfq">
+              <td><a class="rfq-link" (click)="openDetail(row.rfq)">{{ row.rfq.uniqueSerialNo }}</a></td>
+              <td><strong>{{ row.rfq.title }}</strong></td>
+              <td>{{ row.rfq.requester }}</td>
+              <td>{{ row.rfq.department }}</td>
+              <td><span class="priority-badge" [ngClass]="getPriorityClass(row.rfq.priority)">{{ getPriorityLabel(row.rfq.priority) }}</span></td>
+              <td><span class="vendor-badge" [ngClass]="getVendorStageClass(row.vr)">{{ getVendorStageLabel(row.vr) }}</span></td>
+              <td>{{ row.rfq.approvalDate || row.rfq.requestDate || '—' }}</td>
+              <td class="actions-cell">
+                <button class="action-btn view" (click)="openDetail(row.rfq)">👁️ View</button>
+                <button class="action-btn send" (click)="openSendVendorModal(row.rfq)">📤 Send</button>
+                <button class="action-btn status" (click)="openStatusModal(row.rfq)"
+                  [disabled]="!row.vr || row.vr.stage==='NotSent'">📊 Status</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="empty-state" *ngIf="!displayRows.length">
+          <span>📭</span>
+          <p>No approved RFQs pending vendor action right now.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer bar -->
+    <div class="bottom-bar">
+      <div class="weather">
+        <span class="temp">32°C</span><span class="cond">PARTLY CLOUDY</span>
+      </div>
+      <div class="clock">
+        <span class="lang">ENG</span><span class="sep">|</span><span class="lang">IN</span>
+        <span class="date">{{ currentDate | date:'dd-MM-yyyy' }}</span>
+        <span class="time">{{ currentTime }}</span>
+      </div>
     </div>
   </div>
 
-  <!-- Requester Info -->
-  <div class="form-section">
-    <h3 class="section-title">📋 Requester Information</h3>
-    <div class="info-grid">
-      <div class="info-row">
-        <div class="info-label">Name</div>
-        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.requesterName" placeholder="Enter name"></div>
-        <div class="info-label">Request Date</div>
-        <div class="info-value"><input class="form-input" type="date" [(ngModel)]="rfqVendorForm.requestDate"></div>
+  <!-- ===================== DETAIL MODAL ===================== -->
+  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetailModal()">
+    <div class="modal-box detail-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>📄 RFQ Details — {{ selectedRFQ?.uniqueSerialNo }}</h3>
+        <button class="modal-close" (click)="closeDetailModal()">×</button>
       </div>
-      <div class="info-row">
-        <div class="info-label">Department</div>
-        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.department" placeholder="Department"></div>
-        <div class="info-label">Contact No.</div>
-        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.contactNo" placeholder="Contact number"></div>
-      </div>
-      <div class="info-row">
-        <div class="info-label">Email ID</div>
-        <div class="info-value"><input class="form-input" type="email" [(ngModel)]="rfqVendorForm.emailId" placeholder="Email address"></div>
-        <div class="info-label">Organization</div>
-        <div class="info-value"><input class="form-input" [(ngModel)]="rfqVendorForm.organization" placeholder="Organization"></div>
+      <div class="modal-body" *ngIf="selectedRFQ">
+        <div class="detail-grid">
+          <div class="d-item"><label>Title</label><span>{{ selectedRFQ.title }}</span></div>
+          <div class="d-item"><label>Requester</label><span>{{ selectedRFQ.requester }}</span></div>
+          <div class="d-item"><label>Department</label><span>{{ selectedRFQ.department }}</span></div>
+          <div class="d-item"><label>Priority</label>
+            <span class="priority-badge" [ngClass]="getPriorityClass(selectedRFQ.priority)">{{ getPriorityLabel(selectedRFQ.priority) }}</span>
+          </div>
+          <div class="d-item"><label>Organization</label><span>{{ selectedRFQ.organization || '—' }}</span></div>
+          <div class="d-item"><label>Contact No</label><span>{{ selectedRFQ.contactNo || '—' }}</span></div>
+          <div class="d-item"><label>Email</label><span>{{ selectedRFQ.email || '—' }}</span></div>
+          <div class="d-item"><label>Approved By</label><span>{{ selectedRFQ.approvedBy || '—' }}</span></div>
+          <div class="d-item full"><label>Purpose &amp; Objective</label><span>{{ selectedRFQ.description || '—' }}</span></div>
+        </div>
+
+        <h4 class="section-label">Items</h4>
+        <table class="mini-table">
+          <thead><tr><th>Description</th><th>UOM</th><th>Qty</th><th>Make</th><th>Alt/Similar</th><th>Remark</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of selectedRFQ.items">
+              <td>{{ item.description }}</td><td>{{ item.uom }}</td><td>{{ item.qty }}</td>
+              <td>{{ item.make || '—' }}</td><td>{{ item.altSimilar || '—' }}</td><td>{{ item.remark || '—' }}</td>
+            </tr>
+            <tr *ngIf="!selectedRFQ.items.length"><td colspan="6" class="muted-cell">No items on this RFQ.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="vendor-progress-strip" *ngIf="selectedVendorRequest && selectedVendorRequest.vendors.length">
+          <span class="strip-label">Vendor Progress</span>
+          <span class="vendor-badge" [ngClass]="getVendorStageClass(selectedVendorRequest)">
+            {{ getVendorStageLabel(selectedVendorRequest) }}
+          </span>
+        </div>
+
+        <div class="detail-actions">
+          <button class="btn-action btn-send" (click)="openSendVendorModal(selectedRFQ)">📤 Send to Vendor</button>
+          <button class="btn-action btn-status" (click)="openStatusModal(selectedRFQ)"
+            [disabled]="!selectedVendorRequest || selectedVendorRequest.stage==='NotSent'">📊 Check Status</button>
+          <button class="btn-action btn-close" (click)="closeDetailModal()">Close</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Title & Priority -->
-  <div class="form-section">
-    <div class="row-2col">
-      <div class="field-group">
-        <label>Title of Activity *</label>
-        <input class="form-input" [(ngModel)]="rfqVendorForm.titleOfActivity" placeholder="Enter title">
+  <!-- ===================== SEND TO VENDOR MODAL ===================== -->
+  <div class="modal-overlay" *ngIf="showSendVendorModal" (click)="closeSendVendorModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>📤 Send RFQ to Vendors</h3>
+        <button class="modal-close" (click)="closeSendVendorModal()">×</button>
       </div>
-      <div class="field-group">
-        <label>Quotation Status</label>
-        <select class="form-input" [(ngModel)]="rfqVendorForm.quotationStatus">
-          <option>Draft</option>
-          <option>Submitted</option>
-          <option>Under Review</option>
-          <option>Accepted</option>
-          <option>Rejected</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>Priority</label>
-        <select class="form-input" [(ngModel)]="rfqVendorForm.priority">
-          <option value="H">High</option>
-          <option value="M">Medium</option>
-          <option value="L">Low</option>
-        </select>
+      <div class="modal-body" *ngIf="selectedRFQ">
+        <div class="modal-summary">
+          <div><span>RFQ No:</span> <strong>{{ selectedRFQ.uniqueSerialNo }}</strong></div>
+          <div><span>Title:</span> {{ selectedRFQ.title }}</div>
+          <div><span>Requester:</span> {{ selectedRFQ.requester }}</div>
+          <div><span>Department:</span> {{ selectedRFQ.department }}</div>
+        </div>
+
+        <div class="vendors-head">
+          <h4>🏢 Vendor Details <span class="required">*</span></h4>
+          <button class="add-vendor-btn" (click)="addVendorBox()" [disabled]="vendorBoxes.length >= 4">
+            + Add Vendor ({{ vendorBoxes.length }}/4)
+          </button>
+        </div>
+
+        <div class="vendors-grid">
+          <div class="vendor-box" *ngFor="let v of vendorBoxes; let i = index">
+            <div class="vendor-box-head">
+              <span class="vendor-num">#{{ v.serialNo }}</span><span>Vendor {{ v.serialNo }}</span>
+              <button class="remove-vendor" (click)="removeVendorBox(i)" *ngIf="vendorBoxes.length > 1">×</button>
+            </div>
+            <div class="vendor-box-body">
+              <div class="field">
+                <label>Vendor Email <span class="required">*</span></label>
+                <input [(ngModel)]="v.email" (input)="searchVendorByEmail(i, v.email)" placeholder="Enter vendor email">
+                <div class="suggestions" *ngIf="vendorSearchResultsByIndex[i]?.length">
+                  <div class="suggestion" *ngFor="let r of vendorSearchResultsByIndex[i]" (click)="selectVendorSuggestion(i, r)">
+                    <span class="s-name">{{ r.name || r.vendorName }}</span><span class="s-email">{{ r.email }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Vendor Name <span class="required">*</span></label>
+                <input [(ngModel)]="v.vendorName" placeholder="Enter vendor name">
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Company</label><input [(ngModel)]="v.company" placeholder="Company"></div>
+                <div class="field"><label>Phone</label><input [(ngModel)]="v.phone" placeholder="Phone"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-cancel" (click)="closeSendVendorModal()">Cancel</button>
+          <button class="btn-submit" (click)="sendToVendors()" [disabled]="isSubmittingVendors">
+            {{ isSubmittingVendors ? 'Sending...' : 'Send Request' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Items Table -->
-  <div class="form-section">
-    <div class="section-header">
-      <h3 class="section-title">📦 Items / Materials</h3>
-      <div class="toolbar">
-        <button class="btn-outline" (click)="downloadExcelTemplate()">📎 Download Template</button>
-        <label class="btn-outline file-label">
-          📂 Import Excel
-          <input type="file" accept=".xlsx,.xls,.csv" (change)="onExcelFileSelected($event)" hidden>
-        </label>
-        <button class="btn-outline" (click)="exportToExcel()">📤 Export Excel</button>
+  <!-- ===================== STATUS MODAL ===================== -->
+  <div class="modal-overlay" *ngIf="showStatusModal" (click)="closeStatusModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>📊 Vendor Response Status — {{ selectedRFQ?.uniqueSerialNo }}</h3>
+        <button class="modal-close" (click)="closeStatusModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="status-grid">
+          <div class="status-card" *ngFor="let v of statusVendors">
+            <div class="status-card-head">
+              <span class="vendor-num">#{{ v.serialNo }}</span>
+              <div class="status-name">
+                <strong>{{ v.vendorName }}</strong>
+                <small>{{ v.email }}</small>
+              </div>
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(v.status)">{{ v.status }}</span>
+            </div>
+            <div class="status-card-body">
+              <div class="field">
+                <label>Status</label>
+                <select [(ngModel)]="v.status">
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Remarks</label>
+                <textarea rows="2" [(ngModel)]="v.remarks" placeholder="Remarks (optional)"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!statusVendors.length">
+            <span>📭</span><p>No vendors found for this RFQ.</p>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-cancel" (click)="closeStatusModal()">Cancel</button>
+          <button class="btn-submit" (click)="saveVendorStatuses()" [disabled]="isSavingStatus">
+            {{ isSavingStatus ? 'Saving...' : 'Save Status' }}
+          </button>
+        </div>
       </div>
     </div>
-    <div class="table-wrapper">
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>RFQ No</th>
-            <th>Description</th>
-            <th>UOM</th>
-            <th>Qty</th>
-            <th>Make</th>
-            <th>Alternative</th>
-            <th>Currency</th>
-            <th>Unit Cost</th>
-            <th>Value</th>
-            <th>Remark</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of rfqVendorItems; let i = index">
-            <td><input class="form-input sm" [(ngModel)]="item.rfqNo" placeholder="RFQ No"></td>
-            <td><input class="form-input" [(ngModel)]="item.description" placeholder="Description"></td>
-            <td><input class="form-input sm" [(ngModel)]="item.uom" placeholder="UOM"></td>
-            <td><input class="form-input sm" type="number" [(ngModel)]="item.quantity" (ngModelChange)="calcRfqVendorValue(item)"></td>
-            <td><input class="form-input" [(ngModel)]="item.make" placeholder="Make"></td>
-            <td><input class="form-input" [(ngModel)]="item.alternative" placeholder="Alternative"></td>
-            <td><select class="form-input sm" [(ngModel)]="item.currency"><option>INR</option><option>USD</option></select></td>
-            <td><input class="form-input sm" type="number" [(ngModel)]="item.unitCost" (ngModelChange)="calcRfqVendorValue(item)"></td>
-            <td class="value-cell">{{item.value | number}}</td>
-            <td><input class="form-input" [(ngModel)]="item.remark" placeholder="Remark"></td>
-            <td><button class="remove-btn" (click)="removeRfqVendorItem(i)" *ngIf="rfqVendorItems.length > 1">×</button></td>
-          </tr>
-          <tr class="total-row">
-            <td colspan="8" class="total-label">Total Value</td>
-            <td class="value-cell total-value">{{getRfqVendorTotal() | number}}</td>
-            <td colspan="2"></td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr><td colspan="11"><button class="add-btn" (click)="addRfqVendorItem()">+ Add Row</button></td></tr>
-        </tfoot>
-      </table>
-    </div>
   </div>
 
-  <!-- Purpose -->
-  <div class="form-section">
-    <label>Purpose & Objective</label>
-    <textarea class="form-textarea" rows="3" [(ngModel)]="rfqVendorForm.purposeAndObjective" placeholder="Purpose..."></textarea>
-  </div>
-
-  <!-- Approvers -->
-  <div class="form-section">
-    <div class="section-header">
-      <h3 class="section-title">👥 Approvers</h3>
-      <button class="btn-outline" (click)="addRfqVendorApprover()">+ Add Approver</button>
-    </div>
-    <div class="table-wrapper">
-      <table class="approvers-table">
-        <thead>
-          <tr>
-            <th>Line</th>
-            <th>Manager Name</th>
-            <th>Email</th>
-            <th>Designation</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let approver of rfqVendorApprovers; let i = index">
-            <td>
-              <select class="form-input sm" [(ngModel)]="approver.line">
-                <option>Parallel</option>
-                <option>Sequential</option>
-              </select>
-            </td>
-            <td>
-              <input class="form-input" [(ngModel)]="approver.managerName" (ngModelChange)="onManagerLookup(approver, $event)" placeholder="Type name or email">
-            </td>
-            <td><input class="form-input" [(ngModel)]="approver.email" placeholder="Email"></td>
-            <td><input class="form-input" [(ngModel)]="approver.designation" placeholder="Designation"></td>
-            <td><span class="status-badge pending">{{approver.status}}</span></td>
-            <td><button class="remove-btn" (click)="removeRfqVendorApprover(i)" *ngIf="rfqVendorApprovers.length > 1">×</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Actions -->
-  <div class="form-actions">
-    <button class="btn-submit" (click)="submitForm()" [disabled]="isSubmitting">
-      {{ isSubmitting ? 'Submitting...' : 'Submit Quotation Status' }}
-    </button>
-  </div>
 </div>

@@ -1,336 +1,498 @@
-<div class="qc-wrap">
+<div class="qc-page">
 
-  <!-- ── Success Banner ── -->
-  <div class="success-banner" *ngIf="submitSuccess">
-    <span class="success-icon">✓</span>
-    <span>Quotation submitted successfully!</span>
-    <button class="banner-close" (click)="submitSuccess = false">×</button>
+  <!-- Toast -->
+  <div class="app-toast" *ngIf="showToast" [ngClass]="'toast-' + toastType">
+    <span class="toast-icon">{{ toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️' }}</span>
+    <span class="toast-msg">{{ toastMessage }}</span>
+    <button class="toast-close" (click)="closeToast()">×</button>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       HEADER
-  ══════════════════════════════════════════ -->
-  <div class="qc-header">
-    <div class="header-brand">
-      <div class="brand-logo">
-        <img src="assets/logo.png" alt="LCGC" class="logo-img" onerror="this.style.display='none'">
-        <div class="brand-fallback">
-          <span class="brand-icon">⬡</span>
-          <div class="brand-text">
-            <span class="brand-name">LCGC</span>
-            <span class="brand-sub">Resolute Group</span>
+  <!-- ===================== LIST VIEW ===================== -->
+  <div class="page-card" *ngIf="showListView">
+
+    <div class="page-head">
+      <div class="breadcrumb">
+        <span>NON BOM</span><span class="sep">›</span><span>RFQ Request</span><span class="sep">›</span>
+        <span class="active">Quotation Collection and Cost Comparison</span>
+      </div>
+      <div class="head-row">
+        <div>
+          <h1>Quotation <span class="muted">› Cost Comparison</span></h1>
+          <p class="head-sub">RFQs appear here once every vendor sent the RFQ has approved it</p>
+        </div>
+        <button class="btn-refresh" (click)="refreshData()" [disabled]="isLoading">
+          <span [class.spin]="isLoading">↻</span> Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" [(ngModel)]="searchTerm" (input)="refreshData()" placeholder="Search by RFQ no, title, requester, department...">
+    </div>
+
+    <div class="filter-row">
+      <button class="filter-pill" [class.active]="activeFilter==='All'" (click)="setFilter('All')">
+        📋 All <span class="count">{{ countByStatus('All') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='Pending'" (click)="setFilter('Pending')">
+        🕒 Pending Comparison <span class="count">{{ countByStatus('Pending') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter==='Submitted'" (click)="setFilter('Submitted')">
+        ✅ Submitted <span class="count">{{ countByStatus('Submitted') }}</span>
+      </button>
+    </div>
+
+    <div class="table-card">
+      <div class="table-card-head">
+        <h3>RFQs Ready For Comparison</h3>
+        <span class="badge-total">Total: {{ displayRows.length }}</span>
+      </div>
+
+      <div class="loading-state" *ngIf="isLoading">
+        <div class="spinner"></div><p>Loading approved RFQs...</p>
+      </div>
+
+      <div class="table-scroll" *ngIf="!isLoading">
+        <table class="data-table" *ngIf="displayRows.length">
+          <thead>
+            <tr>
+              <th>RFQ No</th><th>Title</th><th>Requester</th><th>Department</th>
+              <th>Priority</th><th>Approved Vendors</th><th>Status</th><th>Date</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of displayRows; trackBy: trackByRequest">
+              <td><a class="rfq-link" (click)="openCompareForm(row)">{{ row.rfqNo }}</a></td>
+              <td><strong>{{ row.title }}</strong></td>
+              <td>{{ row.requester }}</td>
+              <td>{{ row.department }}</td>
+              <td><span class="priority-badge" [ngClass]="getPriorityClass(row.priority)">{{ getPriorityLabel(row.priority) }}</span></td>
+              <td>{{ row.suppliers.join(', ') || '—' }}</td>
+              <td><span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status === 'Submitted' ? 'Submitted' : 'Pending Comparison' }}</span></td>
+              <td>{{ row.date | date:'dd MMM yy' }}</td>
+              <td class="actions-cell">
+                <button class="action-btn view" (click)="openCompareForm(row)">
+                  {{ row.status === 'Submitted' ? '👁️ View' : '⚖️ Compare' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="empty-state" *ngIf="!displayRows.length">
+          <span>📭</span>
+          <p>No RFQs are ready for comparison yet. They will appear here once every vendor on a Requisition approves it.</p>
+        </div>
+      </div>
+      
+      <!-- Debug Info -->
+      <div style="background: #f8fafc; padding: 12px 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; display: flex; gap: 20px; flex-wrap: wrap;">
+        <span><strong>Total:</strong> {{ allRequests.length }}</span>
+        <span><strong>Submitted:</strong> {{ allRequests.filter(r => r.status === 'Submitted').length }}</span>
+        <span><strong>Pending:</strong> {{ allRequests.filter(r => r.status === 'Pending').length }}</span>
+        <span><strong>Filter:</strong> {{ activeFilter }}</span>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="weather"><span class="temp">32°C</span><span class="cond">PARTLY CLOUDY</span></div>
+      <div class="clock">
+        <span class="lang">ENG</span><span class="sep">|</span><span class="lang">IN</span>
+        <span class="date">{{ currentDate | date:'dd-MM-yyyy' }}</span>
+        <span class="time">{{ currentTime }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== FORM VIEW ===================== -->
+  <div class="qc-form-wrap" *ngIf="showFormView && current">
+
+    <div class="form-topbar">
+      <button class="btn-back" (click)="showListViewScreen()">← Back to List</button>
+      <span class="breadcrumb-mini">NON BOM › RFQ Request › Quotation Collection and Cost Comparison</span>
+    </div>
+
+    <div class="qc-wrap">
+
+      <!-- Success Banner -->
+      <div class="success-banner" *ngIf="submitSuccess">
+        <span class="success-icon">✓</span>
+        <span>{{ current.status === 'Submitted' ? 'Quotation submitted successfully!' : 'Draft saved successfully!' }}</span>
+        <button class="banner-close" (click)="submitSuccess = false">×</button>
+      </div>
+
+      <!-- HEADER -->
+      <div class="qc-header">
+        <div class="header-brand">
+          <div class="brand-logo">
+            <img src="assets/logo.png" alt="LCGC" class="logo-img" onerror="this.style.display='none'">
+            <div class="brand-fallback">
+              <span class="brand-icon">⬡</span>
+              <div class="brand-text">
+                <span class="brand-name">LCGC</span>
+                <span class="brand-sub">Resolute Group</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-center">
+          <div class="doc-badge">COMPARATIVE STATEMENT</div>
+          <h1 class="header-title">Quotation Cost Comparison</h1>
+          <p class="header-sub">Non-BOM Procurement · RFQ Analysis</p>
+        </div>
+
+        <div class="header-meta">
+          <div class="meta-field">
+            <label class="meta-label">RFQ No.</label>
+            <div class="meta-value">{{ current.rfqNo }}</div>
+          </div>
+          <div class="meta-field">
+            <label class="meta-label">Requester</label>
+            <div class="meta-value">{{ current.requester }}</div>
+          </div>
+          <div class="meta-field">
+            <label class="meta-label">Status</label>
+            <span class="status-badge" [ngClass]="getStatusClass(current.status)">
+              {{ current.status === 'Submitted' ? 'Submitted' : 'Pending' }}
+            </span>
+          </div>
+          <div class="meta-field">
+            <label class="meta-label">Date</label>
+            <div class="meta-value">{{ current.date | date:'dd MMM yyyy' }}</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="header-center">
-      <div class="doc-badge">COMPARATIVE STATEMENT</div>
-      <h1 class="header-title">Quotation Cost Comparison</h1>
-      <p class="header-sub">Non-BOM Procurement · RFQ Analysis</p>
-    </div>
-
-    <div class="header-meta">
-      <div class="meta-field">
-        <label class="meta-label">RFQ No.</label>
-        <input class="meta-input" type="text" [(ngModel)]="rfqNo" placeholder="RFQ-2026-XXX">
-      </div>
-      <div class="meta-field">
-        <label class="meta-label">Requester Email</label>
-        <input class="meta-input" type="email" [(ngModel)]="requesterEmail" placeholder="requester@company.com">
-      </div>
-      <div class="meta-field">
-        <label class="meta-label">Status</label>
-        <select class="meta-input" [(ngModel)]="comparisonStatus">
-          <option>Draft</option>
-          <option>Submitted</option>
-          <option>Under Review</option>
-          <option>Approved</option>
-        </select>
-      </div>
-      <div class="meta-field">
-        <label class="meta-label">Date</label>
-        <div class="meta-value">{{ requestDate }}</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       SUPPLIER HEADER CARDS
-  ══════════════════════════════════════════ -->
-  <div class="suppliers-strip">
-    <div class="strip-label">
-      <span class="strip-icon">🏢</span>
-      <span>Competing Suppliers</span>
-    </div>
-
-    <div class="supplier-cards">
-
-      <div class="supplier-card" [class.best-card]="isBestSupplier(1)" [class.selected-card]="selectedSupplierIndex === 1" (click)="selectSupplier(1)">
-        <div class="card-rank">S1</div>
-        <div class="card-body">
-          <label class="card-label">Supplier 1</label>
-          <input class="card-input" [(ngModel)]="supplier1Name" placeholder="Supplier Name">
+      <!-- SUPPLIER HEADER CARDS WITH SEARCH -->
+      <div class="suppliers-strip">
+        <div class="strip-label">
+          <span class="strip-icon">🏢</span>
+          <span>Approved Vendors</span>
         </div>
-        <div class="best-tag" *ngIf="isBestSupplier(1)">★ Best Price</div>
-      </div>
 
-      <div class="supplier-card" [class.best-card]="isBestSupplier(2)" [class.selected-card]="selectedSupplierIndex === 2" (click)="selectSupplier(2)">
-        <div class="card-rank s2">S2</div>
-        <div class="card-body">
-          <label class="card-label">Supplier 2</label>
-          <input class="card-input" [(ngModel)]="supplier2Name" placeholder="Supplier Name">
-        </div>
-        <div class="best-tag" *ngIf="isBestSupplier(2)">★ Best Price</div>
-      </div>
+        <div class="supplier-cards">
 
-      <div class="supplier-card" [class.best-card]="isBestSupplier(3)" [class.selected-card]="selectedSupplierIndex === 3" (click)="selectSupplier(3)">
-        <div class="card-rank s3">S3</div>
-        <div class="card-body">
-          <label class="card-label">Supplier 3</label>
-          <input class="card-input" [(ngModel)]="supplier3Name" placeholder="Supplier Name">
-        </div>
-        <div class="best-tag" *ngIf="isBestSupplier(3)">★ Best Price</div>
-      </div>
+          <div class="supplier-card" [class.best-card]="isBestSupplier(1)" [class.selected-card]="current.selectedSupplierIndex === 1" (click)="selectSupplier(1)">
+            <div class="card-rank">S1</div>
+            <div class="card-body">
+              <label class="card-label">Supplier 1</label>
+              <input class="card-input" [(ngModel)]="current.supplier1Name" 
+                     (input)="searchVendorForSlot(1, current.supplier1Name)" 
+                     placeholder="Search or type vendor name">
+              <div class="vendor-suggestions" *ngIf="activeVendorSlot === 1 && showVendorSuggestions && vendorSearchResults.length">
+                <div class="suggestion-item" *ngFor="let result of vendorSearchResults" (click)="selectVendorSuggestion(result)">
+                  <span class="suggestion-name">{{ result.name || result.vendorName }}</span>
+                  <span class="suggestion-email">{{ result.email }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="best-tag" *ngIf="isBestSupplier(1)">★ Best Price</div>
+          </div>
 
-    </div>
-  </div>
+          <div class="supplier-card" [class.best-card]="isBestSupplier(2)" [class.selected-card]="current.selectedSupplierIndex === 2" (click)="selectSupplier(2)">
+            <div class="card-rank s2">S2</div>
+            <div class="card-body">
+              <label class="card-label">Supplier 2</label>
+              <input class="card-input" [(ngModel)]="current.supplier2Name" 
+                     (input)="searchVendorForSlot(2, current.supplier2Name)" 
+                     placeholder="Search or type vendor name">
+              <div class="vendor-suggestions" *ngIf="activeVendorSlot === 2 && showVendorSuggestions && vendorSearchResults.length">
+                <div class="suggestion-item" *ngFor="let result of vendorSearchResults" (click)="selectVendorSuggestion(result)">
+                  <span class="suggestion-name">{{ result.name || result.vendorName }}</span>
+                  <span class="suggestion-email">{{ result.email }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="best-tag" *ngIf="isBestSupplier(2)">★ Best Price</div>
+          </div>
 
-  <!-- ══════════════════════════════════════════
-       COMPARISON TABLE
-  ══════════════════════════════════════════ -->
-  <div class="table-section">
-    <div class="section-header">
-      <div class="section-title">
-        <span class="section-icon">📊</span>
-        Item Price Comparison
-      </div>
-      <button class="add-row-btn" (click)="addRow()">
-        <span>＋</span> Add Row
-      </button>
-      <div class="comparison-mode">
-        <button type="button" [class.active]="comparisonMode === 'auto'" (click)="loadAutoComparison()">Auto (API)</button>
-        <button type="button" [class.active]="comparisonMode === 'manual'" (click)="switchToManual()">Manual</button>
-      </div>
-    </div>
+          <div class="supplier-card" [class.best-card]="isBestSupplier(3)" [class.selected-card]="current.selectedSupplierIndex === 3" (click)="selectSupplier(3)">
+            <div class="card-rank s3">S3</div>
+            <div class="card-body">
+              <label class="card-label">Supplier 3</label>
+              <input class="card-input" [(ngModel)]="current.supplier3Name" 
+                     (input)="searchVendorForSlot(3, current.supplier3Name)" 
+                     placeholder="Search or type vendor name">
+              <div class="vendor-suggestions" *ngIf="activeVendorSlot === 3 && showVendorSuggestions && vendorSearchResults.length">
+                <div class="suggestion-item" *ngFor="let result of vendorSearchResults" (click)="selectVendorSuggestion(result)">
+                  <span class="suggestion-name">{{ result.name || result.vendorName }}</span>
+                  <span class="suggestion-email">{{ result.email }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="best-tag" *ngIf="isBestSupplier(3)">★ Best Price</div>
+          </div>
 
-    <div class="table-scroll">
-      <table class="comp-table">
-        <thead>
-          <tr class="head-supplier">
-            <th rowspan="2" class="th-sno">S.N</th>
-            <th rowspan="2" class="th-code">Part Code</th>
-            <th rowspan="2" class="th-desc">Part Description</th>
-            <th rowspan="2" class="th-spec">Specification</th>
-            <th rowspan="2" class="th-uom">UOM</th>
-            <th rowspan="2" class="th-qty">Qty</th>
-            <th colspan="2" class="th-sup th-sup1">{{ supplier1Name }}</th>
-            <th colspan="2" class="th-sup th-sup2">{{ supplier2Name }}</th>
-            <th colspan="2" class="th-sup th-sup3">{{ supplier3Name }}</th>
-            <th rowspan="2" class="th-action">—</th>
-          </tr>
-          <tr class="head-cols">
-            <th class="th-price">Price</th>
-            <th class="th-amount">Amount</th>
-            <th class="th-price">Price</th>
-            <th class="th-amount">Amount</th>
-            <th class="th-price">Price</th>
-            <th class="th-amount">Amount</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr *ngFor="let item of quotationItems; let i = index" class="data-row">
-            <td class="td-sno">{{ i + 1 }}</td>
-
-            <td class="td-edit">
-              <input class="cell-input" [(ngModel)]="item.partCode" placeholder="Part code">
-            </td>
-
-            <td class="td-edit td-wide">
-              <textarea class="cell-textarea" rows="2" [(ngModel)]="item.partDescription" placeholder="Description"></textarea>
-            </td>
-
-            <td class="td-edit">
-              <input class="cell-input" [(ngModel)]="item.specification" placeholder="Spec">
-            </td>
-
-            <td class="td-edit td-sm">
-              <input class="cell-input" [(ngModel)]="item.uom" placeholder="UOM">
-            </td>
-
-            <td class="td-edit td-sm">
-              <input class="cell-input cell-num" type="number" min="0"
-                [(ngModel)]="item.qty" (input)="calcAmounts(item)">
-            </td>
-
-            <!-- Supplier 1 -->
-            <td class="td-edit td-price">
-              <input class="cell-input cell-num" type="number" min="0"
-                [(ngModel)]="item.supplier1Price" (input)="calcAmounts(item)">
-            </td>
-            <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 1)" [class.td-preferred]="selectedSupplierIndex === 1">
-              ₹ {{ item.supplier1Amount | number:'1.2-2' }}
-            </td>
-
-            <!-- Supplier 2 -->
-            <td class="td-edit td-price">
-              <input class="cell-input cell-num" type="number" min="0"
-                [(ngModel)]="item.supplier2Price" (input)="calcAmounts(item)">
-            </td>
-            <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 2)" [class.td-preferred]="selectedSupplierIndex === 2">
-              ₹ {{ item.supplier2Amount | number:'1.2-2' }}
-            </td>
-
-            <!-- Supplier 3 -->
-            <td class="td-edit td-price">
-              <input class="cell-input cell-num" type="number" min="0"
-                [(ngModel)]="item.supplier3Price" (input)="calcAmounts(item)">
-            </td>
-            <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 3)" [class.td-preferred]="selectedSupplierIndex === 3">
-              ₹ {{ item.supplier3Amount | number:'1.2-2' }}
-            </td>
-
-            <td class="td-action">
-              <button class="remove-btn" (click)="removeRow(i)"
-                [disabled]="quotationItems.length === 1" title="Remove row">✕</button>
-            </td>
-          </tr>
-        </tbody>
-
-        <tfoot>
-          <!-- Total row -->
-          <tr class="foot-total">
-            <td colspan="6" class="foot-label">Total Amount (INR)</td>
-            <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(1)">
-              ₹ {{ getTotals().t1 | number:'1.2-2' }}
-            </td>
-            <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(2)">
-              ₹ {{ getTotals().t2 | number:'1.2-2' }}
-            </td>
-            <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(3)">
-              ₹ {{ getTotals().t3 | number:'1.2-2' }}
-            </td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       TERMS & CONDITIONS
-  ══════════════════════════════════════════ -->
-  <div class="terms-section">
-    <div class="section-header">
-      <div class="section-title">
-        <span class="section-icon">📋</span>
-        Terms &amp; Conditions
-      </div>
-    </div>
-
-    <div class="terms-grid">
-
-      <div class="terms-col terms-col-label">
-        <div class="terms-header-cell label-head">Condition</div>
-        <div class="terms-row-label" *ngFor="let condition of conditionRows">
-          <select class="tc-input" [(ngModel)]="condition.label">
-            <option *ngFor="let option of conditionOptions" [value]="option">{{ option }}</option>
-          </select>
         </div>
       </div>
 
-      <!-- Supplier 1 Terms -->
-      <div class="terms-col" [class.terms-best-col]="isBestSupplier(1)">
-        <div class="terms-header-cell sup1-head">
-          <span class="tc-rank">S1</span>
-          <span class="tc-name">{{ supplier1Name }}</span>
-          <span class="tc-best-badge" *ngIf="isBestSupplier(1)">★</span>
+      <!-- VENDOR-WISE ATTACHMENTS -->
+      <div class="vendor-attachments-strip">
+        <div class="strip-label">
+          <span class="strip-icon">📎</span>
+          <span>Vendor Quotation Attachments</span>
         </div>
-        <div class="terms-cell" *ngFor="let condition of conditionRows"><input class="tc-input" [(ngModel)]="condition.s1" placeholder="Value"></div>
-      </div>
-
-      <!-- Supplier 2 Terms -->
-      <div class="terms-col" [class.terms-best-col]="isBestSupplier(2)">
-        <div class="terms-header-cell sup2-head">
-          <span class="tc-rank">S2</span>
-          <span class="tc-name">{{ supplier2Name }}</span>
-          <span class="tc-best-badge" *ngIf="isBestSupplier(2)">★</span>
+        <div class="attachment-slots">
+          <div class="attachment-slot">
+            <span class="slot-name">{{ current.supplier1Name || 'Supplier 1' }}</span>
+            <label class="upload-btn">
+              📎 {{ current.attachment1 ? 'Replace File' : 'Upload Quotation' }}
+              <input type="file" hidden (change)="onAttachmentSelected(1, $event)">
+            </label>
+            <span class="file-name" *ngIf="current.attachment1">{{ current.attachment1 }}</span>
+          </div>
+          <div class="attachment-slot">
+            <span class="slot-name">{{ current.supplier2Name || 'Supplier 2' }}</span>
+            <label class="upload-btn">
+              📎 {{ current.attachment2 ? 'Replace File' : 'Upload Quotation' }}
+              <input type="file" hidden (change)="onAttachmentSelected(2, $event)">
+            </label>
+            <span class="file-name" *ngIf="current.attachment2">{{ current.attachment2 }}</span>
+          </div>
+          <div class="attachment-slot">
+            <span class="slot-name">{{ current.supplier3Name || 'Supplier 3' }}</span>
+            <label class="upload-btn">
+              📎 {{ current.attachment3 ? 'Replace File' : 'Upload Quotation' }}
+              <input type="file" hidden (change)="onAttachmentSelected(3, $event)">
+            </label>
+            <span class="file-name" *ngIf="current.attachment3">{{ current.attachment3 }}</span>
+          </div>
         </div>
-        <div class="terms-cell" *ngFor="let condition of conditionRows"><input class="tc-input" [(ngModel)]="condition.s2" placeholder="Value"></div>
       </div>
 
-      <!-- Supplier 3 Terms -->
-      <div class="terms-col" [class.terms-best-col]="isBestSupplier(3)">
-        <div class="terms-header-cell sup3-head">
-          <span class="tc-rank">S3</span>
-          <span class="tc-name">{{ supplier3Name }}</span>
-          <span class="tc-best-badge" *ngIf="isBestSupplier(3)">★</span>
+      <!-- COMPARISON TABLE -->
+      <div class="table-section">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="section-icon">📊</span>
+            Item Price Comparison
+          </div>
+          <button class="add-row-btn" (click)="addRow()">
+            <span>＋</span> Add Row
+          </button>
+          <div class="comparison-mode">
+            <button type="button" [class.active]="comparisonMode === 'auto'" (click)="loadAutoComparison()">Auto (API)</button>
+            <button type="button" [class.active]="comparisonMode === 'manual'" (click)="switchToManual()">Manual</button>
+          </div>
         </div>
-        <div class="terms-cell" *ngFor="let condition of conditionRows"><input class="tc-input" [(ngModel)]="condition.s3" placeholder="Value"></div>
+
+        <div class="table-scroll">
+          <table class="comp-table">
+            <thead>
+              <tr class="head-supplier">
+                <th rowspan="2" class="th-sno">S.N</th>
+                <th rowspan="2" class="th-code">Part Code</th>
+                <th rowspan="2" class="th-desc">Part Description</th>
+                <th rowspan="2" class="th-spec">Specification</th>
+                <th rowspan="2" class="th-uom">UOM</th>
+                <th rowspan="2" class="th-qty">Qty</th>
+                <th colspan="2" class="th-sup th-sup1">{{ current.supplier1Name || 'Supplier 1' }}</th>
+                <th colspan="2" class="th-sup th-sup2">{{ current.supplier2Name || 'Supplier 2' }}</th>
+                <th colspan="2" class="th-sup th-sup3">{{ current.supplier3Name || 'Supplier 3' }}</th>
+                <th rowspan="2" class="th-action">—</th>
+              </tr>
+              <tr class="head-cols">
+                <th class="th-price">Price</th>
+                <th class="th-amount">Amount</th>
+                <th class="th-price">Price</th>
+                <th class="th-amount">Amount</th>
+                <th class="th-price">Price</th>
+                <th class="th-amount">Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let item of current.quotationItems; let i = index" class="data-row">
+                <td class="td-sno">{{ i + 1 }}</td>
+
+                <td class="td-edit">
+                  <input class="cell-input" [(ngModel)]="item.partCode" placeholder="Part code">
+                </td>
+
+                <td class="td-edit td-wide">
+                  <textarea class="cell-textarea" rows="2" [(ngModel)]="item.partDescription" placeholder="Description"></textarea>
+                </td>
+
+                <td class="td-edit">
+                  <input class="cell-input" [(ngModel)]="item.specification" placeholder="Spec">
+                </td>
+
+                <td class="td-edit td-sm">
+                  <input class="cell-input" [(ngModel)]="item.uom" placeholder="UOM">
+                </td>
+
+                <td class="td-edit td-sm">
+                  <input class="cell-input cell-num" type="number" min="0"
+                    [(ngModel)]="item.qty" (input)="calcAmounts(item)">
+                </td>
+
+                <!-- Supplier 1 -->
+                <td class="td-edit td-price">
+                  <input class="cell-input cell-num" type="number" min="0"
+                    [(ngModel)]="item.supplier1Price" (input)="calcAmounts(item)">
+                </td>
+                <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 1)" [class.td-preferred]="current.selectedSupplierIndex === 1">
+                  ₹ {{ item.supplier1Amount | number:'1.2-2' }}
+                </td>
+
+                <!-- Supplier 2 -->
+                <td class="td-edit td-price">
+                  <input class="cell-input cell-num" type="number" min="0"
+                    [(ngModel)]="item.supplier2Price" (input)="calcAmounts(item)">
+                </td>
+                <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 2)" [class.td-preferred]="current.selectedSupplierIndex === 2">
+                  ₹ {{ item.supplier2Amount | number:'1.2-2' }}
+                </td>
+
+                <!-- Supplier 3 -->
+                <td class="td-edit td-price">
+                  <input class="cell-input cell-num" type="number" min="0"
+                    [(ngModel)]="item.supplier3Price" (input)="calcAmounts(item)">
+                </td>
+                <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 3)" [class.td-preferred]="current.selectedSupplierIndex === 3">
+                  ₹ {{ item.supplier3Amount | number:'1.2-2' }}
+                </td>
+
+                <td class="td-action">
+                  <button class="remove-btn" (click)="removeRow(i)"
+                    [disabled]="current.quotationItems.length === 1" title="Remove row">✕</button>
+                </td>
+              </tr>
+            </tbody>
+
+            <tfoot>
+              <tr class="foot-total">
+                <td colspan="6" class="foot-label">Total Amount (INR)</td>
+                <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(1)">
+                  ₹ {{ getTotals().t1 | number:'1.2-2' }}
+                </td>
+                <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(2)">
+                  ₹ {{ getTotals().t2 | number:'1.2-2' }}
+                </td>
+                <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(3)">
+                  ₹ {{ getTotals().t3 | number:'1.2-2' }}
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
 
-    </div>
-    <button class="add-row-btn terms-add-row" type="button" (click)="addConditionRow()">+ Add condition</button>
-  </div>
+      <!-- TERMS & CONDITIONS -->
+      <div class="terms-section">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="section-icon">📋</span>
+            Terms &amp; Conditions
+          </div>
+        </div>
 
-  <!-- ══════════════════════════════════════════
-       SAVINGS INSIGHT + RECOMMENDATION
-  ══════════════════════════════════════════ -->
-  <div class="insights-row">
+        <div class="terms-grid">
 
-    <div class="insight-card">
-      <div class="insight-icon">🏆</div>
-      <div class="insight-body">
-        <div class="insight-label">Recommended Supplier</div>
-        <div class="insight-value">{{ getBestSupplier() }}</div>
+          <div class="terms-col terms-col-label">
+            <div class="terms-header-cell label-head">Condition</div>
+            <div class="terms-row-label" *ngFor="let condition of current.conditionRows">
+              <select class="tc-input" [(ngModel)]="condition.label">
+                <option *ngFor="let option of conditionOptions" [value]="option">{{ option }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="terms-col" [class.terms-best-col]="isBestSupplier(1)">
+            <div class="terms-header-cell sup1-head">
+              <span class="tc-rank">S1</span>
+              <span class="tc-name">{{ current.supplier1Name || 'Supplier 1' }}</span>
+              <span class="tc-best-badge" *ngIf="isBestSupplier(1)">★</span>
+            </div>
+            <div class="terms-cell" *ngFor="let condition of current.conditionRows">
+              <input class="tc-input" [(ngModel)]="condition.s1" placeholder="Value">
+            </div>
+          </div>
+
+          <div class="terms-col" [class.terms-best-col]="isBestSupplier(2)">
+            <div class="terms-header-cell sup2-head">
+              <span class="tc-rank">S2</span>
+              <span class="tc-name">{{ current.supplier2Name || 'Supplier 2' }}</span>
+              <span class="tc-best-badge" *ngIf="isBestSupplier(2)">★</span>
+            </div>
+            <div class="terms-cell" *ngFor="let condition of current.conditionRows">
+              <input class="tc-input" [(ngModel)]="condition.s2" placeholder="Value">
+            </div>
+          </div>
+
+          <div class="terms-col" [class.terms-best-col]="isBestSupplier(3)">
+            <div class="terms-header-cell sup3-head">
+              <span class="tc-rank">S3</span>
+              <span class="tc-name">{{ current.supplier3Name || 'Supplier 3' }}</span>
+              <span class="tc-best-badge" *ngIf="isBestSupplier(3)">★</span>
+            </div>
+            <div class="terms-cell" *ngFor="let condition of current.conditionRows">
+              <input class="tc-input" [(ngModel)]="condition.s3" placeholder="Value">
+            </div>
+          </div>
+
+        </div>
+        <button class="add-row-btn terms-add-row" type="button" (click)="addConditionRow()">+ Add condition</button>
       </div>
-    </div>
 
-    <div class="insight-card insight-savings">
-      <div class="insight-icon">💰</div>
-      <div class="insight-body">
-        <div class="insight-label">Max Potential Savings</div>
-        <div class="insight-value">₹ {{ getSavings() }}</div>
+      <!-- SAVINGS INSIGHT + RECOMMENDATION -->
+      <div class="insights-row">
+
+        <div class="insight-card">
+          <div class="insight-icon">🏆</div>
+          <div class="insight-body">
+            <div class="insight-label">Recommended Supplier</div>
+            <div class="insight-value">{{ getBestSupplier() }}</div>
+          </div>
+        </div>
+
+        <div class="insight-card insight-savings">
+          <div class="insight-icon">💰</div>
+          <div class="insight-body">
+            <div class="insight-label">Max Potential Savings</div>
+            <div class="insight-value">₹ {{ getSavings() }}</div>
+          </div>
+        </div>
+
+        <div class="insight-card insight-selected">
+          <div class="insight-icon">✓</div>
+          <div class="insight-body">
+            <div class="insight-label">Selected Vendor</div>
+            <div class="insight-value">{{ getSelectedSupplier() }}</div>
+            <small>{{ getSelectedVsBestMessage() }}</small>
+          </div>
+        </div>
+
       </div>
-    </div>
 
-    <div class="insight-card insight-selected">
-      <div class="insight-icon">✓</div>
-      <div class="insight-body">
-        <div class="insight-label">Selected Vendor</div>
-        <div class="insight-value">{{ getSelectedSupplier() }}</div>
-        <small>{{ getSelectedVsBestMessage() }}</small>
+      <div class="recommendation-section">
+        <label class="rec-label">
+          <span class="rec-icon">✍️</span>
+          Recommendation
+        </label>
+        <textarea class="rec-textarea" rows="3" [(ngModel)]="current.recommendation"
+          placeholder="Enter recommendation..."></textarea>
       </div>
-    </div>
 
-  </div>
+      <!-- FOOTER ACTIONS -->
+      <div class="footer-actions">
+        <div class="action-right">
+          <button class="action-btn secondary" type="button" (click)="saveDraft()">Save Draft</button>
+          <button class="action-btn ghost" type="button">🖨 Print</button>
+          <button class="action-btn primary"
+            (click)="submitQuotation()"
+            [disabled]="isSubmitting || current.status === 'Submitted'">
+            <span class="btn-spinner" *ngIf="isSubmitting">⟳</span>
+            <span *ngIf="!isSubmitting && current.status !== 'Submitted'">Submit</span>
+            <span *ngIf="isSubmitting">Submitting…</span>
+            <span *ngIf="!isSubmitting && current.status === 'Submitted'">Submitted</span>
+          </button>
+        </div>
+      </div>
 
-  <div class="recommendation-section">
-    <label class="rec-label">
-      <span class="rec-icon">✍️</span>
-      Recommendation
-    </label>
-    <textarea class="rec-textarea" rows="3" [(ngModel)]="recommendation"
-      placeholder="Enter recommendation..."></textarea>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       FOOTER ACTIONS
-  ══════════════════════════════════════════ -->
-  <div class="footer-actions">
-    <div class="action-right">
-      <button class="action-btn secondary" type="button" (click)="saveDraft()">Save Draft</button>
-      <button class="action-btn ghost" type="button">
-        🖨 Print
-      </button>
-      <button class="action-btn primary"
-        (click)="submitQuotation()"
-        [disabled]="isSubmitting">
-        <span class="btn-spinner" *ngIf="isSubmitting">⟳</span>
-        <span *ngIf="!isSubmitting">Submit</span>
-        <span *ngIf="isSubmitting">Submitting…</span>
-      </button>
     </div>
   </div>
 

@@ -47,13 +47,11 @@
     
     <!-- ==================== REQUESTS TAB (Full-page form OR list) ==================== -->
     <ng-container *ngIf="!isLoading && activeTab === 'requests' && showInlineCreateForm">
-      <app-create-ep-request-modal
-        [currentUser]="currentUser"
-        [fullPage]="true"
-        (save)="onInlineFormSaved($event)"
-        (close)="initInlineCreateForm()">
-      </app-create-ep-request-modal>
-    </ng-container>
+  <app-create-ep-request
+    (save)="onInlineFormSaved($event)"
+    (close)="initInlineCreateForm()">
+  </app-create-ep-request>
+</ng-container>
 
     <ng-container *ngIf="!isLoading && activeTab === 'requests' && !showInlineCreateForm">
       
@@ -92,6 +90,7 @@
           <table class="ep-table">
             <thead>
               <tr>
+                <th>Request ID</th>
                 <th>Title</th>
                 <th>Requester</th>
                 <th>Department</th>
@@ -104,8 +103,9 @@
             </thead>
             <tbody>
               <tr *ngFor="let req of filteredRequests; trackBy: trackById">
-                <td class="title-cell" [title]="req.title"><strong>{{ req.title }}</strong><br><span class="sub-text">{{ req.email }}</span></td>
-                <td class="requester-cell">{{ req.requester }}<br><span class="sub-text">{{ req.department }}</span></td>
+                <td><strong>{{ req.requestId || req._id || req.id || '—' }}</strong></td>
+                <td class="title-cell" [title]="req.title">{{ req.title }}</td>
+                <td>{{ req.requester }}<br><span class="sub-text">{{ req.email }}</span></td>
                 <td>{{ req.department }}</td>
                 <td class="amount">{{ formatAmount(req.amount) }}</td>
                 <td><span class="priority-badge" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
@@ -115,8 +115,8 @@
                   <button class="btn-icon view-btn" (click)="viewRequest(req)">👁️ View</button>
                   <button *ngIf="canApprove(req)" class="btn-icon approve-btn" (click)="openApprovalModal(req, 'approve')">✅</button>
                   <button *ngIf="canApprove(req)" class="btn-icon reject-btn" (click)="openApprovalModal(req, 'reject')">❌</button>
-                 </td>
-               </tr>
+                </td>
+              </tr>
             </tbody>
           </table>
         </ng-container>
@@ -188,6 +188,7 @@
           <table class="ep-table">
             <thead>
               <tr>
+                <th>Request ID</th>
                 <th>Title</th>
                 <th>Requester</th>
                 <th>Department</th>
@@ -200,6 +201,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let req of approvalList; trackBy: trackById">
+                <td><strong>{{ req.requestId || req._id || req.id || '—' }}</strong></td>
                 <td class="title-cell" [title]="req.title">{{ req.title }}</td>
                 <td>{{ req.requester }}<br><span class="sub-text">{{ req.email }}</span></td>
                 <td>{{ req.department }}</td>
@@ -211,8 +213,8 @@
                   <button class="btn-icon view-btn" (click)="viewRequest(req)">👁️</button>
                   <button *ngIf="canApprove(req)" class="btn-approve" (click)="openApprovalModal(req, 'approve')">Approve</button>
                   <button *ngIf="canApprove(req)" class="btn-reject" (click)="openApprovalModal(req, 'reject')">Reject</button>
-                 </td>
-               </tr>
+                </td>
+              </tr>
             </tbody>
           </table>
         </ng-container>
@@ -299,7 +301,7 @@
                 <td><span class="days-cell" [class.days-overdue]="getRequestAgeDays(req) > 30">{{ getRequestAgeDays(req) }}</span></td>
                 <td><span class="status-badge" [ngClass]="getStatusClass(req.status)">{{ req.status === 'Pending' ? 'In-Process' : req.status }}</span></td>
                 <td><button class="btn-icon view-btn" (click)="viewRequest(req)">View</button></td>
-               </tr>
+              </tr>
             </tbody>
           </table>
         </ng-container>
@@ -549,22 +551,60 @@
     </div>
     <div class="modal-body" *ngIf="selectedRequest">
       <div class="detail-grid">
-        <div class="detail-item"><label>Title:</label><span>{{ selectedRequest.title }}</span></div>
-        <div class="detail-item"><label>Requester:</label><span>{{ selectedRequest.requester }}</span></div>
-        <div class="detail-item"><label>Email:</label><span>{{ selectedRequest.email || '—' }}</span></div>
-        <div class="detail-item"><label>Department:</label><span>{{ selectedRequest.department }}</span></div>
-        <div class="detail-item"><label>Vendor:</label><span>{{ selectedRequest.vendor || '—' }}</span></div>
-        <div class="detail-item"><label>Amount:</label><span class="amount">{{ formatAmount(selectedRequest.amount) }}</span></div>
-        <div class="detail-item"><label>Priority:</label><span class="priority-badge" [ngClass]="getPriorityClass(selectedRequest.priority)">{{ selectedRequest.priority }}</span></div>
-        <div class="detail-item"><label>Status:</label><span class="status-badge" [ngClass]="getStatusClass(selectedRequest.status)">{{ selectedRequest.status }}</span></div>
-        <div class="detail-item full-width"><label>Description:</label><p>{{ selectedRequest.description || '—' }}</p></div>
-        <div class="detail-item full-width"><label>Objective:</label><p>{{ selectedRequest.objective || '—' }}</p></div>
+        <div class="detail-item">
+          <label>Request ID</label>
+          <span><strong>{{ selectedRequest.requestId || selectedRequest._id || selectedRequest.id || '—' }}</strong></span>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <span class="status-badge" [ngClass]="getStatusClass(selectedRequest.status)">{{ selectedRequest.status }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Title</label>
+          <span>{{ selectedRequest.title }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Requester</label>
+          <span>{{ selectedRequest.requester }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Email</label>
+          <span>{{ selectedRequest.email || '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Department</label>
+          <span>{{ selectedRequest.department }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Vendor</label>
+          <span>{{ selectedRequest.vendor || '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Amount</label>
+          <span class="amount">{{ formatAmount(selectedRequest.amount) }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Priority</label>
+          <span class="priority-badge" [ngClass]="getPriorityClass(selectedRequest.priority)">{{ selectedRequest.priority }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Date</label>
+          <span>{{ formatDate(selectedRequest.requestDate) }}</span>
+        </div>
+        <div class="detail-item full-width">
+          <label>Description</label>
+          <p>{{ selectedRequest.description || '—' }}</p>
+        </div>
+        <div class="detail-item full-width">
+          <label>Objective</label>
+          <p>{{ selectedRequest.objective || '—' }}</p>
+        </div>
       </div>
     </div>
     <div class="modal-ftr">
       <button class="btn-cancel" (click)="closeViewModal()">Close</button>
-      <button *ngIf="canApprove(selectedRequest!)" class="btn-approve" (click)="openApprovalModal(selectedRequest!, 'approve')">Approve</button>
-      <button *ngIf="canApprove(selectedRequest!)" class="btn-reject" (click)="openApprovalModal(selectedRequest!, 'reject')">Reject</button>
+      <button *ngIf="selectedRequest && canApprove(selectedRequest)" class="btn-approve" (click)="openApprovalModal(selectedRequest, 'approve')">✅ Approve</button>
+      <button *ngIf="selectedRequest && canApprove(selectedRequest)" class="btn-reject" (click)="openApprovalModal(selectedRequest, 'reject')">❌ Reject</button>
     </div>
   </div>
 </div>

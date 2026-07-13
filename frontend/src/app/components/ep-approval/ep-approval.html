@@ -562,7 +562,7 @@
           <div class="info-grid">
             <div class="info-field">
               <label>Name</label>
-              <input type="text" [ngModel]="selectedRequestCopy.requester" (ngModelChange)="selectedRequestCopy.requester = $event" [disabled]="true">
+              <input type="text" [ngModel]="selectedRequestCopy.requester" (ngModelChange)="selectedRequestCopy.requester = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
             </div>
             <div class="info-field">
               <label>Department</label>
@@ -570,7 +570,7 @@
             </div>
             <div class="info-field">
               <label>Email ID</label>
-              <input type="email" [ngModel]="selectedRequestCopy.email" (ngModelChange)="selectedRequestCopy.email = $event" [disabled]="true">
+              <input type="email" [ngModel]="selectedRequestCopy.email" (ngModelChange)="selectedRequestCopy.email = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
             </div>
             <div class="info-field">
               <label>Request Date</label>
@@ -662,8 +662,8 @@
         </div>
       </div>
 
-      <!-- Remarks / Comments (Visible to Admin or Active Stakeholder/Approver) -->
-      <div class="form-section" *ngIf="(isAdminUser() || canApprove(selectedRequestCopy)) && selectedRequestCopy.status === 'Pending'">
+      <!-- Remarks / Comments (Visible to Admin only) -->
+      <div class="form-section" *ngIf="isAdminUser() && selectedRequestCopy.status === 'Pending'">
         <div class="section-title">
           <span class="section-icon">💬</span>
           Remarks / Comments
@@ -683,10 +683,10 @@
       <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending'" class="btn-submit" (click)="saveEditedRequest()" style="background: #1e3a8a; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer;">
         Save &amp; Submit Changes
       </button>
-      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || canApprove(selectedRequestCopy))" class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && isAdminUser()" class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         ✓ Approve
       </button>
-      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || canApprove(selectedRequestCopy))" class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && isAdminUser()" class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         ✗ Reject
       </button>
     </div>

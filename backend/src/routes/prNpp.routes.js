@@ -5,6 +5,7 @@ const PrNpp = require('../models/prNpp.model');
 const Request = require('../models/request');
 const Rfq = require('../models/Rfq');
 const { sendMail } = require('../services/mail.service');
+const prComparisonCtrl = require('../controllers/prComparison.controller');
 
 const emailRecipients = (body) => [
   body.emailId,
@@ -116,6 +117,9 @@ router.get('/serial/:serialNo', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// Get comparison details for a PR
+router.get('/:prId/comparison', prComparisonCtrl.getComparison);
 
 // Get single PR NPP by database ID
 router.get('/:id', async (req, res) => {

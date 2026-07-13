@@ -202,25 +202,20 @@ userSchema.virtual('profile').get(function() {
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
-  try {
-    // Only hash if password is modified and exists
-    if (!this.isModified('password')) {
-      return next();
-    }
-    
-    // Check if password is already hashed (starts with $2a$ or $2b$)
-    if (this.password && (this.password.startsWith('$2a$') || this.password.startsWith('$2b$'))) {
-      return next();
-    }
-    
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+userSchema.pre('save', async function() {
+  // Only hash if password is modified and exists
+  if (!this.isModified('password')) {
+    return;
   }
+  
+  // Check if password is already hashed (starts with $2a$ or $2b$)
+  if (this.password && (this.password.startsWith('$2a$') || this.password.startsWith('$2b$'))) {
+    return;
+  }
+  
+  // Hash the password
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 // Compare password method

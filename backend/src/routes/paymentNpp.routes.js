@@ -27,6 +27,18 @@ const notifyPayment = async (data, action, comments = '') => {
     comments,
     data
   });
+
+  try {
+    const { createNotification } = require('../services/notification.service');
+    const title = `Payment Advice ${action.charAt(0).toUpperCase() + action.slice(1)}`;
+    const msg = `Payment Advice ${data.uniqueSerialNo || ''} (${data.titleOfActivity || data.paymentTo || 'Untitled'}) has been ${action}.`;
+    const type = action === 'created' ? 'pending' : action;
+    for (const email of recipients) {
+      await createNotification(email, title, msg, type);
+    }
+  } catch (err) {
+    console.error('⚠️ Error in notifyPayment database notifications:', err.message);
+  }
 };
 router.post('/', verifyToken, async (req, res) => {
   try {

@@ -150,6 +150,20 @@ const createRequest = async (req, res) => {
       const firstApprover = savedRequest.stakeholders[0];
       await epNotify.sendNewEPRequestEmail(savedRequest, firstApprover);
       console.log(`📧 Approval request sent to: ${firstApprover.email}`);
+
+      if (firstApprover.email) {
+        try {
+          await Notification.create({
+            userEmail: firstApprover.email,
+            title: `EP Request Approval Required: ${savedRequest.title}`,
+            message: `EP request ${savedRequest.requestId || savedRequest._id} requires your approval.`,
+            type: 'ep',
+            status: 'Pending'
+          });
+        } catch (dbErr) {
+          console.error('Failed to create DB notification for first approver:', dbErr.message);
+        }
+      }
     }
     
     // 3. Send CC notifications
@@ -398,6 +412,20 @@ const approveRequest = async (req, res) => {
     if (nextApprover && nextApprover !== currentApprover) {
       await epNotify.sendNextEPApproverEmail(request, nextApprover, { name: userName });
       console.log(`📧 Next approver notified: ${nextApprover.email}`);
+
+      if (nextApprover.email) {
+        try {
+          await Notification.create({
+            userEmail: nextApprover.email,
+            title: `EP Request Approval Required: ${request.title}`,
+            message: `EP request ${request.requestId || request._id} requires your approval.`,
+            type: 'ep',
+            status: 'Pending'
+          });
+        } catch (dbErr) {
+          console.error('Failed to create DB notification for next approver:', dbErr.message);
+        }
+      }
     }
     
     // Send CC notifications

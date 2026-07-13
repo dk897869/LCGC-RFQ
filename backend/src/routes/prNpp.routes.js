@@ -6,6 +6,7 @@ const Request = require('../models/request');
 const Rfq = require('../models/Rfq');
 const { sendMail } = require('../services/mail.service');
 const prComparisonCtrl = require('../controllers/prComparison.controller');
+const { createNotification } = require('../services/notification.service');
 
 const emailRecipients = (body) => [
   body.emailId,
@@ -27,6 +28,17 @@ const notifyPr = async (data, action, comments = '') => {
     comments,
     data
   });
+
+  try {
+    const title = `PR Request ${action.charAt(0).toUpperCase() + action.slice(1)}`;
+    const msg = `PR request ${data.uniqueSerialNo || ''} (${data.titleOfActivity || data.title || 'Untitled'}) has been ${action}.`;
+    const type = action === 'created' ? 'pending' : action;
+    for (const email of recipients) {
+      await createNotification(email, title, msg, type);
+    }
+  } catch (err) {
+    console.error('⚠️ Error in notifyPr database notifications:', err.message);
+  }
 };
 
 // Create PR NPP

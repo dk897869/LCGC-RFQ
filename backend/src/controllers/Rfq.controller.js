@@ -1,5 +1,6 @@
 const RFQ = require('../models/Rfq');
 const { sendMail } = require('../services/mail.service');
+const { createNotification } = require('../services/notification.service');
 
 // Generate unique serial number
 const generateSerialNumber = () => {
@@ -182,7 +183,29 @@ const createRFQ = async (req, res) => {
     const newRFQ = new RFQ(rfqData);
     const savedRFQ = await newRFQ.save();
 
-    console.log("✅ RFQ saved successfully:", savedRFQ._id);
+     console.log("✅ RFQ saved successfully:", savedRFQ._id);
+
+    // Create database notification for creator
+    await createNotification(
+      savedRFQ.emailId,
+      'RFQ Submitted',
+      `Your RFQ ${savedRFQ.uniqueSerialNo} has been submitted for approval.`,
+      'pending'
+    );
+
+    // Create database notification for stakeholders
+    if (savedRFQ.stakeholders && savedRFQ.stakeholders.length > 0) {
+      for (const approver of savedRFQ.stakeholders) {
+        if (approver.email) {
+          await createNotification(
+            approver.email,
+            'RFQ Approval Required',
+            `RFQ ${savedRFQ.uniqueSerialNo} (${savedRFQ.titleOfActivity}) requires your approval.`,
+            'pending'
+          );
+        }
+      }
+    }
 
     try {
       await sendRFQCreatedEmail(savedRFQ);

@@ -113,8 +113,8 @@
                 <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
                 <td class="actions">
                   <button class="btn-icon view-btn" (click)="viewRequest(req)">👁️ View</button>
-                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-icon approve-btn" (click)="openApprovalModal(req, 'approve')" title="Approve Request">✅</button>
-                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-icon reject-btn" (click)="openApprovalModal(req, 'reject')" title="Reject Request">❌</button>
+                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-approve" (click)="openApprovalModal(req, 'approve')">Approve</button>
+                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-reject" (click)="openApprovalModal(req, 'reject')">Reject</button>
                 </td>
               </tr>
             </tbody>
@@ -544,14 +544,14 @@
 
 <!-- ==================== VIEW MODAL ==================== -->
 <div class="modal-overlay modal-overlay--fullscreen" *ngIf="showViewModal" (click)="closeViewModal()">
-  <div class="create-ep-modal create-ep-modal--fullscreen" (click)="$event.stopPropagation()" style="max-width: 90vw; width: 90vw; height: 90vh;">
+  <div class="create-ep-modal create-ep-modal--fullscreen" (click)="$event.stopPropagation()">
     
     <div class="modal-header">
       <h2>📄 EP Approval Request Details &amp; Edit</h2>
       <button class="close-btn" (click)="closeViewModal()">×</button>
     </div>
     
-    <div class="modal-body" *ngIf="selectedRequestCopy" style="max-height: calc(90vh - 140px); overflow-y: auto;">
+    <div class="modal-body" *ngIf="selectedRequestCopy">
       <!-- Requester Information -->
       <div class="form-section">
         <div class="section-title">
@@ -678,7 +678,7 @@
 
     </div>
     
-    <div class="modal-footer" style="padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+    <div class="modal-footer">
       <button class="btn-cancel" (click)="closeViewModal()">Close</button>
       <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending'" class="btn-submit" (click)="saveEditedRequest()" style="background: #1e3a8a; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer;">
         Save &amp; Submit Changes

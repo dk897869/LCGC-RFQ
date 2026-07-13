@@ -73,6 +73,7 @@ $shadow-md: 0 6px 24px rgba(0, 0, 0, 0.12);
   min-height: 100vh;
   background: #f1f5f9;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
 
   app-vendor-dashboard {
     display: block;
@@ -2410,6 +2411,52 @@ button:focus-visible,
 }
 
 @media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: $sb-width !important;
+    transform: translateX(-100%);
+    z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex !important;
+
+    &:not(.collapsed) {
+      transform: translateX(0);
+    }
+
+    .sb-logo__text,
+    .sb-item__label,
+    .sb-user-profile__info,
+    .sb-item__chevron,
+    .sb-footer {
+      display: flex !important;
+    }
+    
+    .sb-item {
+      justify-content: flex-start !important;
+      padding: 10px 12px !important;
+    }
+    
+    .sb-logo {
+      justify-content: flex-start !important;
+      padding: 18px 16px !important;
+    }
+    
+    .sb-user-profile {
+      justify-content: flex-start !important;
+      padding: 16px 20px !important;
+    }
+  }
+
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
   .dash {
     padding: 14px 16px;
     gap: 14px;

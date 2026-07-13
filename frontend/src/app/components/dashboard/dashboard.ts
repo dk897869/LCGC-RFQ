@@ -461,6 +461,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  getUnreadNotificationsCount(): number {
+    return (this.notificationList || []).filter(n => !n.isRead).length;
+  }
+
   getNotificationIcon(type: string): string {
     const icons: any = {
       'pending': '📋',
@@ -929,6 +933,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadUnifiedDataSilent() {
+    this.authService.getUnifiedApprovals().subscribe({
+      next: (res: any) => {
+        const rows = res?.data || [];
+        this.unifiedRequests = rows.map((r: any) => this.mapUnifiedRow(r));
+        this.updateUnifiedStats();
+        this.updateApprovalStatsByType();
+        this.applyUnifiedFilters();
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
+  startPolling() {
+    // Poll notifications & unified data silently every 10 seconds for real-time dashboard updates
+    this.refreshInterval = setInterval(() => {
+      this.loadNotifications();
+      this.loadUnifiedDataSilent();
+    }, 10000);
+  }
+
   private mapUnifiedRow(r: any): UnifiedRequest {
     return {
       id: String(r.id || r._id || ''),
@@ -1320,7 +1346,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.checkBirthday();
     this.startClock();
     this.loadAllParallel();
+    this.loadNotifications();
     this.loadUnifiedData();
+    this.startPolling();
     this.checkAccessGrantedToast();
   }
 

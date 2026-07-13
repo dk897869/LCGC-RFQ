@@ -46,6 +46,19 @@ const sendPOEmail = async (poData, action, actor) => {
     contentType: 'application/pdf'
   }] : [];
   
+  // Create database notifications for all recipients
+  try {
+    const { createNotification } = require('../services/notification.service');
+    const title = `PO Request ${actionText}`;
+    const msg = `PO request ${poData.uniqueSerialNo || ''} (${poData.titleOfActivity || 'Purchase Order'}) has been ${action}.`;
+    const type = action === 'created' ? 'pending' : action;
+    for (const email of uniqueRecipients) {
+      await createNotification(email, title, msg, type);
+    }
+  } catch (err) {
+    console.error('⚠️ Error in sendPOEmail database notifications:', err.message);
+  }
+
   // Send ONE email to everyone
   return await sendMail({
     to: toEmail,

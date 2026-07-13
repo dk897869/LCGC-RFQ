@@ -3,6 +3,7 @@ const router = express.Router();
 const { verifyToken } = require('../middlewares/auth');
 const { sendMail } = require('../services/mail.service');
 const prComparisonCtrl = require('../controllers/prComparison.controller');
+const { createNotification } = require('../services/notification.service');
 
 const getModel = (path) => {
   try {
@@ -141,13 +142,21 @@ router.patch('/:type/:requestId/approve', verifyToken, async (req, res) => {
     if (!data) return res.status(404).json({ success: false, message: 'Request not found' });
 
     if (data.email || data.emailId) {
+      const normalized = normalizeRequest(data, req.params.type);
+      await createNotification(
+        data.email || data.emailId,
+        `${String(req.params.type).toUpperCase()} Request Approved`,
+        `Your request ${normalized.serialNo || ''} (${normalized.title}) has been approved by ${req.user?.name || 'Approver'}.`,
+        'approved'
+      );
+
       await sendMail({
         to: data.email || data.emailId,
         subject: `${String(req.params.type).toUpperCase()} request approved`,
         type: 'approval',
         action: 'Approved',
         comments: req.body.comments || '',
-        data: { ...normalizeRequest(data, req.params.type), requestType: req.params.type }
+        data: { ...normalized, requestType: req.params.type }
       });
     }
 
@@ -180,13 +189,21 @@ router.patch('/:type/:requestId/reject', verifyToken, async (req, res) => {
     if (!data) return res.status(404).json({ success: false, message: 'Request not found' });
 
     if (data.email || data.emailId) {
+      const normalized = normalizeRequest(data, req.params.type);
+      await createNotification(
+        data.email || data.emailId,
+        `${String(req.params.type).toUpperCase()} Request Rejected`,
+        `Your request ${normalized.serialNo || ''} (${normalized.title}) has been rejected by ${req.user?.name || 'Approver'}.`,
+        'rejected'
+      );
+
       await sendMail({
         to: data.email || data.emailId,
         subject: `${String(req.params.type).toUpperCase()} request rejected`,
         type: 'approval',
         action: 'Rejected',
         comments: req.body.comments || '',
-        data: { ...normalizeRequest(data, req.params.type), requestType: req.params.type }
+        data: { ...normalized, requestType: req.params.type }
       });
     }
 

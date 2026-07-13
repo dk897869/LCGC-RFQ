@@ -1147,16 +1147,35 @@ async function sendMail(opts) {
     return { success: false, error: 'SMTP not configured' };
   }
   
-  try {
-    console.log(`📧 Sending email via Gmail SMTP...`);
-    const info = await smtpTransporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully! Message ID: ${info.messageId}`);
-    console.log(`✅ Email sent to: ${toList.join(', ')}`);
-    return { success: true, via: 'smtp', messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ SMTP send error:', error.message);
-    console.error('❌ Error details:', error);
-    return { success: false, error: error.message };
+  const isCritical = ['otp', 'email_verification', 'reset'].includes(type) || 
+                     subject?.toLowerCase()?.includes('otp') || 
+                     subject?.toLowerCase()?.includes('verification') ||
+                     subject?.toLowerCase()?.includes('code');
+
+  if (isCritical) {
+    try {
+      console.log(`📧 Sending critical email synchronously: ${subject}`);
+      const info = await smtpTransporter.sendMail(mailOptions);
+      console.log(`✅ Email sent successfully! Message ID: ${info.messageId}`);
+      console.log(`✅ Email sent to: ${toList.join(', ')}`);
+      return { success: true, via: 'smtp', messageId: info.messageId };
+    } catch (error) {
+      console.error('❌ SMTP send error:', error.message);
+      console.error('❌ Error details:', error);
+      return { success: false, error: error.message };
+    }
+  } else {
+    console.log(`📧 Dispatching non-critical email asynchronously in background: ${subject}`);
+    setImmediate(() => {
+      smtpTransporter.sendMail(mailOptions)
+        .then(info => {
+          console.log(`✅ [BG] Email sent successfully! Message ID: ${info.messageId}`);
+        })
+        .catch(error => {
+          console.error('❌ [BG] SMTP send error:', error.message);
+        });
+    });
+    return { success: true, via: 'smtp-bg' };
   }
 }
 

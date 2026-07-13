@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 
 interface VendorRfqRow {
@@ -39,15 +40,94 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
   };
 
   statusBreakdown = { pending: 0, submitted: 0, shortlisted: 0, awarded: 0 };
-  rows: VendorRfqRow[] = [];
-  filteredRows: VendorRfqRow[] = [];
+  rows: any[] = [];
+  filteredRows: any[] = [];
   statusFilter = 'all';
   searchTerm = '';
   page = 1;
   pageSize = 8;
   private clockTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private auth: AuthService, private cdr: ChangeDetectorRef) {}
+  showDetailsModal = false;
+  showRejectModal = false;
+  selectedRfq: any = null;
+  rejectionRemarks = '';
+  isSubmitting = false;
+
+  constructor(private auth: AuthService, private cdr: ChangeDetectorRef, private router: Router) {}
+
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
+
+  showToast(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') {
+    window.dispatchEvent(new CustomEvent('app-toast', {
+      detail: { message, type }
+    }));
+  }
+
+  viewRfqDetails(row: any) {
+    this.selectedRfq = row;
+    this.showDetailsModal = true;
+  }
+
+  closeDetailsModal() {
+    this.showDetailsModal = false;
+    this.selectedRfq = null;
+  }
+
+  acceptRfq(row: any) {
+    this.isSubmitting = true;
+    this.auth.acceptVendorRfq(row.id).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showToast('RFQ Invitation Accepted Successfully! Notification sent.', 'success');
+        this.closeDetailsModal();
+        this.loadData();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToast(err?.message || 'Failed to accept RFQ', 'error');
+      }
+    });
+  }
+
+  rejectRfqFromTable(row: any) {
+    this.selectedRfq = row;
+    this.openRejectModal();
+  }
+
+  openRejectModal() {
+    this.rejectionRemarks = '';
+    this.showRejectModal = true;
+  }
+
+  closeRejectModal() {
+    this.showRejectModal = false;
+    this.rejectionRemarks = '';
+  }
+
+  submitRejection() {
+    if (!this.rejectionRemarks.trim()) {
+      this.showToast('Please provide a reason/remarks for rejection', 'warning');
+      return;
+    }
+    this.isSubmitting = true;
+    this.auth.rejectVendorRfq(this.selectedRfq.id, this.rejectionRemarks).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showToast('RFQ Invitation Rejected. Notification sent.', 'info');
+        this.closeRejectModal();
+        this.closeDetailsModal();
+        this.loadData();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToast(err?.message || 'Failed to reject RFQ', 'error');
+      }
+    });
+  }
 
   ngOnInit() {
     const user = this.auth.getUser();
@@ -88,7 +168,8 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
             department: r.department || '—',
             endDate: this.fmt(r.dueDate || r.endDate || r.requestDate),
             status: this.normStatus(r.status),
-            requestedBy: r.requesterName || r.requester || '—'
+            requestedBy: r.requesterName || r.requester || '—',
+            raw: r
           }));
           this.computeStats();
           this.applyFilters();

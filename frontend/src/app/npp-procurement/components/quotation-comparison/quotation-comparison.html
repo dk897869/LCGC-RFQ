@@ -68,7 +68,7 @@
               <td>{{ row.requester }}</td>
               <td>{{ row.department }}</td>
               <td><span class="priority-badge" [ngClass]="getPriorityClass(row.priority)">{{ getPriorityLabel(row.priority) }}</span></td>
-              <td>{{ row.suppliers.join(', ') || '—' }}</td>
+              <td>{{ getSupplierDisplay(row) || '—' }}</td>
               <td><span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status === 'Submitted' ? 'Submitted' : 'Pending Comparison' }}</span></td>
               <td>{{ row.date | date:'dd MMM yy' }}</td>
               <td class="actions-cell">
@@ -208,7 +208,7 @@
             <div class="best-tag" *ngIf="isBestSupplier(2)">★ Best Price</div>
           </div>
 
-          <div class="supplier-card" [class.best-card]="isBestSupplier(3)" [class.selected-card]="current.selectedSupplierIndex === 3" (click)="selectSupplier(3)">
+          <div class="supplier-card" [class.best-card]="isBestSupplier(3)" [class.selected-card]="current.selectedSupplierIndex === 3" (click)="selectSupplier(3)" *ngIf="showSupplier3">
             <div class="card-rank s3">S3</div>
             <div class="card-body">
               <label class="card-label">Supplier 3</label>
@@ -225,42 +225,16 @@
             <div class="best-tag" *ngIf="isBestSupplier(3)">★ Best Price</div>
           </div>
 
+          <div class="supplier-card add-supplier-card" *ngIf="!showSupplier3" (click)="addAdditionalVendor()" style="display: flex; align-items: center; justify-content: center; border: 2px dashed #0f2a5e; cursor: pointer; background: #f8fafc; transition: all 0.2s; min-height: 90px; border-radius: 8px; flex-grow: 1;">
+            <div style="text-align: center; color: #0f2a5e; padding: 10px;">
+              <div style="font-size: 20px; font-weight: bold; margin-bottom: 2px;">＋ Add Supplier Column</div>
+              <div style="font-size: 11px; opacity: 0.8;">Add third vendor manually to compare</div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- VENDOR-WISE ATTACHMENTS -->
-      <div class="vendor-attachments-strip">
-        <div class="strip-label">
-          <span class="strip-icon">📎</span>
-          <span>Vendor Quotation Attachments</span>
-        </div>
-        <div class="attachment-slots">
-          <div class="attachment-slot">
-            <span class="slot-name">{{ current.supplier1Name || 'Supplier 1' }}</span>
-            <label class="upload-btn">
-              📎 {{ current.attachment1 ? 'Replace File' : 'Upload Quotation' }}
-              <input type="file" hidden (change)="onAttachmentSelected(1, $event)">
-            </label>
-            <span class="file-name" *ngIf="current.attachment1">{{ current.attachment1 }}</span>
-          </div>
-          <div class="attachment-slot">
-            <span class="slot-name">{{ current.supplier2Name || 'Supplier 2' }}</span>
-            <label class="upload-btn">
-              📎 {{ current.attachment2 ? 'Replace File' : 'Upload Quotation' }}
-              <input type="file" hidden (change)="onAttachmentSelected(2, $event)">
-            </label>
-            <span class="file-name" *ngIf="current.attachment2">{{ current.attachment2 }}</span>
-          </div>
-          <div class="attachment-slot">
-            <span class="slot-name">{{ current.supplier3Name || 'Supplier 3' }}</span>
-            <label class="upload-btn">
-              📎 {{ current.attachment3 ? 'Replace File' : 'Upload Quotation' }}
-              <input type="file" hidden (change)="onAttachmentSelected(3, $event)">
-            </label>
-            <span class="file-name" *ngIf="current.attachment3">{{ current.attachment3 }}</span>
-          </div>
-        </div>
-      </div>
 
       <!-- COMPARISON TABLE -->
       <div class="table-section">
@@ -290,7 +264,7 @@
                 <th rowspan="2" class="th-qty">Qty</th>
                 <th colspan="2" class="th-sup th-sup1">{{ current.supplier1Name || 'Supplier 1' }}</th>
                 <th colspan="2" class="th-sup th-sup2">{{ current.supplier2Name || 'Supplier 2' }}</th>
-                <th colspan="2" class="th-sup th-sup3">{{ current.supplier3Name || 'Supplier 3' }}</th>
+                <th colspan="2" class="th-sup th-sup3" *ngIf="showSupplier3">{{ current.supplier3Name || 'Supplier 3' }}</th>
                 <th rowspan="2" class="th-action">—</th>
               </tr>
               <tr class="head-cols">
@@ -298,8 +272,8 @@
                 <th class="th-amount">Amount</th>
                 <th class="th-price">Price</th>
                 <th class="th-amount">Amount</th>
-                <th class="th-price">Price</th>
-                <th class="th-amount">Amount</th>
+                <th class="th-price" *ngIf="showSupplier3">Price</th>
+                <th class="th-amount" *ngIf="showSupplier3">Amount</th>
               </tr>
             </thead>
 
@@ -347,11 +321,11 @@
                 </td>
 
                 <!-- Supplier 3 -->
-                <td class="td-edit td-price">
+                <td class="td-edit td-price" *ngIf="showSupplier3">
                   <input class="cell-input cell-num" type="number" min="0"
                     [(ngModel)]="item.supplier3Price" (input)="calcAmounts(item)">
                 </td>
-                <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 3)" [class.td-preferred]="current.selectedSupplierIndex === 3">
+                <td class="td-amount" [class.td-best]="isLowestItemPrice(item, 3)" [class.td-preferred]="current.selectedSupplierIndex === 3" *ngIf="showSupplier3">
                   ₹ {{ item.supplier3Amount | number:'1.2-2' }}
                 </td>
 
@@ -371,7 +345,7 @@
                 <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(2)">
                   ₹ {{ getTotals().t2 | number:'1.2-2' }}
                 </td>
-                <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(3)">
+                <td colspan="2" class="foot-value" [class.foot-best]="isBestSupplier(3)" *ngIf="showSupplier3">
                   ₹ {{ getTotals().t3 | number:'1.2-2' }}
                 </td>
                 <td></td>
@@ -423,7 +397,7 @@
             </div>
           </div>
 
-          <div class="terms-col" [class.terms-best-col]="isBestSupplier(3)">
+          <div class="terms-col" [class.terms-best-col]="isBestSupplier(3)" *ngIf="showSupplier3">
             <div class="terms-header-cell sup3-head">
               <span class="tc-rank">S3</span>
               <span class="tc-name">{{ current.supplier3Name || 'Supplier 3' }}</span>
@@ -475,6 +449,128 @@
         </label>
         <textarea class="rec-textarea" rows="3" [(ngModel)]="current.recommendation"
           placeholder="Enter recommendation..."></textarea>
+      </div>
+      <!-- VENDOR-WISE ATTACHMENTS -->
+      <div class="vendor-attachments-strip">
+        <div class="strip-label">
+          <span class="strip-icon">📎</span>
+          <span>Vendor Quotation Attachments</span>
+        </div>
+        <div class="attachment-slots">
+          <div class="attachment-slot">
+            <span class="slot-name">{{ current.supplier1Name || 'Supplier 1' }}</span>
+            <label class="upload-btn">
+              📎 {{ current.attachment1 ? 'Replace File' : 'Upload Quotation' }}
+              <input type="file" hidden (change)="onAttachmentSelected(1, $event)">
+            </label>
+            <span class="file-name" *ngIf="current.attachment1">{{ current.attachment1 }}</span>
+          </div>
+          <div class="attachment-slot">
+            <span class="slot-name">{{ current.supplier2Name || 'Supplier 2' }}</span>
+            <label class="upload-btn">
+              📎 {{ current.attachment2 ? 'Replace File' : 'Upload Quotation' }}
+              <input type="file" hidden (change)="onAttachmentSelected(2, $event)">
+            </label>
+            <span class="file-name" *ngIf="current.attachment2">{{ current.attachment2 }}</span>
+          </div>
+          <div class="attachment-slot" *ngIf="showSupplier3">
+            <span class="slot-name">{{ current.supplier3Name || 'Supplier 3' }}</span>
+            <label class="upload-btn">
+              📎 {{ current.attachment3 ? 'Replace File' : 'Upload Quotation' }}
+              <input type="file" hidden (change)="onAttachmentSelected(3, $event)">
+            </label>
+            <span class="file-name" *ngIf="current.attachment3">{{ current.attachment3 }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== APPROVAL CHAIN ===================== -->
+      <div class="approval-chain-section">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="section-icon">👥</span>
+            Approval Chain <span class="required">*</span>
+          </div>
+          <button class="add-row-btn" (click)="addApprovalRow()">
+            <span>＋</span> Add Approver
+          </button>
+        </div>
+
+        <div class="approval-chain-table-wrap">
+          <table class="approval-chain-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let approver of current.approvalChain; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.name" 
+                         (ngModelChange)="onApproverLookup(approver, $event)"
+                         placeholder="Type name or email" class="approver-input">
+                </td>
+                <td>
+                  <input type="email" [(ngModel)]="approver.email" 
+                         (blur)="onApproverEmailChange(approver, approver.email)"
+                         placeholder="approver@company.com" class="approver-input">
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.department" 
+                         placeholder="Department" class="approver-input">
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.designation" 
+                         placeholder="Designation" class="approver-input">
+                </td>
+                <td>
+                  <span class="status-badge" [ngClass]="approver.status === 'Approved' ? 'submitted' : 'pending'">
+                    {{ approver.status }}
+                  </span>
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.remarks" 
+                         placeholder="Remarks" class="approver-input">
+                </td>
+                <td>
+                  <button class="remove-btn" (click)="removeApprovalRow(i)"
+                    [disabled]="current.approvalChain.length === 1" title="Remove">✕</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== CC RECIPIENTS ===================== -->
+      <div class="cc-section">
+        <div class="section-header">
+          <div class="section-title">
+            <span class="section-icon">✉️</span>
+            CC Recipients
+          </div>
+        </div>
+
+        <div class="cc-wrap">
+          <input type="text" [(ngModel)]="ccInput" 
+                 (paste)="addMultipleCc($event)" 
+                 placeholder="Paste multiple emails with comma, semicolon, space, or new line" 
+                 class="cc-input">
+          <button type="button" class="add-row-btn" (click)="addCc()">+ Add</button>
+        </div>
+        <div class="cc-chips" *ngIf="current.ccList.length">
+          <span class="cc-chip" *ngFor="let cc of current.ccList; let i = index">
+            {{ cc }} <button type="button" (click)="removeCc(i)">×</button>
+          </span>
+        </div>
       </div>
 
       <!-- FOOTER ACTIONS -->

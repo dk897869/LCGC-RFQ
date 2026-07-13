@@ -1,4 +1,4 @@
-﻿require("dotenv").config();  // ✅ MUST BE FIRST!
+require("dotenv").config();  // ✅ MUST BE FIRST!
 
 const express = require("express");
 const path = require("path");
@@ -755,6 +755,824 @@ app.use('/api/vendor-requests', authMiddleware, vendorRequestRoutes);  // Plural
 app.use('/api/quotation', authMiddleware, quotationRoutes);
 app.use('/api/quotations', authMiddleware, quotationRoutes);  // Plural version
 
+// ==================== ✅ FIXED: QUOTATION COMPARISON LATEST ENDPOINT ====================
+// This handles the /api/pr/latest/comparison request that was failing
+app.get('/api/pr/latest/comparison', authMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    // Find the most recent quotation comparison
+    const latest = await NPPRequest.findOne({ 
+      type: 'quotation-comparison',
+      status: 'Submitted'
+    }).sort({ createdAt: -1 });
+    
+    if (!latest) {
+      // If no quotation comparison found, try to find any quotation submission
+      const fallback = await NPPRequest.findOne({ 
+        type: 'quotation-submission'
+      }).sort({ createdAt: -1 });
+      
+      if (fallback) {
+        return res.json({
+          success: true,
+          data: {
+            rfqNo: fallback.rfqNo || fallback.uniqueSerialNo,
+            items: fallback.quotationSubmissionItems || fallback.items || [],
+            recommendedVendor: {
+              vendorName: 'Supplier 1'
+            },
+            bestSupplier: 'Supplier 1',
+            suppliers: ['Supplier 1', 'Supplier 2', 'Supplier 3'],
+            recommendation: 'Please compare the quotations manually.'
+          }
+        });
+      }
+      
+      return res.status(404).json({
+        success: false,
+        message: 'No quotation comparison data found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        rfqNo: latest.rfqNo || latest.uniqueSerialNo,
+        items: latest.quotationItems || latest.items || [],
+        recommendedVendor: latest.recommendedVendor || {
+          vendorName: latest.bestSupplier || 'Recommended Vendor'
+        },
+        bestSupplier: latest.bestSupplier || 'Recommended Vendor',
+        suppliers: latest.suppliers || [],
+        recommendation: latest.recommendation || ''
+      }
+    });
+  } catch (error) {
+    console.error('Get latest comparison error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== ✅ ADDED: QUOTATION COMPARISON BY RFQ ENDPOINT ====================
+app.get('/api/quotation/comparison/rfq/:rfqId', authMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    const rfqId = req.params.rfqId;
+    
+    const comparison = await NPPRequest.findOne({ 
+      type: 'quotation-comparison',
+      $or: [
+        { rfqNo: rfqId },
+        { uniqueSerialNo: rfqId },
+        { 'rfqVendorItems.rfqNo': rfqId }
+      ]
+    }).sort({ createdAt: -1 });
+    
+    if (!comparison) {
+      return res.status(404).json({
+        success: false,
+        message: 'No comparison data found for this RFQ'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        rfqNo: comparison.rfqNo || comparison.uniqueSerialNo,
+        items: comparison.quotationItems || comparison.items || [],
+        recommendedVendor: comparison.recommendedVendor || {
+          vendorName: comparison.bestSupplier || 'Recommended Vendor'
+        },
+        bestSupplier: comparison.bestSupplier || 'Recommended Vendor',
+        suppliers: comparison.suppliers || [],
+        recommendation: comparison.recommendation || ''
+      }
+    });
+  } catch (error) {
+    console.error('Get comparison by RFQ error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== ✅ NEW: QUOTATION COMPARISON SUBMIT ENDPOINT ====================
+/**
+ * POST /api/quotation-comparison/submit
+ * Submit a quotation comparison
+ */
+app.post('/api/quotation-comparison/submit', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const data = req.body;
+    console.log('📤 Received quotation comparison submission:', data.rfqNo);
+    
+    // Get the NPPRequest model
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    // Check if a comparison already exists for this RFQ
+    const existing = await NPPRequest.findOne({
+      type: 'quotation-comparison',
+      $or: [
+        { rfqNo: data.rfqNo },
+        { rfqId: data.rfqId },
+        { uniqueSerialNo: data.rfqNo }
+      ]
+    });
+    
+    let comparison;
+    
+    if (existing) {
+      // Update existing comparison
+      existing.quotationItems = data.quotationItems || [];
+      existing.suppliers = data.suppliers || [];
+      existing.bestSupplier = data.bestSupplier || '';
+      existing.recommendation = data.recommendation || '';
+      existing.selectedSupplier = data.selectedSupplier || '';
+      existing.status = 'Submitted';
+      existing.submittedAt = new Date().toISOString();
+      existing.updatedAt = new Date().toISOString();
+      existing.conditionRows = data.conditionRows || [];
+      existing.attachments = data.attachments || {};
+      
+      comparison = await existing.save();
+      console.log('✅ Updated existing comparison:', comparison.rfqNo);
+    } else {
+      // Create new comparison
+      const newComparison = new NPPRequest({
+        type: 'quotation-comparison',
+        rfqNo: data.rfqNo || data.rfqId,
+        rfqId: data.rfqId || data.rfqNo,
+        uniqueSerialNo: data.rfqNo || `COMP-${Date.now()}`,
+        title: data.title || 'Quotation Comparison',
+        requesterName: data.requester || '',
+        emailId: data.requesterEmail || '',
+        department: data.department || 'Purchase',
+        priority: data.priority || 'M',
+        status: 'Submitted',
+        requestDate: data.date || new Date().toISOString(),
+        suppliers: data.suppliers || [],
+        bestSupplier: data.bestSupplier || '',
+        amount: data.totalAmount || 0,
+        quotationItems: data.quotationItems || [],
+        recommendation: data.recommendation || '',
+        selectedSupplier: data.selectedSupplier || '',
+        conditionRows: data.conditionRows || [],
+        attachments: data.attachments || {},
+        submittedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      
+      comparison = await newComparison.save();
+      console.log('✅ Created new comparison:', comparison.rfqNo);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Quotation comparison submitted successfully',
+      data: comparison,
+      rfqNo: comparison.rfqNo
+    });
+    
+  } catch (error) {
+    console.error('❌ Error submitting quotation comparison:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit quotation comparison',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: GET ALL QUOTATION COMPARISONS ====================
+/**
+ * GET /api/quotation-comparison/list
+ * Get all quotation comparisons
+ */
+app.get('/api/quotation-comparison/list', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    const comparisons = await NPPRequest.find({
+      type: { $in: ['quotation-comparison', 'quotation-submission'] }
+    }).sort({ createdAt: -1 });
+    
+    console.log(`📋 Found ${comparisons.length} comparisons`);
+    
+    // Format response to match frontend expectations
+    const formatted = comparisons.map(comp => ({
+      id: comp._id,
+      rfqId: comp.rfqId || comp.uniqueSerialNo,
+      rfqNo: comp.rfqNo || comp.uniqueSerialNo,
+      title: comp.title || 'Quotation Comparison',
+      requester: comp.requesterName || '',
+      requesterEmail: comp.emailId || '',
+      department: comp.department || 'Purchase',
+      priority: comp.priority || 'M',
+      status: comp.status || 'Pending',
+      date: comp.requestDate || comp.createdAt,
+      suppliers: comp.suppliers || [],
+      bestSupplier: comp.bestSupplier || '',
+      totalAmount: comp.amount || 0,
+      quotationItems: comp.quotationItems || [],
+      recommendation: comp.recommendation || '',
+      selectedSupplier: comp.selectedSupplier || '',
+      conditionRows: comp.conditionRows || [],
+      attachments: comp.attachments || {},
+      createdAt: comp.createdAt,
+      updatedAt: comp.updatedAt
+    }));
+    
+    res.json({
+      success: true,
+      data: formatted,
+      total: formatted.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching comparisons:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch comparisons',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: GET SUBMITTED QUOTATION COMPARISONS ====================
+/**
+ * GET /api/quotation-comparison/submitted
+ * Get all submitted quotation comparisons
+ */
+app.get('/api/quotation-comparison/submitted', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    const comparisons = await NPPRequest.find({
+      type: { $in: ['quotation-comparison', 'quotation-submission'] },
+      status: 'Submitted'
+    }).sort({ createdAt: -1 });
+    
+    console.log(`📋 Found ${comparisons.length} submitted comparisons`);
+    
+    const formatted = comparisons.map(comp => ({
+      id: comp._id,
+      rfqId: comp.rfqId || comp.uniqueSerialNo,
+      rfqNo: comp.rfqNo || comp.uniqueSerialNo,
+      title: comp.title || 'Quotation Comparison',
+      requester: comp.requesterName || '',
+      requesterEmail: comp.emailId || '',
+      department: comp.department || 'Purchase',
+      priority: comp.priority || 'M',
+      status: comp.status || 'Submitted',
+      date: comp.requestDate || comp.createdAt,
+      suppliers: comp.suppliers || [],
+      bestSupplier: comp.bestSupplier || '',
+      totalAmount: comp.amount || 0,
+      quotationItems: comp.quotationItems || [],
+      recommendation: comp.recommendation || '',
+      selectedSupplier: comp.selectedSupplier || '',
+      conditionRows: comp.conditionRows || [],
+      attachments: comp.attachments || {},
+      createdAt: comp.createdAt,
+      updatedAt: comp.updatedAt,
+      submittedAt: comp.submittedAt || comp.updatedAt
+    }));
+    
+    res.json({
+      success: true,
+      data: formatted,
+      total: formatted.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching submitted comparisons:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch submitted comparisons',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: CREATE PR FROM COMPARISON ====================
+/**
+ * POST /api/pr/create-from-comparison
+ * Create a Purchase Requisition from a comparison
+ */
+app.post('/api/pr/create-from-comparison', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const data = req.body;
+    console.log('📤 Creating PR from comparison:', data.rfqNo);
+    
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    // Create PR request using the correct model fields
+    const newPR = new NPPRequest({
+      type: 'pr-request',
+      uniqueSerialNo: data.serialNo || data.prNumber || `PR-${Date.now()}`,
+      rfqNo: data.rfqNo || '',
+      titleOfActivity: data.titleOfActivity || data.title || 'PR from Quotation Comparison',
+      requesterName: data.name || data.requester || '',
+      emailId: data.emailId || data.requesterEmail || '',
+      department: data.department || 'Purchase',
+      contactNo: data.contactNo || '',
+      organization: data.organization || 'Radiant Appliances',
+      status: data.status || 'Pending',
+      requestDate: data.submittedDate || new Date().toISOString(),
+      prItems: (data.items || []).map(item => ({
+        costCenter: data.costCenter || 'Purchase Department',
+        supplierName: item.supplierName || '',
+        rfqNo: data.rfqNo || '',
+        partCode: item.partCode || '',
+        partDescription: item.partDescription || '',
+        specification: item.cndt || item.specification || '',
+        cmdt: item.cndt || '',
+        uom: item.uom || 'Nos',
+        qty: item.qty || 1,
+        unitPrice: item.unitPrice || 0,
+        totalValue: item.value || (item.qty || 1) * (item.unitPrice || 0)
+      })),
+      amount: data.totalValue || 0,
+      comparisonId: data.comparisonId || data.rfqId,
+      submittedDate: data.submittedDate || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    
+    const savedPR = await newPR.save();
+    console.log('✅ PR created from comparison:', savedPR.uniqueSerialNo);
+    
+    res.json({
+      success: true,
+      message: 'PR created successfully from comparison',
+      data: savedPR,
+      prNumber: savedPR.uniqueSerialNo
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creating PR from comparison:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create PR from comparison',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: SAVE PR (Draft) ====================
+/**
+ * POST /api/pr/save
+ * Save PR as draft
+ */
+app.post('/api/pr/save', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const data = req.body;
+    console.log('💾 Saving PR draft:', data.uniqueSerialNo || data.prNumber);
+    
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    // Check if PR exists
+    const existing = await NPPRequest.findOne({
+      type: 'pr-request',
+      $or: [
+        { uniqueSerialNo: data.uniqueSerialNo || data.prNumber || data.serialNo },
+        { rfqNo: data.rfqNo }
+      ]
+    });
+    
+    let savedPR;
+    
+    if (existing) {
+      // Update existing PR
+      existing.requesterName = data.name || data.requester || existing.requesterName;
+      existing.department = data.department || existing.department;
+      existing.emailId = data.emailId || data.requesterEmail || existing.emailId;
+      existing.contactNo = data.contactNo || existing.contactNo;
+      existing.organization = data.organization || existing.organization;
+      existing.titleOfActivity = data.titleOfActivity || data.title || existing.titleOfActivity;
+      existing.rfqNo = data.rfqNo || existing.rfqNo;
+      existing.status = 'Draft';
+      existing.prItems = (data.items || []).map(item => ({
+        costCenter: data.costCenter || 'Purchase Department',
+        supplierName: item.supplierName || '',
+        rfqNo: data.rfqNo || '',
+        partCode: item.partCode || '',
+        partDescription: item.partDescription || '',
+        specification: item.cndt || item.specification || '',
+        cmdt: item.cndt || '',
+        uom: item.uom || 'Nos',
+        qty: item.qty || 1,
+        unitPrice: item.unitPrice || 0,
+        totalValue: item.value || (item.qty || 1) * (item.unitPrice || 0)
+      }));
+      existing.amount = data.totalValue || 0;
+      existing.updatedAt = new Date().toISOString();
+      
+      savedPR = await existing.save();
+      console.log('✅ PR draft updated:', savedPR.uniqueSerialNo);
+    } else {
+      // Create new PR
+      const newPR = new NPPRequest({
+        type: 'pr-request',
+        uniqueSerialNo: data.uniqueSerialNo || data.prNumber || data.serialNo || `PR-${Date.now()}`,
+        rfqNo: data.rfqNo || '',
+        titleOfActivity: data.titleOfActivity || data.title || 'PR Request',
+        requesterName: data.name || data.requester || '',
+        emailId: data.emailId || data.requesterEmail || '',
+        department: data.department || 'Purchase',
+        contactNo: data.contactNo || '',
+        organization: data.organization || 'Radiant Appliances',
+        status: 'Draft',
+        prItems: (data.items || []).map(item => ({
+          costCenter: data.costCenter || 'Purchase Department',
+          supplierName: item.supplierName || '',
+          rfqNo: data.rfqNo || '',
+          partCode: item.partCode || '',
+          partDescription: item.partDescription || '',
+          specification: item.cndt || item.specification || '',
+          cmdt: item.cndt || '',
+          uom: item.uom || 'Nos',
+          qty: item.qty || 1,
+          unitPrice: item.unitPrice || 0,
+          totalValue: item.value || (item.qty || 1) * (item.unitPrice || 0)
+        })),
+        amount: data.totalValue || 0,
+        comparisonId: data.comparisonId || data.rfqId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      savedPR = await newPR.save();
+      console.log('✅ New PR draft created:', savedPR.uniqueSerialNo);
+    }
+    
+    res.json({
+      success: true,
+      message: 'PR saved successfully',
+      data: savedPR,
+      prNumber: savedPR.uniqueSerialNo
+    });
+    
+  } catch (error) {
+    console.error('❌ Error saving PR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save PR',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: SUBMIT PR ====================
+/**
+ * POST /api/pr/submit
+ * Submit PR for approval
+ */
+app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const data = req.body;
+    console.log('📤 Submitting PR:', data.uniqueSerialNo || data.prNumber);
+    
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    // Check if PR exists
+    const existing = await NPPRequest.findOne({
+      type: 'pr-request',
+      $or: [
+        { uniqueSerialNo: data.uniqueSerialNo || data.prNumber || data.serialNo },
+        { rfqNo: data.rfqNo }
+      ]
+    });
+    
+    let savedPR;
+    
+    if (existing) {
+      // Update existing PR
+      existing.requesterName = data.name || data.requester || existing.requesterName;
+      existing.department = data.department || existing.department;
+      existing.emailId = data.emailId || data.requesterEmail || existing.emailId;
+      existing.contactNo = data.contactNo || existing.contactNo;
+      existing.organization = data.organization || existing.organization;
+      existing.titleOfActivity = data.titleOfActivity || data.title || existing.titleOfActivity;
+      existing.rfqNo = data.rfqNo || existing.rfqNo;
+      existing.status = 'Pending';
+      existing.prItems = (data.items || []).map(item => ({
+        costCenter: data.costCenter || 'Purchase Department',
+        supplierName: item.supplierName || '',
+        rfqNo: data.rfqNo || '',
+        partCode: item.partCode || '',
+        partDescription: item.partDescription || '',
+        specification: item.cndt || item.specification || '',
+        cmdt: item.cndt || '',
+        uom: item.uom || 'Nos',
+        qty: item.qty || 1,
+        unitPrice: item.unitPrice || 0,
+        totalValue: item.value || (item.qty || 1) * (item.unitPrice || 0)
+      }));
+      existing.amount = data.totalValue || 0;
+      existing.submittedDate = new Date().toISOString();
+      existing.updatedAt = new Date().toISOString();
+      
+      savedPR = await existing.save();
+      console.log('✅ PR submitted:', savedPR.uniqueSerialNo);
+    } else {
+      // Create new PR
+      const newPR = new NPPRequest({
+        type: 'pr-request',
+        uniqueSerialNo: data.uniqueSerialNo || data.prNumber || data.serialNo || `PR-${Date.now()}`,
+        rfqNo: data.rfqNo || '',
+        titleOfActivity: data.titleOfActivity || data.title || 'PR Request',
+        requesterName: data.name || data.requester || '',
+        emailId: data.emailId || data.requesterEmail || '',
+        department: data.department || 'Purchase',
+        contactNo: data.contactNo || '',
+        organization: data.organization || 'Radiant Appliances',
+        status: 'Pending',
+        prItems: (data.items || []).map(item => ({
+          costCenter: data.costCenter || 'Purchase Department',
+          supplierName: item.supplierName || '',
+          rfqNo: data.rfqNo || '',
+          partCode: item.partCode || '',
+          partDescription: item.partDescription || '',
+          specification: item.cndt || item.specification || '',
+          cmdt: item.cndt || '',
+          uom: item.uom || 'Nos',
+          qty: item.qty || 1,
+          unitPrice: item.unitPrice || 0,
+          totalValue: item.value || (item.qty || 1) * (item.unitPrice || 0)
+        })),
+        amount: data.totalValue || 0,
+        comparisonId: data.comparisonId || data.rfqId,
+        submittedDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      savedPR = await newPR.save();
+      console.log('✅ New PR submitted:', savedPR.uniqueSerialNo);
+    }
+    
+    res.json({
+      success: true,
+      message: 'PR submitted for approval',
+      data: savedPR,
+      prNumber: savedPR.uniqueSerialNo
+    });
+    
+  } catch (error) {
+    console.error('❌ Error submitting PR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit PR',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: GET PR LIST ====================
+/**
+ * GET /api/pr/list
+ * Get all PRs
+ */
+app.get('/api/pr/list', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    
+    const prs = await NPPRequest.find({
+      type: 'pr-request'
+    }).sort({ createdAt: -1 });
+    
+    console.log(`📋 Found ${prs.length} PRs`);
+    
+    // Format response to match frontend expectations
+    const formatted = prs.map(pr => ({
+      id: pr._id,
+      prNumber: pr.uniqueSerialNo,
+      serialNo: pr.uniqueSerialNo,
+      name: pr.requesterName || '',
+      requestDate: pr.requestDate || pr.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+      department: pr.department || 'Purchase',
+      contactNo: pr.contactNo || '',
+      emailId: pr.emailId || '',
+      organization: pr.organization || 'Radiant Appliances',
+      departmentBudget: 1500000,
+      costCenter: 'Purchase Department',
+      rfqNo: pr.rfqNo || '',
+      titleOfActivity: pr.titleOfActivity || 'PR Request',
+      status: pr.status || 'Draft',
+      items: (pr.prItems || []).map(item => ({
+        id: 0,
+        rfqNo: item.rfqNo || '',
+        supplierName: item.supplierName || '',
+        partCode: item.partCode || '',
+        partDescription: item.partDescription || '',
+        cndt: item.cndt || item.specification || '',
+        uom: item.uom || 'Nos',
+        qty: item.qty || 1,
+        currency: 'INR',
+        unitPrice: item.unitPrice || 0,
+        value: item.totalValue || 0
+      })),
+      totalValue: pr.amount || 0,
+      submittedDate: pr.submittedDate || pr.updatedAt,
+      comparisonId: pr.comparisonId || '',
+      createdAt: pr.createdAt,
+      updatedAt: pr.updatedAt
+    }));
+    
+    res.json({
+      success: true,
+      data: formatted,
+      total: formatted.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching PRs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch PRs',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: GET SINGLE PR ====================
+/**
+ * GET /api/pr/:id
+ * Get a single PR by ID or serial number
+ */
+app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    const { id } = req.params;
+    
+    const pr = await NPPRequest.findOne({
+      type: 'pr-request',
+      $or: [
+        { _id: id },
+        { uniqueSerialNo: id },
+        { prNumber: id },
+        { serialNo: id }
+      ]
+    });
+    
+    if (!pr) {
+      return res.status(404).json({
+        success: false,
+        message: 'PR not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        id: pr._id,
+        prNumber: pr.uniqueSerialNo,
+        serialNo: pr.uniqueSerialNo,
+        name: pr.requesterName || '',
+        requestDate: pr.requestDate || pr.createdAt?.split('T')[0],
+        department: pr.department || 'Purchase',
+        contactNo: pr.contactNo || '',
+        emailId: pr.emailId || '',
+        organization: pr.organization || 'Radiant Appliances',
+        departmentBudget: 1500000,
+        costCenter: 'Purchase Department',
+        rfqNo: pr.rfqNo || '',
+        titleOfActivity: pr.titleOfActivity || 'PR Request',
+        status: pr.status || 'Draft',
+        items: (pr.prItems || []).map(item => ({
+          id: 0,
+          rfqNo: item.rfqNo || '',
+          supplierName: item.supplierName || '',
+          partCode: item.partCode || '',
+          partDescription: item.partDescription || '',
+          cndt: item.cndt || item.specification || '',
+          uom: item.uom || 'Nos',
+          qty: item.qty || 1,
+          currency: 'INR',
+          unitPrice: item.unitPrice || 0,
+          value: item.totalValue || 0
+        })),
+        totalValue: pr.amount || 0,
+        submittedDate: pr.submittedDate,
+        comparisonId: pr.comparisonId || '',
+        createdAt: pr.createdAt,
+        updatedAt: pr.updatedAt
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching PR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch PR',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: APPROVE PR ====================
+/**
+ * POST /api/pr/:id/approve
+ * Approve a PR
+ */
+app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    const { id } = req.params;
+    
+    const pr = await NPPRequest.findOne({
+      type: 'pr-request',
+      $or: [
+        { _id: id },
+        { uniqueSerialNo: id },
+        { prNumber: id },
+        { serialNo: id }
+      ]
+    });
+    
+    if (!pr) {
+      return res.status(404).json({
+        success: false,
+        message: 'PR not found'
+      });
+    }
+    
+    pr.status = 'Approved';
+    pr.approvedAt = new Date().toISOString();
+    pr.approvedBy = req.user?.name || req.user?.email || 'Admin';
+    pr.updatedAt = new Date().toISOString();
+    
+    await pr.save();
+    console.log('✅ PR approved:', pr.uniqueSerialNo);
+    
+    res.json({
+      success: true,
+      message: 'PR approved successfully',
+      data: pr
+    });
+    
+  } catch (error) {
+    console.error('❌ Error approving PR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to approve PR',
+      error: error.message
+    });
+  }
+});
+
+// ==================== ✅ NEW: REJECT PR ====================
+/**
+ * POST /api/pr/:id/reject
+ * Reject a PR
+ */
+app.post('/api/pr/:id/reject', authMiddleware, moduleAccessMiddleware, async (req, res) => {
+  try {
+    const NPPRequest = require('./models/nppRequest.model');
+    const { id } = req.params;
+    const { comments } = req.body;
+    
+    const pr = await NPPRequest.findOne({
+      type: 'pr-request',
+      $or: [
+        { _id: id },
+        { uniqueSerialNo: id },
+        { prNumber: id },
+        { serialNo: id }
+      ]
+    });
+    
+    if (!pr) {
+      return res.status(404).json({
+        success: false,
+        message: 'PR not found'
+      });
+    }
+    
+    pr.status = 'Rejected';
+    pr.rejectionReason = comments || '';
+    pr.rejectedAt = new Date().toISOString();
+    pr.rejectedBy = req.user?.name || req.user?.email || 'Admin';
+    pr.updatedAt = new Date().toISOString();
+    
+    await pr.save();
+    console.log('❌ PR rejected:', pr.uniqueSerialNo);
+    
+    res.json({
+      success: true,
+      message: 'PR rejected',
+      data: pr
+    });
+    
+  } catch (error) {
+    console.error('❌ Error rejecting PR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reject PR',
+      error: error.message
+    });
+  }
+});
+
 // Root endpoint
 app.get("/", (req, res) => {
   res.json({
@@ -797,8 +1615,23 @@ app.get("/", (req, res) => {
         create: "POST /api/quotation",
         getByRfq: "GET /api/quotation/rfq/:rfqId",
         comparison: "GET /api/quotation/comparison/:rfqId",
+        latestComparison: "GET /api/quotation/latest/comparison",
         updateStatus: "PATCH /api/quotation/:id/status",
         selectWinner: "POST /api/quotation/:rfqId/winner"
+      },
+      quotationComparison: {
+        submit: "POST /api/quotation-comparison/submit",
+        list: "GET /api/quotation-comparison/list",
+        submitted: "GET /api/quotation-comparison/submitted"
+      },
+      pr: {
+        list: "GET /api/pr/list",
+        save: "POST /api/pr/save",
+        submit: "POST /api/pr/submit",
+        createFromComparison: "POST /api/pr/create-from-comparison",
+        getById: "GET /api/pr/:id",
+        approve: "POST /api/pr/:id/approve",
+        reject: "POST /api/pr/:id/reject"
       }
     }
   });
@@ -838,7 +1671,7 @@ app.post('/api/test-email-direct', async (req, res) => {
       secure: false,
       auth: {
         user: 'dk897869@gmail.com',
-        pass: 'snaq ptsl yqpm hufr'  // Your NEW app password WITH spaces
+        pass: process.env.SMTP_PASS || 'jzix seng gfwe pyvm'  // Your NEW app password WITH spaces
       },
       tls: {
         rejectUnauthorized: false
@@ -902,6 +1735,18 @@ const startServer = async () => {
       console.log(`✅ CORS: Configured for all origins`);
       console.log(`✅ Vendor Request: POST /api/vendor-request`);
       console.log(`✅ Quotation: POST /api/quotation`);
+      console.log(`✅ Latest Comparison: GET /api/pr/latest/comparison`);
+      console.log(`\n🆕 NEW ENDPOINTS ADDED:`);
+      console.log(`   POST /api/quotation-comparison/submit`);
+      console.log(`   GET  /api/quotation-comparison/list`);
+      console.log(`   GET  /api/quotation-comparison/submitted`);
+      console.log(`   POST /api/pr/save`);
+      console.log(`   POST /api/pr/submit`);
+      console.log(`   POST /api/pr/create-from-comparison`);
+      console.log(`   GET  /api/pr/list`);
+      console.log(`   GET  /api/pr/:id`);
+      console.log(`   POST /api/pr/:id/approve`);
+      console.log(`   POST /api/pr/:id/reject`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);

@@ -277,7 +277,14 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
         
         console.log('📊 Data to map:', data);
         
-        this.allRequests = data.map((r: any) => this.mapRecord(r));
+        this.allRequests = data
+          .filter((r: any) => {
+            const title = String(r.title || r.subject || r.titleOfActivity || '').trim();
+            const requester = String(r.requester || r.requesterName || r.createdBy?.name || '').trim();
+            const amount = Number(r.amount ?? r.estimatedAmount ?? r.totalAmount ?? 0);
+            return title && title.toLowerCase() !== 'nm' && requester && amount > 0;
+          })
+          .map((r: any) => this.mapRecord(r));
         console.log('✅ Mapped Requests:', this.allRequests);
         
         this.applyFilters();
@@ -425,7 +432,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     
     // For approvals tab
     let approvalList = this.allRequests.filter(r =>
-      r.status === 'Pending' || r.status === 'In Process'
+      r.status === 'Pending' || r.status === 'In Process' || r.status === 'Approved'
     );
     if (this.filterPriority) {
       approvalList = approvalList.filter(r => r.priority === this.filterPriority);
@@ -998,15 +1005,106 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
   
+  selectedRequestCopy: any = null;
+  isEditingRequest = false;
+
   // View Request
   viewRequest(request: EPRequest) {
     this.selectedRequest = request;
+    this.selectedRequestCopy = JSON.parse(JSON.stringify(request));
+    this.isEditingRequest = false;
     this.showViewModal = true;
   }
   
+  isAdminUser(): boolean {
+    return this.authService.getUserRole() === 'Admin';
+  }
+
+  approveFromViewModal(request: any) {
+    const id = request._id || request.id;
+    if (!id) return;
+    const remarks = this.selectedRequestCopy.approvalComments || '';
+    this.isSubmitting = true;
+    this.authService.approveEPRequest(id, remarks).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showToast('EP Request approved successfully', 'success');
+        this.closeViewModal();
+        this.loadRequests();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToast(err?.message || 'Failed to approve request', 'error');
+      }
+    });
+  }
+
+  rejectFromViewModal(request: any) {
+    const id = request._id || request.id;
+    if (!id) return;
+    const remarks = this.selectedRequestCopy.approvalComments || '';
+    this.isSubmitting = true;
+    this.authService.rejectEPRequest(id, remarks).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showToast('EP Request rejected successfully', 'success');
+        this.closeViewModal();
+        this.loadRequests();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToast(err?.message || 'Failed to reject request', 'error');
+      }
+    });
+  }
+
   closeViewModal() {
     this.showViewModal = false;
     this.selectedRequest = null;
+    this.selectedRequestCopy = null;
+    this.isEditingRequest = false;
+  }
+
+  saveEditedRequest() {
+    if (!this.selectedRequestCopy || !this.selectedRequestCopy.title?.trim()) {
+      this.showToast('Title is required', 'error');
+      return;
+    }
+    if (!this.selectedRequestCopy.vendor?.trim()) {
+      this.showToast('Vendor is required', 'error');
+      return;
+    }
+    if (this.selectedRequestCopy.amount == null || this.selectedRequestCopy.amount <= 0) {
+      this.showToast('Valid amount is required', 'error');
+      return;
+    }
+
+    this.isSubmitting = true;
+    const id = this.selectedRequestCopy._id || this.selectedRequestCopy.id;
+    this.authService.updateEPRequest(id, this.selectedRequestCopy).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showToast('EP Request updated successfully!', 'success');
+        this.showViewModal = false;
+        this.loadRequests();
+        
+        // Notify admin
+        this.authService.notifyAdminsForEPRequest({
+          requestId: this.selectedRequestCopy.requestId,
+          title: this.selectedRequestCopy.title,
+          requester: this.selectedRequestCopy.requester,
+          amount: this.selectedRequestCopy.amount
+        }).subscribe();
+        
+        this.showToast('Admin notified: EP approval submitted for review', 'info');
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToast(err?.message || 'Failed to update request', 'error');
+        this.cdr.detectChanges();
+      }
+    });
   }
   
   // Approval Methods

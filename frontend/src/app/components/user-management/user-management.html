@@ -107,11 +107,14 @@
                 <span *ngIf="user.fullModuleAccessGranted" class="right-badge lifetime">🔓 Full Access</span>
               </div>
             </td>
-            <td class="action-cell">
-              <button class="edit-btn" (click)="openEditModal(user)" title="Edit Permissions">
-                ✏️ Edit
-              </button>
-            </td>
+             <td class="action-cell" style="display: flex; gap: 8px;">
+               <button class="edit-btn" (click)="openEditModal(user)" title="Edit Permissions">
+                 ✏️ Edit
+               </button>
+               <button class="delete-btn" (click)="deleteUser(user)" title="Delete User" style="background: #dc2626; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                 🗑️ Delete
+               </button>
+             </td>
           </tr>
           <tr *ngIf="users.length === 0">
             <td colspan="7" class="empty-state">

@@ -85,15 +85,18 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
 
   allRequests: RFQItem[] = [];
   filteredRequests: RFQItem[] = [];
+  pendingRequests: RFQItem[] = [];
   isLoading = false;
   isPrefillLoading = false;
   searchTerm = '';
-  activeFilter: 'All' | 'Pending' | 'Approved' | 'Rejected' | 'In Process' = 'All';
+  activeFilter: 'All' | 'Pending' | 'Approved' | 'Rejected' | 'In Process' = 'Pending';
 
   showCreateModal = false;
   showViewModal = false;
   selectedItem: RFQItem | null = null;
   isSubmitting = false;
+  isEditMode = false;
+  editingSerialNo = '';
 
   // Confirmation modals
   showApproveConfirm = false;
@@ -408,11 +411,14 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
       next: (res: any) => {
         const data = res?.data ?? [];
         this.allRequests = Array.isArray(data) ? data.map((r: any) => this.mapRecord(r)) : [];
+        // Only show Pending RFQs in the main list
+        this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
         this.applyFilter();
-        this.completeLoading(startedAt, `Data fetched successfully: ${this.allRequests.length} RFQ request(s) loaded.`, 'success');
+        this.completeLoading(startedAt, `Data fetched successfully: ${this.pendingRequests.length} pending RFQ request(s) loaded.`, 'success');
       },
       error: (err: any) => {
         this.allRequests = [];
+        this.pendingRequests = [];
         this.filteredRequests = [];
         this.completeLoading(startedAt, err?.message || 'Failed to load RFQs.', 'error');
       }
@@ -432,8 +438,11 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   }
 
   applyFilter() {
-    let list = [...this.allRequests];
-    if (this.activeFilter !== 'All') list = list.filter(r => r.status === this.activeFilter);
+    let list = [...this.pendingRequests];
+    if (this.activeFilter !== 'All' && this.activeFilter !== 'Pending') {
+      // Since we only show pending in main list, only 'All' and 'Pending' make sense
+      list = this.pendingRequests;
+    }
     if (this.searchTerm.trim()) {
       const q = this.searchTerm.toLowerCase();
       list = list.filter(r =>
@@ -456,41 +465,125 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   onSearch() { this.applyFilter(); }
 
   countByStatus(status: string): number {
-    if (status === 'All') return this.allRequests.length;
+    if (status === 'All') return this.pendingRequests.length;
+    if (status === 'Pending') return this.pendingRequests.length;
     return this.allRequests.filter(r => r.status === status).length;
   }
 
-  // ====================== CREATE FORM ======================
+  // ====================== CREATE / EDIT FORM ======================
 
-  openCreate() { this.initCreateForm(true); }
+  openCreate() { 
+    this.isEditMode = false;
+    this.editingSerialNo = '';
+    this.initCreateForm(true); 
+  }
+
+  openEditFromList(item: RFQItem) {
+    if (item.status !== 'Pending') {
+      this.showToast('info', 'Only pending RFQs can be edited.');
+      return;
+    }
+    this.isEditMode = true;
+    this.editingSerialNo = item.uniqueSerialNo || '';
+    // Load the full data from the backend
+    const id = item._id || item.id;
+    if (id) {
+      this.isPrefillLoading = true;
+      this.authService.getRFQById(String(id)).subscribe({
+        next: (res: any) => {
+          const data = res?.data || res?.rfq || item;
+          this.prefillFormFromData(data);
+          this.isPrefillLoading = false;
+          this.activeSubMenu = 'create-rfq';
+          this.showCreateModal = false;
+          this.showToast('success', `Loaded RFQ: ${item.uniqueSerialNo}`);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.prefillFormFromData(item);
+          this.isPrefillLoading = false;
+          this.activeSubMenu = 'create-rfq';
+          this.showCreateModal = false;
+          this.cdr.detectChanges();
+        }
+      });
+    } else {
+      this.prefillFormFromData(item);
+      this.activeSubMenu = 'create-rfq';
+      this.showCreateModal = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  viewItem(item: RFQItem) {
+    // Open the full form for editing if it's pending
+    if (item.status === 'Pending') {
+      this.openEditFromList(item);
+      return;
+    }
+    // For non-pending items, show the view modal
+    const id = item._id || item.id;
+    if (id) {
+      this.isPrefillLoading = true;
+      this.authService.getRFQById(String(id)).subscribe({
+        next: (res: any) => {
+          const data = res?.data || res?.rfq || item;
+          this.selectedItem      = this.mapRecord(data);
+          this.showViewModal     = true;
+          this.isPrefillLoading  = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.selectedItem      = item;
+          this.showViewModal     = true;
+          this.isPrefillLoading  = false;
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
+    this.selectedItem  = item;
+    this.showViewModal = true;
+    this.cdr.detectChanges();
+  }
 
   initCreateForm(openModal = false) {
     this.isPrefillLoading = true;
     this.authService.getLoggedInUser().subscribe({
       next: (res: any) => {
         const u = res?.user || res?.data || this.currentUser;
-        this.prefillForm(u);
-        this.prepareDraftSerial();
+        if (!this.isEditMode) {
+          this.prefillForm(u);
+          this.prepareDraftSerial();
+        }
         this.loadDraftOptions();
         this.isPrefillLoading = false;
         if (openModal) this.showCreateModal = true;
         this.activeSubMenu = 'create-rfq';
-        this.showToast('success', 'Form prefilled from API profile data.');
+        if (!this.isEditMode) {
+          this.showToast('success', 'Form prefilled from API profile data.');
+        }
       },
       error: () => {
-        this.prefillForm(this.currentUser);
-        this.prepareDraftSerial();
+        if (!this.isEditMode) {
+          this.prefillForm(this.currentUser);
+          this.prepareDraftSerial();
+        }
         this.loadDraftOptions();
         this.isPrefillLoading = false;
         if (openModal) this.showCreateModal = true;
         this.activeSubMenu = 'create-rfq';
-        this.showToast('info', 'Prefilled from local session.');
+        if (!this.isEditMode) {
+          this.showToast('info', 'Prefilled from local session.');
+        }
       }
     });
   }
 
   closeCreateModal() {
     this.showCreateModal = false;
+    this.isEditMode = false;
+    this.editingSerialNo = '';
     this.resetForm();
     this.clearSearch();
     if (this.activeSubMenu === 'create-rfq') {
@@ -544,6 +637,8 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     this.rfqAttachments = [{ name: 'Attachment 1', fileName: '' }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
+    this.isEditMode = false;
+    this.editingSerialNo = '';
   }
 
   private prepareDraftSerial() {
@@ -561,6 +656,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   }
 
   private getFinalRfqSerial(): string {
+    if (this.isEditMode && this.editingSerialNo) return this.editingSerialNo;
     if (this.rfqSerialFixed && this.rfqDraftSerialNo) return this.rfqDraftSerialNo;
     this.rfqDraftSerialNo = this.generateLocalSerial('RFQ');
     this.rfqSerialFixed   = true;
@@ -755,7 +851,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     } catch {}
   }
 
-  // ====================== SUBMIT ======================
+  // ====================== SUBMIT / UPDATE ======================
 
   submitRFQ() {
     if (!this.formData.title?.trim()) {
@@ -805,54 +901,56 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
       requestDate:       new Date().toISOString()
     };
 
-    this.authService.createRFQ(payload).subscribe({
-      next: (res: any) => {
-        const newItem = res?.data || res;
-        this.allRequests.unshift(this.mapRecord({ ...newItem, id: newItem._id || newItem.id, title: newItem.titleOfActivity || newItem.title }));
-        this.applyFilter();
-        this.showCreateModal = false;
-        this.isSubmitting    = false;
-        this.saveHistory(finalSerialNo, 'Pending');
-        this.showToast('success', `RFQ submitted successfully. Serial No: ${finalSerialNo}`);
-        this.resetForm();
-        this.clearSearch();
-        this.activeSubMenu = 'rfq-list';
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        this.isSubmitting = false;
-        this.showToast('error', err?.message || 'Failed to create RFQ.');
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  // ====================== VIEW ======================
-
-  viewItem(item: RFQItem) {
-    const id = item._id || item.id;
-    if (id) {
-      this.isPrefillLoading = true;
-      this.authService.getRFQById(String(id)).subscribe({
+    if (this.isEditMode && this.editingSerialNo) {
+      // Update existing RFQ
+      const id = this.allRequests.find(r => r.uniqueSerialNo === this.editingSerialNo)?._id || this.editingSerialNo;
+      this.authService.updateRFQ(id, payload).subscribe({
         next: (res: any) => {
-          const data = res?.data || res?.rfq || item;
-          this.selectedItem      = this.mapRecord(data);
-          this.showViewModal     = true;
-          this.isPrefillLoading  = false;
+          const updatedItem = res?.data || res;
+          const index = this.allRequests.findIndex(r => r.uniqueSerialNo === this.editingSerialNo);
+          if (index !== -1) {
+            this.allRequests[index] = this.mapRecord({ ...updatedItem, id: updatedItem._id || updatedItem.id });
+          }
+          this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
+          this.applyFilter();
+          this.showCreateModal = false;
+          this.isSubmitting = false;
+          this.showToast('success', `RFQ updated successfully. Serial No: ${finalSerialNo}`);
+          this.resetForm();
+          this.clearSearch();
+          this.activeSubMenu = 'rfq-list';
           this.cdr.detectChanges();
         },
-        error: () => {
-          this.selectedItem      = item;
-          this.showViewModal     = true;
-          this.isPrefillLoading  = false;
+        error: (err: any) => {
+          this.isSubmitting = false;
+          this.showToast('error', err?.message || 'Failed to update RFQ.');
           this.cdr.detectChanges();
         }
       });
-      return;
+    } else {
+      // Create new RFQ
+      this.authService.createRFQ(payload).subscribe({
+        next: (res: any) => {
+          const newItem = res?.data || res;
+          this.allRequests.unshift(this.mapRecord({ ...newItem, id: newItem._id || newItem.id, title: newItem.titleOfActivity || newItem.title }));
+          this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
+          this.applyFilter();
+          this.showCreateModal = false;
+          this.isSubmitting = false;
+          this.saveHistory(finalSerialNo, 'Pending');
+          this.showToast('success', `RFQ submitted successfully. Serial No: ${finalSerialNo}`);
+          this.resetForm();
+          this.clearSearch();
+          this.activeSubMenu = 'rfq-list';
+          this.cdr.detectChanges();
+        },
+        error: (err: any) => {
+          this.isSubmitting = false;
+          this.showToast('error', err?.message || 'Failed to create RFQ.');
+          this.cdr.detectChanges();
+        }
+      });
     }
-    this.selectedItem  = item;
-    this.showViewModal = true;
-    this.cdr.detectChanges();
   }
 
   closeViewModal() {
@@ -888,10 +986,14 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
         item.approvedBy   = this.currentUser?.name || 'Admin';
         item.currentStage = 'Vendor Request';
         item.vendorRequestCreated = false;
+        // Remove from pending list
+        this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
         this.applyFilter();
         this.showToast('success', `"${item.title}" approved! RFQ moved to Vendor Request stage.`);
         this.confirmItem = null;
         this.cdr.detectChanges();
+        // Refresh the list
+        this.loadRFQs();
       },
       error: (err: any) => {
         this.showToast('error', err?.message || 'Approval failed.');
@@ -911,10 +1013,14 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
       next: () => {
         item.status       = 'Rejected';
         item.currentStage = 'Rejected';
+        // Remove from pending list
+        this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
         this.applyFilter();
         this.showToast('info', `"${item.title}" rejected.`);
         this.confirmItem = null;
         this.cdr.detectChanges();
+        // Refresh the list
+        this.loadRFQs();
       },
       error: (err: any) => {
         this.showToast('error', err?.message || 'Rejection failed.');

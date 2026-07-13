@@ -1,152 +1,468 @@
 <section class="po-page">
-  <div class="po-toast" *ngIf="toast" [class.error]="toast.type === 'error'" [class.info]="toast.type === 'info'">
+  
+  <!-- Toast -->
+  <div class="po-toast" *ngIf="toast" [ngClass]="toast.type" (click)="closeToast()">
     {{ toast.message }}
   </div>
 
-  <header class="po-hero">
-    <div>
-      <p>NON BOM</p>
-      <h1>Purchase Order (NPP)</h1>
-      <span>Create, preview and submit purchase orders with approval routing.</span>
-    </div>
-    <div class="po-clock">
-      <strong>{{ form.orderDate | date:'hh:mm:ss a' }}</strong>
-      <small>{{ form.orderDate | date:'EEEE, dd MMMM yyyy' }}</small>
-    </div>
-  </header>
-
-  <div class="metric-grid">
-    <article>
-      <span>Total Value</span>
-      <strong>{{ totalAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
-      <small>Including GST</small>
-    </article>
-    <article>
-      <span>Line Items</span>
-      <strong>{{ items.length }}</strong>
-      <small>Materials/services</small>
-    </article>
-    <article>
-      <span>Approvals</span>
-      <strong>{{ pendingApprovals }}</strong>
-      <small>Pending approvers</small>
-    </article>
-    <article>
-      <span>Submitted</span>
-      <strong>{{ submittedOrders.length }}</strong>
-      <small>This session</small>
-    </article>
-  </div>
-
-  <form class="po-form" (ngSubmit)="submit()">
-    <div class="section-title">Requester Information</div>
-    <div class="form-grid four">
-      <label>Name<input [(ngModel)]="form.requesterName" name="requesterName" required></label>
-      <label>Department<input [(ngModel)]="form.department" name="department"></label>
-      <label>Email<input type="email" [(ngModel)]="form.emailId" name="emailId" required></label>
-      <label>Contact No.<input [(ngModel)]="form.contactNo" name="contactNo"></label>
-      <label>Request Date<input type="date" [(ngModel)]="form.requestDate" name="requestDate"></label>
-      <label>Priority
-        <select [(ngModel)]="form.priority" name="priority">
-          <option value="H">High</option>
-          <option value="M">Medium</option>
-          <option value="L">Low</option>
-        </select>
-      </label>
-      <label class="wide">Title<input [(ngModel)]="form.titleOfActivity" name="titleOfActivity"></label>
+  <!-- ===================== LIST VIEW ===================== -->
+  <ng-container *ngIf="view === 'list'">
+    
+    <!-- Breadcrumb -->
+    <div class="page-head">
+      <div class="breadcrumb">
+        <span>NON BOM</span><span class="sep">›</span>
+        <span>PR Process</span><span class="sep">›</span>
+        <span class="active">PO Approval and Generation</span>
+      </div>
+      <div class="head-row">
+        <div>
+          <h1>Purchase Orders</h1>
+          <p class="head-sub">Track, search and create purchase orders with approval routing</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn-refresh" (click)="loadOrders()" [disabled]="isLoadingList">
+            <span [class.spin]="isLoadingList">↻</span> Refresh
+          </button>
+          <button class="btn-create" (click)="openNewOrder()">+ Create PO</button>
+        </div>
+      </div>
     </div>
 
-    <div class="section-title">Vendor & Order Details</div>
-    <div class="form-grid four">
-      <label>Vendor Code<input [(ngModel)]="form.vendorCode" name="vendorCode"></label>
-      <label>Vendor Name<input [(ngModel)]="form.vendorName" name="vendorName" required></label>
-      <label>Vendor Email<input type="email" [(ngModel)]="form.vendorEmail" name="vendorEmail"></label>
-      <label>Vendor Contact<input [(ngModel)]="form.vendorContact" name="vendorContact"></label>
-      <label>GST No.<input [(ngModel)]="form.vendorGst" name="vendorGst"></label>
-      <label>Kind Attn<input [(ngModel)]="form.vendorKindAttn" name="vendorKindAttn"></label>
-      <label>PO No.<input [(ngModel)]="form.orderNo" name="orderNo" placeholder="Auto if blank"></label>
-      <label>PO Date<input type="date" [(ngModel)]="form.orderDate" name="orderDate"></label>
-      <label class="wide">Vendor Address<textarea [(ngModel)]="form.vendorAddress" name="vendorAddress" rows="2"></textarea></label>
-      <label>Quotation Ref<input [(ngModel)]="form.quotRef" name="quotRef"></label>
-      <label>PR No.<input [(ngModel)]="form.prNo" name="prNo"></label>
-      <label>PR Date<input type="date" [(ngModel)]="form.prDate" name="prDate"></label>
-      <label>Transporter<input [(ngModel)]="form.transporter" name="transporter"></label>
+    <!-- Metrics -->
+    <div class="metric-grid">
+      <div class="metric-card">
+        <span class="metric-label">Total Orders</span>
+        <span class="metric-value">{{ countFor['All'] }}</span>
+        <span class="metric-sub">All time</span>
+      </div>
+      <div class="metric-card approved">
+        <span class="metric-label">Approved</span>
+        <span class="metric-value">{{ countFor['Approved'] }}</span>
+        <span class="metric-sub">Completed</span>
+      </div>
+      <div class="metric-card pending">
+        <span class="metric-label">Pending</span>
+        <span class="metric-value">{{ countFor['Pending'] }}</span>
+        <span class="metric-sub">Awaiting approval</span>
+      </div>
+      <div class="metric-card rejected">
+        <span class="metric-label">Rejected</span>
+        <span class="metric-value">{{ countFor['Rejected'] }}</span>
+        <span class="metric-sub">Needs revision</span>
+      </div>
     </div>
 
-    <div class="section-head">
-      <div class="section-title">Item Details</div>
-      <button type="button" (click)="addItem()">+ Add Item</button>
+    <!-- Search & Filters -->
+    <div class="list-panel">
+      <div class="list-toolbar">
+        <div class="tabs">
+          <button *ngFor="let tab of ['All','Pending','Approved','Rejected']"
+                  [class.active]="activeTab === tab"
+                  (click)="setTab($any(tab))">
+            {{ tab }}
+            <span class="badge">{{ countFor[tab] }}</span>
+          </button>
+        </div>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search PO No, RFQ No, PR No or Vendor..." 
+                 [(ngModel)]="searchTerm" (input)="loadOrders()">
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>PO No.</th>
+              <th>RFQ / PR Ref</th>
+              <th>Vendor</th>
+              <th>Requester</th>
+              <th>Value</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="isLoadingList">
+              <td colspan="8" class="empty-row">Loading purchase orders...</td>
+            </tr>
+            <tr *ngIf="!isLoadingList && filteredOrders.length === 0">
+              <td colspan="8" class="empty-row">No purchase orders found.</td>
+            </tr>
+            <tr *ngFor="let po of filteredOrders">
+              <td>
+                <a class="rfq-link" (click)="openOrder(po)">{{ po.uniqueSerialNo || po.orderNo || '—' }}</a>
+              </td>
+              <td>
+                <span class="ref-text">{{ po.rfqNo || po.prNo || '—' }}</span>
+              </td>
+              <td>{{ po.vendorName }}</td>
+              <td>{{ po.requesterName }}</td>
+              <td class="amount">{{ formatAmount(po.amount) }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusBadgeClass(po.status)">
+                  {{ getStatusLabel(po.status) }}
+                </span>
+              </td>
+              <td>{{ formatDate(po.orderDate || po.createdAt) }}</td>
+              <td class="actions-cell">
+                <button class="action-btn view" (click)="openOrder(po)">👁️ View</button>
+                <button *ngIf="po.status === 'Pending'" class="action-btn approve" (click)="approvePO(po)">✅ Approve</button>
+                <button *ngIf="po.status === 'Pending'" class="action-btn reject" (click)="rejectPO(po)">❌ Reject</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="bottom-bar">
+        <div class="weather">
+          <span class="temp">32°C</span>
+          <span class="cond">Mostly clear</span>
+        </div>
+        <div class="clock">
+          <span class="lang">ENG</span><span class="sep">|</span><span class="lang">IN</span>
+          <span class="date">{{ currentDate | date:'dd-MM-yyyy' }}</span>
+          <span class="time">{{ currentTime }}</span>
+        </div>
+      </div>
     </div>
-    <div class="items-table">
-      <table>
+
+  </ng-container>
+
+  <!-- ===================== FORM / DOCUMENT VIEW ===================== -->
+  <ng-container *ngIf="view === 'form'">
+    
+    <!-- Form Toolbar -->
+    <div class="form-toolbar no-print">
+      <div class="toolbar-left">
+        <button class="btn-back" (click)="backToList()">← Back to List</button>
+        <span class="breadcrumb-mini">NON BOM › PR Process › PO Approval</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-print" (click)="printOrder()">🖨️ Print</button>
+        <button class="btn-submit" [disabled]="isSubmitting" (click)="submit()">
+          <span *ngIf="isSubmitting" class="spinner"></span>
+          {{ isSubmitting ? 'Submitting...' : '📤 Submit PO' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- PO Document -->
+    <div class="po-doc">
+      
+      <!-- Document Header -->
+      <table class="doc-table header-table">
+        <tr>
+          <td class="logo-cell" rowspan="2">
+            <div class="logo-mark">LCGC</div>
+            <div class="logo-sub">Resolute Group</div>
+          </td>
+          <td class="title-cell" colspan="3">
+            <strong>RADIANT APPLIANCES AND ELECTRONICS PVT. LTD.</strong>
+            <div>S-2 &amp; 9, Survey No. 191, 192, EClty, Fakulla,</div>
+            <div>Maheshwaram Mandl, Ranjeela Village, Rangareddy Hyderabad - 581053</div>
+            <div>GSTIN: 36AAACR4828E1ZS</div>
+          </td>
+        </tr>
+        <tr>
+          <td class="po-banner" colspan="3"><strong>PURCHASE ORDER</strong></td>
+        </tr>
+      </table>
+
+      <!-- Vendor + Order meta -->
+      <table class="doc-table meta-table">
+        <tr>
+          <td class="meta-left" rowspan="7">
+            <label class="meta-label">Vendor Code</label>
+            <input [(ngModel)]="form.vendorCode" name="vendorCode">
+
+            <label class="meta-label strong-label">Vendor Name *</label>
+            <input class="strong-input" [(ngModel)]="form.vendorName" name="vendorName" required>
+
+            <label class="meta-label">Vendor Address</label>
+            <textarea rows="2" [(ngModel)]="form.vendorAddress" name="vendorAddress"></textarea>
+
+            <label class="meta-label">GST No.</label>
+            <input [(ngModel)]="form.vendorGst" name="vendorGst">
+
+            <label class="meta-label">Contact No.</label>
+            <input [(ngModel)]="form.vendorContact" name="vendorContact">
+
+            <label class="meta-label">E-Mail Id</label>
+            <input type="email" [(ngModel)]="form.vendorEmail" name="vendorEmail">
+
+            <label class="meta-label">Kind Attn</label>
+            <input [(ngModel)]="form.vendorKindAttn" name="vendorKindAttn">
+          </td>
+          <td class="meta-label">Order No.</td>
+          <td colspan="2">
+            <input [(ngModel)]="form.orderNo" name="orderNo" placeholder="Auto-generated">
+          </td>
+        </tr>
+        <tr>
+          <td class="meta-label">Order Date</td>
+          <td colspan="2"><input type="date" [(ngModel)]="form.orderDate" name="orderDate"></td>
+        </tr>
+        <tr>
+          <td class="meta-label">RFQ No.</td>
+          <td colspan="2"><input [(ngModel)]="form.rfqNo" name="rfqNo"></td>
+        </tr>
+        <tr>
+          <td class="meta-label">PR No.</td>
+          <td colspan="2"><input [(ngModel)]="form.prNo" name="prNo"></td>
+        </tr>
+        <tr>
+          <td class="meta-label">PR Date</td>
+          <td colspan="2"><input type="date" [(ngModel)]="form.prDate" name="prDate"></td>
+        </tr>
+        <tr>
+          <td class="meta-label">Purchaser</td>
+          <td colspan="2"><input [(ngModel)]="form.purchaser" name="purchaser"></td>
+        </tr>
+        <tr>
+          <td class="meta-label">Purchaser Mobile</td>
+          <td colspan="2"><input [(ngModel)]="form.purchaserMobile" name="purchaserMobile"></td>
+        </tr>
+      </table>
+
+      <!-- Billing / Shipping -->
+      <table class="doc-table address-table">
+        <tr>
+          <th>BILLING ADDRESS</th>
+          <th>SHIPPING ADDRESS</th>
+        </tr>
+        <tr>
+          <td>
+            <textarea rows="4" [(ngModel)]="form.billingAddress" name="billingAddress"></textarea>
+            <div class="gst-line">GST: <input [(ngModel)]="form.billingGst" name="billingGst"></div>
+          </td>
+          <td>
+            <textarea rows="4" [(ngModel)]="form.shippingAddress" name="shippingAddress"></textarea>
+            <div class="gst-line">GST: <input [(ngModel)]="form.shippingGst" name="shippingGst"></div>
+          </td>
+        </tr>
+      </table>
+
+      <p class="salutation">Dear Sir / Madam,</p>
+      <p class="lead-line">We are pleased to place our Purchase Order for the following Material as per the Terms &amp; Conditions stipulated below.</p>
+
+      <!-- Items table -->
+      <div class="items-wrap">
+        <table class="doc-table items-table">
+          <thead>
+            <tr>
+              <th>S.No.</th>
+              <th>Part Code</th>
+              <th>Item Description</th>
+              <th>HSN</th>
+              <th>UOM</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Disc %</th>
+              <th>Disc Amt</th>
+              <th>Taxable</th>
+              <th>CGST %</th>
+              <th>CGST Amt</th>
+              <th>SGST %</th>
+              <th>SGST Amt</th>
+              <th>Net Amount</th>
+              <th>Delivery</th>
+              <th>Remark</th>
+              <th class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of items; let i = index">
+              <td class="center">{{ i + 1 }}</td>
+              <td><input [(ngModel)]="item.partNo" name="partNo{{i}}"></td>
+              <td><input class="desc-input" [(ngModel)]="item.itemDescription" name="itemDescription{{i}}" required></td>
+              <td><input [(ngModel)]="item.hsn" name="hsn{{i}}"></td>
+              <td><input [(ngModel)]="item.uom" name="uom{{i}}"></td>
+              <td><input type="number" min="0" class="num" [(ngModel)]="item.quantity" name="quantity{{i}}"></td>
+              <td><input type="number" min="0" class="num" [(ngModel)]="item.rate" name="rate{{i}}"></td>
+              <td><input type="number" min="0" class="num" [(ngModel)]="item.discount" name="discount{{i}}"></td>
+              <td class="num readonly">{{ (itemBase(item) - itemAfterDiscount(item)) | number:'1.2-2' }}</td>
+              <td class="num readonly">{{ itemAfterDiscount(item) | number:'1.2-2' }}</td>
+              <td><input type="number" min="0" class="num" [(ngModel)]="item.gst" name="gst{{i}}"></td>
+              <td class="num readonly">{{ itemCgst(item) | number:'1.2-2' }}</td>
+              <td class="num readonly">{{ item.gst }}</td>
+              <td class="num readonly">{{ itemSgst(item) | number:'1.2-2' }}</td>
+              <td class="num readonly bold">{{ itemNetAmount(item) | number:'1.2-2' }}</td>
+              <td><input type="date" [(ngModel)]="item.deliveryDate" name="deliveryDate{{i}}"></td>
+              <td><input [(ngModel)]="item.remark" name="remark{{i}}"></td>
+              <td class="no-print"><button type="button" class="icon-btn" (click)="removeItem(i)">×</button></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="9" class="right bold">Grand Total:</td>
+              <td class="num bold">{{ totalBeforeTax | number:'1.2-2' }}</td>
+              <td></td>
+              <td class="num bold">{{ totalCgst | number:'1.2-2' }}</td>
+              <td></td>
+              <td class="num bold">{{ totalSgst | number:'1.2-2' }}</td>
+              <td class="num bold">{{ totalAmount | number:'1.2-2' }}</td>
+              <td colspan="2"></td>
+              <td class="no-print"></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="add-row-btn no-print" (click)="addItem()">+ Add Item</button>
+      </div>
+
+      <!-- Two-column: Remarks / Terms -->
+      <div class="two-col-section">
+        <table class="doc-table remarks-table">
+          <tr><th colspan="2">REMARKS:</th></tr>
+          <tr><td>1</td><td><input [(ngModel)]="form.purposeAndObjective" name="purposeAndObjective" placeholder="Purpose"></td></tr>
+          <tr><td>2</td><td><input [(ngModel)]="form.transporter" name="transporter" placeholder="Transporter"></td></tr>
+          <tr><td>3</td><td><input [(ngModel)]="form.taxes" name="taxes" placeholder="Taxes"></td></tr>
+          <tr><td>4</td><td><input [(ngModel)]="form.remarks" name="remarks" placeholder="Remarks"></td></tr>
+        </table>
+
+        <table class="doc-table terms-table">
+          <tr><th>TERMS &amp; CONDITIONS:</th></tr>
+          <tr>
+            <td>
+              <textarea rows="10" [(ngModel)]="form.terms" name="terms"></textarea>
+              <ol class="print-only-terms">
+                <li *ngFor="let line of termsLines()">{{ line }}</li>
+              </ol>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <p class="closing-line">For RADIANT APPLIANCES AND ELECTRONICS PVT. LTD.</p>
+      <p class="auth-line">Authorised Signatory</p>
+
+      <!-- Approval Chain -->
+      <div class="section-head">
+        <div class="section-title">👥 Approval Chain</div>
+        <button type="button" class="add-row-btn no-print" (click)="addApprover()">+ Add Approver</button>
+      </div>
+      <table class="doc-table approval-table">
         <thead>
           <tr>
-            <th>Part No.</th><th>Description</th><th>HSN</th><th>UOM</th><th>Qty</th><th>Rate</th><th>Disc %</th><th>GST %</th><th>Delivery</th><th>Remark</th><th></th>
+            <th>Line</th>
+            <th>Stakeholder</th>
+            <th>Remarks</th>
+            <th>Designation</th>
+            <th>Status</th>
+            <th class="no-print"></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of items; let i = index">
-            <td><input [(ngModel)]="item.partNo" name="partNo{{i}}"></td>
-            <td><input [(ngModel)]="item.itemDescription" name="itemDescription{{i}}" required></td>
-            <td><input [(ngModel)]="item.hsn" name="hsn{{i}}"></td>
-            <td><input [(ngModel)]="item.uom" name="uom{{i}}"></td>
-            <td><input type="number" min="0" [(ngModel)]="item.quantity" name="quantity{{i}}"></td>
-            <td><input type="number" min="0" [(ngModel)]="item.rate" name="rate{{i}}"></td>
-            <td><input type="number" min="0" [(ngModel)]="item.discount" name="discount{{i}}"></td>
-            <td><input type="number" min="0" [(ngModel)]="item.gst" name="gst{{i}}"></td>
-            <td><input type="date" [(ngModel)]="item.deliveryDate" name="deliveryDate{{i}}"></td>
-            <td><input [(ngModel)]="item.remark" name="remark{{i}}"></td>
-            <td><button type="button" class="icon-btn" (click)="removeItem(i)">x</button></td>
+          <tr *ngFor="let approver of stakeholders; let i = index">
+            <td>
+              <select [(ngModel)]="approver.line" name="line{{i}}">
+                <option>Sequential</option>
+                <option>Parallel</option>
+              </select>
+            </td>
+            <td><input [(ngModel)]="approver.managerName" name="managerName{{i}}" placeholder="Manager name"></td>
+            <td><input [(ngModel)]="approver.remarks" name="approverRemarks{{i}}" placeholder="Remarks"></td>
+            <td><input [(ngModel)]="approver.designation" name="designation{{i}}" placeholder="Designation"></td>
+            <td>
+              <span class="status-pill"
+                    [class.approved]="approver.status === 'Approved'"
+                    [class.rejected]="approver.status === 'Rejected'"
+                    [class.pending]="approver.status === 'Pending'">
+                {{ approver.status }}
+              </span>
+            </td>
+            <td class="no-print"><button type="button" class="icon-btn" (click)="removeApprover(i)">×</button></td>
           </tr>
         </tbody>
       </table>
-    </div>
 
-    <div class="form-grid two">
-      <label>Purpose & Objective<textarea [(ngModel)]="form.purposeAndObjective" name="purposeAndObjective" rows="4"></textarea></label>
-      <label>Terms & Conditions<textarea [(ngModel)]="form.terms" name="terms" rows="4"></textarea></label>
-      <label>Billing Address<textarea [(ngModel)]="form.billingAddress" name="billingAddress" rows="3"></textarea></label>
-      <label>Shipping Address<textarea [(ngModel)]="form.shippingAddress" name="shippingAddress" rows="3"></textarea></label>
-    </div>
-
-    <div class="section-head">
-      <div class="section-title">Approvers</div>
-      <button type="button" (click)="addApprover()">+ Add Approver</button>
-    </div>
-    <div class="approver-grid" *ngFor="let approver of stakeholders; let i = index">
-      <select [(ngModel)]="approver.line" name="line{{i}}"><option>Parallel</option><option>Sequential</option></select>
-      <input [(ngModel)]="approver.managerName" name="managerName{{i}}" placeholder="Manager name">
-      <input type="email" [(ngModel)]="approver.email" name="approverEmail{{i}}" placeholder="Email">
-      <input [(ngModel)]="approver.designation" name="designation{{i}}" placeholder="Designation">
-      <input [(ngModel)]="approver.remarks" name="approverRemarks{{i}}" placeholder="Remarks">
-      <button type="button" class="icon-btn" (click)="removeApprover(i)">x</button>
-    </div>
-
-    <footer class="form-actions">
-      <div>
-        <span>PO Total</span>
-        <strong>{{ totalAmount | currency:'INR':'symbol':'1.2-2' }}</strong>
+      <!-- Attachments -->
+      <div class="section-head">
+        <div class="section-title">📎 Attachments</div>
+        <button type="button" class="add-row-btn no-print" (click)="addAttachment()">+ Add Attachment</button>
       </div>
-      <button type="submit" [disabled]="isSubmitting">
-        <span *ngIf="isSubmitting" class="spinner"></span>
-        {{ isSubmitting ? 'Submitting...' : 'Submit Purchase Order' }}
-      </button>
-    </footer>
-  </form>
+      <table class="doc-table attach-table">
+        <thead>
+          <tr><th>S.No.</th><th>Attachment</th><th>File Size</th><th>Remark</th><th class="no-print"></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let att of attachments; let i = index">
+            <td class="center">{{ i + 1 }}</td>
+            <td><input [(ngModel)]="att.fileName" name="fileName{{i}}" placeholder="Attachment"></td>
+            <td><input [(ngModel)]="att.fileSize" name="fileSize{{i}}" placeholder="Size"></td>
+            <td><input [(ngModel)]="att.remark" name="attRemark{{i}}" placeholder="Remark"></td>
+            <td class="no-print"><button type="button" class="icon-btn" (click)="removeAttachment(i)">×</button></td>
+          </tr>
+        </tbody>
+      </table>
 
-  <section class="recent" *ngIf="submittedOrders.length">
-    <div class="section-title">Recent PO Submissions</div>
-    <table>
-      <thead><tr><th>PO No.</th><th>Vendor</th><th>Value</th><th>Status</th><th>Date</th></tr></thead>
-      <tbody>
-        <tr *ngFor="let po of submittedOrders">
-          <td>{{ po.uniqueSerialNo || po.orderNo }}</td>
-          <td>{{ po.vendorName }}</td>
-          <td>{{ po.amount | currency:'INR':'symbol':'1.0-0' }}</td>
-          <td><span>{{ po.status || 'Pending' }}</span></td>
-          <td>{{ po.createdAt || po.orderDate | date:'dd MMM yyyy' }}</td>
+      <!-- CC Emails -->
+      <div class="section-head">
+        <div class="section-title">📧 CC Recipients</div>
+        <button type="button" class="add-row-btn no-print" (click)="addCcEmail()">+ Add CC</button>
+      </div>
+      <table class="doc-table cc-table">
+        <tr><th>Email</th></tr>
+        <tr *ngFor="let email of ccEmails; let i = index">
+          <td>
+            <input type="email" [(ngModel)]="ccEmails[i]" name="cc{{i}}" placeholder="name@company.com">
+            <button type="button" class="icon-btn no-print" (click)="removeCcEmail(i)">×</button>
+          </td>
         </tr>
-      </tbody>
-    </table>
-  </section>
+      </table>
+
+      <!-- Requester Info -->
+      <div class="section-head">
+        <div class="section-title">📋 Requester Information</div>
+      </div>
+      <table class="doc-table requester-table">
+        <tr>
+          <td class="meta-label">Name *</td>
+          <td><input [(ngModel)]="form.requesterName" name="requesterName" required></td>
+          <td class="meta-label">Department</td>
+          <td><input [(ngModel)]="form.department" name="department"></td>
+        </tr>
+        <tr>
+          <td class="meta-label">Email *</td>
+          <td><input type="email" [(ngModel)]="form.emailId" name="emailId" required></td>
+          <td class="meta-label">Contact No.</td>
+          <td><input [(ngModel)]="form.contactNo" name="contactNo"></td>
+        </tr>
+        <tr>
+          <td class="meta-label">Request Date</td>
+          <td><input type="date" [(ngModel)]="form.requestDate" name="requestDate"></td>
+          <td class="meta-label">Priority</td>
+          <td>
+            <select [(ngModel)]="form.priority" name="priority">
+              <option value="H">High</option>
+              <option value="M">Medium</option>
+              <option value="L">Low</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td class="meta-label">Organization</td>
+          <td colspan="3"><input [(ngModel)]="form.organization" name="organization"></td>
+        </tr>
+      </table>
+
+      <!-- Form Actions -->
+      <div class="form-actions no-print">
+        <div class="total-summary">
+          <span>PO Total</span>
+          <strong>{{ formatAmount(totalAmount) }}</strong>
+        </div>
+        <button type="button" class="btn-submit" [disabled]="isSubmitting" (click)="submit()">
+          <span *ngIf="isSubmitting" class="spinner"></span>
+          {{ isSubmitting ? 'Submitting...' : '📤 Submit Purchase Order' }}
+        </button>
+      </div>
+
+    </div>
+  </ng-container>
+
 </section>

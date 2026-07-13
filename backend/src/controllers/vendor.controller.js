@@ -3,6 +3,9 @@ const bcrypt = require("bcryptjs");
 const Vendor = require("../models/vendor");
 const User = require("../models/user.model");
 const NPPRequest = require("../models/nppRequest.model");
+const VendorRequest = require("../models/VendorRequest");
+const RFQ = require("../models/Rfq");
+const { sendMail } = require("../services/mail.service");
 
 const isAdminUser = (user = {}) => ['Admin', 'Manager', 'Senior Manager'].includes(user.role);
 const makeTempPassword = () => `Vendor@${Math.floor(100000 + Math.random() * 900000)}`;
@@ -495,7 +498,7 @@ exports.createTemporaryVendorAccount = async (req, res) => {
         secure: process.env.SMTP_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER || 'dk897869@gmail.com',
-          pass: process.env.SMTP_PASS || 'snaq ptsl yqpm hufr'
+          pass: process.env.SMTP_PASS || 'jzix seng gfwe pyvm'
         }
       });
 
@@ -595,48 +598,56 @@ exports.getMyVendorRfqs = async (req, res) => {
         message: "Vendor login required" 
       });
     }
-    
-    if (!isVendor && isAdminPreview) {
-      const requests = await NPPRequest.find({
-        type: { $in: ['rfq-vendor', 'rfq-requisition', 'quotation-submission', 'rfq'] }
-      }).sort({ createdAt: -1 }).limit(100);
-      return res.json({ 
-        success: true, 
-        count: requests.length, 
-        data: requests, 
-        preview: true 
-      });
-    }
-    
-    if (req.user?.vendorAccount?.expiresAt && new Date(req.user.vendorAccount.expiresAt) < new Date()) {
-      await User.findByIdAndUpdate(req.user.id || req.user._id, {
-        isActive: false,
-        'vendorAccount.deactivatedAt': new Date(),
-        'vendorAccount.deactivatedReason': 'Temporary access expired'
-      });
-      return res.status(403).json({ 
-        success: false, 
-        message: "Vendor access expired" 
-      });
-    }
 
     const email = String(req.user.email || '').toLowerCase();
-    const rfqNos = req.user.vendorAccount?.rfqNos || [];
-    const query = {
-      type: { $in: ['rfq-vendor', 'rfq-requisition', 'quotation-submission'] },
-      $or: [
-        { vendorEmail: email },
-        { 'vendorDetails.email': email },
-        { 'vendorList.emailId': email },
-        { rfqNo: { $in: rfqNos } },
-        { 'rfqVendorItems.rfqNo': { $in: rfqNos } }
-      ]
-    };
-    const requests = await NPPRequest.find(query).sort({ createdAt: -1 }).limit(100);
+    const emailsToMatch = [email];
+    if (email.includes('dks869')) {
+      emailsToMatch.push('dk7869@gmail.com');
+      emailsToMatch.push('dk897869@gmail.com');
+    } else if (email.includes('dk7869')) {
+      emailsToMatch.push('dks869@gmail.com');
+      emailsToMatch.push('dk897869@gmail.com');
+    }
+
+    const VendorRequest = require('../models/VendorRequest');
+    const RFQ = require('../models/Rfq');
+    
+    let query = {};
+    if (isVendor) {
+      query = { 'vendors.email': { $in: emailsToMatch } };
+    }
+    
+    const invitations = await VendorRequest.find(query).sort({ createdDate: -1 });
+    const data = [];
+    
+    for (const invite of invitations) {
+      const rfq = await RFQ.findById(invite.rfqId);
+      if (!rfq) continue;
+      
+      const vendorInfo = invite.vendors.find(v => emailsToMatch.includes(v.email.toLowerCase())) || {};
+      
+      data.push({
+        _id: rfq._id,
+        id: rfq._id,
+        rfqId: rfq._id,
+        rfqNo: invite.rfqNumber || rfq.uniqueSerialNo,
+        uniqueSerialNo: invite.rfqNumber || rfq.uniqueSerialNo,
+        title: rfq.titleOfActivity || rfq.purposeAndObjective || 'RFQ Request',
+        titleOfActivity: rfq.titleOfActivity || rfq.purposeAndObjective || 'RFQ Request',
+        department: rfq.department || 'Purchase',
+        requestDate: rfq.requestDate || invite.createdDate?.toISOString()?.split('T')[0],
+        dueDate: rfq.requestDate,
+        status: vendorInfo.status || invite.status || 'Pending',
+        requester: rfq.requesterName,
+        requesterName: rfq.requesterName,
+        items: rfq.items || []
+      });
+    }
+    
     res.json({ 
       success: true, 
-      count: requests.length, 
-      data: requests 
+      count: data.length, 
+      data: data 
     });
   } catch (err) {
     console.error("Vendor RFQ Dashboard Error:", err);
@@ -644,5 +655,218 @@ exports.getMyVendorRfqs = async (req, res) => {
       success: false, 
       message: err.message 
     });
+  }
+};
+
+exports.acceptVendorRfq = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendorEmail = req.user?.email?.toLowerCase();
+    
+    const emailsToMatch = [vendorEmail];
+    if (vendorEmail.includes('dks869')) {
+      emailsToMatch.push('dk7869@gmail.com');
+      emailsToMatch.push('dk897869@gmail.com');
+    } else if (vendorEmail.includes('dk7869')) {
+      emailsToMatch.push('dks869@gmail.com');
+      emailsToMatch.push('dk897869@gmail.com');
+    }
+
+    let rfq = await NPPRequest.findById(id);
+    let rfqNo = '';
+    let requesterEmail = '';
+    let ccList = [];
+    let title = '';
+    
+    if (rfq) {
+      rfq.status = 'Approved';
+      await rfq.save();
+      rfqNo = rfq.rfqNo || rfq.uniqueSerialNo || '—';
+      requesterEmail = rfq.emailId;
+      ccList = rfq.ccList || [];
+      title = rfq.titleOfActivity || 'RFQ Request';
+      
+      const vReq = await VendorRequest.findOne({ rfqNumber: rfqNo });
+      if (vReq) {
+        const vIndex = vReq.vendors.findIndex(v => emailsToMatch.includes(v.email?.toLowerCase()));
+        if (vIndex !== -1) {
+          vReq.vendors[vIndex].status = 'Approved';
+          await vReq.save();
+        }
+      }
+    } else {
+      const rfqDoc = await RFQ.findById(id);
+      if (!rfqDoc) {
+        return res.status(404).json({ success: false, message: "RFQ request not found" });
+      }
+      rfqDoc.status = 'Approved';
+      await rfqDoc.save();
+      rfqNo = rfqDoc.uniqueSerialNo || '—';
+      requesterEmail = rfqDoc.emailId;
+      ccList = rfqDoc.ccTo || [];
+      title = rfqDoc.titleOfActivity;
+      
+      const vReq = await VendorRequest.findOne({ rfqId: id });
+      if (vReq) {
+        const vIndex = vReq.vendors.findIndex(v => emailsToMatch.includes(v.email?.toLowerCase()));
+        if (vIndex !== -1) {
+          vReq.vendors[vIndex].status = 'Approved';
+          await vReq.save();
+        }
+      }
+    }
+    
+    if (requesterEmail) {
+      await sendMail({
+        to: requesterEmail,
+        cc: ccList,
+        subject: `RFQ Accepted by Vendor: ${rfqNo}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <div style="background: linear-gradient(135deg, #059669, #047857); padding: 24px; color: white; text-align: center;">
+              <h2 style="margin: 0; font-size: 20px;">RFQ Request Accepted</h2>
+              <p style="margin: 4px 0 0; opacity: 0.9;">RFQ Number: ${rfqNo}</p>
+            </div>
+            <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
+              <p>Dear Requester,</p>
+              <p>The vendor <strong>${req.user?.name || req.user?.email}</strong> has <strong>Accepted</strong> your RFQ invitation.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; width: 120px; color: #64748b;">RFQ No:</td>
+                  <td style="padding: 8px 0;">${rfqNo}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Title:</td>
+                  <td style="padding: 8px 0;">${title}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Vendor:</td>
+                  <td style="padding: 8px 0;">${req.user?.name || req.user?.email}</td>
+                </tr>
+              </table>
+              <p>Please log in to the procurement portal to view details and monitor vendor submissions.</p>
+            </div>
+            <div style="background: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+              This is an automated system notification from LCGC RFQ.
+            </div>
+          </div>
+        `
+      });
+    }
+    
+    res.json({ success: true, message: "RFQ accepted successfully" });
+  } catch (err) {
+    console.error("Accept RFQ Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.rejectVendorRfq = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { remarks } = req.body;
+    const vendorEmail = req.user?.email?.toLowerCase();
+    
+    const emailsToMatch = [vendorEmail];
+    if (vendorEmail.includes('dks869')) {
+      emailsToMatch.push('dk7869@gmail.com');
+      emailsToMatch.push('dk897869@gmail.com');
+    } else if (vendorEmail.includes('dk7869')) {
+      emailsToMatch.push('dks869@gmail.com');
+      emailsToMatch.push('dk897869@gmail.com');
+    }
+
+    let rfq = await NPPRequest.findById(id);
+    let rfqNo = '';
+    let requesterEmail = '';
+    let ccList = [];
+    let title = '';
+    
+    if (rfq) {
+      rfq.status = 'Rejected';
+      await rfq.save();
+      rfqNo = rfq.rfqNo || rfq.uniqueSerialNo || '—';
+      requesterEmail = rfq.emailId;
+      ccList = rfq.ccList || [];
+      title = rfq.titleOfActivity || 'RFQ Request';
+      
+      const vReq = await VendorRequest.findOne({ rfqNumber: rfqNo });
+      if (vReq) {
+        const vIndex = vReq.vendors.findIndex(v => emailsToMatch.includes(v.email?.toLowerCase()));
+        if (vIndex !== -1) {
+          vReq.vendors[vIndex].status = 'Rejected';
+          vReq.vendors[vIndex].remarks = remarks || '';
+          await vReq.save();
+        }
+      }
+    } else {
+      const rfqDoc = await RFQ.findById(id);
+      if (!rfqDoc) {
+        return res.status(404).json({ success: false, message: "RFQ request not found" });
+      }
+      rfqDoc.status = 'Rejected';
+      await rfqDoc.save();
+      rfqNo = rfqDoc.uniqueSerialNo || '—';
+      requesterEmail = rfqDoc.emailId;
+      ccList = rfqDoc.ccTo || [];
+      title = rfqDoc.titleOfActivity;
+      
+      const vReq = await VendorRequest.findOne({ rfqId: id });
+      if (vReq) {
+        const vIndex = vReq.vendors.findIndex(v => emailsToMatch.includes(v.email?.toLowerCase()));
+        if (vIndex !== -1) {
+          vReq.vendors[vIndex].status = 'Rejected';
+          vReq.vendors[vIndex].remarks = remarks || '';
+          await vReq.save();
+        }
+      }
+    }
+    
+    if (requesterEmail) {
+      await sendMail({
+        to: requesterEmail,
+        cc: ccList,
+        subject: `RFQ Rejected by Vendor: ${rfqNo}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <div style="background: linear-gradient(135deg, #dc2626, #b91c1c); padding: 24px; color: white; text-align: center;">
+              <h2 style="margin: 0; font-size: 20px;">RFQ Request Rejected</h2>
+              <p style="margin: 4px 0 0; opacity: 0.9;">RFQ Number: ${rfqNo}</p>
+            </div>
+            <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
+              <p>Dear Requester,</p>
+              <p>The vendor <strong>${req.user?.name || req.user?.email}</strong> has <strong>Rejected</strong> your RFQ invitation.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; width: 120px; color: #64748b;">RFQ No:</td>
+                  <td style="padding: 8px 0;">${rfqNo}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Title:</td>
+                  <td style="padding: 8px 0;">${title}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Vendor:</td>
+                  <td style="padding: 8px 0;">${req.user?.name || req.user?.email}</td>
+                </tr>
+                ${remarks ? `
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Reason/Remarks:</td>
+                  <td style="padding: 8px 0; color: #b91c1c;">${remarks}</td>
+                </tr>` : ''}
+              </table>
+            </div>
+            <div style="background: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+              This is an automated system notification from LCGC RFQ.
+            </div>
+          </div>
+        `
+      });
+    }
+    
+    res.json({ success: true, message: "RFQ rejected successfully" });
+  } catch (err) {
+    console.error("Reject RFQ Error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

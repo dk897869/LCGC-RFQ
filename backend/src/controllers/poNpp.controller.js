@@ -1,4 +1,5 @@
 const PoNpp = require('../models/poNpp.model');
+const PrNpp = require('../models/prNpp.model');
 const { sendMail } = require('../services/mail.service');
 const { generateBeautifulPDF } = require('../services/pdf.service');
 const { generatePOSerial } = require('../services/serialNumber.service');
@@ -50,10 +51,10 @@ const sendPOEmail = async (poData, action, actor) => {
     to: toEmail,
     cc: ccEmailList,
     subject: subject,
-    poRequestData: poData,
+    type: 'po',
+    data: poData,
     action: action,
-    actor: actor || null,
-    nextApprover: null,
+    comments: actor?.remarks || '',
     attachments: attachments
   });
 };
@@ -81,6 +82,32 @@ const createPoNpp = async (req, res) => {
     const uniqueSerialNo = generatePOSerial();
     console.log(`📋 Generated PO Serial Number: ${uniqueSerialNo}`);
 
+    let poStakeholders = stakeholders || [];
+    if ((!poStakeholders || !poStakeholders.length || poStakeholders.every(s => !s.name)) && prNo) {
+      console.log(`🔍 Looking up stakeholders for associated PR NPP: ${prNo}`);
+      try {
+        const associatedPr = await PrNpp.findOne({
+          $or: [
+            { uniqueSerialNo: prNo },
+            { rfqNo: prNo },
+            { titleOfActivity: prNo }
+          ]
+        });
+        if (associatedPr && associatedPr.approvalChain && associatedPr.approvalChain.length) {
+          poStakeholders = associatedPr.approvalChain.map(s => ({
+            name: s.stakeholder || s.name || 'Approver',
+            email: s.email,
+            designation: s.designation || 'Approver',
+            status: 'Pending',
+            remarks: s.comments || ''
+          }));
+          console.log(`✅ Loaded ${poStakeholders.length} approvers from PR NPP`);
+        }
+      } catch (dbErr) {
+        console.error('Failed to lookup associated PR:', dbErr.message);
+      }
+    }
+
     const newPo = new PoNpp({
       uniqueSerialNo,
       requesterName,
@@ -101,7 +128,7 @@ const createPoNpp = async (req, res) => {
       billingAddress, billingGst, shippingAddress, shippingGst,
       transporter, taxes,
       items: items || [],
-      stakeholders: stakeholders || [],
+      stakeholders: poStakeholders,
       ccList: ccList || [],
       terms: terms || [],
       financeRows: financeRows || [],

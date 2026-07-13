@@ -1,5 +1,6 @@
 const Request = require('../models/request');
 const mongoose = require('mongoose');
+const Notification = require('../models/notification.model');
 const { sendMail } = require('../services/mail.service');
 const { generatePDFFromRequest } = require('../services/pdf.service');
 const epNotify = require('../services/epNotify.service');
@@ -119,6 +120,19 @@ const createRequest = async (req, res) => {
     const savedRequest = await newRequest.save();
     console.log("✅ EP Request saved successfully:", savedRequest._id);
 
+    // Create database Notification record
+    try {
+      await Notification.create({
+        userEmail: savedRequest.email,
+        title: `EP Request Created: ${savedRequest.title}`,
+        message: `Your EP request ${savedRequest.requestId || savedRequest._id} for ₹${savedRequest.amount} is pending approval.`,
+        type: 'ep',
+        status: 'Pending'
+      });
+    } catch (dbErr) {
+      console.error('Failed to create DB notification on createRequest:', dbErr.message);
+    }
+
     // ====================== SEND EMAILS (AFTER savedRequest is created) ======================
     
     // 1. Send email to requester
@@ -190,12 +204,20 @@ const getRequests = async (req, res) => {
       });
     }
     
-    const requests = await Request.find(query)
+    const combinedQuery = {
+      $and: [
+        query,
+        { title: { $exists: true, $ne: '', $nin: ['Nm', 'nm', 'NM'] } },
+        { requester: { $exists: true, $ne: '' } }
+      ]
+    };
+
+    const requests = await Request.find(combinedQuery)
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
     
-    const total = await Request.countDocuments(query);
+    const total = await Request.countDocuments(combinedQuery);
     
     res.status(200).json({
       success: true,
@@ -353,6 +375,19 @@ const approveRequest = async (req, res) => {
     }
     
     await request.save();
+
+    // Create database Notification record
+    try {
+      await Notification.create({
+        userEmail: request.email,
+        title: `EP Request Approved: ${request.title}`,
+        message: `Your EP request ${request.requestId || request._id} has been approved by ${userName}.`,
+        type: 'ep',
+        status: 'Approved'
+      });
+    } catch (dbErr) {
+      console.error('Failed to create DB notification on approveRequest:', dbErr.message);
+    }
     
     // Send approval email to requester
     await epNotify.sendEPRequestApprovedEmail(request, { name: userName, remarks: comments });
@@ -425,6 +460,19 @@ const rejectRequest = async (req, res) => {
     request.rejectionReason = comments;
     
     await request.save();
+
+    // Create database Notification record
+    try {
+      await Notification.create({
+        userEmail: request.email,
+        title: `EP Request Rejected: ${request.title}`,
+        message: `Your EP request ${request.requestId || request._id} has been rejected by ${userName}. Reason: ${comments || '—'}`,
+        type: 'ep',
+        status: 'Rejected'
+      });
+    } catch (dbErr) {
+      console.error('Failed to create DB notification on rejectRequest:', dbErr.message);
+    }
     
     // Send rejection email
     await epNotify.sendEPRequestRejectedEmail(request, { name: userName, remarks: comments });

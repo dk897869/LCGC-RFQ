@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("../models/user.model");
+const Notification = require("../models/notification.model");
 const { sendMail } = require("../services/mail.service");
 
 const MODULE_ID_TO_RIGHT = {
@@ -262,6 +263,19 @@ exports.updateUserRights = async (req, res) => {
     }
     
     await user.save();
+
+    // Create database Notification record
+    try {
+      await Notification.create({
+        userEmail: user.email,
+        title: `Access Rights Updated`,
+        message: `Admin has updated your system access permissions. Please log in again to see updates.`,
+        type: 'system',
+        status: 'Approved'
+      });
+    } catch (dbErr) {
+      console.error('Failed to create DB notification on updateUserRights:', dbErr.message);
+    }
     
     console.log("✅ User rights updated for:", user.email);
     

@@ -1,101 +1,75 @@
-const express = require('express');
-const router = express.Router();
+const mongoose = require('mongoose');
 
-const verifyToken = (req, res, next) => {
-  req.user = { id: 'test-user-id', name: 'Test User', email: 'test@example.com' };
-  next();
-};
-
-let poNppStore = [];
-
-// Create PO NPP
-router.post('/', verifyToken, async (req, res) => {
-  try {
-    const newPo = {
-      _id: Date.now().toString(),
-      ...req.body,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      uniqueSerialNo: `PO-${Date.now()}-${Math.floor(Math.random() * 10000)}`
-    };
-    poNppStore.unshift(newPo);
-    console.log('✅ PO NPP created:', newPo._id);
-    res.status(201).json({ success: true, message: 'PO NPP created successfully', serialNumber: newPo.uniqueSerialNo, data: newPo });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+const poItemSchema = new mongoose.Schema({
+  partCode: { type: String, default: '' },
+  partDescription: { type: String, default: '' },
+  specification: { type: String, default: '' },
+  hsnCode: { type: String, default: '' },
+  uom: { type: String, default: 'PCS' },
+  qty: { type: Number, default: 0 },
+  unitPrice: { type: Number, default: 0 },
+  cgst: { type: Number, default: 0 },
+  sgst: { type: Number, default: 0 },
+  igst: { type: Number, default: 0 }
 });
 
-// Get all PO NPP
-router.get('/', verifyToken, async (req, res) => {
-  try {
-    res.json({ success: true, data: poNppStore });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+const poApproverSchema = new mongoose.Schema({
+  line: { type: String, enum: ['Parallel', 'Sequential'], default: 'Parallel' },
+  managerName: { type: String, default: '' },
+  email: { type: String, default: '' },
+  designation: { type: String, default: '' },
+  status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In-Process'], default: 'Pending' },
+  dateTime: { type: String, default: '' },
+  remarks: { type: String, default: '' }
 });
 
-// Get single PO NPP
-router.get('/:id', verifyToken, async (req, res) => {
-  try {
-    const po = poNppStore.find(p => p._id === req.params.id);
-    if (!po) return res.status(404).json({ success: false, message: "PO NPP not found" });
-    res.json({ success: true, data: po });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+const poNppSchema = new mongoose.Schema({
+  uniqueSerialNo: { type: String, unique: true, required: true },
+  requesterName: { type: String, default: '' },
+  department: { type: String, default: '' },
+  emailId: { type: String, default: '' },
+  requestDate: { type: String, default: '' },
+  contactNo: { type: String, default: '' },
+  organization: { type: String, default: 'Radiant Appliances' },
+  titleOfActivity: { type: String, default: '' },
+  purposeAndObjective: { type: String, default: '' },
+  amount: { type: Number, default: 0 },
+  remarks: { type: String, default: '' },
+  priority: { type: String, default: 'M' },
+  
+  vendorCode: { type: String, default: '' },
+  vendorName: { type: String, default: '' },
+  vendorAddress: { type: String, default: '' },
+  vendorGst: { type: String, default: '' },
+  vendorContact: { type: String, default: '' },
+  vendorEmail: { type: String, default: '' },
+  vendorKindAttn: { type: String, default: '' },
+  
+  orderNo: { type: String, default: '' },
+  orderDate: { type: String, default: '' },
+  quotRef: { type: String, default: '' },
+  prNo: { type: String, default: '' },
+  prDate: { type: String, default: '' },
+  purchaser: { type: String, default: '' },
+  purchaserMobile: { type: String, default: '' },
+  
+  billingAddress: { type: String, default: '' },
+  billingGst: { type: String, default: '' },
+  shippingAddress: { type: String, default: '' },
+  shippingGst: { type: String, default: '' },
+  
+  transporter: { type: String, default: '' },
+  taxes: { type: String, default: '' },
+  
+  items: [poItemSchema],
+  stakeholders: [poApproverSchema],
+  ccList: [{ type: String }],
+  terms: { type: mongoose.Schema.Types.Mixed, default: [] },
+  financeRows: { type: mongoose.Schema.Types.Mixed, default: [] },
+  deliverySchedule: { type: mongoose.Schema.Types.Mixed, default: [] },
+  
+  status: { type: String, default: 'Pending' },
+  source: { type: String, default: 'PO-NPP' }
+}, { timestamps: true });
 
-// Update PO NPP
-router.put('/:id', verifyToken, async (req, res) => {
-  try {
-    const index = poNppStore.findIndex(p => p._id === req.params.id);
-    if (index === -1) return res.status(404).json({ success: false, message: "PO NPP not found" });
-    poNppStore[index] = { ...poNppStore[index], ...req.body, updatedAt: new Date() };
-    res.json({ success: true, data: poNppStore[index] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// Delete PO NPP
-router.delete('/:id', verifyToken, async (req, res) => {
-  try {
-    const index = poNppStore.findIndex(p => p._id === req.params.id);
-    if (index === -1) return res.status(404).json({ success: false, message: "PO NPP not found" });
-    poNppStore.splice(index, 1);
-    res.json({ success: true, message: "PO NPP deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// Approve PO NPP
-router.patch('/:id/approve', verifyToken, async (req, res) => {
-  try {
-    const index = poNppStore.findIndex(p => p._id === req.params.id);
-    if (index === -1) return res.status(404).json({ success: false, message: "PO NPP not found" });
-    poNppStore[index].status = 'Approved';
-    poNppStore[index].approvedAt = new Date();
-    poNppStore[index].approvalComments = req.body.comments;
-    res.json({ success: true, message: "PO NPP approved", data: poNppStore[index] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// Reject PO NPP
-router.patch('/:id/reject', verifyToken, async (req, res) => {
-  try {
-    const index = poNppStore.findIndex(p => p._id === req.params.id);
-    if (index === -1) return res.status(404).json({ success: false, message: "PO NPP not found" });
-    poNppStore[index].status = 'Rejected';
-    poNppStore[index].rejectedAt = new Date();
-    poNppStore[index].rejectionComments = req.body.comments;
-    res.json({ success: true, message: "PO NPP rejected", data: poNppStore[index] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-module.exports = router;
+module.exports = mongoose.model('PoNpp', poNppSchema);

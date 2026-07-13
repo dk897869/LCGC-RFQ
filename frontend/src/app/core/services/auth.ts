@@ -1255,6 +1255,30 @@ createTemporaryVendorAccount(data: any): Observable<any> {
       catchError(this.handleError('Get Vendor RFQ Dashboard'))
     );
   }
+
+  acceptVendorRfq(id: string): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/vendor/rfqs/${id}/accept`, {}, this.getHttpOptions()).pipe(
+      catchError(this.handleError('Accept Vendor RFQ'))
+    );
+  }
+
+  rejectVendorRfq(id: string, remarks: string): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/vendor/rfqs/${id}/reject`, { remarks }, this.getHttpOptions()).pipe(
+      catchError(this.handleError('Reject Vendor RFQ'))
+    );
+  }
+
+  getPendingAccessRequests(): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/users/access-requests?status=pending`, this.getHttpOptions()).pipe(
+      catchError(this.handleError('Get Pending Access Requests'))
+    );
+  }
+
+  reviewAccessRequest(id: string, action: string, comments: string): Observable<any> {
+    return this.http.patch<any>(`${this.API_URL}/users/access-requests/${id}`, { action, comments }, this.getHttpOptions()).pipe(
+      catchError(this.handleError('Review Access Request'))
+    );
+  }
 // ==================== VENDOR SEARCH METHODS ====================
 
 

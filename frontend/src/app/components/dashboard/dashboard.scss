@@ -74,6 +74,13 @@ $shadow-md: 0 6px 24px rgba(0, 0, 0, 0.12);
   background: #f1f5f9;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 
+  app-vendor-dashboard {
+    display: block;
+    width: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
   &.sidebar-collapsed {
     .sidebar {
       width: $sb-collapsed;

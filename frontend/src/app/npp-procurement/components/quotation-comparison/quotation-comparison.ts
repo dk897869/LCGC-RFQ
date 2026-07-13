@@ -74,6 +74,16 @@ interface QuotationTerms {
 
 interface ConditionRow { label: string; s1: string; s2: string; s3: string; }
 
+interface ApprovalChainItem {
+  name: string;
+  email: string;
+  department: string;
+  designation: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  remarks: string;
+  approvalDate?: string;
+}
+
 interface QuotationRequest {
   id: string;
   rfqId: string;
@@ -101,6 +111,12 @@ interface QuotationRequest {
   attachment1: string;
   attachment2: string;
   attachment3: string;
+  attachment1File?: File;
+  attachment2File?: File;
+  attachment3File?: File;
+  approvalChain: ApprovalChainItem[];
+  ccList: string[];
+  isHidden?: boolean;
 }
 
 @Component({
@@ -119,7 +135,7 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
 
   // ---------------- list search / filter ----------------
   searchTerm = '';
-  activeFilter: 'All' | 'Pending' | 'Submitted' = 'All';
+  activeFilter: 'All' | 'Pending' | 'Submitted' = 'Pending';
 
   // ---------------- toast ----------------
   toastMessage = '';
@@ -151,12 +167,33 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   isSearchingVendor = false;
   activeVendorSlot: 1 | 2 | 3 = 1;
 
+  hasAddedSupplier3 = false;
+
+  get showSupplier3(): boolean {
+    return !!(this.current?.supplier3Name && this.current.supplier3Name.trim() !== '' && this.current.supplier3Name !== 'Supplier 3') || this.hasAddedSupplier3;
+  }
+
+  addAdditionalVendor() {
+    this.hasAddedSupplier3 = true;
+    if (this.current) {
+      this.current.supplier3Name = '';
+    }
+    this.cdr.detectChanges();
+  }
+
+  // ---------------- manager options for approval chain ----------------
+  managerOptions: { name: string; email: string; department?: string; designation?: string; role?: string }[] = [];
+
+  // ---------------- CC input ----------------
+  ccInput = '';
+
   constructor(private authService: AuthService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.updateClock();
     this.clockTimer = setInterval(() => this.updateClock(), 1000);
     this.loadAll();
+    this.loadManagerOptions();
   }
 
   ngOnDestroy(): void {
@@ -171,6 +208,30 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ====================== MANAGER OPTIONS ======================
+
+  private loadManagerOptions() {
+    this.authService.getManagers().subscribe({
+      next: (res: any) => {
+        const list = res?.managers || res?.defaultApprovers || [];
+        this.managerOptions = Array.isArray(list) ? list : [];
+        if (!this.managerOptions.length) this.setDefaultManagers();
+      },
+      error: () => { this.setDefaultManagers(); }
+    });
+  }
+
+  private setDefaultManagers() {
+    this.managerOptions = [
+      { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', department: 'Purchase', designation: 'Manager' },
+      { name: 'Ravib', email: 'ravib@radiant.com', department: 'Purchase', designation: 'A-GM' },
+      { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', department: 'Purchase', designation: 'VP' },
+      { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', department: 'Purchase', designation: 'S-VP' },
+      { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', department: 'Purchase', designation: 'GM' },
+      { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', department: 'Purchase', designation: 'MD' }
+    ];
+  }
+
   // ====================== STORAGE ======================
 
   loadAll() {
@@ -178,7 +239,6 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     this.loadVendorRequests();
     this.loadRequestsFromStorage();
     this.syncFromVendorRequests();
-    // Also fetch from API
     this.fetchComparisonsFromAPI();
     setTimeout(() => { this.isLoading = false; this.cdr.detectChanges(); }, 250);
   }
@@ -186,26 +246,28 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   private fetchComparisonsFromAPI() {
     this.authService.getComparisons().subscribe({
       next: (res: any) => {
-        console.log('✅ Comparisons from API:', res);
         if (res?.success && res?.data) {
           const apiComparisons = Array.isArray(res.data) ? res.data : [res.data];
-          // Merge with local data
           apiComparisons.forEach((comp: any) => {
             const exists = this.allRequests.find(r => r.rfqId === comp.rfqId || r.rfqNo === comp.rfqNo);
             if (!exists) {
-              this.allRequests.push(this.mapApiToLocal(comp));
+              const mapped = this.mapApiToLocal(comp);
+              if (mapped.status === 'Submitted') {
+                mapped.isHidden = true;
+              }
+              this.allRequests.push(mapped);
             } else {
-              // Update existing
               Object.assign(exists, this.mapApiToLocal(comp));
+              if (exists.status === 'Submitted') {
+                exists.isHidden = true;
+              }
             }
           });
           this.saveRequestsToStorage();
         }
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('❌ Error fetching comparisons:', error);
-        // Use localStorage as fallback
+      error: () => {
         this.loadRequestsFromStorage();
       }
     });
@@ -257,7 +319,12 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       ],
       recommendation: apiData.recommendation || '',
       selectedSupplierIndex: 1,
-      attachment1: '', attachment2: '', attachment3: ''
+      attachment1: '', attachment2: '', attachment3: '',
+      approvalChain: apiData.approvalChain || [
+        { name: '', email: '', department: '', designation: '', status: 'Pending', remarks: '' }
+      ],
+      ccList: apiData.ccList || [],
+      isHidden: apiData.status === 'Submitted'
     };
   }
 
@@ -276,6 +343,11 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     try {
       const saved = localStorage.getItem(COMPARISON_STORAGE_KEY);
       this.allRequests = saved ? JSON.parse(saved) : [];
+      this.allRequests.forEach(r => {
+        if (r.status === 'Submitted') {
+          r.isHidden = true;
+        }
+      });
     } catch {
       this.allRequests = [];
     }
@@ -292,7 +364,9 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     completed.forEach(vr => {
       const existing = this.allRequests.find(r => r.rfqId === vr.rfqId);
       if (!existing) {
-        this.allRequests.unshift(this.buildQuotationRequest(vr));
+        const newReq = this.buildQuotationRequest(vr);
+        newReq.isHidden = false;
+        this.allRequests.unshift(newReq);
         changed = true;
       }
     });
@@ -343,30 +417,56 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       ],
       recommendation: '',
       selectedSupplierIndex: 1,
-      attachment1: '', attachment2: '', attachment3: ''
+      attachment1: '', attachment2: '', attachment3: '',
+      approvalChain: [
+        { name: '', email: '', department: '', designation: '', status: 'Pending', remarks: '' }
+      ],
+      ccList: [],
+      isHidden: false
     };
   }
 
   // ====================== LIST VIEW ======================
 
   get displayRows(): QuotationRequest[] {
-    let rows = [...this.allRequests];
-    if (this.activeFilter !== 'All') rows = rows.filter(r => r.status === this.activeFilter);
+    let rows = [...this.allRequests].filter(r => !r.isHidden && r.status !== 'Submitted');
+    
+    if (this.activeFilter === 'All') {
+      rows = rows.filter(r => r.status === 'Pending');
+    } else if (this.activeFilter === 'Pending') {
+      rows = rows.filter(r => r.status === 'Pending');
+    } else if (this.activeFilter === 'Submitted') {
+      rows = [];
+    }
+    
     if (this.searchTerm.trim()) {
       const q = this.searchTerm.toLowerCase();
       rows = rows.filter(r =>
-        r.title.toLowerCase().includes(q) || r.requester.toLowerCase().includes(q) ||
-        r.department.toLowerCase().includes(q) || r.rfqNo.toLowerCase().includes(q)
+        (r.title || '').toLowerCase().includes(q) || 
+        (r.requester || '').toLowerCase().includes(q) ||
+        (r.department || '').toLowerCase().includes(q) || 
+        (r.rfqNo || '').toLowerCase().includes(q)
       );
     }
     return rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
 
   countByStatus(s: 'All' | 'Pending' | 'Submitted'): number {
-    if (s === 'All') return this.allRequests.length;
-    return this.allRequests.filter(r => r.status === s).length;
+    if (s === 'All') {
+      return this.allRequests.filter(r => !r.isHidden && r.status === 'Pending').length;
+    }
+    if (s === 'Pending') {
+      return this.allRequests.filter(r => !r.isHidden && r.status === 'Pending').length;
+    }
+    if (s === 'Submitted') {
+      return this.allRequests.filter(r => r.status === 'Submitted').length;
+    }
+    return 0;
   }
-  setFilter(f: 'All' | 'Pending' | 'Submitted') { this.activeFilter = f; }
+  
+  setFilter(f: 'All' | 'Pending' | 'Submitted') { 
+    this.activeFilter = f; 
+  }
 
   refreshData() {
     this.isLoading = true;
@@ -374,12 +474,15 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.loadAll();
       this.fetchComparisonsFromAPI();
-      this.showToastMessage(`${this.allRequests.length} quotation comparison(s) found`, 'success');
+      const pendingCount = this.allRequests.filter(r => !r.isHidden && r.status === 'Pending').length;
+      this.showToastMessage(`${pendingCount} pending quotation comparison(s) found`, 'success');
     }, 500);
   }
 
   checkStatus() {
-    this.showToastMessage(`Total ${this.allRequests.length} quotation comparison(s) found`, 'info');
+    const pendingCount = this.allRequests.filter(r => !r.isHidden && r.status === 'Pending').length;
+    const submittedCount = this.allRequests.filter(r => r.status === 'Submitted').length;
+    this.showToastMessage(`Pending: ${pendingCount} | Submitted: ${submittedCount} (moved to PR)`, 'info');
   }
 
   trackByRequest(_: number, r: QuotationRequest) { return r.id; }
@@ -406,6 +509,10 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   }
 
   openCompareForm(request: QuotationRequest) {
+    if (request.status === 'Submitted') {
+      this.showToastMessage('This quotation has already been submitted and moved to PR', 'info');
+      return;
+    }
     this.current = JSON.parse(JSON.stringify(request));
     this.comparisonMode = 'auto';
     this.showListView = false;
@@ -482,7 +589,10 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       fresh.attachment1 = this.current!.attachment1;
       fresh.attachment2 = this.current!.attachment2;
       fresh.attachment3 = this.current!.attachment3;
+      fresh.approvalChain = this.current!.approvalChain;
+      fresh.ccList = this.current!.ccList;
       fresh.status = this.current!.status;
+      fresh.isHidden = false;
       this.current = fresh;
       this.current.quotationItems.forEach(it => this.calcAmounts(it));
     }
@@ -507,7 +617,7 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }
       },
-      error: () => { /* no backend suggestion available — client-side comparison still applies */ }
+      error: () => {}
     });
   }
 
@@ -657,9 +767,108 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (slot === 1) this.current.attachment1 = file.name;
-    if (slot === 2) this.current.attachment2 = file.name;
-    if (slot === 3) this.current.attachment3 = file.name;
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      const fileData = reader.result as string;
+      if (slot === 1) {
+        this.current!.attachment1 = file.name;
+        this.current!.attachment1File = file;
+      } else if (slot === 2) {
+        this.current!.attachment2 = file.name;
+        this.current!.attachment2File = file;
+      } else if (slot === 3) {
+        this.current!.attachment3 = file.name;
+        this.current!.attachment3File = file;
+      }
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ====================== APPROVAL CHAIN ======================
+
+  addApprovalRow() {
+    if (!this.current) return;
+    this.current.approvalChain.push({
+      name: '',
+      email: '',
+      department: '',
+      designation: '',
+      status: 'Pending',
+      remarks: ''
+    });
+    this.cdr.detectChanges();
+  }
+
+  removeApprovalRow(index: number) {
+    if (!this.current) return;
+    if (this.current.approvalChain.length <= 1) {
+      this.showToastMessage('At least one approver is required', 'info');
+      return;
+    }
+    this.current.approvalChain.splice(index, 1);
+    this.cdr.detectChanges();
+  }
+
+  getApprovalStatusClass(status: string): string {
+    const map: any = { Approved: 'approved', Rejected: 'rejected', 'In-Process': 'in-process', Pending: 'pending' };
+    return map[status] || 'pending';
+  }
+
+  onApproverLookup(row: ApprovalChainItem, value: string) {
+    const term = (value || '').trim().toLowerCase();
+    const manager = this.managerOptions.find(m => 
+      (m.name || '').toLowerCase() === term || 
+      (m.email || '').toLowerCase() === term
+    );
+    if (manager) {
+      row.name = manager.name;
+      row.email = manager.email;
+      row.department = manager.department || '';
+      row.designation = manager.designation || manager.role || '';
+    }
+  }
+
+  onApproverEmailChange(row: ApprovalChainItem, email: string) {
+    row.email = email.trim();
+    const manager = this.managerOptions.find(m => 
+      (m.email || '').toLowerCase() === row.email.toLowerCase()
+    );
+    if (manager) {
+      row.name = manager.name;
+      row.department = manager.department || '';
+      row.designation = manager.designation || manager.role || '';
+    }
+  }
+
+  // ====================== CC ======================
+
+  addCc() {
+    if (!this.current) return;
+    const raw = this.ccInput.trim();
+    if (!raw) return;
+    
+    raw.split(/[;,\s\n]+/).map(x => x.trim().replace(/[<>]/g, '')).filter(Boolean).forEach(email => {
+      if (email.includes('@') && !this.current!.ccList.includes(email)) {
+        this.current!.ccList.push(email);
+      }
+    });
+    this.ccInput = '';
+    this.cdr.detectChanges();
+  }
+
+  addMultipleCc(event: ClipboardEvent) {
+    const value = event.clipboardData?.getData('text') || '';
+    if (!value) return;
+    this.ccInput = value;
+    this.addCc();
+    event.preventDefault();
+  }
+
+  removeCc(index: number) {
+    if (!this.current) return;
+    this.current.ccList.splice(index, 1);
     this.cdr.detectChanges();
   }
 
@@ -668,6 +877,7 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   saveDraft() {
     if (!this.current) return;
     this.current.status = 'Pending';
+    this.current.isHidden = false;
     this.persistCurrent();
     this.submitSuccess = true;
     this.showToastMessage('Draft saved successfully!', 'success');
@@ -686,10 +896,15 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const validApprovers = this.current.approvalChain.filter(a => a.email && a.email.trim());
+    if (!validApprovers.length) {
+      this.showToastMessage('Please add at least one approver with email', 'error');
+      return;
+    }
+
     this.isSubmitting = true;
     this.showToastMessage('Submitting quotation comparison...', 'info');
 
-    // ✅ Prepare data for API
     const submissionData = {
       rfqId: this.current.rfqId,
       rfqNo: this.current.rfqNo,
@@ -723,44 +938,40 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
         supplier1: this.current.attachment1,
         supplier2: this.current.attachment2,
         supplier3: this.current.attachment3
-      }
+      },
+      approvalChain: this.current.approvalChain.map(a => ({
+        name: a.name,
+        email: a.email,
+        department: a.department,
+        designation: a.designation,
+        status: a.status,
+        remarks: a.remarks
+      })),
+      ccList: this.current.ccList
     };
 
-    // ✅ CALL API - Submit comparison
     this.authService.submitQuotationComparison(submissionData).subscribe({
       next: (response: any) => {
-        console.log('✅ Quotation comparison submitted to API:', response);
         this.isSubmitting = false;
         this.submitSuccess = true;
         this.current!.status = 'Submitted';
-        
-        // ✅ Save locally
+        this.current!.isHidden = true;
         this.persistCurrent();
-        
-        // ✅ Fetch updated list
         this.fetchComparisonsFromAPI();
-        
         this.showToastMessage('Quotation comparison submitted successfully!', 'success');
-        
-        // ✅ Auto-create PR in PR Process
         this.createPRFromComparison(submissionData);
-        
         setTimeout(() => {
           this.submitSuccess = false;
           this.showListViewScreen();
         }, 1500);
       },
       error: (error) => {
-        console.error('❌ Error submitting to API:', error);
-        // ✅ Fallback - Save locally
         this.isSubmitting = false;
         this.current!.status = 'Submitted';
+        this.current!.isHidden = true;
         this.persistCurrent();
         this.showToastMessage('Saved locally. Will sync when online.', 'info');
-        
-        // ✅ Auto-create PR locally
         this.createPRFromComparison(submissionData);
-        
         setTimeout(() => {
           this.showListViewScreen();
         }, 1500);
@@ -768,8 +979,10 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ NEW: Auto-create PR from comparison
   private createPRFromComparison(comparisonData: any) {
+    const suppliers = comparisonData.suppliers || [];
+    const bestSupplier = comparisonData.bestSupplier || suppliers[0] || '';
+    
     const prData = {
       rfqNo: comparisonData.rfqNo,
       title: comparisonData.title,
@@ -785,7 +998,7 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       items: comparisonData.quotationItems.map((item: any, index: number) => ({
         id: index + 1,
         rfqNo: comparisonData.rfqNo,
-        supplierName: comparisonData.bestSupplier || comparisonData.suppliers[0] || '',
+        supplierName: bestSupplier,
         partCode: item.partCode || '',
         partDescription: item.partDescription || '',
         cndt: item.specification || '',
@@ -798,18 +1011,16 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       totalValue: comparisonData.quotationItems.reduce((sum: number, item: any) => 
         sum + (item.qty || 1) * (item.supplier1Price || 0), 0),
       submittedDate: new Date().toISOString(),
-      comparisonId: comparisonData.rfqId || `comp-${Date.now()}`
+      comparisonId: comparisonData.rfqId || `comp-${Date.now()}`,
+      approvalChain: comparisonData.approvalChain || [],
+      ccList: comparisonData.ccList || []
     };
 
-    // ✅ Call API to create PR
     this.authService.createPRFromComparison(prData).subscribe({
-      next: (response: any) => {
-        console.log('✅ PR created from comparison:', response);
+      next: () => {
         this.showToastMessage(`PR created for RFQ ${comparisonData.rfqNo}`, 'success');
       },
-      error: (error) => {
-        console.error('❌ Error creating PR:', error);
-        // ✅ Fallback - Save PR locally
+      error: () => {
         this.savePRToStorage(prData);
       }
     });
@@ -827,9 +1038,8 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
         all.unshift(prData);
       }
       localStorage.setItem('pr_requests', JSON.stringify(all));
-      console.log('💾 PR saved to localStorage:', prData.rfqNo);
     } catch (error) {
-      console.error('❌ Error saving PR to localStorage:', error);
+      console.error('Error saving PR to localStorage:', error);
     }
   }
 
@@ -845,6 +1055,16 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     if (idx >= 0) this.allRequests[idx] = snapshot;
     else this.allRequests.unshift(snapshot);
     this.saveRequestsToStorage();
+  }
+
+  // ====================== HELPER METHODS ======================
+
+  getSupplierDisplay(row: any): string {
+    if (!row || !row.suppliers) return '—';
+    if (Array.isArray(row.suppliers)) {
+      return row.suppliers.map((s: any) => s.name || s).join(', ');
+    }
+    return String(row.suppliers);
   }
 
   // ====================== UTIL ======================

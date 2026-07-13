@@ -362,7 +362,7 @@ $shadow-md:   0 8px 24px rgba(15, 23, 42, .10);
 }
 
 // ════════════════════════════════════════════════════════════════
-//  FORM VIEW — original Quotation Comparison design (unchanged)
+//  FORM VIEW — original Quotation Comparison design
 // ════════════════════════════════════════════════════════════════
 :host {
   --navy-950: #060d1f;
@@ -755,6 +755,7 @@ $shadow-md:   0 8px 24px rgba(15, 23, 42, .10);
   letter-spacing: -0.01em;
 
   .section-icon { font-size: 16px; }
+  .required { color: var(--red); margin-left: 2px; }
 }
 
 .comparison-mode {
@@ -1120,6 +1121,139 @@ $shadow-md:   0 8px 24px rgba(15, 23, 42, .10);
   &:focus { border-color: var(--navy-600); }
 }
 
+// ── Approval Chain ────────────────────────────────────────────
+.approval-chain-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.approval-chain-table-wrap {
+  overflow-x: auto;
+  padding: 0 12px 12px;
+}
+
+.approval-chain-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead th {
+    background: var(--surface-1);
+    padding: 8px 10px;
+    text-align: left;
+    font-family: 'Sora', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-sub);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .approver-input {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    padding: 5px 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--text-hd);
+    background: transparent;
+    outline: none;
+    transition: border-color .15s var(--ease);
+
+    &:focus {
+      border-color: var(--navy-400);
+      background: var(--surface-0);
+    }
+  }
+
+  .remove-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-mute);
+    font-size: 11px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all .15s var(--ease);
+
+    &:hover:not(:disabled) {
+      background: var(--red-light);
+      border-color: var(--red);
+      color: var(--red);
+    }
+    &:disabled { opacity: .3; cursor: not-allowed; }
+  }
+}
+
+// ── CC Section ────────────────────────────────────────────────
+.cc-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.cc-wrap {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px 12px;
+  align-items: center;
+
+  .cc-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-md);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+
+    &:focus {
+      border-color: var(--navy-400);
+    }
+  }
+
+  .add-row-btn {
+    flex-shrink: 0;
+  }
+}
+
+.cc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 24px 16px;
+
+  .cc-chip {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    button {
+      background: none;
+      border: none;
+      color: #1e40af;
+      cursor: pointer;
+      font-size: 14px;
+      &:hover { color: var(--red); }
+    }
+  }
+}
+
 // ── Footer Actions ────────────────────────────────────────────
 .footer-actions {
   display: flex;
@@ -1210,4 +1344,6 @@ $shadow-md:   0 8px 24px rgba(15, 23, 42, .10);
   .action-btn { width: 100%; justify-content: center; }
 
   .comp-table { font-size: 11px; }
+  .approval-chain-table { font-size: 11px; }
+  .cc-wrap { flex-direction: column; }
 }

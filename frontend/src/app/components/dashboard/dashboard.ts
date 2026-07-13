@@ -32,6 +32,7 @@ import { ApprovalsComponent } from '../approvals/approvals';
 import { PoNpp } from '../po-npp/po-npp';
 import { WccCertificate } from '../wcc-certificate/wcc-certificate';
 import { ReportsDashboardComponent } from '../reports-dashboard/reports-dashboard';
+import { VendorDashboardComponent } from '../vendor-dashboard/vendor-dashboard';
 
 interface Toast {
   id: number;
@@ -101,7 +102,7 @@ interface NotificationItem {
     PriceApproval, PlanStock, SupplierPerformance, VehicularMs,
     ProfileComponent, PartsComponent, VendorsComponent, ApprovalsComponent,
     PoNpp, WccCertificate, NppProcurementComponent,
-    ReportsDashboardComponent
+    ReportsDashboardComponent, VendorDashboardComponent
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
@@ -438,150 +439,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.authService.getNotifications().subscribe({
       next: (res: any) => {
         const data = res?.data || [];
-        if (data.length) {
-          this.notificationList = data.map((n: any) => ({
-            id: n.id || n._id || '',
-            icon: n.icon || this.getNotificationIcon(n.type),
-            title: n.title || n.message || 'Notification',
-            subtitle: n.subtitle || n.status || '',
-            time: n.createdAt ? new Date(n.createdAt).toLocaleString('en-IN') : 'Just now',
-            isRead: n.isRead || false,
-            color: n.color || this.getNotificationColor(n.type),
-            type: n.type || 'system'
-          }));
-          this.notificationError = '';
-        } else {
-          // Demo notifications
-          this.notificationList = [
-            {
-              id: '1',
-              icon: '📋',
-              title: 'NPP PR-20260615-5891',
-              subtitle: 'pending',
-              time: '15/6/2026, 5:30:00 am',
-              isRead: false,
-              color: '#f59e0b',
-              type: 'pending'
-            },
-            {
-              id: '2',
-              icon: '📋',
-              title: 'NPP PR-20260615-1734',
-              subtitle: 'pending',
-              time: '15/6/2026, 5:30:00 am',
-              isRead: false,
-              color: '#f59e0b',
-              type: 'pending'
-            },
-            {
-              id: '3',
-              icon: '📋',
-              title: 'NPP PR-20260615-9844',
-              subtitle: 'pending',
-              time: '15/6/2026, 5:30:00 am',
-              isRead: false,
-              color: '#f59e0b',
-              type: 'pending'
-            },
-            {
-              id: '4',
-              icon: '📋',
-              title: 'NPP PR-20260615-9210',
-              subtitle: 'pending',
-              time: '15/6/2026, 5:30:00 am',
-              isRead: false,
-              color: '#f59e0b',
-              type: 'pending'
-            },
-            {
-              id: '5',
-              icon: '📋',
-              title: 'NPP PR-20260615-8000',
-              subtitle: 'pending',
-              time: '15/6/2026, 5:30:00 am',
-              isRead: false,
-              color: '#f59e0b',
-              type: 'pending'
-            },
-            {
-              id: '6',
-              icon: '📋',
-              title: 'NPP PR-20260615-7156',
-              subtitle: 'pending',
-              time: '15/6/2026, 5:30:00 am',
-              isRead: false,
-              color: '#f59e0b',
-              type: 'pending'
-            }
-          ];
-          this.notificationError = 'Invalid or expired token';
-        }
+        this.notificationList = data.map((n: any) => ({
+          id: n._id || n.id || '',
+          icon: this.getNotificationIcon(n.type),
+          title: n.title || 'Notification',
+          subtitle: n.message || '',
+          time: n.createdAt ? new Date(n.createdAt).toLocaleString('en-IN') : 'Just now',
+          isRead: n.isRead || false,
+          color: this.getNotificationColor(n.type),
+          type: n.type || 'system'
+        }));
+        this.notificationError = '';
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.notificationError = 'Invalid or expired token';
-        this.notificationList = [
-          {
-            id: '1',
-            icon: '📋',
-            title: 'NPP PR-20260615-5891',
-            subtitle: 'pending',
-            time: '15/6/2026, 5:30:00 am',
-            isRead: false,
-            color: '#f59e0b',
-            type: 'pending'
-          },
-          {
-            id: '2',
-            icon: '📋',
-            title: 'NPP PR-20260615-1734',
-            subtitle: 'pending',
-            time: '15/6/2026, 5:30:00 am',
-            isRead: false,
-            color: '#f59e0b',
-            type: 'pending'
-          },
-          {
-            id: '3',
-            icon: '📋',
-            title: 'NPP PR-20260615-9844',
-            subtitle: 'pending',
-            time: '15/6/2026, 5:30:00 am',
-            isRead: false,
-            color: '#f59e0b',
-            type: 'pending'
-          },
-          {
-            id: '4',
-            icon: '📋',
-            title: 'NPP PR-20260615-9210',
-            subtitle: 'pending',
-            time: '15/6/2026, 5:30:00 am',
-            isRead: false,
-            color: '#f59e0b',
-            type: 'pending'
-          },
-          {
-            id: '5',
-            icon: '📋',
-            title: 'NPP PR-20260615-8000',
-            subtitle: 'pending',
-            time: '15/6/2026, 5:30:00 am',
-            isRead: false,
-            color: '#f59e0b',
-            type: 'pending'
-          },
-          {
-            id: '6',
-            icon: '📋',
-            title: 'NPP PR-20260615-7156',
-            subtitle: 'pending',
-            time: '15/6/2026, 5:30:00 am',
-            isRead: false,
-            color: '#f59e0b',
-            type: 'pending'
-          }
-        ];
+      error: (err: any) => {
+        console.error('Failed to fetch notifications:', err);
+        this.notificationList = [];
+        this.notificationError = '';
         this.cdr.detectChanges();
       }
     });
@@ -652,10 +526,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.openApprovalSection('approvals');
   }
 
-  openRightsRequests() {
-    this.showRightsRequestModal = true;
-    this.openDropdown = null;
-  }
+
 
   // ─────────────────────────────────────────────────────────────────────────
   // DROPDOWN METHODS - FIXED AND WORKING
@@ -1351,11 +1222,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
     this.isSubmittingRequest = true;
-    setTimeout(() => {
-      this.isSubmittingRequest = false;
-      this.showToast('Access request sent!', 'success');
-      this.closeRightsRequestModal();
-    }, 1000);
+    this.authService.requestModuleAccess(this.requestReason, this.requestingModuleId, this.requestingModuleName).subscribe({
+      next: (res: any) => {
+        this.isSubmittingRequest = false;
+        this.showToast('Access request submitted successfully!', 'success');
+        this.closeRightsRequestModal();
+        this.loadUserInfo();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSubmittingRequest = false;
+        this.showToast(err?.message || 'Failed to submit request', 'error');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   closeRightsRequestModal() {
@@ -1365,14 +1245,68 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.requestReason = '';
   }
 
-  approveRightsRequest(request: any) {
-    this.showToast(`Access granted to ${request.requestedBy}`, 'success');
-    this.pendingRightsRequests = this.pendingRightsRequests.filter(r => r.id !== request.id);
+  showAdminRequestsModal = false;
+
+  openRightsRequests() {
+    this.showAdminRequestsModal = true;
+    this.openDropdown = null;
+    this.loadPendingAccessRequests();
   }
 
-  rejectRightsRequest(request: any) {
-    this.showToast(`Access denied for ${request.requestedBy}`, 'info');
-    this.pendingRightsRequests = this.pendingRightsRequests.filter(r => r.id !== request.id);
+  closeAdminRequestsModal() {
+    this.showAdminRequestsModal = false;
+  }
+
+  loadPendingAccessRequests() {
+    this.authService.getModuleAccessRequests('pending').subscribe({
+      next: (res: any) => {
+        this.pendingRightsRequests = res?.data || [];
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.showToast('Failed to load pending access requests', 'error');
+      }
+    });
+  }
+
+  grantAccessRequest(req: any) {
+    const id = req.id || req._id;
+    this.authService.reviewModuleAccessRequest(id, 'grant', 'Approved by Admin').subscribe({
+      next: () => {
+        this.showToast(`Access request granted for ${req.name}`, 'success');
+        this.loadPendingAccessRequests();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.showToast('Failed to grant access request', 'error');
+      }
+    });
+  }
+
+  rejectAccessRequest(req: any) {
+    const id = req.id || req._id;
+    this.authService.reviewModuleAccessRequest(id, 'reject', 'Rejected by Admin').subscribe({
+      next: () => {
+        this.showToast(`Access request rejected for ${req.name}`, 'info');
+        this.loadPendingAccessRequests();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.showToast('Failed to reject access request', 'error');
+      }
+    });
+  }
+
+  checkAccessGrantedToast() {
+    const user = this.authService.getUser();
+    if (user?.accessRequest?.status === 'granted') {
+      const moduleId = user.accessRequest.moduleId;
+      const key = `access_granted_notified_${moduleId}`;
+      if (!sessionStorage.getItem(key)) {
+        this.showToast(`🎉 Access to module "${user.accessRequest.moduleName || moduleId}" has been GRANTED by Admin!`, 'success');
+        sessionStorage.setItem(key, 'true');
+      }
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1387,6 +1321,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.startClock();
     this.loadAllParallel();
     this.loadUnifiedData();
+    this.checkAccessGrantedToast();
   }
 
   ngOnDestroy() {

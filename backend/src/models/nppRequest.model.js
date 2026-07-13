@@ -5,7 +5,11 @@ const nppRequestSchema = new mongoose.Schema({
   uniqueSerialNo: { type: String, unique: true },
   rfqNo: { type: String, default: '' },
   formData: { type: mongoose.Schema.Types.Mixed, default: {} },
-  status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In-Process'], default: 'Pending' },
+  status: { 
+    type: String, 
+    enum: ['Pending', 'Approved', 'Rejected', 'In-Process', 'Submitted', 'Draft', 'Open', 'Closed'], 
+    default: 'Pending' 
+  },
   requesterName: { type: String },
   department: { type: String },
   emailId: { type: String },
@@ -214,6 +218,8 @@ const nppRequestSchema = new mongoose.Schema({
     score: Number,
     remark: String
   }]
+}, {
+  timestamps: true
 });
 
 nppRequestSchema.index({ uniqueSerialNo: 1 });

@@ -125,6 +125,8 @@ export class UserRightsComponent implements OnInit {
   requestAccess(row: UserRightsRow) {
     if (!row.canRequest) return;
     this.http.post<any>(`${this.apiUrl}/users/access-request`, {
+      moduleId: row.moduleId,
+      moduleName: row.userRight,
       message: `Access requested by ${this.currentUserName} from User Rights page for ${row.userRight}.`
     }, { headers: this.getHeaders() }).pipe(
       timeout(5000),

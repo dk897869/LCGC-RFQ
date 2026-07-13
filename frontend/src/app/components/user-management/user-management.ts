@@ -440,6 +440,26 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
+  deleteUser(user: User): void {
+    const userId = user._id || user.id;
+    if (!userId) return;
+    
+    if (confirm(`Are you sure you want to delete user "${user.name}"?`)) {
+      this.isLoading = true;
+      this.http.delete<any>(`${this.apiUrl}/${userId}`, { headers: this.getHeaders() }).subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.showTopToast('User deleted successfully', 'success');
+          this.loadUsers();
+        },
+        error: err => {
+          this.isLoading = false;
+          this.showTopToast(err.error?.message || 'Failed to delete user', 'error');
+        }
+      });
+    }
+  }
+
   closeCredentialsModal(): void { this.showCredentialsModal = false; this.newUserCredentials = { email: '', password: '' }; }
 
   private generateSystemPassword(): string {

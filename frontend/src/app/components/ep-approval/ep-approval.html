@@ -113,8 +113,8 @@
                 <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
                 <td class="actions">
                   <button class="btn-icon view-btn" (click)="viewRequest(req)">👁️ View</button>
-                  <button *ngIf="canApprove(req)" class="btn-icon approve-btn" (click)="openApprovalModal(req, 'approve')">✅</button>
-                  <button *ngIf="canApprove(req)" class="btn-icon reject-btn" (click)="openApprovalModal(req, 'reject')">❌</button>
+                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-icon approve-btn" (click)="openApprovalModal(req, 'approve')" title="Approve Request">✅</button>
+                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-icon reject-btn" (click)="openApprovalModal(req, 'reject')" title="Reject Request">❌</button>
                 </td>
               </tr>
             </tbody>
@@ -211,8 +211,8 @@
                 <td><span class="status-badge" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
                 <td class="actions">
                   <button class="btn-icon view-btn" (click)="viewRequest(req)">👁️</button>
-                  <button *ngIf="canApprove(req)" class="btn-approve" (click)="openApprovalModal(req, 'approve')">Approve</button>
-                  <button *ngIf="canApprove(req)" class="btn-reject" (click)="openApprovalModal(req, 'reject')">Reject</button>
+                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-approve" (click)="openApprovalModal(req, 'approve')">Approve</button>
+                  <button *ngIf="req.status === 'Pending' && (canApprove(req) || isAdminUser())" class="btn-reject" (click)="openApprovalModal(req, 'reject')">Reject</button>
                 </td>
               </tr>
             </tbody>
@@ -543,69 +543,154 @@
 </div>
 
 <!-- ==================== VIEW MODAL ==================== -->
-<div class="modal-overlay" *ngIf="showViewModal" (click)="closeViewModal()">
-  <div class="modal-card view-modal" (click)="$event.stopPropagation()">
-    <div class="modal-hdr">
-      <h3>📄 EP Request Details</h3>
-      <button (click)="closeViewModal()">×</button>
+<div class="modal-overlay modal-overlay--fullscreen" *ngIf="showViewModal" (click)="closeViewModal()">
+  <div class="create-ep-modal create-ep-modal--fullscreen" (click)="$event.stopPropagation()" style="max-width: 90vw; width: 90vw; height: 90vh;">
+    
+    <div class="modal-header">
+      <h2>📄 EP Approval Request Details &amp; Edit</h2>
+      <button class="close-btn" (click)="closeViewModal()">×</button>
     </div>
-    <div class="modal-body" *ngIf="selectedRequest">
-      <div class="detail-grid">
-        <div class="detail-item">
-          <label>Request ID</label>
-          <span><strong>{{ selectedRequest.requestId || selectedRequest._id || selectedRequest.id || '—' }}</strong></span>
+    
+    <div class="modal-body" *ngIf="selectedRequestCopy" style="max-height: calc(90vh - 140px); overflow-y: auto;">
+      <!-- Requester Information -->
+      <div class="form-section">
+        <div class="section-title">
+          <span class="section-icon">👤</span>
+          Requester Information
         </div>
-        <div class="detail-item">
-          <label>Status</label>
-          <span class="status-badge" [ngClass]="getStatusClass(selectedRequest.status)">{{ selectedRequest.status }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Title</label>
-          <span>{{ selectedRequest.title }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Requester</label>
-          <span>{{ selectedRequest.requester }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Email</label>
-          <span>{{ selectedRequest.email || '—' }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Department</label>
-          <span>{{ selectedRequest.department }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Vendor</label>
-          <span>{{ selectedRequest.vendor || '—' }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Amount</label>
-          <span class="amount">{{ formatAmount(selectedRequest.amount) }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Priority</label>
-          <span class="priority-badge" [ngClass]="getPriorityClass(selectedRequest.priority)">{{ selectedRequest.priority }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Date</label>
-          <span>{{ formatDate(selectedRequest.requestDate) }}</span>
-        </div>
-        <div class="detail-item full-width">
-          <label>Description</label>
-          <p>{{ selectedRequest.description || '—' }}</p>
-        </div>
-        <div class="detail-item full-width">
-          <label>Objective</label>
-          <p>{{ selectedRequest.objective || '—' }}</p>
+        <div class="info-card">
+          <div class="info-grid">
+            <div class="info-field">
+              <label>Name</label>
+              <input type="text" [ngModel]="selectedRequestCopy.requester" (ngModelChange)="selectedRequestCopy.requester = $event" [disabled]="true">
+            </div>
+            <div class="info-field">
+              <label>Department</label>
+              <input type="text" [ngModel]="selectedRequestCopy.department" (ngModelChange)="selectedRequestCopy.department = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
+            </div>
+            <div class="info-field">
+              <label>Email ID</label>
+              <input type="email" [ngModel]="selectedRequestCopy.email" (ngModelChange)="selectedRequestCopy.email = $event" [disabled]="true">
+            </div>
+            <div class="info-field">
+              <label>Request Date</label>
+              <input type="date" [ngModel]="selectedRequestCopy.requestDate" (ngModelChange)="selectedRequestCopy.requestDate = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
+            </div>
+            <div class="info-field">
+              <label>Contact No.</label>
+              <input type="text" [ngModel]="selectedRequestCopy.contactNo" (ngModelChange)="selectedRequestCopy.contactNo = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
+            </div>
+            <div class="info-field">
+              <label>Organization</label>
+              <input type="text" [ngModel]="selectedRequestCopy.organization" (ngModelChange)="selectedRequestCopy.organization = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
+            </div>
+          </div>
         </div>
       </div>
+      
+      <!-- Activity Overview -->
+      <div class="form-section">
+        <div class="section-title">
+          <span class="section-icon">🎯</span>
+          Activity Overview
+        </div>
+        <div class="info-card">
+          <div class="form-grid">
+            <div class="form-field full-width">
+              <label>TITLE OF ACTIVITY *</label>
+              <input type="text" [ngModel]="selectedRequestCopy.title" (ngModelChange)="selectedRequestCopy.title = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" placeholder="Enter title">
+            </div>
+            <div class="form-field">
+              <label>VENDOR / SUPPLIER *</label>
+              <input type="text" [ngModel]="selectedRequestCopy.vendor" (ngModelChange)="selectedRequestCopy.vendor = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" placeholder="Enter vendor">
+            </div>
+            <div class="form-field">
+              <label>AMOUNT / COST (₹) *</label>
+              <input type="number" [ngModel]="selectedRequestCopy.amount" (ngModelChange)="selectedRequestCopy.amount = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" placeholder="Enter amount">
+            </div>
+            <div class="form-field">
+              <label>PRIORITY LEVEL</label>
+              <select [ngModel]="selectedRequestCopy.priority" (ngModelChange)="selectedRequestCopy.priority = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
+                <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
+              </select>
+            </div>
+            <div class="form-field full-width">
+              <label>DESCRIPTION</label>
+              <textarea [ngModel]="selectedRequestCopy.description" (ngModelChange)="selectedRequestCopy.description = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" rows="3"></textarea>
+            </div>
+            <div class="form-field full-width">
+              <label>OBJECTIVE</label>
+              <textarea [ngModel]="selectedRequestCopy.objective" (ngModelChange)="selectedRequestCopy.objective = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stakeholders / Approval status -->
+      <div class="form-section" *ngIf="selectedRequestCopy.stakeholders?.length">
+        <div class="section-title">
+          <span class="section-icon">👥</span>
+          Approval Status Flow
+        </div>
+        <div class="approval-table-wrapper">
+          <table class="approval-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Manager Name</th>
+                <th>Designation</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let st of selectedRequestCopy.stakeholders; let idx = index">
+                <td>{{ idx + 1 }}</td>
+                <td><strong>{{ st.name || st.managerName }}</strong></td>
+                <td>{{ st.designation || '—' }}</td>
+                <td>{{ st.email || '—' }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStatusClass(st.status)">
+                    {{ st.status }}
+                  </span>
+                </td>
+                <td>{{ st.remarks || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Remarks / Comments (Visible to Admin or Active Stakeholder/Approver) -->
+      <div class="form-section" *ngIf="(isAdminUser() || canApprove(selectedRequestCopy)) && selectedRequestCopy.status === 'Pending'">
+        <div class="section-title">
+          <span class="section-icon">💬</span>
+          Remarks / Comments
+        </div>
+        <div class="info-card" style="margin-top: 10px;">
+          <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+            <label style="font-size: 11px; font-weight: 700; color: #475569;">REMARKS / COMMENTS FOR APPROVAL OR REJECTION</label>
+            <textarea [(ngModel)]="selectedRequestCopy.approvalComments" rows="3" placeholder="Enter approval or rejection remarks here..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="modal-ftr">
+    
+    <div class="modal-footer" style="padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
       <button class="btn-cancel" (click)="closeViewModal()">Close</button>
-      <button *ngIf="selectedRequest && canApprove(selectedRequest)" class="btn-approve" (click)="openApprovalModal(selectedRequest, 'approve')">✅ Approve</button>
-      <button *ngIf="selectedRequest && canApprove(selectedRequest)" class="btn-reject" (click)="openApprovalModal(selectedRequest, 'reject')">❌ Reject</button>
+      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending'" class="btn-submit" (click)="saveEditedRequest()" style="background: #1e3a8a; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer;">
+        Save &amp; Submit Changes
+      </button>
+      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || canApprove(selectedRequestCopy))" class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        ✓ Approve
+      </button>
+      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || canApprove(selectedRequestCopy))" class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        ✗ Reject
+      </button>
     </div>
+    
   </div>
 </div>
 

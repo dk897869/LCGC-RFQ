@@ -10,24 +10,25 @@
   <!-- ===================== MAIN CONTENT ===================== -->
   <div class="ep-main">
 
-    <!-- ===================== CREATE RFQ (inline full-page) ===================== -->
+    <!-- ===================== CREATE/EDIT RFQ (inline full-page) ===================== -->
     <ng-container *ngIf="activeSubMenu === 'create-rfq' && !showCreateModal">
       <div class="rfq-create-card inline-form-card full-page-form">
         <div class="form-back-header">
           <button class="btn-back" (click)="activeSubMenu = 'rfq-list'">← Back to RFQ List</button>
+          <span *ngIf="isEditMode" class="edit-badge">✏️ Editing: {{ editingSerialNo }}</span>
         </div>
         <ng-container *ngTemplateOutlet="rfqCreateShell"></ng-container>
       </div>
     </ng-container>
 
-    <!-- ===================== LIST VIEW (RFQ REQUESTS) ===================== -->
+    <!-- ===================== LIST VIEW (RFQ REQUESTS - ONLY PENDING) ===================== -->
     <ng-container *ngIf="activeSubMenu === 'rfq-list'">
 
       <!-- Top Bar -->
       <div class="ep-topbar">
         <div class="topbar-title">
           <div class="breadcrumb">NON BOM › RFQ Request</div>
-          <h2>RFQ Requests <span class="topbar-sub">Manage and track all RFQ requests</span></h2>
+          <h2>Pending RFQ Requests <span class="topbar-sub">Manage and track all pending RFQ requests</span></h2>
         </div>
         <div class="topbar-actions">
           <button class="btn-status" (click)="activeSubMenu = 'status'">📊 Check Status</button>
@@ -54,26 +55,17 @@
         <!-- Filters -->
         <div class="filter-row">
           <button class="filter-pill" [class.active]="activeFilter === 'All'" (click)="setFilter('All')">
-            📋 All <span class="count">{{ countByStatus('All') }}</span>
+            📋 All <span class="count">{{ pendingRequests.length }}</span>
           </button>
           <button class="filter-pill" [class.active]="activeFilter === 'Pending'" (click)="setFilter('Pending')">
-            ⏳ Pending <span class="count">{{ countByStatus('Pending') }}</span>
-          </button>
-          <button class="filter-pill" [class.active]="activeFilter === 'Approved'" (click)="setFilter('Approved')">
-            ✅ Approved <span class="count">{{ countByStatus('Approved') }}</span>
-          </button>
-          <button class="filter-pill" [class.active]="activeFilter === 'Rejected'" (click)="setFilter('Rejected')">
-            ❌ Rejected <span class="count">{{ countByStatus('Rejected') }}</span>
-          </button>
-          <button class="filter-pill" [class.active]="activeFilter === 'In Process'" (click)="setFilter('In Process')">
-            🔄 In Process <span class="count">{{ countByStatus('In Process') }}</span>
+            ⏳ Pending <span class="count">{{ pendingRequests.length }}</span>
           </button>
         </div>
 
         <!-- Table -->
         <div class="table-card">
           <div class="table-card-head">
-            <h3>Quotation</h3>
+            <h3>Pending Quotations</h3>
             <span class="badge-total">Total: {{ filteredRequests.length }}</span>
           </div>
 
@@ -101,7 +93,7 @@
                   <td><span class="status-badge" [ngClass]="getEpStatusClass(item.status)">{{ item.status }}</span></td>
                   <td>{{ formatDate(item.requestDate) }}</td>
                   <td class="actions-cell">
-                    <button class="action-btn view" (click)="viewItem(item)" title="View Details">👁️ View</button>
+                    <button class="action-btn view" (click)="viewItem(item)" title="Edit RFQ">✏️ Edit</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'"
                             class="action-btn approve" (click)="approveItem(item)" title="Approve RFQ">✓ Approve</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'"
@@ -113,7 +105,7 @@
             <ng-template #noData>
               <div class="empty-state">
                 <span>📭</span>
-                <p>No RFQ requests found. Click "Create New RFQ" to get started.</p>
+                <p>No pending RFQ requests found. Click "Create New RFQ" to get started.</p>
                 <button class="create-first-btn" (click)="openCreate()">+ Create New RFQ</button>
               </div>
             </ng-template>
@@ -122,13 +114,13 @@
 
         <!-- Footer -->
         <div class="list-footer">
-          <span class="data-status">Data fetched successfully: {{ filteredRequests.length }} RFQ request(s)</span>
+          <span class="data-status">Data fetched successfully: {{ filteredRequests.length }} pending RFQ request(s)</span>
           <button class="btn-action" (click)="activeSubMenu = 'status'">📊 Check Status</button>
         </div>
 
         <!-- Total -->
         <div class="list-total">
-          <span>Total: {{ filteredRequests.length }}</span>
+          <span>Total Pending: {{ filteredRequests.length }}</span>
         </div>
 
         <!-- Bottom Bar -->
@@ -237,12 +229,12 @@
       <div class="stats-grid">
         <div class="stat-card all" (click)="setFilter('All'); activeSubMenu = 'rfq-list'" style="cursor:pointer">
           <div class="stat-icon">📋</div>
-          <div class="stat-value">{{ countByStatus('All') }}</div>
+          <div class="stat-value">{{ allRequests.length }}</div>
           <div class="stat-label">Total RFQs</div>
         </div>
         <div class="stat-card pending" (click)="setFilter('Pending'); activeSubMenu = 'rfq-list'" style="cursor:pointer">
           <div class="stat-icon">⏳</div>
-          <div class="stat-value">{{ countByStatus('Pending') }}</div>
+          <div class="stat-value">{{ pendingRequests.length }}</div>
           <div class="stat-label">Pending</div>
         </div>
         <div class="stat-card approved" (click)="setFilter('Approved'); activeSubMenu = 'rfq-list'" style="cursor:pointer">
@@ -327,6 +319,7 @@
   <div class="rfq-create-card full-page-form" (click)="$event.stopPropagation()">
     <div class="form-back-header">
       <button class="btn-back" (click)="closeCreateModal()">← Back to RFQ List</button>
+      <span *ngIf="isEditMode" class="edit-badge">✏️ Editing: {{ editingSerialNo }}</span>
     </div>
     <ng-container *ngTemplateOutlet="rfqCreateShell"></ng-container>
   </div>
@@ -338,8 +331,8 @@
   <div class="rfq-create-hdr">
     <div>
       <div class="rfq-module-label">NPP PROCUREMENT (NON-BOM)</div>
-      <div class="rfq-create-title">Create RFQ Request</div>
-      <p class="rfq-create-sub">Fill in the details to create a new RFQ request</p>
+      <div class="rfq-create-title">{{ isEditMode ? 'Edit RFQ Request' : 'Create RFQ Request' }}</div>
+      <p class="rfq-create-sub">{{ isEditMode ? 'Update the details to modify the RFQ request' : 'Fill in the details to create a new RFQ request' }}</p>
     </div>
     <button type="button" class="rfq-close-btn" (click)="closeCreateModal()">×</button>
   </div>
@@ -350,13 +343,13 @@
     <div class="rfq-serial-card">
       <div>
         <span class="serial-label">📋 Current RFQ Serial No</span>
-        <strong [class.fixed]="rfqSerialFixed">{{ rfqDraftSerialNo || 'Generating...' }}</strong>
+        <strong [class.fixed]="rfqSerialFixed || isEditMode">{{ rfqDraftSerialNo || 'Generating...' }}</strong>
       </div>
-      <span class="serial-note">{{ rfqSerialFixed ? 'Fixed after submit' : 'Draft serial refreshes until submit' }}</span>
+      <span class="serial-note">{{ isEditMode ? 'Existing RFQ - Serial locked' : (rfqSerialFixed ? 'Fixed after submit' : 'Draft serial refreshes until submit') }}</span>
     </div>
 
-    <!-- Serial Number Search -->
-    <div class="serial-search-section">
+    <!-- Serial Number Search (only for new RFQ) -->
+    <div class="serial-search-section" *ngIf="!isEditMode">
       <div class="serial-search-header">
         <span>🔍 Search &amp; Reuse Existing RFQ</span>
         <small>Enter serial number to load existing data</small>
@@ -570,7 +563,7 @@
     <button type="button" class="btn-cancel" (click)="closeCreateModal()">Cancel</button>
     <button type="button" class="btn-submit" (click)="submitRFQ()" [disabled]="isSubmitting">
       <span class="btn-spin" *ngIf="isSubmitting"></span>
-      {{ isSubmitting ? 'Submitting...' : 'Submit RFQ' }}
+      {{ isSubmitting ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update RFQ' : 'Submit RFQ') }}
     </button>
   </div>
 </ng-template>
@@ -636,6 +629,7 @@
     </div>
     <div class="modal-ftr">
       <button class="btn-cancel" (click)="closeViewModal()">Close</button>
+      <button *ngIf="selectedItem?.status === 'Pending'" class="btn-edit" (click)="viewItem(selectedItem!); closeViewModal()">✏️ Edit</button>
       <button *ngIf="isAdminOrManager() && selectedItem?.status === 'Pending'" class="btn-approve" (click)="approveItem(selectedItem!); closeViewModal()">✓ Approve</button>
       <button *ngIf="isAdminOrManager() && selectedItem?.status === 'Pending'" class="btn-reject" (click)="rejectItem(selectedItem!); closeViewModal()">✗ Reject</button>
     </div>

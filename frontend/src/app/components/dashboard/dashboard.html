@@ -8,6 +8,7 @@
     </div>
   </div>
 
+  <ng-container *ngIf="userRole !== 'Vendor'">
   <!-- SIDEBAR (fully removed from the DOM in focus mode so it can never overlap a module's own UI) -->
   <aside class="sidebar" *ngIf="!isFocusMode" [class.collapsed]="sidebarCollapsed">
     <div class="sb-logo">
@@ -311,95 +312,125 @@
           </div>
         </div>
 
-        <!-- Stats Row -->
-        <div class="stats-row">
-          <div class="scard scard--blue" (click)="navigateToEpApproval('requests')">
-            <div class="scard__top"><div><div class="scard__label">TOTAL REQUESTS</div><div class="scard__val">{{ isStatsLoading ? '—' : (displayTotalRequests ?? unifiedStats.total) }}</div><div class="scard__sub">All time requests</div></div><div class="scard__icon scard__icon--blue">📋</div></div>
-            <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,25 20,20 40,22 60,12 80,15 100,8" fill="none" stroke="rgba(59,130,246,0.6)" stroke-width="2"/></svg></div>
-          </div>
-          <div class="scard scard--amber" (click)="navigateToEpApproval('approvals')">
-            <div class="scard__top"><div><div class="scard__label">PENDING</div><div class="scard__val scard__val--amber">{{ isStatsLoading ? '—' : (displayPending ?? unifiedStats.pending) }}</div><div class="scard__sub">Waiting for approval</div></div><div class="scard__icon scard__icon--amber">⏳</div></div>
-            <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,10 20,18 40,12 60,22 80,16 100,20" fill="none" stroke="rgba(245,158,11,0.6)" stroke-width="2"/></svg></div>
-          </div>
-          <div class="scard scard--green" (click)="navigateToEpApproval('status')">
-            <div class="scard__top"><div><div class="scard__label">APPROVED</div><div class="scard__val scard__val--green">{{ isStatsLoading ? '—' : (displayApproved ?? unifiedStats.approved) }}</div><div class="scard__sub">Successfully approved</div></div><div class="scard__icon scard__icon--green">🛡️</div></div>
-            <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,22 40,18 60,14 80,10 100,5" fill="none" stroke="rgba(16,185,129,0.6)" stroke-width="2"/></svg></div>
-          </div>
-          <div class="scard scard--purple">
-            <div class="scard__top"><div><div class="scard__label">SUCCESS RATE</div><div class="scard__val scard__val--purple">{{ isStatsLoading ? '—' : getApprovalRate() + '%' }}</div><div class="scard__sub">Overall success rate</div></div><div class="scard__icon scard__icon--purple">📈</div></div>
-            <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,20 20,18 40,15 60,12 80,10 100,8" fill="none" stroke="rgba(139,92,246,0.6)" stroke-width="2"/></svg></div>
-          </div>
-        </div>
-
-        <!-- Action Row -->
-        <div class="action-row">
-          <button class="action-btn action-btn--primary" (click)="navigateToNppTab('rfq-npp-form')"><span>＋</span> Create RFQ</button>
-          <button class="action-btn action-btn--outline" (click)="navigateToNppTab('pr-request')"><span>📋</span> Create PR</button>
-          <button class="action-btn action-btn--green" (click)="navigateToEpApproval('approvals')"><span>✅</span> Pending Approvals</button>
-          <button class="action-btn action-btn--purple" (click)="openReportsModal()"><span>📊</span> Reports</button>
-        </div>
-
-        <!-- Request Statistics -->
-        <div class="section-title"><span class="section-title__icon">📊</span> Request Statistics by Type</div>
-        <div class="type-cards">
-          <div class="tcard tcard--ep" (click)="navigateToModule('ep-approval')">
-            <div class="tcard__hdr"><span class="tcard__icon">📋</span><span class="tcard__name">EP Approvals</span></div>
-            <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.epApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.epApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.epApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.epApprovals.rejected }}</strong></div></div>
-            <div class="tcard__bar"><div [style.width]="getApprovalProgress(approvalStatsByType.epApprovals)"></div></div>
-          </div>
-          <div class="tcard tcard--rfq" (click)="navigateToModule('rfq')">
-            <div class="tcard__hdr"><span class="tcard__icon">📄</span><span class="tcard__name">RFQ (NON BOM)</span></div>
-            <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.rfqApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.rfqApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.rfqApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.rfqApprovals.rejected }}</strong></div></div>
-            <div class="tcard__bar tcard__bar--green"><div [style.width]="getApprovalProgress(approvalStatsByType.rfqApprovals)"></div></div>
-          </div>
-          <div class="tcard tcard--npp" (click)="navigateToModule('npp-procurement')">
-            <div class="tcard__hdr"><span class="tcard__icon">🛒</span><span class="tcard__name">NPP Procurement</span></div>
-            <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.nppApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.nppApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.nppApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.nppApprovals.rejected }}</strong></div></div>
-            <div class="tcard__bar tcard__bar--amber"><div [style.width]="getApprovalProgress(approvalStatsByType.nppApprovals)"></div></div>
-          </div>
-        </div>
-
-        <!-- Mid Row -->
-        <div class="mid-row">
-          <div class="chart-panel">
-            <div class="chart-panel__hdr"><span>📈</span> Request Trends (Last 6 Months)<div class="chart-legend"><span class="cl cl--blue">Total</span><span class="cl cl--green">Approved</span><span class="cl cl--amber">Pending</span></div></div>
-            <div class="chart-body">
-              <div class="chart-yaxis"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div>
-              <div class="chart-bars"><div class="chart-col" *ngFor="let label of chartData.labels; let i = index"><div class="chart-bar-group"><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.total[i] }}</span><div class="bar bar--blue" [style.height]="getBarHeight(chartData.total[i], 40)"></div></div><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.approved[i] }}</span><div class="bar bar--green" [style.height]="getBarHeight(chartData.approved[i], 40)"></div></div><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.pending[i] }}</span><div class="bar bar--amber" [style.height]="getBarHeight(chartData.pending[i], 40)"></div></div></div><div class="chart-xlabel">{{ label }}</div></div></div>
+        <!-- SIMPLIFIED USER DASHBOARD -->
+        <div *ngIf="userRole === 'User'" class="simple-user-dash" style="margin-top: 24px;">
+          <div class="section-title"><span class="section-title__icon">🔒</span> Request Module Permissions</div>
+          <p style="color: #64748b; font-size: 14px; margin-bottom: 24px;">Select any of the modules below. If you don't have access, you can submit a request to the Administrator to grant you permissions.</p>
+          <div class="user-dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+            <div *ngFor="let item of allMenuItems" class="module-card" [class.granted]="userRights[item.rightKey] === true" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #e2e8f0; transition: transform 0.2s, box-shadow 0.2s;">
+              <div>
+                <div style="font-size: 32px; margin-bottom: 12px;">{{ item.icon }}</div>
+                <h3 style="margin: 0 0 8px; color: #0f2a5e; font-size: 16px; font-weight: 700;">{{ item.name }}</h3>
+                <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.4;">
+                  Access status: 
+                  <span *ngIf="userRights[item.rightKey] === true" style="color: #059669; font-weight: 600;">Granted ✓</span>
+                  <span *ngIf="userRights[item.rightKey] !== true" style="color: #d97706; font-weight: 600;">Not Authorized 🔒</span>
+                </p>
+              </div>
+              <div style="margin-top: 20px;">
+                <button *ngIf="userRights[item.rightKey] === true" (click)="navigateToModule(item.id)" style="width: 100%; padding: 10px; background: #0f2a5e; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                  Open Module
+                </button>
+                <button *ngIf="userRights[item.rightKey] !== true" (click)="navigateToModule(item.id)" style="width: 100%; padding: 10px; background: #f1f5f9; color: #0f2a5e; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                  Request Access
+                </button>
+              </div>
             </div>
           </div>
-          <div class="activity-panel">
-            <div class="activity-panel__hdr">Recent Activity <button class="view-all" (click)="navigateToEpApproval('requests')">View All</button></div>
-            <div class="activity-list"><div class="act-item" *ngFor="let a of activityFeed"><div class="act-item__icon" [style.background]="a.color + '20'" [style.color]="a.color">{{ a.icon }}</div><div class="act-item__body"><div class="act-item__text">{{ a.text }}</div></div><div class="act-item__time">{{ a.time }}</div></div></div>
-          </div>
         </div>
 
-        <!-- Recent Requests -->
-        <div class="recent-requests-panel" *ngIf="filteredUnifiedRequests.length">
-          <div class="recent-requests-panel__hdr">
-            <h3>Recent Requests</h3>
-            <button class="view-all" (click)="navigateToEpApproval('approvals')">Manage Approvals →</button>
+        <!-- DETAILED ADMIN / MANAGER DASHBOARD -->
+        <div *ngIf="userRole !== 'User'">
+          <!-- Stats Row -->
+          <div class="stats-row">
+            <div class="scard scard--blue" (click)="navigateToEpApproval('requests')">
+              <div class="scard__top"><div><div class="scard__label">TOTAL REQUESTS</div><div class="scard__val">{{ isStatsLoading ? '—' : (displayTotalRequests ?? unifiedStats.total) }}</div><div class="scard__sub">All time requests</div></div><div class="scard__icon scard__icon--blue">📋</div></div>
+              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,25 20,20 40,22 60,12 80,15 100,8" fill="none" stroke="rgba(59,130,246,0.6)" stroke-width="2"/></svg></div>
+            </div>
+            <div class="scard scard--amber" (click)="navigateToEpApproval('approvals')">
+              <div class="scard__top"><div><div class="scard__label">PENDING</div><div class="scard__val scard__val--amber">{{ isStatsLoading ? '—' : (displayPending ?? unifiedStats.pending) }}</div><div class="scard__sub">Waiting for approval</div></div><div class="scard__icon scard__icon--amber">⏳</div></div>
+              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,10 20,18 40,12 60,22 80,16 100,20" fill="none" stroke="rgba(245,158,11,0.6)" stroke-width="2"/></svg></div>
+            </div>
+            <div class="scard scard--green" (click)="navigateToEpApproval('status')">
+              <div class="scard__top"><div><div class="scard__label">APPROVED</div><div class="scard__val scard__val--green">{{ isStatsLoading ? '—' : (displayApproved ?? unifiedStats.approved) }}</div><div class="scard__sub">Successfully approved</div></div><div class="scard__icon scard__icon--green">🛡️</div></div>
+              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,22 40,18 60,14 80,10 100,5" fill="none" stroke="rgba(16,185,129,0.6)" stroke-width="2"/></svg></div>
+            </div>
+            <div class="scard scard--purple">
+              <div class="scard__top"><div><div class="scard__label">SUCCESS RATE</div><div class="scard__val scard__val--purple">{{ isStatsLoading ? '—' : getApprovalRate() + '%' }}</div><div class="scard__sub">Overall success rate</div></div><div class="scard__icon scard__icon--purple">📈</div></div>
+              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,20 20,18 40,15 60,12 80,10 100,8" fill="none" stroke="rgba(139,92,246,0.6)" stroke-width="2"/></svg></div>
+            </div>
           </div>
-          <table class="data-table data-table--compact">
-            <thead><tr><th>Type</th><th>Serial</th><th>Title</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody>
-              <tr *ngFor="let req of filteredUnifiedRequests | slice:0:8">
-                <td><span class="tbadge" [ngClass]="'tbadge--' + req.type">{{ getTypeLabel(req.type) }}</span></td>
-                <td class="mono">{{ req.uniqueSerialNo || '—' }}</td>
-                <td><strong>{{ req.title }}</strong></td>
-                <td>{{ req.requester }}</td>
-                <td><span class="sbadge" [ngClass]="getUnifiedStatusClass(req.status)">{{ req.status }}</span></td>
-                <td><button class="mini" (click)="viewFullForm(req)">View</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
 
-        <!-- Counters -->
-        <div class="counters-row" *ngIf="isAdminView">
-          <div class="counter" (click)="navigateToModule('vendors')"><span class="counter__icon">🏢</span><div><div class="counter__lbl">Vendors</div><div class="counter__val">{{ vendorCount ?? 0 }}</div></div></div>
-          <div class="counter" (click)="navigateToModule('parts')"><span class="counter__icon">🔧</span><div><div class="counter__lbl">Parts</div><div class="counter__val">{{ partCount ?? 0 }}</div></div></div>
-          <div class="counter" (click)="navigateToEpApproval('approvals')"><span class="counter__icon">⏳</span><div><div class="counter__lbl">Pending</div><div class="counter__val counter__val--red">{{ unifiedStats.pending }}</div></div></div>
+          <!-- Action Row -->
+          <div class="action-row">
+            <button class="action-btn action-btn--primary" (click)="navigateToNppTab('rfq-npp-form')"><span>＋</span> Create RFQ</button>
+            <button class="action-btn action-btn--outline" (click)="navigateToNppTab('pr-request')"><span>📋</span> Create PR</button>
+            <button class="action-btn action-btn--green" (click)="navigateToEpApproval('approvals')"><span>✅</span> Pending Approvals</button>
+            <button class="action-btn action-btn--purple" (click)="openReportsModal()"><span>📊</span> Reports</button>
+          </div>
+
+          <!-- Request Statistics -->
+          <div class="section-title"><span class="section-title__icon">📊</span> Request Statistics by Type</div>
+          <div class="type-cards">
+            <div class="tcard tcard--ep" (click)="navigateToModule('ep-approval')">
+              <div class="tcard__hdr"><span class="tcard__icon">📋</span><span class="tcard__name">EP Approvals</span></div>
+              <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.epApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.epApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.epApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.epApprovals.rejected }}</strong></div></div>
+              <div class="tcard__bar"><div [style.width]="getApprovalProgress(approvalStatsByType.epApprovals)"></div></div>
+            </div>
+            <div class="tcard tcard--rfq" (click)="navigateToModule('rfq')">
+              <div class="tcard__hdr"><span class="tcard__icon">📄</span><span class="tcard__name">RFQ (NON BOM)</span></div>
+              <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.rfqApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.rfqApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.rfqApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.rfqApprovals.rejected }}</strong></div></div>
+              <div class="tcard__bar tcard__bar--green"><div [style.width]="getApprovalProgress(approvalStatsByType.rfqApprovals)"></div></div>
+            </div>
+            <div class="tcard tcard--npp" (click)="navigateToModule('npp-procurement')">
+              <div class="tcard__hdr"><span class="tcard__icon">🛒</span><span class="tcard__name">NPP Procurement</span></div>
+              <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.nppApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.nppApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.nppApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.nppApprovals.rejected }}</strong></div></div>
+              <div class="tcard__bar tcard__bar--amber"><div [style.width]="getApprovalProgress(approvalStatsByType.nppApprovals)"></div></div>
+            </div>
+          </div>
+
+          <!-- Mid Row -->
+          <div class="mid-row">
+            <div class="chart-panel">
+              <div class="chart-panel__hdr"><span>📈</span> Request Trends (Last 6 Months)<div class="chart-legend"><span class="cl cl--blue">Total</span><span class="cl cl--green">Approved</span><span class="cl cl--amber">Pending</span></div></div>
+              <div class="chart-body">
+                <div class="chart-yaxis"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div>
+                <div class="chart-bars"><div class="chart-col" *ngFor="let label of chartData.labels; let i = index"><div class="chart-bar-group"><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.total[i] }}</span><div class="bar bar--blue" [style.height]="getBarHeight(chartData.total[i], 40)"></div></div><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.approved[i] }}</span><div class="bar bar--green" [style.height]="getBarHeight(chartData.approved[i], 40)"></div></div><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.pending[i] }}</span><div class="bar bar--amber" [style.height]="getBarHeight(chartData.pending[i], 40)"></div></div></div><div class="chart-xlabel">{{ label }}</div></div></div>
+              </div>
+            </div>
+            <div class="activity-panel">
+              <div class="activity-panel__hdr">Recent Activity <button class="view-all" (click)="navigateToEpApproval('requests')">View All</button></div>
+              <div class="activity-list"><div class="act-item" *ngFor="let a of activityFeed"><div class="act-item__icon" [style.background]="a.color + '20'" [style.color]="a.color">{{ a.icon }}</div><div class="act-item__body"><div class="act-item__text">{{ a.text }}</div></div><div class="act-item__time">{{ a.time }}</div></div></div>
+            </div>
+          </div>
+
+          <!-- Recent Requests -->
+          <div class="recent-requests-panel" *ngIf="filteredUnifiedRequests.length">
+            <div class="recent-requests-panel__hdr">
+              <h3>Recent Requests</h3>
+              <button class="view-all" (click)="navigateToEpApproval('approvals')">Manage Approvals →</button>
+            </div>
+            <table class="data-table data-table--compact">
+              <thead><tr><th>Type</th><th>Serial</th><th>Title</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let req of filteredUnifiedRequests | slice:0:8">
+                  <td><span class="tbadge" [ngClass]="'tbadge--' + req.type">{{ getTypeLabel(req.type) }}</span></td>
+                  <td class="mono">{{ req.uniqueSerialNo || '—' }}</td>
+                  <td><strong>{{ req.title }}</strong></td>
+                  <td>{{ req.requester }}</td>
+                  <td><span class="sbadge" [ngClass]="getUnifiedStatusClass(req.status)">{{ req.status }}</span></td>
+                  <td><button class="mini" (click)="viewFullForm(req)">View</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Counters -->
+          <div class="counters-row" *ngIf="isAdminView">
+            <div class="counter" (click)="navigateToModule('vendors')"><span class="counter__icon">🏢</span><div><div class="counter__lbl">Vendors</div><div class="counter__val">{{ vendorCount ?? 0 }}</div></div></div>
+            <div class="counter" (click)="navigateToModule('parts')"><span class="counter__icon">🔧</span><div><div class="counter__lbl">Parts</div><div class="counter__val">{{ partCount ?? 0 }}</div></div></div>
+            <div class="counter" (click)="navigateToEpApproval('approvals')"><span class="counter__icon">⏳</span><div><div class="counter__lbl">Pending</div><div class="counter__val counter__val--red">{{ unifiedStats.pending }}</div></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -411,6 +442,53 @@
       <div class="modal-box__hdr"><h2>Access Request</h2><button (click)="closeRightsRequestModal()">✕</button></div>
       <div class="modal-box__body"><div class="req-info"><div style="font-size:48px;text-align:center">🔒</div><h3>Request Access to {{ requestingModuleName }}</h3><p>You don't have permission to access this module.</p></div><label>Reason for Access</label><textarea [(ngModel)]="requestReason" rows="4"></textarea></div>
       <div class="modal-box__ftr"><button class="mbtn mbtn--cancel" (click)="closeRightsRequestModal()">Cancel</button><button class="mbtn mbtn--primary" (click)="submitRightsRequest()">Submit Request</button></div>
+    </div>
+  </div>
+
+  <!-- ADMIN ACCESS REQUESTS MODAL -->
+  <div class="modal-bg show" *ngIf="showAdminRequestsModal" (click)="closeAdminRequestsModal()">
+    <div class="modal-box modal-box--wide" (click)="$event.stopPropagation()">
+      <div class="modal-box__hdr modal-box__hdr--dark">
+        <h2>👥 Manage Module Access Requests</h2>
+        <button (click)="closeAdminRequestsModal()">✕</button>
+      </div>
+      <div class="modal-box__body">
+        <div class="table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <table class="ep-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                <th style="padding: 12px; color: #475569;">User</th>
+                <th style="padding: 12px; color: #475569;">Email</th>
+                <th style="padding: 12px; color: #475569;">Requested Module</th>
+                <th style="padding: 12px; color: #475569;">Reason</th>
+                <th style="padding: 12px; color: #475569; text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let req of pendingRightsRequests" style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 12px;"><strong>{{ req.name }}</strong></td>
+                <td style="padding: 12px;">{{ req.email }}</td>
+                <td style="padding: 12px;">
+                  <span class="tbadge" [ngClass]="'tbadge--rfq'" style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-weight: 600;">
+                    {{ req.accessRequest?.moduleName || req.accessRequest?.moduleId || 'Module' }}
+                  </span>
+                </td>
+                <td style="padding: 12px; color: #64748b;">{{ req.accessRequest?.message || '—' }}</td>
+                <td style="padding: 12px; text-align: center; white-space: nowrap;">
+                  <button class="mbtn mbtn--approve" style="padding: 6px 12px; margin-right: 8px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;" (click)="grantAccessRequest(req)">✓ Grant</button>
+                  <button class="mbtn mbtn--reject" style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;" (click)="rejectAccessRequest(req)">✗ Reject</button>
+                </td>
+              </tr>
+              <tr *ngIf="!pendingRightsRequests.length">
+                <td colspan="5" style="padding: 32px; text-align: center; color: #64748b;">No pending access requests.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-box__ftr">
+        <button class="mbtn mbtn--cancel" (click)="closeAdminRequestsModal()">Close</button>
+      </div>
     </div>
   </div>
 
@@ -439,5 +517,8 @@
   </div>
 
   <app-profile *ngIf="showProfileModal" [initialTab]="profileInitialTab" (close)="closeProfileModal()"></app-profile>
+  </ng-container>
 
+  <!-- VENDOR VIEW: Only render vendor dashboard -->
+  <app-vendor-dashboard *ngIf="userRole === 'Vendor'"></app-vendor-dashboard>
 </div>

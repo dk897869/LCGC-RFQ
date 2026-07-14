@@ -27,6 +27,7 @@ interface Attachment {
 }
 
 interface EPRequest {
+  _id?: string;          // MongoDB document id
   id: string;
   requestId: string;
   title: string;
@@ -36,6 +37,8 @@ interface EPRequest {
   date: string;
   priority: string;
   amount: number;
+  email?: string;
+  createdAt?: string;
 }
 
 @Component({
@@ -182,55 +185,44 @@ export class CreateEPRequestModalComponent implements OnInit {
     };
   }
 
+  // Load requests from API (real backend)
   loadRequestsFromStorage() {
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('ep_approval_requests');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            this.allRequests = parsed;
-            return;
+    this.isLoading = true;
+    this.authService.getAllEPApprovalRequests().subscribe({
+      next: (res: any) => {
+        const list = res?.data || res?.requests || (Array.isArray(res) ? res : []);
+        this.allRequests = list.map((item: any) => ({
+          _id: item._id || item.id,
+          id: item._id || item.id,
+          requestId: item.uniqueSerialNo || item.requestId || item._id || 'EP-' + String(item._id).slice(-6),
+          title: item.title || item.titleOfActivity || 'Untitled',
+          requester: item.requester || item.requesterName || item.createdByName || '',
+          department: item.department || '',
+          status: item.status || 'Pending',
+          date: item.requestDate || item.createdAt || '',
+          priority: item.priority || 'Medium',
+          amount: Number(item.amount || 0),
+          email: item.email || item.emailId || ''
+        }));
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoading = false;
+        // Fallback to localStorage if API fails
+        if (typeof localStorage !== 'undefined') {
+          const saved = localStorage.getItem('ep_approval_requests');
+          if (saved) {
+            try { this.allRequests = JSON.parse(saved); } catch {}
           }
-        } catch (e) {
-          console.error('Error loading requests:', e);
         }
+        this.cdr.detectChanges();
       }
-    }
-    // Load sample data if no requests exist
-    if (this.allRequests.length === 0) {
-      this.allRequests = [
-        {
-          id: 'EP-20260624-001',
-          requestId: 'EP-20260624-001',
-          title: 'Software License Purchase',
-          requester: 'Deepak Kumar',
-          department: 'IT',
-          status: 'Pending',
-          date: '2026-06-24',
-          priority: 'High',
-          amount: 150000
-        },
-        {
-          id: 'EP-20260623-002',
-          requestId: 'EP-20260623-002',
-          title: 'Office Equipment Procurement',
-          requester: 'Deepak Kumar',
-          department: 'Purchase',
-          status: 'Approved',
-          date: '2026-06-23',
-          priority: 'Medium',
-          amount: 75000
-        }
-      ];
-      this.saveRequestsToStorage();
-    }
+    });
   }
 
   saveRequestsToStorage() {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('ep_approval_requests', JSON.stringify(this.allRequests));
-    }
+    // No longer saving to localStorage — data lives in backend
   }
 
   private loadManagerOptions() {
@@ -655,63 +647,53 @@ export class CreateEPRequestModalComponent implements OnInit {
   
   onSubmit() {
     if (!this.validateForm()) return;
-    
+
     this.isSubmitting = true;
     this.showToastMessage('Submitting EP request...', 'info');
-    
-    setTimeout(() => {
-      this.isSubmitting = false;
-      
-      const requestId = `EP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(this.allRequests.length + 1).padStart(3, '0')}`;
-      
-      const newRequest: EPRequest = {
-        id: requestId,
-        requestId: requestId,
-        title: this.formData.titleOfActivity,
-        requester: this.formData.requesterName,
-        department: this.formData.department,
-        status: 'Pending',
-        date: this.formData.requestDate,
-        priority: this.formData.priority,
-        amount: this.formData.amount || 0
-      };
-      
-      this.allRequests.unshift(newRequest);
-      this.saveRequestsToStorage();
-      
-      const payload = {
-        ...this.formData,
-        requestId: requestId,
-        stakeholders: this.approvers.filter(a => a.managerName).map((a, idx) => ({
-          line: a.line,
+
+    const payload = {
+      title: this.formData.titleOfActivity,
+      requester: this.formData.requesterName,
+      department: this.formData.department,
+      email: this.formData.emailId,
+      requestDate: this.formData.requestDate,
+      contactNo: this.formData.contactNo,
+      organization: this.formData.organization,
+      description: this.formData.description,
+      status: 'Pending',
+      stakeholders: this.approvers
+        .filter(a => a.managerName && a.email)
+        .map((a, idx) => ({
           name: a.managerName,
           email: a.email,
-          designation: a.designation,
+          designation: a.designation || '',
+          line: a.line,
           approvalOrder: idx + 1,
           status: 'Pending',
-          remarks: a.remarks,
-          dateTime: a.dateTime || new Date().toISOString()
+          remarks: a.remarks || ''
         })),
-        attachments: this.attachments.filter(a => a.file).map(a => ({
-          name: a.name,
-          fileName: a.file?.name,
-          fileSize: a.fileSize,
-          remark: a.remark
-        })),
-        ccList: this.ccList,
-        status: 'Pending'
-      };
-      
-      this.save.emit(payload);
-      this.showToastMessage(`EP Request ${requestId} submitted successfully!`, 'success');
-      
-      // Navigate to list view after 2 seconds
-      setTimeout(() => {
-        this.showListViewScreen();
-        this.resetForm();
-      }, 2000);
-      
-    }, 1500);
+      attachments: this.attachments
+        .filter(a => a.file)
+        .map(a => ({ name: a.name, fileSize: a.fileSize, remark: a.remark })),
+      ccList: this.ccList
+    };
+
+    this.authService.createEPRequest(payload).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        const createdId = res?.data?.uniqueSerialNo || res?.data?._id || res?.requestId || 'EP-' + Date.now();
+        this.showToastMessage(`EP Request ${createdId} submitted successfully!`, 'success');
+        setTimeout(() => {
+          this.loadRequestsFromStorage(); // Refresh from API
+          this.showListViewScreen();
+          this.resetForm();
+        }, 2000);
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToastMessage(err?.message || 'Failed to submit EP request. Please try again.', 'error');
+      }
+    });
   }
 
   resetForm() {
@@ -784,20 +766,28 @@ export class CreateEPRequestModalComponent implements OnInit {
 
   approveRequest() {
     if (!this.selectedRequest) return;
+    const mongoId = this.selectedRequest._id || this.selectedRequest.id;
+    if (!mongoId) {
+      this.showToastMessage('Cannot identify request. Please refresh and try again.', 'error');
+      return;
+    }
     this.isActioning = true;
-    setTimeout(() => {
-      if (this.selectedRequest) {
-        const idx = this.allRequests.findIndex(r => r.requestId === this.selectedRequest!.requestId);
-        if (idx !== -1) {
-          this.allRequests[idx].status = 'Approved';
-          this.selectedRequest.status = 'Approved';
-          this.saveRequestsToStorage();
-        }
+    this.authService.approveEPRequest(mongoId, this.actionRemarks).subscribe({
+      next: (res: any) => {
+        this.isActioning = false;
+        this.showToastMessage(
+          res?.message || `Request approved successfully!`, 'success'
+        );
+        setTimeout(() => {
+          this.loadRequestsFromStorage(); // Refresh list from API
+          this.showListViewScreen();
+        }, 2000);
+      },
+      error: (err: any) => {
+        this.isActioning = false;
+        this.showToastMessage(err?.message || 'Failed to approve request. Please try again.', 'error');
       }
-      this.isActioning = false;
-      this.showToastMessage(`Request ${this.selectedRequest?.requestId} approved successfully!`, 'success');
-      setTimeout(() => this.showListViewScreen(), 2000);
-    }, 1000);
+    });
   }
 
   rejectRequest() {
@@ -806,20 +796,28 @@ export class CreateEPRequestModalComponent implements OnInit {
       this.showToastMessage('Please enter remarks before rejecting.', 'error');
       return;
     }
+    const mongoId = this.selectedRequest._id || this.selectedRequest.id;
+    if (!mongoId) {
+      this.showToastMessage('Cannot identify request. Please refresh and try again.', 'error');
+      return;
+    }
     this.isActioning = true;
-    setTimeout(() => {
-      if (this.selectedRequest) {
-        const idx = this.allRequests.findIndex(r => r.requestId === this.selectedRequest!.requestId);
-        if (idx !== -1) {
-          this.allRequests[idx].status = 'Rejected';
-          this.selectedRequest.status = 'Rejected';
-          this.saveRequestsToStorage();
-        }
+    this.authService.rejectEPRequest(mongoId, this.actionRemarks).subscribe({
+      next: (res: any) => {
+        this.isActioning = false;
+        this.showToastMessage(
+          res?.message || `Request rejected.`, 'info'
+        );
+        setTimeout(() => {
+          this.loadRequestsFromStorage(); // Refresh list from API
+          this.showListViewScreen();
+        }, 2000);
+      },
+      error: (err: any) => {
+        this.isActioning = false;
+        this.showToastMessage(err?.message || 'Failed to reject request. Please try again.', 'error');
       }
-      this.isActioning = false;
-      this.showToastMessage(`Request ${this.selectedRequest?.requestId} rejected.`, 'error');
-      setTimeout(() => this.showListViewScreen(), 2000);
-    }, 1000);
+    });
   }
 
   // Helper methods
@@ -855,4 +853,21 @@ export class CreateEPRequestModalComponent implements OnInit {
   checkStatus() {
     this.showToastMessage(`Total ${this.getTotalRequests()} EP request(s) found`, 'info');
   }
-}
+
+  // Edit request - opens full form pre-filled with selected request data
+  editRequest() {
+    if (!this.selectedRequest) return;
+    // Pre-fill form with selected request data
+    this.formData.titleOfActivity = this.selectedRequest.title || '';
+    this.formData.requesterName   = this.selectedRequest.requester || '';
+    this.formData.department      = this.selectedRequest.department || '';
+    this.formData.requestDate     = this.selectedRequest.date || new Date().toISOString().split('T')[0];
+    this.formData.description     = '';
+    // Switch to edit/create form mode
+    this.isViewMode = false;
+    this.showListView = false;
+    this.showFormView = true;
+    this.showSuccessView = false;
+    this.showToastMessage('Form is now editable. Submit to update the request.', 'info');
+  }
+}

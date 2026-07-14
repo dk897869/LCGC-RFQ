@@ -167,20 +167,6 @@
               <label>Activity <span class="required">*</span></label>
               <input type="text" [(ngModel)]="formData.titleOfActivity" placeholder="Enter title of the activity">
             </div>
-            <div class="field-group">
-              <label>Priority</label>
-              <select [(ngModel)]="formData.priority">
-                <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Amount (Rs.)</label>
-              <input type="number" [(ngModel)]="formData.amount" placeholder="0.00">
-            </div>
-            <div class="field-group">
-              <label>Vendor</label>
-              <input type="text" [(ngModel)]="formData.vendor" placeholder="Vendor name">
-            </div>
             <div class="field-group full-width">
               <label>Description</label>
               <textarea [(ngModel)]="formData.description" rows="3" placeholder="Describe the activity..."></textarea>
@@ -414,7 +400,8 @@
         </div>
       </div>
 
-      <div class="form-section approval-action-section">
+      <!-- Approval Action: only show when request is still Pending -->
+      <div class="form-section approval-action-section" *ngIf="selectedRequest?.status === 'Pending'">
         <div class="section-title"><span class="section-icon">Check</span> Approval Action</div>
         <div class="section-body">
           <div class="approval-action-body">
@@ -436,10 +423,28 @@
           </div>
         </div>
       </div>
+
+      <!-- Already actioned message -->
+      <div class="form-section actioned-notice" *ngIf="selectedRequest?.status === 'Approved' || selectedRequest?.status === 'Rejected'">
+        <div class="section-body">
+          <div class="actioned-msg" [class.actioned-approved]="selectedRequest?.status === 'Approved'" [class.actioned-rejected]="selectedRequest?.status === 'Rejected'">
+            <span class="actioned-icon" *ngIf="selectedRequest?.status === 'Approved'">✅</span>
+            <span class="actioned-icon" *ngIf="selectedRequest?.status === 'Rejected'">❌</span>
+            <div>
+              <strong>This request has been {{ selectedRequest?.status }}.</strong>
+              <p>No further action can be taken on this request.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div class="form-footer">
-      <button type="button" class="btn-cancel" (click)="showListViewScreen()">Back to List</button>
+      <button type="button" class="btn-cancel" (click)="showListViewScreen()">← Back to List</button>
+      <button type="button" class="btn-edit-request" (click)="editRequest()" *ngIf="selectedRequest?.status === 'Pending'">
+        ✏️ Edit Full Form
+      </button>
     </div>
   </div>
 

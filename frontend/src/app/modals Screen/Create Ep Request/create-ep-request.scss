@@ -1416,3 +1416,81 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
     &:hover { color: #4b5563 !important; }
   }
 }
+
+// ── ACTIONED NOTICE BANNER ──────────────────────────────────────
+.actioned-notice {
+  border: none !important;
+  background: transparent;
+}
+
+.actioned-msg {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+
+  &.actioned-approved {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    border-left: 5px solid #10b981;
+    color: #064e3b;
+  }
+
+  &.actioned-rejected {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    border-left: 5px solid #ef4444;
+    color: #7f1d1d;
+  }
+
+  .actioned-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+  }
+
+  strong {
+    font-size: 1rem;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+}
+
+// ── EDIT REQUEST BUTTON ─────────────────────────────────────────
+.btn-edit-request {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 1.75rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.45);
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+// Update form-footer to be flex row for Back + Edit buttons
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

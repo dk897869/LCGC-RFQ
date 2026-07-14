@@ -35,6 +35,7 @@ export interface VendorRequestRecord {
   sentDate?: string;
   completedDate?: string;
   createdDate?: string;
+  rfq?: any;
 }
 
 export interface QuotationReceived {
@@ -100,6 +101,10 @@ export class QuotationStatusComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.clockTimer) clearInterval(this.clockTimer);
     if (this.toastTimer) clearTimeout(this.toastTimer);
+  }
+
+  openCreate() {
+    window.dispatchEvent(new CustomEvent('npp-navigate-tab', { detail: 'rfq-npp-form' }));
   }
 
   private updateClock() {
@@ -170,10 +175,10 @@ export class QuotationStatusComponent implements OnInit, OnDestroy {
     if (this.searchTerm.trim()) {
       const q = this.searchTerm.toLowerCase();
       rows = rows.filter(r =>
-        r.rfqNo.toLowerCase().includes(q) ||
-        r.title.toLowerCase().includes(q) ||
-        r.requester.toLowerCase().includes(q) ||
-        r.department.toLowerCase().includes(q)
+        (r.rfqNo || '').toLowerCase().includes(q) ||
+        (r.title || r.rfq?.title || '').toLowerCase().includes(q) ||
+        (r.requester || r.rfq?.requester || '').toLowerCase().includes(q) ||
+        (r.department || r.rfq?.department || '').toLowerCase().includes(q)
       );
     }
 
@@ -190,6 +195,24 @@ export class QuotationStatusComponent implements OnInit, OnDestroy {
 
   setFilter(f: 'All' | 'NotSent' | 'Sent' | 'Received' | 'Completed') {
     this.activeFilter = f;
+  }
+
+  get totalRfqsCount(): number {
+    return this.vendorRequests.length;
+  }
+
+  get pendingRfqsCount(): number {
+    return this.vendorRequests.filter(r => r.stage !== 'Completed').length;
+  }
+
+  get approvedRfqsCount(): number {
+    return this.vendorRequests.filter(r => r.stage === 'Completed').length;
+  }
+
+  get successRate(): number {
+    const total = this.totalRfqsCount;
+    if (total === 0) return 0;
+    return Math.round((this.approvedRfqsCount / total) * 100);
   }
 
   // ====================== VENDOR STATUS HELPERS ======================

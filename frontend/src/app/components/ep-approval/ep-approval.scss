@@ -1685,3 +1685,426 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
 
   .modal-body { padding: 16px; }
 }
+
+// ==================== EP APPROVAL ALIGNED UI STYLES ====================
+.ep-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+
+// Inline switch tabs (pills)
+.ep-switch-tabs {
+  display: flex;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  align-self: flex-start;
+  margin-top: 16px;
+  margin-bottom: 24px;
+}
+
+.tab-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  .tab-pill-icon {
+    font-size: 14px;
+  }
+  
+  &:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  &.active {
+    background: white;
+    color: #2563eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+}
+
+// Filter Requests Card
+.ep-filter-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  
+  .filter-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .filter-card-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+  
+  .filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+    
+    select, input {
+      padding: 8px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      background: white;
+      width: 100%;
+      box-sizing: border-box;
+      
+      &:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+      }
+    }
+    
+    .date-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      
+      .calendar-icon {
+        position: absolute;
+        left: 10px;
+        font-size: 14px;
+        color: #94a3b8;
+        pointer-events: none;
+      }
+      
+      input {
+        padding-left: 32px;
+      }
+    }
+  }
+  
+  .filter-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 16px;
+    
+    button {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    
+    .btn-apply-filters {
+      background: #2563eb;
+      color: white;
+      border: none;
+      
+      &:hover {
+        background: #1d4ed8;
+      }
+    }
+    
+    .btn-clear-filters {
+      background: white;
+      border: 1.5px solid #cbd5e1;
+      color: #475569;
+      
+      &:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+      }
+    }
+  }
+}
+
+// Mini status metrics grid
+.ep-stats-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ep-mini-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.01);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  
+  .lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .val {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  
+  &.pending {
+    border-left: 4px solid #f59e0b;
+    .val { color: #d97706; }
+  }
+  &.approved {
+    border-left: 4px solid #10b981;
+    .val { color: #059669; }
+  }
+  &.rejected {
+    border-left: 4px solid #ef4444;
+    .val { color: #dc2626; }
+  }
+}
+
+// Export button
+.btn-export {
+  background: white;
+  border: 1.5px solid #cbd5e1;
+  color: #475569;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  &:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+  }
+}
+
+// Priority Badges (Capsule Pill Style)
+.priority-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &.priority-high { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  &.priority-medium { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+  &.priority-low { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+}
+
+// Status Badges (Capsule Pill Style)
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &.status-pending { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+  &.status-approved { background: rgba(16, 185, 129, 0.1); color: #059669; }
+  &.status-rejected { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+  &.status-inprocess { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+}
+
+// Pagination Bar
+.ep-pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 16px;
+  margin-top: 16px;
+  
+  .showing-text {
+    font-size: 12px;
+    color: #64748b;
+  }
+  
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .pg-arrow, .pg-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    
+    &.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+  }
+  
+  .pg-size-select {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-left: 8px;
+    outline: none;
+  }
+}
+
+// Dots Action Button
+.dots-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  cursor: pointer;
+  padding: 4px !important;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+  }
+}
+
+// Status Tab Empty Filter View
+.ep-empty-state-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  
+  .empty-icon-wrap {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+  
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 6px;
+  }
+  
+  p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 20px;
+  }
+  
+  .btn-reset-filters {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: #1d4ed8;
+    }
+  }
+}
+
+// Media Query Updates
+@media (max-width: 1024px) {
+  .ep-filter-card {
+    .filter-card-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  
+  .ep-stats-metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .ep-filter-card {
+    padding: 16px;
+    .filter-card-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .ep-stats-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ep-pagination-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+}

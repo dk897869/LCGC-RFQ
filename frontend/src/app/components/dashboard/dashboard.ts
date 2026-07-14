@@ -909,7 +909,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.currentDate = n.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  loadUnifiedData() {
+  loadUnifiedData(silent: boolean = false) {
     this.isLoading = true;
     this.authService.getUnifiedApprovals().subscribe({
       next: (res: any) => {
@@ -919,7 +919,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.updateApprovalStatsByType();
         this.applyUnifiedFilters();
         this.isLoading = false;
-        this.showToast('Data loaded successfully', 'success');
+        if (!silent) {
+          this.showToast('Data loaded successfully', 'success');
+        }
         this.cdr.detectChanges();
       },
       error: () => {
@@ -927,7 +929,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.updateUnifiedStats();
         this.applyUnifiedFilters();
         this.isLoading = false;
-        this.showToast('Could not load requests from API', 'error');
+        if (!silent) {
+          this.showToast('Could not load requests from API', 'error');
+        }
         this.cdr.detectChanges();
       }
     });

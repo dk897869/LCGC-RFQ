@@ -16,26 +16,58 @@
         <div class="brand-mark">LC</div>
         <div class="brand-text">
           <span class="brand-name">LCGC</span>
-          <span class="brand-sub">Resolute Group</span>
+          <span class="brand-sub">Resource Group</span>
         </div>
       </div>
 
       <div class="hero-text">
-        <h1>Join the<br><em>Platform.</em></h1>
-        <p>Create your account and start managing procurement, approvals, and vendors — all in one place.</p>
+        <h1>Create your account.<br>Get started today.</h1>
+        <p>Join thousands of professionals who manage procurement smarter and faster.</p>
       </div>
 
-      <div class="feature-pills">
-        <div class="pill">🚀 Quick Setup</div>
-        <div class="pill">🔐 Secure Access</div>
-        <div class="pill">💼 Enterprise Ready</div>
-        <div class="pill">🎂 Birthday Surprises</div>
+      <div class="feature-cards-list">
+        <div class="f-card">
+          <div class="f-card-icon f-card-icon--blue">💼</div>
+          <div class="f-card-body">
+            <h4>Centralized Procurement</h4>
+            <p>All your requests in one place</p>
+          </div>
+        </div>
+        <div class="f-card">
+          <div class="f-card-icon f-card-icon--navy">🔔</div>
+          <div class="f-card-body">
+            <h4>Track &amp; Stay Updated</h4>
+            <p>Real-time status and alerts</p>
+          </div>
+        </div>
+        <div class="f-card">
+          <div class="f-card-icon f-card-icon--green">🛡️</div>
+          <div class="f-card-body">
+            <h4>Secure &amp; Reliable</h4>
+            <p>Enterprise-grade security</p>
+          </div>
+        </div>
       </div>
 
-      <div class="lp-decoration">
-        <div class="deco-circle c1"></div>
-        <div class="deco-circle c2"></div>
-        <div class="deco-circle c3"></div>
+      <!-- Mock 3D Clipboard Visual -->
+      <div class="mock-clipboard-visual">
+        <div class="clipboard-box">
+          <div class="clipboard-clip"></div>
+          <div class="clipboard-body">
+            <div class="user-row">
+              <div class="user-avatar">DK</div>
+              <div class="user-info"><div class="line"></div><div class="line sm"></div></div>
+            </div>
+            <hr>
+            <div class="list-item"><span class="check checked">✓</span><div class="line"></div></div>
+            <div class="list-item"><span class="check checked">✓</span><div class="line sm"></div></div>
+            <div class="list-item"><span class="check checked">✓</span><div class="line"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-footer">
+        <p>© 2026 LCGC Resource Group. All rights reserved.</p>
       </div>
     </div>
   </div>
@@ -45,13 +77,13 @@
     <div class="form-card">
       <div class="form-top">
         <h2>Create Account</h2>
-        <p>Join LCGC Resolute Group today</p>
+        <p>Fill in the details to get started</p>
       </div>
 
       <div class="register-form">
         <!-- Full Name -->
         <div class="field">
-          <label>Full Name <span class="req">*</span></label>
+          <label>Full Name</label>
           <div class="field-wrap">
             <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -60,15 +92,13 @@
             <input 
               type="text" 
               [(ngModel)]="fullName" 
-              placeholder="Enter your full name"
-              [class.error]="fullName && fullName.trim().length < 3">
+              placeholder="Enter your full name">
           </div>
-          <small class="hint" *ngIf="fullName && fullName.trim().length < 3">Minimum 3 characters required</small>
         </div>
 
         <!-- Email Address -->
         <div class="field">
-          <label>Email Address <span class="req">*</span></label>
+          <label>Email Address</label>
           <div class="field-wrap">
             <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -77,16 +107,13 @@
             <input 
               type="email" 
               [(ngModel)]="email" 
-              placeholder="you@company.com"
-              [class.error]="email && !isValidEmail()">
+              placeholder="Enter your email address">
           </div>
-          <small class="hint" *ngIf="email && !isValidEmail()">Please enter a valid email address</small>
-          <small class="hint" *ngIf="email && isValidEmail()">✓ Valid email</small>
         </div>
 
         <!-- Date of Birth -->
         <div class="field">
-          <label>Date of Birth <span class="req">*</span></label>
+          <label>Date of Birth</label>
           <div class="field-wrap">
             <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -96,18 +123,13 @@
             </svg>
             <input 
               type="date" 
-              [(ngModel)]="dateOfBirth" 
-              [max]="currentDate"
-              [class.error]="dateOfBirth && !isValidDateOfBirth()">
+              [(ngModel)]="dateOfBirth">
           </div>
-          <small class="hint" *ngIf="dateOfBirth && !isValidDateOfBirth()">{{ getAgeError() }}</small>
-          <small class="hint" *ngIf="dateOfBirth && isValidDateOfBirth()">✓ Age verified</small>
-          <small class="hint">🎉 We'll celebrate your birthday!</small>
         </div>
 
         <!-- Password -->
         <div class="field">
-          <label>Password <span class="req">*</span></label>
+          <label>Password</label>
           <div class="field-wrap">
             <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -116,63 +138,61 @@
             <input 
               [type]="showPassword ? 'text' : 'password'" 
               [(ngModel)]="password" 
-              placeholder="Minimum 6 characters">
+              placeholder="Create a password">
             <button type="button" class="eye-btn" (click)="togglePassword()">
-              {{ showPassword ? '🔒' : '👁️' }}
+              <span>👁️</span>
             </button>
           </div>
-          <div class="strength-bar" *ngIf="password">
-            <div class="strength-fill" [style.width.%]="getPasswordStrength().pct" [style.background]="getPasswordStrength().color"></div>
-          </div>
-          <small class="strength-label" *ngIf="password" [style.color]="getPasswordStrength().color">
-            {{ getPasswordStrength().label }}
-          </small>
-          <small class="hint" *ngIf="password && password.length < 6">Password must be at least 6 characters</small>
         </div>
 
         <!-- Confirm Password -->
         <div class="field">
-          <label>Confirm Password <span class="req">*</span></label>
+          <label>Confirm Password</label>
           <div class="field-wrap">
             <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
             <input 
               [type]="showConfirmPassword ? 'text' : 'password'" 
               [(ngModel)]="confirmPassword" 
-              placeholder="Re-enter password">
+              placeholder="Confirm your password">
             <button type="button" class="eye-btn" (click)="toggleConfirmPassword()">
-              {{ showConfirmPassword ? '🔒' : '👁️' }}
+              <span>👁️</span>
             </button>
           </div>
-          <small class="mismatch" *ngIf="confirmPassword && !passwordsMatch()">
-            ⚠️ Passwords do not match
-          </small>
-          <small class="match" *ngIf="confirmPassword && passwordsMatch() && password">
-            ✓ Passwords match
-          </small>
         </div>
 
         <!-- Role Selection -->
         <div class="field">
-          <label>Role <span class="req">*</span></label>
+          <label>Role</label>
           <div class="role-grid">
-            <button type="button" *ngFor="let role of roles"
+            <button type="button"
                     class="role-card"
-                    [class.selected]="selectedRole === role.value"
-                    (click)="selectedRole = role.value">
-              <span class="role-icon">{{ role.icon }}</span>
-              <span class="role-label">{{ role.label }}</span>
-              <span class="role-desc">{{ role.desc }}</span>
+                    [class.selected]="selectedRole === 'Admin'"
+                    (click)="selectedRole = 'Admin'">
+              <span class="role-icon">🛡️</span>
+              <span class="role-label">Admin</span>
+              <span class="role-desc">Full system access</span>
+              <span class="check-badge" *ngIf="selectedRole === 'Admin'">✓</span>
+            </button>
+            <button type="button"
+                    class="role-card"
+                    [class.selected]="selectedRole === 'User'"
+                    (click)="selectedRole = 'User'">
+              <span class="role-icon">👤</span>
+              <span class="role-label">User</span>
+              <span class="role-desc">Standard access</span>
+              <span class="check-badge" *ngIf="selectedRole === 'User'">✓</span>
             </button>
           </div>
         </div>
 
         <!-- Terms and Conditions -->
-        <label class="check-label">
+        <label class="check-label" style="margin-top: 10px;">
           <input type="checkbox" [(ngModel)]="agreeTerms">
           <span class="check-box"></span>
-          <span>I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></span>
+          <span>I agree to the Terms of Service and Privacy Policy</span>
         </label>
 
         <!-- Submit Button -->
@@ -185,12 +205,7 @@
       </div>
 
       <div class="divider"><span>Already have an account?</span></div>
-      <a routerLink="/login" class="login-btn">Sign in instead</a>
-      
-      <div class="info-note">
-        <p>📧 After registration, you'll receive a verification email to activate your account.</p>
-        <p>🔐 Please check your inbox and spam folder for the verification link.</p>
-      </div>
+      <a routerLink="/login" class="login-btn" style="text-align: center; text-decoration: none; display: block; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 14px; background: #e2e8f0; color: #0f2a5e;">Sign in</a>
     </div>
   </div>
 </div>

@@ -62,7 +62,7 @@ const sendRFQCreatedEmail = async (rfqData) => {
 // Get all RFQs
 const getAllRFQs = async (req, res) => {
   try {
-    const rfqs = await RFQ.find().sort({ createdAt: -1 });
+    const rfqs = await RFQ.find().select('-items.picturePreview').sort({ createdAt: -1 });
     res.status(200).json({ 
       success: true, 
       count: rfqs.length,
@@ -441,7 +441,7 @@ const getApprovedRFQs = async (req, res) => {
       status: 'Approved',
       vendorRequestCreated: false,
       currentStage: { $ne: 'Rejected' }
-    }).sort({ approvalDate: -1 });
+    }).select('-items.picturePreview').sort({ approvalDate: -1 });
 
     console.log(`✅ Found ${rfqs.length} approved RFQs ready for vendor request`);
 
@@ -471,7 +471,7 @@ const getRFQsByVendorStatus = async (req, res) => {
       filter.vendorRequestCreated = false;
     }
 
-    const rfqs = await RFQ.find(filter).sort({ approvalDate: -1 });
+    const rfqs = await RFQ.find(filter).select('-items.picturePreview').sort({ approvalDate: -1 });
 
     res.status(200).json({
       success: true,

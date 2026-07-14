@@ -2573,3 +2573,530 @@ button:focus-visible,
     border: 1px solid #ddd !important;
   }
 }
+
+// ==================== TWO COLUMN DASHBOARD LAYOUT & DESIGNS ====================
+.admin-dashboard-container {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.dash-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  
+  &--left {
+    flex: 2;
+    min-width: 0; // prevent flexbox items from pushing width
+  }
+  
+  &--right {
+    flex: 1;
+    min-width: 320px;
+  }
+}
+
+// Stats Card Trend Badges
+.scard {
+  position: relative;
+  
+  &__trend {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    
+    span {
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    
+    &--blue span { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+    &--amber span { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+    &--green span { background: rgba(16, 185, 129, 0.1); color: #059669; }
+    &--purple span { background: rgba(139, 92, 246, 0.1); color: #7c3aed; }
+  }
+}
+
+// Greeting Banner Layout
+.hero {
+  background: linear-gradient(135deg, #0b1428 0%, #0d2b5c 100%) !important;
+  color: white;
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(11, 20, 40, 0.15);
+  
+  &__left-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    z-index: 2;
+  }
+  
+  &__title-row {
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: white;
+    }
+    p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+  }
+  
+  &__params-grid {
+    display: flex;
+    gap: 28px;
+  }
+  
+  &__param-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    .param-icon {
+      font-size: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .param-lbl {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .param-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+      margin-top: 2px;
+    }
+  }
+  
+  &__right-graphics {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    z-index: 2;
+    
+    .hero__btn-customize {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.18);
+      }
+    }
+  }
+}
+
+// Doughnut Chart and Trends Grid Panel
+.charts-grid-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.doughnut-panel, .trend-chart-panel {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  
+  &__hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+  }
+}
+
+.chart-select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+  outline: none;
+}
+
+.doughnut-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.doughnut-chart {
+  transform: rotate(-90deg);
+  flex-shrink: 0;
+  
+  circle {
+    transition: stroke-dasharray 0.3s ease;
+  }
+  
+  text {
+    transform: rotate(90deg);
+    transform-origin: center;
+  }
+}
+
+.doughnut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #64748b;
+    
+    .color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      &.blue { background: #2563eb; }
+      &.green { background: #10b981; }
+      &.orange { background: #f59e0b; }
+    }
+    
+    .val {
+      margin-left: auto;
+      color: #0f172a;
+      font-weight: 700;
+    }
+  }
+}
+
+// Trends Multi-Line Chart
+.trend-chart-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 16px;
+  
+  .lg-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    &.blue { background: #2563eb; }
+    &.green { background: #10b981; }
+    &.orange { background: #f59e0b; }
+  }
+}
+
+.line-chart-svg {
+  width: 100%;
+  height: 140px;
+}
+
+// Mini Cards Grid (Avg approval time, etc.)
+.mini-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.m-card-item {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .m-card-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .m-card-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 6px;
+    
+    .unit {
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748b;
+    }
+  }
+  
+  .m-card-sub {
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 4px;
+    &.green { color: #10b981; }
+    &.red { color: #ef4444; }
+  }
+  
+  .m-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    
+    &.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    &.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    &.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+  }
+}
+
+// Stay Updated Card
+.stay-updated-card {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  
+  .stay-icon {
+    font-size: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .stay-body {
+    flex: 1;
+    h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      margin: 0 0 2px;
+    }
+    p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0;
+    }
+  }
+  
+  .stay-input-row {
+    display: flex;
+    gap: 8px;
+    
+    input {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 13px;
+      outline: none;
+      width: 200px;
+      
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+    
+    .btn-subscribe {
+      background: white;
+      color: #6d28d9;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover {
+        background: #f3f4f6;
+      }
+    }
+  }
+}
+
+// Recent Activity Body Fix
+.act-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  
+  .act-item__sub {
+    font-size: 11px;
+    color: #64748b;
+  }
+}
+
+// Top Requesters Panel
+.top-requesters-panel {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  
+  .requesters-hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+  }
+  
+  .requesters-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .req-user-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+      
+      &.blue { background: #3b82f6; }
+      &.green { background: #10b981; }
+      &.orange { background: #f59e0b; }
+      &.purple { background: #8b5cf6; }
+    }
+    
+    .user-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      
+      .user-name-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: #334155;
+        
+        span {
+          font-weight: 600;
+        }
+        
+        strong {
+          color: #0f172a;
+          font-weight: 700;
+        }
+      }
+      
+      .progress-bar {
+        height: 6px;
+        background: #f1f5f9;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      
+      .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        
+        &.blue { background: #3b82f6; }
+        &.green { background: #10b981; }
+        &.orange { background: #f59e0b; }
+        &.purple { background: #8b5cf6; }
+      }
+    }
+  }
+}
+
+// Media responsive tweaks
+@media (max-width: 1024px) {
+  .admin-dashboard-container {
+    flex-direction: column;
+  }
+  .charts-grid-panel {
+    grid-template-columns: 1fr;
+  }
+  .mini-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stay-updated-card {
+    flex-direction: column;
+    align-items: flex-start;
+    .stay-input-row {
+      width: 100%;
+      input {
+        flex: 1;
+        width: auto;
+      }
+    }
+  }
+}

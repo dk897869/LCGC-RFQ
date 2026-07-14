@@ -2594,13 +2594,23 @@ getQuotationComparison(rfqId: string): Observable<any> {
     return this.getUnifiedApprovals().pipe(
       map((res: any) => {
         const rows = res?.data || [];
-        return rows.slice(0, 8).map((r: any) => ({
-          icon: r.status === 'Approved' ? '✅' : r.status === 'Rejected' ? '❌' : '⏳',
-          text: `${this.getRequestTypeLabel(r.type)} ${r.serialNo || r.uniqueSerialNo || ''}`.trim(),
-          time: r.requestDate || r.createdAt || '',
-          type: (r.status || 'pending').toLowerCase(),
-          color: r.status === 'Approved' ? '#10b981' : r.status === 'Rejected' ? '#ef4444' : '#f59e0b'
-        }));
+        return rows.slice(0, 8).map((r: any) => {
+          const typeLabel = this.getRequestTypeLabel(r.type);
+          const serial = r.serialNo || r.uniqueSerialNo || '';
+          const title = r.title || r.titleOfActivity || 'Untitled';
+          const requester = r.requester || r.requesterName || 'Unknown';
+          const department = r.department || 'General';
+          const p = r.priority || 'Medium';
+          const priorityLabel = p === 'H' ? 'High' : p === 'L' ? 'Low' : p === 'M' ? 'Medium' : p;
+          
+          return {
+            icon: r.status === 'Approved' ? '✅' : r.status === 'Rejected' ? '❌' : '⏳',
+            text: `${typeLabel} ${serial} / ${title} | Req: ${requester} | Dept: ${department} | Priority: ${priorityLabel}`,
+            time: r.requestDate || r.createdAt || '',
+            type: (r.status || 'pending').toLowerCase(),
+            color: r.status === 'Approved' ? '#10b981' : r.status === 'Rejected' ? '#ef4444' : '#f59e0b'
+          };
+        });
       }),
       catchError(() => of([]))
     );

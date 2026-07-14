@@ -30,9 +30,12 @@
     <ng-container *ngIf="activeSubMenu === 'rfq-list'">
       <div class="ep-topbar">
         <div class="topbar-title">
-          <h2>RFQ <span class="topbar-sub">› Requests</span></h2>
+          <div class="ep-breadcrumb">NON BOM › RFQ Request › RFQ (Request for Quotation)</div>
+          <h2>Pending RFQ Requests</h2>
+          <p class="ep-subtitle">Manage and track all pending RFQ requests</p>
         </div>
         <div class="topbar-actions">
+          <button class="status-btn" style="background: white; border: 1.5px solid #cbd5e1; color: #475569; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Check Status</button>
           <button class="refresh-btn" (click)="loadRFQs()" [disabled]="isLoading">🔄 Refresh</button>
           <button class="create-btn" (click)="openCreate()">+ Create New RFQ</button>
         </div>
@@ -44,30 +47,44 @@
       </div>
 
       <ng-container *ngIf="!isLoading">
-        <div class="search-bar-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" class="search-bar" [(ngModel)]="searchTerm" (input)="onSearch()"
-            placeholder="Search by title, requester, department...">
+        <!-- Stats cards row -->
+        <div class="ep-stats-metrics-grid" style="margin-bottom: 24px;">
+          <div class="ep-mini-card">
+            <div class="lbl">Total Requests</div>
+            <div class="val">{{ allRequests.length }}</div>
+          </div>
+          <div class="ep-mini-card pending">
+            <div class="lbl">Pending</div>
+            <div class="val">{{ countByStatus('Pending') }}</div>
+          </div>
+          <div class="ep-mini-card approved">
+            <div class="lbl">Approved</div>
+            <div class="val">{{ countByStatus('Approved') }}</div>
+          </div>
+          <div class="ep-mini-card success-rate">
+            <div class="lbl">Success Rate</div>
+            <div class="val">55%</div>
+          </div>
         </div>
 
-        <div class="section-filters">
-          <button class="filter-btn" [class.active]="activeFilter === 'All'" (click)="setFilter('All')">
-            📋 All <span class="count-badge">{{ countByStatus('All') }}</span>
+        <div class="search-bar-wrap" style="position: relative; display: flex; align-items: center; margin-bottom: 20px;">
+          <input type="text" class="search-bar" [(ngModel)]="searchTerm" (input)="onSearch()"
+            placeholder="Search by RFQ no, title, requester, department..." style="width: 100%; padding: 12px 42px 12px 16px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; background: white;">
+          <span class="search-icon" style="position: absolute; right: 14px; color: #94a3b8; font-size: 16px;">🔍</span>
+        </div>
+
+        <div class="ep-switch-tabs" style="margin-bottom: 20px; align-self: flex-start;">
+          <button class="tab-pill" [class.active]="activeFilter === 'All'" (click)="setFilter('All')">
+            All ({{ countByStatus('All') }})
           </button>
-          <button class="filter-btn approved-btn" [class.active]="activeFilter === 'Approved'" (click)="setFilter('Approved')">
-            ✅ Approved <span class="count-badge">{{ countByStatus('Approved') }}</span>
-          </button>
-          <button class="filter-btn rejected-btn" [class.active]="activeFilter === 'Rejected'" (click)="setFilter('Rejected')">
-            ❌ Rejected <span class="count-badge">{{ countByStatus('Rejected') }}</span>
-          </button>
-          <button class="filter-btn inprocess-btn" [class.active]="activeFilter === 'In Process'" (click)="setFilter('In Process')">
-            🔄 In Process <span class="count-badge">{{ countByStatus('In Process') }}</span>
+          <button class="tab-pill" [class.active]="activeFilter === 'Pending'" (click)="setFilter('Pending')">
+            Pending ({{ countByStatus('Pending') }})
           </button>
         </div>
 
         <div class="table-container">
           <div class="table-header-row">
-            <h3>All RFQ Requests</h3>
+            <h3>Pending Quotations</h3>
             <span class="stat-badge">Total: {{ filteredRequests.length }}</span>
           </div>
 
@@ -87,21 +104,22 @@
               </thead>
               <tbody>
                 <tr *ngFor="let item of filteredRequests">
-                  <td><span class="serial-pill">{{ item.uniqueSerialNo || '—' }}</span></td>
+                  <td><span class="mono">{{ item.uniqueSerialNo || '—' }}</span></td>
                   <td><strong>{{ item.title }}</strong></td>
                   <td>{{ item.requester }}<br><small>{{ item.email }}</small></td>
                   <td>{{ item.department }}</td>
-                  <td><span class="priority-badge" [ngClass]="getPriorityClass(item.priority)">{{ item.priority }}</span></td>
-                  <td><span class="status-badge" [ngClass]="getEpStatusClass(item.status)">{{ item.status }}</span></td>
+                  <td><span class="priority-pill" [ngClass]="getPriorityClass(item.priority)">{{ item.priority }}</span></td>
+                  <td><span class="status-pill" [ngClass]="getEpStatusClass(item.status)">{{ item.status }}</span></td>
                   <td>{{ formatDate(item.requestDate) }}</td>
                   <td class="actions">
-                    <button class="btn-icon view-btn" (click)="viewItem(item)">👁️ View</button>
+                    <button class="btn-icon edit-btn" (click)="viewItem(item)" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;"><span class="icon">✏️</span> Edit</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'" 
-                            class="btn-icon approve-btn" (click)="approveItem(item)">✅ Approve</button>
+                            class="btn-approve" (click)="approveItem(item)"><span class="icon">✅</span> Approve</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'" 
-                            class="btn-icon reject-btn" (click)="rejectItem(item)">❌ Reject</button>
-                    </td>
-                  </tr>
+                            class="btn-reject" (click)="rejectItem(item)"><span class="icon">❌</span> Reject</button>
+                    <button class="btn-icon dots-btn">⋮</button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </ng-container>

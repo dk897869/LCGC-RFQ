@@ -251,6 +251,7 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
     this.setInitialTab();
     if (typeof window !== 'undefined') {
       window.addEventListener('app-toast', this.handleToastEvent.bind(this));
+      window.addEventListener('npp-navigate-tab', this.handleNavigateTabEvent.bind(this));
     }
   }
 
@@ -265,12 +266,21 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
     if (this.quickToastTimer) clearTimeout(this.quickToastTimer);
     if (typeof window !== 'undefined') {
       window.removeEventListener('app-toast', this.handleToastEvent.bind(this));
+      window.removeEventListener('npp-navigate-tab', this.handleNavigateTabEvent.bind(this));
     }
   }
 
   private handleToastEvent(event: any) {
     const { message, type } = event.detail;
     this.showQuickToast(message, type);
+  }
+
+  private handleNavigateTabEvent(event: any) {
+    const tabId = event.detail;
+    const step = this.workflowSteps.find(s => s.id === tabId);
+    if (step) {
+      this.setActiveTab(step.id, step.groupId);
+    }
   }
 
   loadUserInfo(): void {

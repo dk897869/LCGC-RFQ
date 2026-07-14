@@ -9,58 +9,93 @@
 
   <div class="page-card">
 
-    <!-- Breadcrumb + Title -->
-    <div class="page-head">
-      <div class="breadcrumb">
-        <span>NON BOM</span><span class="sep">›</span><span>RFQ Request</span><span class="sep">›</span>
-        <span class="active">Quotation Status</span>
-      </div>
-      <div class="head-row">
-        <div>
-          <h1>Quotation <span class="muted">› Status</span></h1>
-          <p class="head-sub">Track RFQs sent to vendors and monitor quotation submissions</p>
+    <!-- Stats overview cards matching Image 3 style with SVGs -->
+    <div class="ep-stats-metrics-grid" style="margin-top: 16px; margin-bottom: 24px;">
+      <div class="ep-mini-card">
+        <div class="card-icon-wrapper blue">📄</div>
+        <div class="card-details">
+          <span class="lbl">Total RFQs</span>
+          <span class="val">{{ totalRfqsCount }}</span>
+          <span class="sub">All time requests</span>
         </div>
-        <button class="btn-refresh" (click)="refreshData()" [disabled]="isLoading">
-          <span [class.spin]="isLoading">↻</span> Refresh
-        </button>
+        <svg class="sparkline" viewBox="0 0 100 30">
+          <path d="M0,15 Q25,5 50,20 T100,10" fill="none" stroke="#3b82f6" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="ep-mini-card pending">
+        <div class="card-icon-wrapper amber">⏳</div>
+        <div class="card-details">
+          <span class="lbl">Pending</span>
+          <span class="val">{{ pendingRfqsCount }}</span>
+          <span class="sub">Waiting for approval</span>
+        </div>
+        <svg class="sparkline" viewBox="0 0 100 30">
+          <path d="M0,20 Q25,10 50,25 T100,15" fill="none" stroke="#f59e0b" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="ep-mini-card approved">
+        <div class="card-icon-wrapper green">✅</div>
+        <div class="card-details">
+          <span class="lbl">Approved</span>
+          <span class="val">{{ approvedRfqsCount }}</span>
+          <span class="sub">Successfully approved</span>
+        </div>
+        <svg class="sparkline" viewBox="0 0 100 30">
+          <path d="M0,25 Q25,15 50,20 T100,5" fill="none" stroke="#10b981" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="ep-mini-card success-rate">
+        <div class="card-icon-wrapper purple">📈</div>
+        <div class="card-details">
+          <span class="lbl">Success Rate</span>
+          <span class="val">{{ successRate }}%</span>
+          <span class="sub">Overall success rate</span>
+        </div>
+        <svg class="sparkline" viewBox="0 0 100 30">
+          <path d="M0,15 Q25,25 50,10 T100,20" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+        </svg>
       </div>
     </div>
 
-    <!-- Search -->
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" [(ngModel)]="searchTerm" placeholder="Search by RFQ no, title, requester, department...">
+    <!-- Search Bar with Create RFQ button on the right -->
+    <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center;">
+      <div class="search-bar-wrap" style="position: relative; display: flex; align-items: center; flex: 1;">
+        <input type="text" class="search-bar" [(ngModel)]="searchTerm" placeholder="Search by RFQ no, title, requester, department..." style="width: 100%; padding: 12px 42px 12px 16px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; background: white;">
+        <span class="search-icon" style="position: absolute; right: 14px; color: #94a3b8; font-size: 16px;">🔍</span>
+      </div>
+      <button class="create-btn" style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; white-space: nowrap;">
+        + Create New RFQ
+      </button>
     </div>
 
-    <!-- Filters -->
-    <div class="filter-row">
-      <button class="filter-pill" [class.active]="activeFilter === 'All'" (click)="setFilter('All')">
-        📋 All <span class="count">{{ countByStatus('All') }}</span>
+    <!-- Filters (Switch Tabs style) -->
+    <div class="ep-switch-tabs" style="margin-bottom: 20px; align-self: flex-start; display: flex; gap: 8px; background: #f1f5f9; padding: 4px; border-radius: 10px;">
+      <button class="tab-pill" [class.active]="activeFilter === 'All'" (click)="setFilter('All')" style="border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        All ({{ countByStatus('All') }})
       </button>
-      <button class="filter-pill" [class.active]="activeFilter === 'NotSent'" (click)="setFilter('NotSent')">
-        📤 Not Sent <span class="count">{{ countByStatus('NotSent') }}</span>
+      <button class="tab-pill" [class.active]="activeFilter === 'NotSent'" (click)="setFilter('NotSent')" style="border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        Not Sent ({{ countByStatus('NotSent') }})
       </button>
-      <button class="filter-pill" [class.active]="activeFilter === 'Sent'" (click)="setFilter('Sent')">
-        📨 Sent <span class="count">{{ countByStatus('Sent') }}</span>
+      <button class="tab-pill" [class.active]="activeFilter === 'Sent'" (click)="setFilter('Sent')" style="border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        Sent ({{ countByStatus('Sent') }})
       </button>
-      <button class="filter-pill" [class.active]="activeFilter === 'Received'" (click)="setFilter('Received')">
-        📥 Received <span class="count">{{ countByStatus('Received') }}</span>
+      <button class="tab-pill" [class.active]="activeFilter === 'Received'" (click)="setFilter('Received')" style="border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        Received ({{ countByStatus('Received') }})
       </button>
-      <button class="filter-pill" [class.active]="activeFilter === 'Completed'" (click)="setFilter('Completed')">
-        ✅ Completed <span class="count">{{ countByStatus('Completed') }}</span>
+      <button class="tab-pill" [class.active]="activeFilter === 'Completed'" (click)="setFilter('Completed')" style="border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        Completed ({{ countByStatus('Completed') }})
       </button>
     </div>
 
     <!-- Table -->
     <div class="table-card">
       <div class="table-card-head">
-        <h3>Approved RFQs Pending Vendor Action</h3>
+        <h3>Quotation Status Records</h3>
         <span class="badge-total">Total: {{ displayRows.length }}</span>
       </div>
 
       <div class="loading-state" *ngIf="isLoading">
-        <div class="spinner"></div>
-        <p>Loading RFQ status...</p>
+        <div class="spinner"></div><p>Loading quotation status...</p>
       </div>
 
       <div class="table-scroll" *ngIf="!isLoading">
@@ -79,15 +114,15 @@
           </thead>
           <tbody>
             <tr *ngFor="let request of displayRows; trackBy: trackByRequest">
-              <td><a class="rfq-link" (click)="openDetail(request)">{{ request.rfqNo }}</a></td>
-              <td><strong>{{ request.title }}</strong></td>
-              <td>{{ request.requester }}</td>
-              <td>{{ request.department }}</td>
-              <td><span class="priority-badge" [ngClass]="getPriorityClass(request.priority)">{{ getPriorityLabel(request.priority) }}</span></td>
-              <td><span class="vendor-badge" [ngClass]="getVendorStageClass(request)">{{ getVendorStageLabel(request) }}</span></td>
+              <td><span class="mono" style="font-family: monospace; font-size: 12px; font-weight: 600; color: #1e40af; background: #eef2ff; padding: 4px 8px; border-radius: 6px;">{{ request.rfqNo }}</span></td>
+              <td><strong>{{ request.title || request.rfq?.title }}</strong></td>
+              <td>{{ request.requester || request.rfq?.requester }}</td>
+              <td>{{ request.department || request.rfq?.department }}</td>
+              <td><span class="priority-badge" [ngClass]="getPriorityClass(request.priority || request.rfq?.priority)">{{ getPriorityLabel(request.priority || request.rfq?.priority) }}</span></td>
+              <td><span class="status-badge" [ngClass]="getVendorStageClass(request)">{{ getVendorStageLabel(request) }}</span></td>
               <td>{{ formatDate(request.sentDate || request.createdDate) }}</td>
               <td class="actions-cell">
-                <button class="action-btn view" (click)="openDetail(request)">View</button>
+                <button class="action-btn view" (click)="openDetail(request)" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; border: none; padding: 6px 16px; border-radius: 20px; font-weight: 600; cursor: pointer;">👁️ View</button>
               </td>
             </tr>
           </tbody>

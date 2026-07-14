@@ -460,20 +460,20 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
 
   applyStatusFilters(): void {
     let list = [...this.allRequests];
-    if (this.statusFilterPriority) {
-      list = list.filter(r => r.priority === this.statusFilterPriority);
+    if (this.filterPriority) {
+      list = list.filter(r => r.priority === this.filterPriority);
     }
-    if (this.statusFilterStatus) {
-      list = list.filter(r => r.status === this.statusFilterStatus);
+    if (this.filterStatus) {
+      list = list.filter(r => r.status === this.filterStatus);
     }
-    if (this.statusFilterDepartment) {
-      list = list.filter(r => r.department === this.statusFilterDepartment);
+    if (this.filterDepartment) {
+      list = list.filter(r => r.department === this.filterDepartment);
     }
-    const term = this.statusFilterSearch.trim().toLowerCase();
-    if (term) {
-      list = list.filter(r =>
-        [r.title, r.requester, r.email, r.department, r.description, r.requestId].join(' ').toLowerCase().includes(term)
-      );
+    if (this.filterDate) {
+      list = list.filter(r => r.requestDate?.startsWith(this.filterDate));
+    }
+    if (this.filterVendor) {
+      list = list.filter(r => r.vendor?.toLowerCase().includes(this.filterVendor.toLowerCase()));
     }
     this.filteredStatusList = list;
   }

@@ -1364,3 +1364,185 @@
     font-size: 18px;
   }
 }
+
+// Aligned RFQ Styles
+.ep-breadcrumb {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.ep-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+
+// Mini status metrics grid
+.ep-stats-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ep-mini-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.01);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  
+  .lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .val {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  
+  &.pending {
+    border-left: 4px solid #f59e0b;
+    .val { color: #d97706; }
+  }
+  &.approved {
+    border-left: 4px solid #10b981;
+    .val { color: #059669; }
+  }
+  &.success-rate {
+    border-left: 4px solid #8b5cf6;
+    .val { color: #7c3aed; }
+  }
+}
+
+// Switch tabs
+.ep-switch-tabs {
+  display: flex;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.tab-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  &.active {
+    background: white;
+    color: #2563eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+}
+
+// Priority Badges (Capsule Pill Style)
+.priority-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &.priority-high, &.High { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  &.priority-medium, &.Medium { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+  &.priority-low, &.Low { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+}
+
+// Status Badges (Capsule Pill Style)
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &.status-pending, &.Pending { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+  &.status-approved, &.Approved { background: rgba(16, 185, 129, 0.1); color: #059669; }
+  &.status-rejected, &.Rejected { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+  &.status-inprocess, &.In-Process, &.In\ Process { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+}
+
+// Dots Action Button
+.dots-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  cursor: pointer;
+  padding: 4px !important;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  
+  &:hover {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+  }
+}
+
+.btn-approve, .btn-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  color: white !important;
+  
+  .icon {
+    font-size: 11px;
+  }
+}
+
+.btn-approve {
+  background: #059669 !important;
+  &:hover {
+    background: #047857 !important;
+    transform: translateY(-1px) !important;
+  }
+}
+
+.btn-reject {
+  background: #dc2626 !important;
+  &:hover {
+    background: #b91c1c !important;
+    transform: translateY(-1px) !important;
+  }
+}

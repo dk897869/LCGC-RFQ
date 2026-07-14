@@ -522,3 +522,222 @@ $shadow-lg:   0 20px 40px rgba(15, 23, 42, .16);
   .quotation-cards { grid-template-columns: 1fr; }
   .modal-box { max-width: 95%; max-height: 95vh; }
 }
+
+// Aligned Quotation Status page styles
+.ep-breadcrumb {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.ep-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+
+// Mini status metrics grid
+.ep-stats-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ep-mini-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  
+  .card-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    
+    &.blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+    &.amber { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+    &.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    &.purple { background: rgba(139, 92, 246, 0.1); color: #7c3aed; }
+  }
+  
+  .card-details {
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+  }
+  
+  .lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .val {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    margin: 2px 0;
+  }
+  
+  .sub {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  
+  .sparkline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 25px;
+    width: 100%;
+    opacity: 0.25;
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  &.pending {
+    border-bottom: 3px solid #f59e0b;
+  }
+  &.approved {
+    border-bottom: 3px solid #10b981;
+  }
+  &.success-rate {
+    border-bottom: 3px solid #8b5cf6;
+  }
+}
+
+// Switch tabs active pill
+.ep-switch-tabs {
+  .tab-pill {
+    background: transparent;
+    color: #64748b;
+    
+    &:hover {
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
+    &.active {
+      background: white !important;
+      color: #2563eb !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  
+  .table-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+    
+    .stat-badge {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  }
+}
+
+.ep-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+  
+  th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1.5px solid #cbd5e1;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+  
+  .mono {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e40af;
+    background: #eef2ff;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  
+  .priority-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    
+    &.priority-high, &.High { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    &.priority-medium, &.Medium { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+    &.priority-low, &.Low { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+  }
+  
+  .status-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    
+    &.status-pending, &.Pending, &.Sent { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+    &.status-approved, &.Approved, &.Completed { background: rgba(16, 185, 129, 0.1); color: #059669; }
+    &.status-rejected, &.Rejected { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+    &.status-inprocess, &.In-Process, &.InProgress { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+  }
+  
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}

@@ -122,6 +122,10 @@ export class RfqVendorComponent implements OnInit, OnDestroy {
     if (this.toastTimer) clearTimeout(this.toastTimer);
   }
 
+  openCreate() {
+    window.dispatchEvent(new CustomEvent('npp-navigate-tab', { detail: 'rfq-npp-form' }));
+  }
+
   private updateClock() {
     this.currentDate = new Date();
     this.currentTime = this.currentDate.toLocaleTimeString('en-US', {
@@ -245,6 +249,30 @@ export class RfqVendorComponent implements OnInit, OnDestroy {
   }
 
   setFilter(f: 'All' | 'NotSent' | 'InProgress') { this.activeFilter = f; }
+
+  get totalRfqsCount(): number {
+    return this.approvedRFQs.length;
+  }
+
+  get pendingRfqsCount(): number {
+    return this.approvedRFQs.filter(r => {
+      const vr = this.getVendorRequestFor(r.id);
+      return !vr || vr.stage !== 'Completed';
+    }).length;
+  }
+
+  get approvedRfqsCount(): number {
+    return this.approvedRFQs.filter(r => {
+      const vr = this.getVendorRequestFor(r.id);
+      return vr && vr.stage === 'Completed';
+    }).length;
+  }
+
+  get successRate(): number {
+    const total = this.totalRfqsCount;
+    if (total === 0) return 0;
+    return Math.round((this.approvedRfqsCount / total) * 100);
+  }
 
   getVendorStageLabel(vr: VendorRequestRecord | null | undefined): string {
     if (!vr || vr.stage === 'NotSent' || !vr.vendors.length) return 'Not Sent';

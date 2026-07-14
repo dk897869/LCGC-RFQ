@@ -299,15 +299,49 @@
 
         <!-- Hero Section -->
         <div class="hero">
-          <div class="hero__left">
-            <h1>{{ greeting }}, {{ getFirstName() }}! 👋</h1>
-            <p>Welcome back to your dashboard.<br>Here's what's happening today.</p>
-            <span class="hero__role">{{ userRole }}</span>
+          <div class="hero__left-main">
+            <div class="hero__title-row">
+              <h1>Good afternoon, {{ userName }}</h1>
+              <p>Here's what's happening with your operations today.</p>
+            </div>
+            
+            <div class="hero__params-grid">
+              <div class="hero__param-item">
+                <span class="param-icon">🕒</span>
+                <div>
+                  <div class="param-lbl">Current Time</div>
+                  <div class="param-val">{{ currentTime }}</div>
+                </div>
+              </div>
+              <div class="hero__param-item">
+                <span class="param-icon">📅</span>
+                <div>
+                  <div class="param-lbl">Date</div>
+                  <div class="param-val">{{ currentDate }}</div>
+                </div>
+              </div>
+              <div class="hero__param-item">
+                <span class="param-icon">👤</span>
+                <div>
+                  <div class="param-lbl">Role</div>
+                  <div class="param-val">{{ userRole }}</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="hero__right">
-            <div class="hero__clock">
-              <div class="hero__time">{{ currentTime }}</div>
-              <div class="hero__date">{{ currentDate }}</div>
+          
+          <div class="hero__right-graphics">
+            <button class="hero__btn-customize">⚙️ Customize</button>
+            <div class="graphics-wrapper">
+              <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
+                <path d="M10 80 Q 40 40, 70 60 T 130 30 T 170 50" stroke="rgba(59, 130, 246, 0.4)" stroke-width="3" fill="none"/>
+                <path d="M10 80 Q 40 45, 70 55 T 130 35 T 170 45" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" fill="none"/>
+                <g transform="translate(110, 40)">
+                  <rect x="0" y="20" width="10" height="30" fill="#8b5cf6" rx="2"/>
+                  <rect x="15" y="10" width="10" height="40" fill="#3b82f6" rx="2"/>
+                  <rect x="30" y="0" width="10" height="50" fill="#60a5fa" rx="2"/>
+                </g>
+              </svg>
             </div>
           </div>
         </div>
@@ -340,99 +374,212 @@
         </div>
 
         <!-- DETAILED ADMIN / MANAGER DASHBOARD -->
-        <div *ngIf="userRole !== 'User'">
-          <!-- Stats Row -->
-          <div class="stats-row">
-            <div class="scard scard--blue" (click)="navigateToEpApproval('requests')">
-              <div class="scard__top"><div><div class="scard__label">TOTAL REQUESTS</div><div class="scard__val">{{ isStatsLoading ? '—' : (displayTotalRequests ?? unifiedStats.total) }}</div><div class="scard__sub">All time requests</div></div><div class="scard__icon scard__icon--blue">📋</div></div>
-              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,25 20,20 40,22 60,12 80,15 100,8" fill="none" stroke="rgba(59,130,246,0.6)" stroke-width="2"/></svg></div>
-            </div>
-            <div class="scard scard--amber" (click)="navigateToEpApproval('approvals')">
-              <div class="scard__top"><div><div class="scard__label">PENDING</div><div class="scard__val scard__val--amber">{{ isStatsLoading ? '—' : (displayPending ?? unifiedStats.pending) }}</div><div class="scard__sub">Waiting for approval</div></div><div class="scard__icon scard__icon--amber">⏳</div></div>
-              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,10 20,18 40,12 60,22 80,16 100,20" fill="none" stroke="rgba(245,158,11,0.6)" stroke-width="2"/></svg></div>
-            </div>
-            <div class="scard scard--green" (click)="navigateToEpApproval('status')">
-              <div class="scard__top"><div><div class="scard__label">APPROVED</div><div class="scard__val scard__val--green">{{ isStatsLoading ? '—' : (displayApproved ?? unifiedStats.approved) }}</div><div class="scard__sub">Successfully approved</div></div><div class="scard__icon scard__icon--green">🛡️</div></div>
-              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,22 40,18 60,14 80,10 100,5" fill="none" stroke="rgba(16,185,129,0.6)" stroke-width="2"/></svg></div>
-            </div>
-            <div class="scard scard--purple">
-              <div class="scard__top"><div><div class="scard__label">SUCCESS RATE</div><div class="scard__val scard__val--purple">{{ isStatsLoading ? '—' : getApprovalRate() + '%' }}</div><div class="scard__sub">Overall success rate</div></div><div class="scard__icon scard__icon--purple">📈</div></div>
-              <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,20 20,18 40,15 60,12 80,10 100,8" fill="none" stroke="rgba(139,92,246,0.6)" stroke-width="2"/></svg></div>
-            </div>
-          </div>
-
-          <!-- Action Row -->
-          <div class="action-row">
-            <button class="action-btn action-btn--primary" (click)="navigateToNppTab('rfq-npp-form')"><span>＋</span> Create RFQ</button>
-            <button class="action-btn action-btn--outline" (click)="navigateToNppTab('pr-request')"><span>📋</span> Create PR</button>
-            <button class="action-btn action-btn--green" (click)="navigateToEpApproval('approvals')"><span>✅</span> Pending Approvals</button>
-            <button class="action-btn action-btn--purple" (click)="openReportsModal()"><span>📊</span> Reports</button>
-          </div>
-
-          <!-- Request Statistics -->
-          <div class="section-title"><span class="section-title__icon">📊</span> Request Statistics by Type</div>
-          <div class="type-cards">
-            <div class="tcard tcard--ep" (click)="navigateToModule('ep-approval')">
-              <div class="tcard__hdr"><span class="tcard__icon">📋</span><span class="tcard__name">EP Approvals</span></div>
-              <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.epApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.epApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.epApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.epApprovals.rejected }}</strong></div></div>
-              <div class="tcard__bar"><div [style.width]="getApprovalProgress(approvalStatsByType.epApprovals)"></div></div>
-            </div>
-            <div class="tcard tcard--rfq" (click)="navigateToModule('rfq')">
-              <div class="tcard__hdr"><span class="tcard__icon">📄</span><span class="tcard__name">RFQ (NON BOM)</span></div>
-              <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.rfqApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.rfqApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.rfqApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.rfqApprovals.rejected }}</strong></div></div>
-              <div class="tcard__bar tcard__bar--green"><div [style.width]="getApprovalProgress(approvalStatsByType.rfqApprovals)"></div></div>
-            </div>
-            <div class="tcard tcard--npp" (click)="navigateToModule('npp-procurement')">
-              <div class="tcard__hdr"><span class="tcard__icon">🛒</span><span class="tcard__name">NPP Procurement</span></div>
-              <div class="tcard__grid"><div class="tcard__stat"><span>Total:</span><strong>{{ approvalStatsByType.nppApprovals.total }}</strong></div><div class="tcard__stat tcard__stat--amber"><span>Pending:</span><strong>{{ approvalStatsByType.nppApprovals.pending }}</strong></div><div class="tcard__stat tcard__stat--green"><span>Approved:</span><strong>{{ approvalStatsByType.nppApprovals.approved }}</strong></div><div class="tcard__stat tcard__stat--red"><span>Rejected:</span><strong>{{ approvalStatsByType.nppApprovals.rejected }}</strong></div></div>
-              <div class="tcard__bar tcard__bar--amber"><div [style.width]="getApprovalProgress(approvalStatsByType.nppApprovals)"></div></div>
-            </div>
-          </div>
-
-          <!-- Mid Row -->
-          <div class="mid-row">
-            <div class="chart-panel">
-              <div class="chart-panel__hdr"><span>📈</span> Request Trends (Last 6 Months)<div class="chart-legend"><span class="cl cl--blue">Total</span><span class="cl cl--green">Approved</span><span class="cl cl--amber">Pending</span></div></div>
-              <div class="chart-body">
-                <div class="chart-yaxis"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div>
-                <div class="chart-bars"><div class="chart-col" *ngFor="let label of chartData.labels; let i = index"><div class="chart-bar-group"><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.total[i] }}</span><div class="bar bar--blue" [style.height]="getBarHeight(chartData.total[i], 40)"></div></div><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.approved[i] }}</span><div class="bar bar--green" [style.height]="getBarHeight(chartData.approved[i], 40)"></div></div><div class="chart-bar-wrap"><span class="bar-label">{{ chartData.pending[i] }}</span><div class="bar bar--amber" [style.height]="getBarHeight(chartData.pending[i], 40)"></div></div></div><div class="chart-xlabel">{{ label }}</div></div></div>
+        <div *ngIf="userRole !== 'User'" class="admin-dashboard-container">
+          
+          <!-- Left Column (Charts, Mini Cards, Stay Updated) -->
+          <div class="dash-col dash-col--left">
+            <!-- Stats Row -->
+            <div class="stats-row">
+              <div class="scard scard--blue" (click)="navigateToEpApproval('requests')">
+                <div class="scard__top"><div><div class="scard__label">TOTAL REQUESTS</div><div class="scard__val">{{ isStatsLoading ? '—' : (displayTotalRequests ?? unifiedStats.total) }}</div><div class="scard__sub">All time requests</div></div><div class="scard__icon scard__icon--blue">📋</div></div>
+                <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,25 20,20 40,22 60,12 80,15 100,8" fill="none" stroke="rgba(59,130,246,0.6)" stroke-width="2"/></svg></div>
+                <div class="scard__trend scard__trend--blue"><span>↑ 12%</span> vs last month</div>
+              </div>
+              <div class="scard scard--amber" (click)="navigateToEpApproval('approvals')">
+                <div class="scard__top"><div><div class="scard__label">PENDING</div><div class="scard__val scard__val--amber">{{ isStatsLoading ? '—' : (displayPending ?? unifiedStats.pending) }}</div><div class="scard__sub">Waiting for approval</div></div><div class="scard__icon scard__icon--amber">⏳</div></div>
+                <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,10 20,18 40,12 60,22 80,16 100,20" fill="none" stroke="rgba(245,158,11,0.6)" stroke-width="2"/></svg></div>
+                <div class="scard__trend scard__trend--amber"><span>↑ 8%</span> vs last month</div>
+              </div>
+              <div class="scard scard--green" (click)="navigateToEpApproval('status')">
+                <div class="scard__top"><div><div class="scard__label">APPROVED</div><div class="scard__val scard__val--green">{{ isStatsLoading ? '—' : (displayApproved ?? unifiedStats.approved) }}</div><div class="scard__sub">Successfully approved</div></div><div class="scard__icon scard__icon--green">🛡️</div></div>
+                <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,22 40,18 60,14 80,10 100,5" fill="none" stroke="rgba(16,185,129,0.6)" stroke-width="2"/></svg></div>
+                <div class="scard__trend scard__trend--green"><span>↑ 15%</span> vs last month</div>
+              </div>
+              <div class="scard scard--purple">
+                <div class="scard__top"><div><div class="scard__label">SUCCESS RATE</div><div class="scard__val scard__val--purple">{{ isStatsLoading ? '—' : getApprovalRate() + '%' }}</div><div class="scard__sub">Overall success rate</div></div><div class="scard__icon scard__icon--purple">📈</div></div>
+                <div class="scard__sparkline"><svg viewBox="0 0 100 30"><polyline points="0,20 20,18 40,15 60,12 80,10 100,8" fill="none" stroke="rgba(139,92,246,0.6)" stroke-width="2"/></svg></div>
+                <div class="scard__trend scard__trend--purple"><span>↑ 5%</span> vs last month</div>
               </div>
             </div>
+
+            <!-- Action buttons -->
+            <div class="action-row">
+              <button class="action-btn action-btn--primary" (click)="navigateToNppTab('rfq-npp-form')"><span>＋</span> Create RFQ</button>
+              <button class="action-btn action-btn--outline" (click)="navigateToNppTab('pr-request')"><span>📅</span> Create PR</button>
+              <button class="action-btn action-btn--green" (click)="navigateToEpApproval('approvals')"><span>⚙️</span> Pending Approvals ({{ unifiedStats.pending }})</button>
+              <button class="action-btn action-btn--purple" (click)="openReportsModal()"><span>📊</span> Reports</button>
+            </div>
+
+            <!-- Grid of charts -->
+            <div class="charts-grid-panel">
+              <!-- Doughnut panel -->
+              <div class="doughnut-panel">
+                <div class="doughnut-panel__hdr">
+                  <h3>Request Statistics by Type</h3>
+                  <select class="chart-select"><option>6 Months</option></select>
+                </div>
+                <div class="doughnut-container">
+                  <svg class="doughnut-chart" width="120" height="120" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" stroke-width="3"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="3" stroke-dasharray="41.7 58.3" stroke-dashoffset="25"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="43.8 56.2" stroke-dashoffset="-16.7"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="14.6 85.4" stroke-dashoffset="-60.5"/>
+                    <text x="18" y="16.5" class="chart-center-lbl" text-anchor="middle" fill="#64748b" font-size="2.5">Total</text>
+                    <text x="18" y="22.5" class="chart-center-val" text-anchor="middle" fill="#0f172a" font-size="4" font-weight="bold">{{ approvalStatsByType.epApprovals.total + approvalStatsByType.rfqApprovals.total + approvalStatsByType.nppApprovals.total || 48 }}</text>
+                  </svg>
+                  
+                  <div class="doughnut-legend">
+                    <div class="legend-item"><span class="color-dot blue"></span> EP Approvals <strong class="val">20 (41.7%)</strong></div>
+                    <div class="legend-item"><span class="color-dot green"></span> RFQ (NON BOM) <strong class="val">21 (43.8%)</strong></div>
+                    <div class="legend-item"><span class="color-dot orange"></span> NPP Procurement <strong class="val">7 (14.6%)</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Line Chart panel -->
+              <div class="trend-chart-panel">
+                <div class="trend-chart-panel__hdr">
+                  <h3>Request Trends (Last 6 Months)</h3>
+                  <select class="chart-select"><option>6 Months</option></select>
+                </div>
+                <div class="trend-chart-legend">
+                  <span class="lg-dot blue"></span> Total
+                  <span class="lg-dot green"></span> Approved
+                  <span class="lg-dot orange"></span> Pending
+                </div>
+                <div class="trend-chart-body">
+                  <svg viewBox="0 0 300 120" class="line-chart-svg">
+                    <line x1="20" y1="20" x2="290" y2="20" stroke="#f1f5f9" stroke-width="1" />
+                    <line x1="20" y1="50" x2="290" y2="50" stroke="#f1f5f9" stroke-width="1" />
+                    <line x1="20" y1="80" x2="290" y2="80" stroke="#f1f5f9" stroke-width="1" />
+                    <line x1="20" y1="110" x2="290" y2="110" stroke="#cbd5e1" stroke-width="1" />
+                    <text x="5" y="23" fill="#94a3b8" font-size="8">40</text>
+                    <text x="5" y="53" fill="#94a3b8" font-size="8">30</text>
+                    <text x="5" y="83" fill="#94a3b8" font-size="8">20</text>
+                    <text x="5" y="113" fill="#94a3b8" font-size="8">0</text>
+                    <text x="25" y="123" fill="#94a3b8" font-size="8">Jan</text>
+                    <text x="75" y="123" fill="#94a3b8" font-size="8">Feb</text>
+                    <text x="125" y="123" fill="#94a3b8" font-size="8">Mar</text>
+                    <text x="175" y="123" fill="#94a3b8" font-size="8">Apr</text>
+                    <text x="225" y="123" fill="#94a3b8" font-size="8">May</text>
+                    <text x="275" y="123" fill="#94a3b8" font-size="8">Jun</text>
+                    <polyline points="25,90 75,80 125,75 175,70 225,50 275,65" fill="none" stroke="#2563eb" stroke-width="2"/>
+                    <polyline points="25,100 75,95 125,90 175,85 225,65 275,80" fill="none" stroke="#10b981" stroke-width="2"/>
+                    <polyline points="25,110 75,105 125,105 175,102 225,105 275,110" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini cards grid -->
+            <div class="mini-cards-grid">
+              <div class="m-card-item">
+                <div>
+                  <div class="m-card-lbl">Avg. Approval Time</div>
+                  <div class="m-card-val">2.4 <span class="unit">Days</span></div>
+                  <div class="m-card-sub green">↓ -0.6 vs last month</div>
+                </div>
+                <div class="m-card-icon blue">🕒</div>
+              </div>
+              <div class="m-card-item">
+                <div>
+                  <div class="m-card-lbl">Requests This Month</div>
+                  <div class="m-card-val">18</div>
+                  <div class="m-card-sub green">↑ +20% vs last month</div>
+                </div>
+                <div class="m-card-icon blue">📄</div>
+              </div>
+              <div class="m-card-item">
+                <div>
+                  <div class="m-card-lbl">Overdue Requests</div>
+                  <div class="m-card-val">5</div>
+                  <div class="m-card-sub red">↓ -2 vs last month</div>
+                </div>
+                <div class="m-card-icon red">⚠️</div>
+              </div>
+              <div class="m-card-item">
+                <div>
+                  <div class="m-card-lbl">Completion Rate</div>
+                  <div class="m-card-val">88%</div>
+                  <div class="m-card-sub green">↑ +7% vs last month</div>
+                </div>
+                <div class="m-card-icon green">✓</div>
+              </div>
+            </div>
+
+            <!-- Stay Updated newsletter -->
+            <div class="stay-updated-card">
+              <div class="stay-icon">🔔</div>
+              <div class="stay-body">
+                <h4>Stay Updated</h4>
+                <p>Get notified about important updates and pending approvals.</p>
+              </div>
+              <div class="stay-input-row">
+                <input type="email" placeholder="Enter your email" />
+                <button class="btn-subscribe">Subscribe</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column (Recent Activity, Top Requesters) -->
+          <div class="dash-col dash-col--right">
+            <!-- Recent Activity -->
             <div class="activity-panel">
-              <div class="activity-panel__hdr">Recent Activity <button class="view-all" (click)="navigateToEpApproval('requests')">View All</button></div>
-              <div class="activity-list"><div class="act-item" *ngFor="let a of activityFeed"><div class="act-item__icon" [style.background]="a.color + '20'" [style.color]="a.color">{{ a.icon }}</div><div class="act-item__body"><div class="act-item__text">{{ a.text }}</div></div><div class="act-item__time">{{ a.time }}</div></div></div>
+              <div class="activity-panel__hdr">
+                <h3>Recent Activity</h3>
+                <button class="view-all" (click)="navigateToEpApproval('requests')">View All</button>
+              </div>
+              <div class="activity-list">
+                <div class="act-item" *ngFor="let a of activityFeed">
+                  <div class="act-item__icon" [style.background]="a.color + '20'" [style.color]="a.color">{{ a.icon }}</div>
+                  <div class="act-item__body">
+                    <div class="act-item__text"><strong>{{ a.text.split('/')[0] }}</strong></div>
+                    <div class="act-item__sub" *ngIf="a.text.includes('/')">{{ a.text.split('/')[1] }}</div>
+                    <div class="act-item__time">{{ a.time }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Requesters -->
+            <div class="top-requesters-panel">
+              <div class="requesters-hdr">
+                <h3>Top Requesters</h3>
+                <select class="chart-select"><option>6 Months</option></select>
+              </div>
+              <div class="requesters-list">
+                <div class="req-user-item">
+                  <div class="user-avatar blue">AK</div>
+                  <div class="user-details">
+                    <div class="user-name-row"><span>Amit Kumar</span><strong>12 requests</strong></div>
+                    <div class="progress-bar"><div class="progress-fill blue" style="width: 75%;"></div></div>
+                  </div>
+                </div>
+                <div class="req-user-item">
+                  <div class="user-avatar green">RS</div>
+                  <div class="user-details">
+                    <div class="user-name-row"><span>Rajesh Sharma</span><strong>9 requests</strong></div>
+                    <div class="progress-bar"><div class="progress-fill green" style="width: 55%;"></div></div>
+                  </div>
+                </div>
+                <div class="req-user-item">
+                  <div class="user-avatar orange">PS</div>
+                  <div class="user-details">
+                    <div class="user-name-row"><span>Priya Singh</span><strong>7 requests</strong></div>
+                    <div class="progress-bar"><div class="progress-fill orange" style="width: 40%;"></div></div>
+                  </div>
+                </div>
+                <div class="req-user-item">
+                  <div class="user-avatar purple">VJ</div>
+                  <div class="user-details">
+                    <div class="user-name-row"><span>Vikram Joshi</span><strong>6 requests</strong></div>
+                    <div class="progress-bar"><div class="progress-fill purple" style="width: 30%;"></div></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Recent Requests -->
-          <div class="recent-requests-panel" *ngIf="filteredUnifiedRequests.length">
-            <div class="recent-requests-panel__hdr">
-              <h3>Recent Requests</h3>
-              <button class="view-all" (click)="navigateToEpApproval('approvals')">Manage Approvals →</button>
-            </div>
-            <div class="table-responsive" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
-              <table class="data-table data-table--compact">
-                <thead><tr><th>Type</th><th>Serial</th><th>Title</th><th>Requester</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody>
-                  <tr *ngFor="let req of filteredUnifiedRequests | slice:0:8">
-                    <td><span class="tbadge" [ngClass]="'tbadge--' + req.type">{{ getTypeLabel(req.type) }}</span></td>
-                    <td class="mono">{{ req.uniqueSerialNo || '—' }}</td>
-                    <td><strong>{{ req.title }}</strong></td>
-                    <td>{{ req.requester }}</td>
-                    <td><span class="sbadge" [ngClass]="getUnifiedStatusClass(req.status)">{{ req.status }}</span></td>
-                    <td><button class="mini" (click)="viewFullForm(req)">View</button></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Counters -->
-          <div class="counters-row" *ngIf="isAdminView">
-            <div class="counter" (click)="navigateToModule('vendors')"><span class="counter__icon">🏢</span><div><div class="counter__lbl">Vendors</div><div class="counter__val">{{ vendorCount ?? 0 }}</div></div></div>
-            <div class="counter" (click)="navigateToModule('parts')"><span class="counter__icon">🔧</span><div><div class="counter__lbl">Parts</div><div class="counter__val">{{ partCount ?? 0 }}</div></div></div>
-            <div class="counter" (click)="navigateToEpApproval('approvals')"><span class="counter__icon">⏳</span><div><div class="counter__lbl">Pending</div><div class="counter__val counter__val--red">{{ unifiedStats.pending }}</div></div></div>
-          </div>
         </div>
       </div>
     </div>

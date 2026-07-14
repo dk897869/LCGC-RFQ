@@ -21,26 +21,75 @@
         <div class="brand-mark">LC</div>
         <div class="brand-text">
           <span class="brand-name">LCGC</span>
-          <span class="brand-sub">Resolute Group</span>
+          <span class="brand-sub">Resource Group</span>
         </div>
       </div>
 
       <div class="hero-text">
-        <h1>Procurement<br><em>Reimagined.</em></h1>
-        <p>Streamline approvals, track vendors, and manage your supply chain — all in one platform built for speed.</p>
+        <h1>Smart Procurement.<br>Better Decisions.</h1>
+        <p>Streamline approvals, manage vendors and track every request in one powerful platform.</p>
       </div>
 
-      <div class="feature-pills">
-        <div class="pill">⚡ Fast Approvals</div>
-        <div class="pill">🔒 Role-based Access</div>
-        <div class="pill">📊 Live Analytics</div>
-        <div class="pill">🌐 Multi-team</div>
+      <div class="feature-cards-list">
+        <div class="f-card">
+          <div class="f-card-icon f-card-icon--blue">⚡</div>
+          <div class="f-card-body">
+            <h4>Fast & Easy Approvals</h4>
+            <p>Reduce turnaround time</p>
+          </div>
+        </div>
+        <div class="f-card">
+          <div class="f-card-icon f-card-icon--navy">🔒</div>
+          <div class="f-card-body">
+            <h4>Secure & Role-based Access</h4>
+            <p>Data security you can trust</p>
+          </div>
+        </div>
+        <div class="f-card">
+          <div class="f-card-icon f-card-icon--green">📊</div>
+          <div class="f-card-body">
+            <h4>Real-time Analytics</h4>
+            <p>Insightful dashboards</p>
+          </div>
+        </div>
+        <div class="f-card">
+          <div class="f-card-icon f-card-icon--purple">👥</div>
+          <div class="f-card-body">
+            <h4>Multi-team Collaboration</h4>
+            <p>Work together seamlessly</p>
+          </div>
+        </div>
       </div>
 
-      <div class="lp-decoration">
-        <div class="deco-circle c1"></div>
-        <div class="deco-circle c2"></div>
-        <div class="deco-circle c3"></div>
+      <!-- Mock 3D Dashboard Visual -->
+      <div class="mock-dashboard-visual">
+        <div class="mock-window">
+          <div class="mock-header">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <div class="mock-search"></div>
+          </div>
+          <div class="mock-layout">
+            <div class="mock-sidebar">
+              <div class="bar sm"></div>
+              <div class="bar md"></div>
+              <div class="bar lg"></div>
+            </div>
+            <div class="mock-content">
+              <div class="mock-cards">
+                <div class="m-card"><div class="line"></div><div class="line sm"></div></div>
+                <div class="m-card green"><div class="line"></div><div class="line sm"></div></div>
+              </div>
+              <div class="mock-chart">
+                <div class="chart-line"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="shield-indicator">🛡️</div>
+      </div>
+
+      <div class="lp-footer">
+        <p>© 2026 LCGC Resource Group. All rights reserved.</p>
       </div>
     </div>
   </div>
@@ -53,40 +102,24 @@
         <p>Sign in to your account to continue</p>
       </div>
 
-      <!-- Method Toggle -->
-      <div class="method-toggle">
-        <button class="mt-btn" [class.active]="loginMethod === 'email'" (click)="setLoginMethod('email')">
-          <span>📧</span> Email
-        </button>
-        <button class="mt-btn" [class.active]="loginMethod === 'mobile'" (click)="setLoginMethod('mobile')">
-          <span>📱</span> Mobile OTP
-        </button>
-        <div class="mt-slider" [class.right]="loginMethod === 'mobile'"></div>
-      </div>
-
       <!-- Email Form -->
-      <div class="login-form" *ngIf="loginMethod === 'email'">
-        <div class="email-mode-row">
-          <button type="button" class="sub-mode" [class.active]="emailLoginMode === 'password'" (click)="setEmailLoginMode('password')">Password</button>
-          <button type="button" class="sub-mode" [class.active]="emailLoginMode === 'otp'" (click)="setEmailLoginMode('otp')">Email OTP</button>
-        </div>
-
+      <div class="login-form">
         <div class="field">
           <label>Email Address</label>
           <div class="field-wrap">
             <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            <input type="email" [(ngModel)]="email" name="email" placeholder="you@company.com" (keyup.enter)="onEmailLogin()">
+            <input type="email" [(ngModel)]="email" name="email" placeholder="Enter your email" (keyup.enter)="onEmailLogin()">
           </div>
         </div>
 
-        <div class="field" *ngIf="emailLoginMode === 'password'">
+        <div class="field">
           <div class="field-label-row">
             <label>Password</label>
             <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
           </div>
           <div class="field-wrap">
             <svg class="field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" placeholder="••••••••" (keyup.enter)="onEmailLogin()">
+            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password" placeholder="Enter your password" (keyup.enter)="onEmailLogin()">
             <button type="button" class="eye-btn" (click)="togglePassword()">
               <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -94,9 +127,7 @@
           </div>
         </div>
 
-        <p class="otp-hint-email" *ngIf="emailLoginMode === 'otp'">We will email you a 6-digit code. Check spam if it does not arrive.</p>
-
-        <div class="remember-row" *ngIf="emailLoginMode === 'password'">
+        <div class="remember-row">
           <label class="check-label">
             <input type="checkbox" [(ngModel)]="rememberMe">
             <span class="check-box"></span>
@@ -106,27 +137,8 @@
 
         <button class="submit-btn" (click)="onEmailLogin()" [disabled]="isLoading">
           <span class="btn-spinner" *ngIf="isLoading"></span>
-          <span *ngIf="!isLoading && emailLoginMode === 'password'">Sign In →</span>
-          <span *ngIf="!isLoading && emailLoginMode === 'otp'">Send email code →</span>
-          <span *ngIf="isLoading && emailLoginMode === 'password'">Signing in...</span>
-          <span *ngIf="isLoading && emailLoginMode === 'otp'">Sending...</span>
-        </button>
-      </div>
-
-      <!-- Mobile OTP Form -->
-      <div class="login-form" *ngIf="loginMethod === 'mobile'">
-        <div class="field">
-          <label>Mobile Number</label>
-          <div class="field-wrap mobile-wrap">
-            <span class="prefix">+91</span>
-            <input type="tel" [(ngModel)]="mobileNumber" name="mobile" placeholder="10-digit number" maxlength="10" (keyup.enter)="sendMobileOTP()">
-          </div>
-        </div>
-
-        <button class="submit-btn green" (click)="sendMobileOTP()" [disabled]="isLoading || !mobileNumber">
-          <span class="btn-spinner" *ngIf="isLoading"></span>
-          <span *ngIf="!isLoading">Send OTP →</span>
-          <span *ngIf="isLoading">Sending OTP...</span>
+          <span *ngIf="!isLoading">Sign In →</span>
+          <span *ngIf="isLoading">Signing in...</span>
         </button>
       </div>
 
@@ -135,33 +147,15 @@
         <div class="divider"><span>Or continue with</span></div>
         <div class="social-buttons-equal">
           <!-- Google Button -->
-          <div id="google-signin-btn" class="social-btn-equal google-btn-wrapper"></div>
-          
-          <!-- Facebook Button -->
-          <button class="social-btn-equal facebook" (click)="facebookLogin()">
-            <span class="social-icon-equal">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
-                <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/>
-              </svg>
-            </span>
-            <span>Continue with Facebook</span>
-          </button>
-          
-          <!-- Twitter Button -->
-          <button class="social-btn-equal twitter" (click)="twitterLogin()">
-            <span class="social-icon-equal">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DA1F2">
-                <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.52 8.52 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
-              </svg>
-            </span>
-            <span>Continue with Twitter</span>
-          </button>
+          <div id="google-signin-btn" class="social-btn-equal google-btn-wrapper" style="display: flex; justify-content: center; width: 100%;"></div>
         </div>
       </div>
 
-      <div class="divider"><span>New to LCGC?</span></div>
-      <a routerLink="/register" class="register-btn">Create an account</a>
-      <a routerLink="/vendor-login" class="register-btn" style="margin-top:10px;background:transparent;color:#0f2a5e;border:1px solid #0f2a5e;">Vendor Portal Login</a>
+      <div class="divider"><span>Or manage accounts</span></div>
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+        <a routerLink="/register" class="register-btn" style="text-align: center; text-decoration: none; display: block; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 14px; background: #e2e8f0; color: #0f2a5e;">Create an account</a>
+        <!-- <a routerLink="/vendor-login" class="register-btn" style="text-align: center; text-decoration: none; display: block; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 14px; background: transparent; color: #0f2a5e; border: 1.5px solid #0f2a5e;">Vendor Portal Login</a> -->
+      </div>
     </div>
   </div>
 </div>

@@ -201,6 +201,10 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     if (this.toastTimer) clearTimeout(this.toastTimer);
   }
 
+  openCreate() {
+    window.dispatchEvent(new CustomEvent('npp-navigate-tab', { detail: 'rfq-npp-form' }));
+  }
+
   private updateClock() {
     this.currentDate = new Date();
     this.currentTime = this.currentDate.toLocaleTimeString('en-US', {
@@ -291,9 +295,9 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       suppliers: suppliers,
       totalAmount: apiData.totalAmount || 0,
       bestSupplier: apiData.bestSupplier || '',
-      supplier1Name: suppliers[0] || '',
-      supplier2Name: suppliers[1] || '',
-      supplier3Name: suppliers[2] || '',
+      supplier1Name: suppliers[0] ? (suppliers[0].name || suppliers[0].vendorName || (typeof suppliers[0] === 'string' ? suppliers[0] : 'Supplier 1')) : 'Supplier 1',
+      supplier2Name: suppliers[1] ? (suppliers[1].name || suppliers[1].vendorName || (typeof suppliers[1] === 'string' ? suppliers[1] : 'Supplier 2')) : 'Supplier 2',
+      supplier3Name: suppliers[2] ? (suppliers[2].name || suppliers[2].vendorName || (typeof suppliers[2] === 'string' ? suppliers[2] : 'Supplier 3')) : 'Supplier 3',
       quotationItems: items.map((item: any, idx: number) => ({
         sNo: idx + 1,
         partCode: item.partCode || '',

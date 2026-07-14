@@ -28,7 +28,7 @@
   <div class="ep-main" [class.ep-main--full]="hideInternalSidebar">
     
     <!-- Header -->
-    <div class="ep-topbar">
+    <div class="ep-topbar" *ngIf="!showViewModal">
       <div class="topbar-title">
         <div class="ep-breadcrumb">NON BOM › Approvals › Request</div>
         <h2>EP Approval</h2>
@@ -41,7 +41,7 @@
     </div>
     
     <!-- Switch Tabs (Pills) -->
-    <div class="ep-switch-tabs">
+    <div class="ep-switch-tabs" *ngIf="!showViewModal">
       <button class="tab-pill" [class.active]="activeTab === 'requests'" (click)="setTab('requests')">
         <span class="tab-pill-icon">📄</span> Requests
       </button>
@@ -54,7 +54,7 @@
     </div>
 
     <!-- Filter Requests card -->
-    <div class="ep-filter-card" *ngIf="!showInlineCreateForm">
+    <div class="ep-filter-card" *ngIf="!showInlineCreateForm && !showViewModal">
       <div class="filter-card-title">Filter Requests</div>
       <div class="filter-card-grid">
         <div class="filter-field">
@@ -441,27 +441,9 @@
               <label>TITLE OF ACTIVITY *</label>
               <input type="text" [(ngModel)]="formData.titleOfActivity" placeholder="Enter title of the activity">
             </div>
-            <div class="form-field">
-              <label>VENDOR / SUPPLIER *</label>
-              <input type="text" [(ngModel)]="formData.vendor" placeholder="Enter vendor name">
-            </div>
-            <div class="form-field">
-              <label>AMOUNT / COST (₹) *</label>
-              <input type="number" [(ngModel)]="formData.amount" placeholder="Enter amount" min="0" step="1000">
-            </div>
-            <div class="form-field">
-              <label>PRIORITY LEVEL</label>
-              <select [(ngModel)]="formData.priority">
-                <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
-              </select>
-            </div>
             <div class="form-field full-width">
               <label>DESCRIPTION</label>
-              <textarea [(ngModel)]="formData.description" rows="3" placeholder="State the objective..."></textarea>
-            </div>
-            <div class="form-field full-width">
-              <label>OBJECTIVE</label>
-              <textarea [(ngModel)]="formData.objective" rows="2" placeholder="Business objective..."></textarea>
+              <textarea [(ngModel)]="formData.description" rows="3" placeholder="Describe the activity..."></textarea>
             </div>
           </div>
         </div>
@@ -514,61 +496,170 @@
         </div>
       </div>
       
-      <!-- Approval Chain -->
-      <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">👥</span>
-          Approval Chain
-          <button type="button" class="add-approver-btn" (click)="addApprover()">+ Add Approver</button>
-        </div>
-        <div class="approval-table-wrapper">
-          <table class="approval-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Line</th>
-                <th>Manager Name *</th>
-                <th>Designation *</th>
-                <th>Email *</th>
-                <th>Status</th>
-                <th>Date/Time</th>
-                <th>Remarks</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let approver of approvers; let i = index">
-                <td>{{ i + 1 }}</td>
-                <td>
-                  <select [(ngModel)]="approver.line" class="line-select">
-                    <option value="Parallel">Parallel</option>
-                    <option value="Sequential">Sequential</option>
-                  </select>
-                </td>
-                <td>
-                  <select [(ngModel)]="approver.managerName" (ngModelChange)="onManagerChange(approver, $event)" class="manager-select">
-                    <option value="">Select Manager</option>
-                    <option *ngFor="let m of managerOptions" [value]="m.name">{{ m.name }} ({{ m.designation }})</option>
-                  </select>
-                </td>
-                <td><input type="text" [(ngModel)]="approver.designation" placeholder="Designation" class="designation-input"></td>
-                <td><input type="email" [(ngModel)]="approver.email" placeholder="Email" class="email-input"></td>
-                <td>
-                  <span class="status-badge" [class.approved]="approver.status === 'approved'" [class.rejected]="approver.status === 'rejected'" [class.pending]="approver.status === 'pending'">
-                    {{ approver.status }}
-                  </span>
-                </td>
-                <td class="date-time-cell">{{ approver.dateTime || '—' }}</td>
-                <td><input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks" class="remarks-input"></td>
-                <td>
-                  <button *ngIf="approvers.length > 1" type="button" class="remove-row-btn" (click)="removeApprover(i)">×</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
+<!-- Approval Chain -->
+<div class="approval-section">
+
+  <div class="approval-header">
+    <div class="title">
+      <span>👥</span>
+      Approval Chain
+    </div>
+
+    <button class="add-btn" (click)="addApprover()">
+      + Add Approver
+    </button>
+  </div>
+
+  <div class="table-wrapper">
+
+    <table class="approval-table">
+
+      <thead>
+        <tr>
+          <th style="width:50px">#</th>
+          <th style="width:90px">Line</th>
+          <th style="width:220px">Name</th>
+          <th style="width:420px">Comments/Remarks</th>
+          <th style="width:150px">Designation</th>
+          <th style="width:220px">E-Mail</th>
+          <th style="width:150px">Contact No.</th>
+          <th style="width:160px">Organization</th>
+          <th style="width:110px">Status</th>
+          <th style="width:170px">Date/Time</th>
+          <th width="45"></th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let approver of approvers; let i=index">
+
+          <td class="center">
+            {{i+1}}
+          </td>
+
+          <td>
+
+            <select [(ngModel)]="approver.line">
+
+              <option>Parallel</option>
+
+              <option>Sequential</option>
+
+            </select>
+
+          </td>
+
+          <td style="position: relative;">
+            <input type="text"
+                   [(ngModel)]="approver.managerName"
+                   (ngModelChange)="onManagerChange(approver, $event)"
+                   (focus)="approver.showSuggestions = true"
+                   (blur)="onManagerBlur(approver)"
+                   placeholder="Enter Name"
+                   class="manager-input-text"
+                   autocomplete="off">
+            <div class="manager-suggestions" *ngIf="approver.showSuggestions && getFilteredManagers(approver.managerName).length > 0">
+              <div class="suggestion-item"
+                   *ngFor="let m of getFilteredManagers(approver.managerName)"
+                   (mousedown)="selectManager(approver, m)">
+                <span class="m-name">{{ m.name }}</span>
+                <span class="m-designation">{{ m.designation }}</span>
+              </div>
+            </div>
+          </td>
+
+          <td>
+
+            <input
+              type="text"
+              [(ngModel)]="approver.remarks"
+            >
+
+          </td>
+
+          <td class="readonly">
+
+            {{approver.designation}}
+
+          </td>
+
+          <td class="readonly">
+
+            {{approver.email}}
+
+          </td>
+
+          <td>
+
+            <input
+              type="text"
+              [(ngModel)]="approver.contactNo"
+            >
+
+          </td>
+
+          <td>
+
+            <input
+              type="text"
+              [(ngModel)]="approver.organization"
+            >
+
+          </td>
+
+          <td>
+
+            <span
+              class="approved"
+              *ngIf="approver.status=='approved'"
+            >
+              Approved
+            </span>
+
+            <span
+              class="pending"
+              *ngIf="approver.status=='pending'"
+            >
+              Pending
+            </span>
+
+            <span
+              class="rejected"
+              *ngIf="approver.status=='rejected'"
+            >
+              Rejected
+            </span>
+
+          </td>
+
+          <td>
+
+            {{approver.dateTime}}
+
+          </td>
+
+          <td>
+
+            <button
+              class="delete-btn"
+              *ngIf="approvers.length>1"
+              (click)="removeApprover(i)"
+            >
+              ×
+            </button>
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>      
       <!-- CC Recipients -->
       <div class="form-section">
         <div class="section-title">
@@ -605,16 +696,22 @@
   </div>
 </div>
 
-<!-- ==================== VIEW MODAL ==================== -->
-<div class="modal-overlay modal-overlay--fullscreen" *ngIf="showViewModal" (click)="closeViewModal()">
-  <div class="create-ep-modal create-ep-modal--fullscreen" (click)="$event.stopPropagation()">
+<!-- ==================== VIEW REQUEST FULL PAGE ==================== -->
+<div class="ep-full-page-container" *ngIf="showViewModal && selectedRequestCopy">
+  <div class="full-page-inner">
     
-    <div class="modal-header">
-      <h2>📄 EP Approval Request Details &amp; Edit</h2>
-      <button class="close-btn" (click)="closeViewModal()">×</button>
+    <div class="full-page-header">
+      <div class="back-nav">
+        <button class="btn-back" (click)="closeViewModal()">← Back to List</button>
+        <span class="breadcrumb-item">/ EP Request Details</span>
+      </div>
+      <div class="header-main">
+        <h2>📄 EP Approval Request ({{ selectedRequestCopy.requestId }})</h2>
+        <span class="status-badge" [ngClass]="getStatusClass(selectedRequestCopy.status)">{{ selectedRequestCopy.status }}</span>
+      </div>
     </div>
     
-    <div class="modal-body" *ngIf="selectedRequestCopy">
+    <div class="full-page-body" *ngIf="selectedRequestCopy">
       <!-- Requester Information -->
       <div class="form-section">
         <div class="section-title">
@@ -660,30 +757,12 @@
         <div class="info-card">
           <div class="form-grid">
             <div class="form-field full-width">
-              <label>TITLE OF ACTIVITY *</label>
+              <label>ACTIVITY *</label>
               <input type="text" [ngModel]="selectedRequestCopy.title" (ngModelChange)="selectedRequestCopy.title = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" placeholder="Enter title">
-            </div>
-            <div class="form-field">
-              <label>VENDOR / SUPPLIER *</label>
-              <input type="text" [ngModel]="selectedRequestCopy.vendor" (ngModelChange)="selectedRequestCopy.vendor = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" placeholder="Enter vendor">
-            </div>
-            <div class="form-field">
-              <label>AMOUNT / COST (₹) *</label>
-              <input type="number" [ngModel]="selectedRequestCopy.amount" (ngModelChange)="selectedRequestCopy.amount = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" placeholder="Enter amount">
-            </div>
-            <div class="form-field">
-              <label>PRIORITY LEVEL</label>
-              <select [ngModel]="selectedRequestCopy.priority" (ngModelChange)="selectedRequestCopy.priority = $event" [disabled]="selectedRequestCopy.status !== 'Pending'">
-                <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
-              </select>
             </div>
             <div class="form-field full-width">
               <label>DESCRIPTION</label>
               <textarea [ngModel]="selectedRequestCopy.description" (ngModelChange)="selectedRequestCopy.description = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" rows="3"></textarea>
-            </div>
-            <div class="form-field full-width">
-              <label>OBJECTIVE</label>
-              <textarea [ngModel]="selectedRequestCopy.objective" (ngModelChange)="selectedRequestCopy.objective = $event" [disabled]="selectedRequestCopy.status !== 'Pending'" rows="2"></textarea>
             </div>
           </div>
         </div>
@@ -700,25 +779,33 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>Manager Name</th>
+                <th>Line</th>
+                <th>Name</th>
+                <th>Comments/Remarks</th>
                 <th>Designation</th>
-                <th>Email</th>
+                <th>E-Mail</th>
+                <th>Contact No.</th>
+                <th>Organization</th>
                 <th>Status</th>
-                <th>Remarks</th>
+                <th>Date/Time</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let st of selectedRequestCopy.stakeholders; let idx = index">
                 <td>{{ idx + 1 }}</td>
+                <td>{{ st.line || 'Parallel' }}</td>
                 <td><strong>{{ st.name || st.managerName }}</strong></td>
+                <td>{{ st.remarks || '—' }}</td>
                 <td>{{ st.designation || '—' }}</td>
                 <td>{{ st.email || '—' }}</td>
+                <td>{{ st.contactNo || '—' }}</td>
+                <td>{{ st.organization || '—' }}</td>
                 <td>
                   <span class="status-badge" [ngClass]="getStatusClass(st.status)">
                     {{ st.status }}
                   </span>
                 </td>
-                <td>{{ st.remarks || '—' }}</td>
+                <td>{{ st.dateTime ? (st.dateTime | date:'M/d/yy h:mm a') : '—' }}</td>
               </tr>
             </tbody>
           </table>
@@ -741,15 +828,15 @@
 
     </div>
     
-    <div class="modal-footer">
+    <div class="full-page-footer">
       <button class="btn-cancel" (click)="closeViewModal()">Close</button>
       <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending'" class="btn-submit" (click)="saveEditedRequest()" style="background: #1e3a8a; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer;">
         Save &amp; Submit Changes
       </button>
-      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && isAdminUser()" class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)" class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
         ✓ Approve
       </button>
-      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && isAdminUser()" class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)" class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
         ✗ Reject
       </button>
     </div>

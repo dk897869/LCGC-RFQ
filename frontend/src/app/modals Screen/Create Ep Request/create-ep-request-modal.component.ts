@@ -12,6 +12,9 @@ interface Approver {
   status: 'pending' | 'approved' | 'rejected' | 'waiting';
   dateTime: string;
   remarks: string;
+  contactNo?: string;
+  organization?: string;
+  showSuggestions?: boolean;
 }
 
 interface Attachment {
@@ -51,11 +54,16 @@ export class CreateEPRequestModalComponent implements OnInit {
   showFormView: boolean = false;
   showSuccessView: boolean = false;
   showDetailModal: boolean = false;
+  isViewMode: boolean = false;
   isLoading: boolean = false;
   toastMessage: string = '';
   toastType: 'success' | 'error' | 'info' = 'success';
   showToast: boolean = false;
   selectedRequest: EPRequest | null = null;
+
+  // Approval action
+  actionRemarks: string = '';
+  isActioning: boolean = false;
 
   // Form Data
   formData = {
@@ -84,7 +92,9 @@ export class CreateEPRequestModalComponent implements OnInit {
       designation: '',
       status: 'pending',
       dateTime: '',
-      remarks: ''
+      remarks: '',
+      contactNo: '',
+      organization: ''
     }
   ];
 
@@ -239,6 +249,9 @@ export class CreateEPRequestModalComponent implements OnInit {
     this.showFormView = false;
     this.showSuccessView = false;
     this.showDetailModal = false;
+    this.isViewMode = false;
+    this.selectedRequest = null;
+    this.actionRemarks = '';
     this.loadRequestsFromStorage();
   }
 
@@ -247,6 +260,7 @@ export class CreateEPRequestModalComponent implements OnInit {
     this.showFormView = true;
     this.showSuccessView = false;
     this.showDetailModal = false;
+    this.isViewMode = false;
     this.initializeForm();
   }
 
@@ -258,6 +272,29 @@ export class CreateEPRequestModalComponent implements OnInit {
   }
 
   // Toast methods
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.managerOptions;
+    return this.managerOptions.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectManager(approver: any, manager: any) {
+    approver.managerName = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation;
+    approver.showSuggestions = false;
+    approver.dateTime = new Date().toLocaleString();
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+    }, 200);
+  }
+
   showToastMessage(message: string, type: 'success' | 'error' | 'info' = 'info') {
     this.toastMessage = message;
     this.toastType = type;
@@ -265,7 +302,7 @@ export class CreateEPRequestModalComponent implements OnInit {
     
     setTimeout(() => {
       this.showToast = false;
-    }, 3000);
+    }, 2000);
   }
 
   closeToast() {
@@ -284,7 +321,9 @@ export class CreateEPRequestModalComponent implements OnInit {
       designation: '',
       status: 'pending',
       dateTime: '',
-      remarks: ''
+      remarks: '',
+      contactNo: '',
+      organization: ''
     });
   }
 
@@ -727,15 +766,60 @@ export class CreateEPRequestModalComponent implements OnInit {
     }
   }
 
-  // View request
+  // View request - opens full page detail view
   viewRequest(request: EPRequest) {
     this.selectedRequest = request;
-    this.showDetailModal = true;
+    this.isViewMode = true;
+    this.showListView = false;
+    this.showFormView = true;
+    this.showSuccessView = false;
+    this.showDetailModal = false;
+    this.actionRemarks = '';
   }
 
   closeDetailModal() {
     this.showDetailModal = false;
     this.selectedRequest = null;
+  }
+
+  approveRequest() {
+    if (!this.selectedRequest) return;
+    this.isActioning = true;
+    setTimeout(() => {
+      if (this.selectedRequest) {
+        const idx = this.allRequests.findIndex(r => r.requestId === this.selectedRequest!.requestId);
+        if (idx !== -1) {
+          this.allRequests[idx].status = 'Approved';
+          this.selectedRequest.status = 'Approved';
+          this.saveRequestsToStorage();
+        }
+      }
+      this.isActioning = false;
+      this.showToastMessage(`Request ${this.selectedRequest?.requestId} approved successfully!`, 'success');
+      setTimeout(() => this.showListViewScreen(), 2000);
+    }, 1000);
+  }
+
+  rejectRequest() {
+    if (!this.selectedRequest) return;
+    if (!this.actionRemarks.trim()) {
+      this.showToastMessage('Please enter remarks before rejecting.', 'error');
+      return;
+    }
+    this.isActioning = true;
+    setTimeout(() => {
+      if (this.selectedRequest) {
+        const idx = this.allRequests.findIndex(r => r.requestId === this.selectedRequest!.requestId);
+        if (idx !== -1) {
+          this.allRequests[idx].status = 'Rejected';
+          this.selectedRequest.status = 'Rejected';
+          this.saveRequestsToStorage();
+        }
+      }
+      this.isActioning = false;
+      this.showToastMessage(`Request ${this.selectedRequest?.requestId} rejected.`, 'error');
+      setTimeout(() => this.showListViewScreen(), 2000);
+    }, 1000);
   }
 
   // Helper methods

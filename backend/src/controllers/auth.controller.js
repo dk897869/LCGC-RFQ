@@ -2113,7 +2113,7 @@ exports.getAllEPRequests = async (req, res) => {
       if (endDate) filter.requestDate.$lte = endDate;
     }
 
-    const epRequests = await EPRequest.find(filter).sort({ createdAt: -1 }).lean();
+    const epRequests = await EPRequest.find(filter).select('-attachments.fileUrl').sort({ createdAt: -1 }).lean();
 
     const data = epRequests.map(req => ({
       ...req,

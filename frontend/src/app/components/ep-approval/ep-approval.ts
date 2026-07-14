@@ -14,8 +14,10 @@ interface Approver {
   status: 'pending' | 'approved' | 'rejected' | 'waiting';
   dateTime: string;
   remarks: string;
+  contactNo?: string;
+  organization?: string;
+  showSuggestions?: boolean;
 }
-
 interface Attachment {
   id?: number;
   name: string;
@@ -124,7 +126,9 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       designation: '',
       status: 'pending',
       dateTime: '',
-      remarks: ''
+      remarks: '',
+      contactNo: '',
+      organization: ''
     }
   ];
   
@@ -554,7 +558,9 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       designation: '',
       status: 'pending',
       dateTime: '',
-      remarks: ''
+      remarks: '',
+      contactNo: '',
+      organization: ''
     });
   }
   
@@ -915,14 +921,6 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       this.showToast('Title of Activity is required', 'error');
       return false;
     }
-    if (!this.formData.vendor?.trim()) {
-      this.showToast('Vendor/Supplier is required', 'error');
-      return false;
-    }
-    if (!this.formData.amount || this.formData.amount <= 0) {
-      this.showToast('Valid amount is required', 'error');
-      return false;
-    }
     
     const validApprovers = this.approvers.filter(a => a.managerName);
     if (validApprovers.length === 0) {
@@ -1197,13 +1195,37 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     return role === 'Admin' || role === 'Manager';
   }
   
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.managerOptions;
+    return this.managerOptions.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectManager(approver: any, manager: any) {
+    approver.managerName = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation;
+    approver.showSuggestions = false;
+    approver.dateTime = new Date().toLocaleString();
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
   showToast(message: string, type: 'success' | 'error' | 'info') {
     if (this.toastTimer) clearTimeout(this.toastTimer);
     this.toast = { message, type };
     this.toastTimer = setTimeout(() => {
       this.toast = null;
       this.cdr.detectChanges();
-    }, 5000);
+    }, 2000);
   }
   
   closeToast() {

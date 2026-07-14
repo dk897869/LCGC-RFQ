@@ -1,53 +1,43 @@
 <div class="ep-container">
-  
+
   <!-- Toast Notification -->
-  <div class="toast-notification" *ngIf="showToast" [class.toast-success]="toastType === 'success'" 
-       [class.toast-error]="toastType === 'error'" [class.toast-info]="toastType === 'info'">
-    <span class="toast-icon">{{ toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️' }}</span>
+  <div class="toast-notification" *ngIf="showToast"
+       [class.toast-success]="toastType === 'success'"
+       [class.toast-error]="toastType === 'error'"
+       [class.toast-info]="toastType === 'info'">
+    <span class="toast-icon">
+      <svg *ngIf="toastType === 'success'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <svg *ngIf="toastType === 'error'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <svg *ngIf="toastType === 'info'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </span>
     <span class="toast-message">{{ toastMessage }}</span>
-    <button class="toast-close" (click)="closeToast()">×</button>
+    <button class="toast-close" (click)="closeToast()">x</button>
   </div>
 
-  <!-- ========== LIST VIEW ========== -->
+  <!-- LIST VIEW -->
   <div *ngIf="showListView" class="list-view">
-    
-    <!-- Header -->
     <div class="list-header">
       <div class="header-top">
         <h1 class="main-title">EP Approval</h1>
       </div>
-      
-      <!-- Breadcrumb -->
       <div class="breadcrumb-nav">
         <span class="breadcrumb-item">NON BOM</span>
-        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-sep">></span>
         <span class="breadcrumb-item">Approvals</span>
-        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-sep">></span>
         <span class="breadcrumb-item active">EP Approval</span>
-      </div>
-      
-      <!-- Sub Menu -->
-      <div class="sub-menu">
-        <button class="sub-menu-item active">
-          <span class="menu-icon">📋</span>
-          Requests
-        </button>
-        <button class="sub-menu-item">
-          <span class="menu-icon">✅</span>
-          Approvals
-        </button>
-        <button class="sub-menu-item">
-          <span class="menu-icon">📊</span>
-          Status
-        </button>
       </div>
     </div>
 
-    <!-- All EP Requests -->
     <div class="list-content">
-      <h2 class="section-title">All EP Requests</h2>
-      
-      <!-- Table -->
+      <div class="list-toolbar">
+        <h2 class="section-title">All EP Requests</h2>
+        <div class="toolbar-actions">
+          <button class="btn-action" (click)="refreshData()" [disabled]="isLoading">Refresh</button>
+          <button class="btn-create" (click)="showFormScreen()">+ Create New EP Request</button>
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table class="requests-table">
           <thead>
@@ -65,38 +55,38 @@
           </thead>
           <tbody>
             <tr *ngFor="let request of allRequests">
-              <td><strong>{{ request.requestId }}</strong></td>
+              <td><strong class="req-id">{{ request.requestId }}</strong></td>
               <td>{{ request.title }}</td>
               <td>{{ request.requester }}</td>
               <td>{{ request.department }}</td>
               <td>
-                <span class="priority-badge" [class.priority-high]="request.priority === 'High'" 
-                                           [class.priority-medium]="request.priority === 'Medium'" 
-                                           [class.priority-low]="request.priority === 'Low'"
-                                           [class.priority-urgent]="request.priority === 'Urgent'">
+                <span class="priority-badge"
+                  [class.priority-high]="request.priority === 'High'"
+                  [class.priority-medium]="request.priority === 'Medium'"
+                  [class.priority-low]="request.priority === 'Low'"
+                  [class.priority-urgent]="request.priority === 'Urgent'">
                   {{ getPriorityLabel(request.priority) }}
                 </span>
               </td>
               <td>
-                <span class="status-badge" [class.status-approved]="request.status === 'Approved'" 
-                                          [class.status-pending]="request.status === 'Pending'"
-                                          [class.status-rejected]="request.status === 'Rejected'">
+                <span class="status-badge"
+                  [class.status-approved]="request.status === 'Approved'"
+                  [class.status-pending]="request.status === 'Pending'"
+                  [class.status-rejected]="request.status === 'Rejected'">
                   {{ request.status }}
                 </span>
               </td>
               <td>{{ request.date | date:'dd MMM yy' }}</td>
-              <td><strong>₹{{ request.amount | number }}</strong></td>
+              <td><strong>{{ request.amount | number }}</strong></td>
               <td>
-                <button class="btn-view" (click)="viewRequest(request)">
-                  <span class="view-icon">👁️</span> View
-                </button>
+                <button class="btn-view" (click)="viewRequest(request)">View</button>
               </td>
             </tr>
             <tr *ngIf="allRequests.length === 0">
               <td colspan="9" class="empty-row">
                 <div class="empty-state">
-                  <span class="empty-icon">📭</span>
-                  <p>No EP requests found. Click "Create New EP Request" to get started.</p>
+                  <span class="empty-icon">No Data</span>
+                  <p>No EP requests found. Click Create New EP Request to get started.</p>
                 </div>
               </td>
             </tr>
@@ -104,34 +94,17 @@
         </table>
       </div>
 
-      <!-- Footer Actions -->
       <div class="list-footer">
-        <div class="footer-left">
-          <span class="data-status">Data fetched successfully: {{ getTotalRequests() }} EP request(s)</span>
-          <button class="btn-action" (click)="checkStatus()">📊 Check Status</button>
-          <button class="btn-action" (click)="refreshData()" [disabled]="isLoading">
-            <span [class.spinning]="isLoading">↻</span> Refresh
-          </button>
-        </div>
-        <div class="footer-right">
-          <button class="btn-create" (click)="showFormScreen()">+ Create New EP Request</button>
-        </div>
-      </div>
-
-      <!-- Total -->
-      <div class="list-total">
-        <span>Total: {{ getTotalRequests() }}</span>
+        <span class="data-status">Total: {{ getTotalRequests() }} EP request(s)</span>
       </div>
     </div>
   </div>
 
-  <!-- ========== FORM VIEW ========== -->
-  <div *ngIf="showFormView" class="form-view">
-    
-    <!-- Header -->
+  <!-- FORM VIEW (CREATE MODE) -->
+  <div *ngIf="showFormView && !isViewMode" class="form-view">
     <div class="form-header">
       <div class="header-left">
-        <button class="btn-back" (click)="showListViewScreen()">← Back to List</button>
+        <button class="btn-back" (click)="showListViewScreen()">Back to List</button>
         <div class="header-title-group">
           <h1 class="form-title">Create EP Approval Request</h1>
           <p class="form-subtitle">Fill in the details to create a new EP approval request</p>
@@ -140,26 +113,20 @@
       <div class="header-right">
         <div class="info-box">
           <div class="info-row">
-            <span class="info-label">📅 Date</span>
+            <span class="info-label">Date</span>
             <span class="info-value">{{ formData.requestDate | date:'dd MMM yyyy' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">👤 Requester</span>
+            <span class="info-label">Requester</span>
             <span class="info-value">{{ formData.requesterName }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Form Body -->
     <div class="form-body">
-      
-      <!-- Requester Information -->
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">👤</span>
-          Requester Information
-        </div>
+        <div class="section-title"><span class="section-icon">User</span> Requester Information</div>
         <div class="section-body">
           <div class="info-grid">
             <div class="field-group">
@@ -191,52 +158,39 @@
           </div>
         </div>
       </div>
-      
-      <!-- Activity Overview -->
+
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">🎯</span>
-          Activity Overview
-        </div>
+        <div class="section-title"><span class="section-icon">Target</span> Activity Overview</div>
         <div class="section-body">
           <div class="form-grid">
             <div class="field-group full-width">
-              <label>Title of Activity <span class="required">*</span></label>
+              <label>Activity <span class="required">*</span></label>
               <input type="text" [(ngModel)]="formData.titleOfActivity" placeholder="Enter title of the activity">
             </div>
             <div class="field-group">
-              <label>Priority Level</label>
+              <label>Priority</label>
               <select [(ngModel)]="formData.priority">
                 <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
               </select>
             </div>
             <div class="field-group">
-              <label>Vendor</label>
-              <input type="text" [(ngModel)]="formData.vendor" placeholder="Enter vendor name">
+              <label>Amount (Rs.)</label>
+              <input type="number" [(ngModel)]="formData.amount" placeholder="0.00">
             </div>
             <div class="field-group">
-              <label>Amount (₹)</label>
-              <input type="number" [(ngModel)]="formData.amount" placeholder="Enter amount" min="0">
+              <label>Vendor</label>
+              <input type="text" [(ngModel)]="formData.vendor" placeholder="Vendor name">
             </div>
             <div class="field-group full-width">
               <label>Description</label>
               <textarea [(ngModel)]="formData.description" rows="3" placeholder="Describe the activity..."></textarea>
             </div>
-            <div class="field-group full-width">
-              <label>Objective</label>
-              <textarea [(ngModel)]="formData.objective" rows="2" placeholder="Business objective..."></textarea>
-            </div>
           </div>
         </div>
       </div>
-      
-      <!-- Attachments -->
+
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">📎</span>
-          Attachments
-          <span class="section-badge">Documents / Images</span>
-        </div>
+        <div class="section-title"><span class="section-icon">Attach</span> Attachments <span class="section-badge">Documents / Images</span></div>
         <div class="section-body">
           <div class="attachments-table-wrapper">
             <table class="attachments-table">
@@ -254,10 +208,8 @@
               <tbody>
                 <tr *ngFor="let att of attachments; let i = index">
                   <td>{{ i + 1 }}</td>
-                  <td>
-                    <input type="text" [(ngModel)]="att.name" placeholder="Attachment name" class="input-sm">
-                  </td>
-                  <td class="file-size">{{ att.fileSize || '—' }}</td>
+                  <td><input type="text" [(ngModel)]="att.name" placeholder="Attachment name" class="input-sm"></td>
+                  <td class="file-size">{{ att.fileSize || '-' }}</td>
                   <td>
                     <label class="btn-upload">
                       Choose File
@@ -266,34 +218,23 @@
                   </td>
                   <td class="preview-cell">
                     <div *ngIf="att.preview" class="file-preview">
-                      <span *ngIf="att.preview.startsWith('data:image')">
-                        <img [src]="att.preview" class="preview-image" alt="Preview">
-                      </span>
+                      <span *ngIf="att.preview.startsWith('data:image')"><img [src]="att.preview" class="preview-image" alt="Preview"></span>
                       <span *ngIf="!att.preview.startsWith('data:image')" class="file-icon">{{ att.preview }}</span>
                     </div>
-                    <span *ngIf="!att.preview" class="no-preview">—</span>
+                    <span *ngIf="!att.preview" class="no-preview">-</span>
                   </td>
-                  <td>
-                    <input type="text" [(ngModel)]="att.remark" placeholder="Remark" class="input-sm">
-                  </td>
-                  <td>
-                    <button *ngIf="att.file" type="button" class="remove-btn" (click)="removeAttachment(att)">×</button>
-                  </td>
+                  <td><input type="text" [(ngModel)]="att.remark" placeholder="Remark" class="input-sm"></td>
+                  <td><button *ngIf="att.file" type="button" class="remove-btn" (click)="removeAttachment(att)">x</button></td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div class="attachment-note">
-            📌 Upload images, PDFs, or documents (max 5MB each)
-          </div>
+          <div class="attachment-note">Upload images, PDFs, or documents (max 5MB each)</div>
         </div>
       </div>
-      
-      <!-- Approval Chain -->
+
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">👥</span>
-          Approval Chain
+        <div class="section-title"><span class="section-icon">Team</span> Approval Chain
           <button type="button" class="btn-add-approver" (click)="addApprover()">+ Add Approver</button>
         </div>
         <div class="section-body">
@@ -303,60 +244,68 @@
                 <tr>
                   <th>#</th>
                   <th>Line</th>
-                  <th>Manager Name <span class="required">*</span></th>
+                  <th>Name</th>
+                  <th>Comments/Remarks</th>
                   <th>Designation</th>
-                  <th>Email</th>
+                  <th>E-Mail</th>
+                  <th>Contact No.</th>
+                  <th>Organization</th>
                   <th>Status</th>
                   <th>Date/Time</th>
-                  <th>Remarks</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let approver of approvers; let i = index">
-                  <td>{{ i + 1 }}</td>
+                  <td class="center-cell">{{ i + 1 }}</td>
                   <td>
                     <select [(ngModel)]="approver.line" class="input-sm">
                       <option value="Parallel">Parallel</option>
                       <option value="Sequential">Sequential</option>
                     </select>
                   </td>
-                  <td>
-                    <input type="text" [(ngModel)]="approver.managerName" (ngModelChange)="onManagerLookup(approver, $event)" placeholder="Type name or email" class="input-sm">
+                  <td style="position: relative; min-width: 160px;">
+                    <input type="text"
+                           [(ngModel)]="approver.managerName"
+                           (ngModelChange)="onManagerLookup(approver, $event)"
+                           (focus)="approver.showSuggestions = true"
+                           (blur)="onManagerBlur(approver)"
+                           placeholder="Enter name..."
+                           class="input-sm manager-input-text"
+                           autocomplete="off">
+                    <div class="manager-suggestions" *ngIf="approver.showSuggestions && getFilteredManagers(approver.managerName).length > 0">
+                      <div class="suggestion-item"
+                           *ngFor="let m of getFilteredManagers(approver.managerName)"
+                           (mousedown)="selectManager(approver, m)">
+                        <span class="m-name">{{ m.name }}</span>
+                        <span class="m-designation">{{ m.designation }}</span>
+                      </div>
+                    </div>
                   </td>
+                  <td><input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks" class="input-sm"></td>
+                  <td class="readonly-cell">{{ approver.designation || '-' }}</td>
+                  <td class="readonly-cell">{{ approver.email || '-' }}</td>
+                  <td><input type="text" [(ngModel)]="approver.contactNo" placeholder="Contact No." class="input-sm"></td>
+                  <td><input type="text" [(ngModel)]="approver.organization" placeholder="Organization" class="input-sm"></td>
                   <td>
-                    <input type="text" [(ngModel)]="approver.designation" placeholder="Designation" class="input-sm">
-                  </td>
-                  <td>
-                    <input type="email" [(ngModel)]="approver.email" placeholder="Email" class="input-sm">
-                  </td>
-                  <td>
-                    <span class="status-badge-small" [class.status-pending]="approver.status === 'pending'">
+                    <span class="status-badge-small"
+                      [class.status-pending]="approver.status === 'pending'"
+                      [class.status-approved]="approver.status === 'approved'"
+                      [class.status-rejected]="approver.status === 'rejected'">
                       {{ approver.status }}
                     </span>
                   </td>
-                  <td class="date-time-cell">
-                    {{ approver.dateTime || '—' }}
-                  </td>
-                  <td>
-                    <input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks" class="input-sm">
-                  </td>
-                  <td>
-                    <button *ngIf="approvers.length > 1" type="button" class="remove-btn" (click)="removeApprover(i)">×</button>
-                  </td>
+                  <td class="date-time-cell">{{ approver.dateTime || '-' }}</td>
+                  <td><button *ngIf="approvers.length > 1" type="button" class="remove-btn" (click)="removeApprover(i)">x</button></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
-      
-      <!-- CC Recipients -->
+
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">📧</span>
-          CC Recipients
-        </div>
+        <div class="section-title"><span class="section-icon">Email</span> CC Recipients</div>
         <div class="section-body">
           <div class="cc-container">
             <div class="cc-input-group">
@@ -366,20 +315,18 @@
             <div class="cc-chips" *ngIf="ccList.length">
               <span class="cc-chip" *ngFor="let cc of ccList; let i = index">
                 {{ cc }}
-                <button type="button" (click)="removeCc(i)">×</button>
+                <button type="button" (click)="removeCc(i)">x</button>
               </span>
             </div>
           </div>
         </div>
       </div>
-      
     </div>
-    
-    <!-- Footer Actions -->
+
     <div class="form-footer">
       <button type="button" class="btn-cancel" (click)="showListViewScreen()">Cancel</button>
-      <button type="button" class="btn-preview" (click)="previewPDF()">👁️ Preview</button>
-      <button type="button" class="btn-draft" (click)="saveDraft()">💾 Save Draft</button>
+      <button type="button" class="btn-preview" (click)="previewPDF()">Preview</button>
+      <button type="button" class="btn-draft" (click)="saveDraft()">Save Draft</button>
       <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="isSubmitting">
         <span class="btn-spinner" *ngIf="isSubmitting"></span>
         {{ isSubmitting ? 'Submitting...' : 'Submit Request' }}
@@ -387,16 +334,125 @@
     </div>
   </div>
 
-  <!-- ========== SUCCESS VIEW ========== -->
+  <!-- DETAIL VIEW (full page, VIEW MODE) -->
+  <div *ngIf="showFormView && isViewMode" class="form-view detail-view">
+    <div class="form-header">
+      <div class="header-left">
+        <button class="btn-back" (click)="showListViewScreen()">Back to List</button>
+        <div class="header-title-group">
+          <h1 class="form-title">EP Request Details</h1>
+          <p class="form-subtitle">Viewing full details of the EP Approval Request</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="ep-id-badge">
+          <span class="ep-id-label">EP Request ID</span>
+          <span class="ep-id-value">{{ selectedRequest?.requestId }}</span>
+        </div>
+        <span class="status-badge lg"
+          [class.status-approved]="selectedRequest?.status === 'Approved'"
+          [class.status-pending]="selectedRequest?.status === 'Pending'"
+          [class.status-rejected]="selectedRequest?.status === 'Rejected'">
+          {{ selectedRequest?.status }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form-body">
+      <div class="form-section">
+        <div class="section-title"><span class="section-icon">Doc</span> Request Information</div>
+        <div class="section-body">
+          <div class="detail-info-grid">
+            <div class="detail-field">
+              <label>Request ID</label>
+              <span class="dv req-id">{{ selectedRequest?.requestId }}</span>
+            </div>
+            <div class="detail-field">
+              <label>Title / Activity</label>
+              <span class="dv">{{ selectedRequest?.title }}</span>
+            </div>
+            <div class="detail-field">
+              <label>Requester</label>
+              <span class="dv">{{ selectedRequest?.requester }}</span>
+            </div>
+            <div class="detail-field">
+              <label>Department</label>
+              <span class="dv">{{ selectedRequest?.department }}</span>
+            </div>
+            <div class="detail-field">
+              <label>Priority</label>
+              <span class="dv">
+                <span class="priority-badge"
+                  [class.priority-high]="selectedRequest?.priority === 'High'"
+                  [class.priority-medium]="selectedRequest?.priority === 'Medium'"
+                  [class.priority-low]="selectedRequest?.priority === 'Low'"
+                  [class.priority-urgent]="selectedRequest?.priority === 'Urgent'">
+                  {{ getPriorityLabel(selectedRequest?.priority || '') }}
+                </span>
+              </span>
+            </div>
+            <div class="detail-field">
+              <label>Amount</label>
+              <span class="dv amount-highlight">Rs. {{ selectedRequest?.amount | number }}</span>
+            </div>
+            <div class="detail-field">
+              <label>Request Date</label>
+              <span class="dv">{{ selectedRequest?.date | date:'dd MMM yyyy' }}</span>
+            </div>
+            <div class="detail-field">
+              <label>Status</label>
+              <span class="dv">
+                <span class="status-badge"
+                  [class.status-approved]="selectedRequest?.status === 'Approved'"
+                  [class.status-pending]="selectedRequest?.status === 'Pending'"
+                  [class.status-rejected]="selectedRequest?.status === 'Rejected'">
+                  {{ selectedRequest?.status }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section approval-action-section">
+        <div class="section-title"><span class="section-icon">Check</span> Approval Action</div>
+        <div class="section-body">
+          <div class="approval-action-body">
+            <div class="action-info">
+              <p>Take action on this EP Approval Request. Your decision will be recorded with timestamp.</p>
+            </div>
+            <div class="remarks-field">
+              <label>Remarks / Comments</label>
+              <textarea [(ngModel)]="actionRemarks" placeholder="Enter your remarks before approving or rejecting..." rows="3"></textarea>
+            </div>
+            <div class="action-buttons">
+              <button class="btn-approve" (click)="approveRequest()" [disabled]="isActioning">
+                {{ isActioning ? 'Processing...' : 'Approve' }}
+              </button>
+              <button class="btn-reject" (click)="rejectRequest()" [disabled]="isActioning">
+                {{ isActioning ? 'Processing...' : 'Reject' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="button" class="btn-cancel" (click)="showListViewScreen()">Back to List</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS VIEW -->
   <div *ngIf="showSuccessView" class="success-view">
     <div class="success-content">
-      <div class="success-icon">✅</div>
+      <div class="success-icon">Success</div>
       <h2>EP Request Submitted Successfully!</h2>
       <p class="success-detail">Your request has been submitted for approval</p>
       <div class="submission-details">
         <div class="detail-row">
           <span class="label">Request ID:</span>
-          <span class="value">{{ selectedRequest?.requestId || '—' }}</span>
+          <span class="value">{{ selectedRequest?.requestId || '-' }}</span>
         </div>
         <div class="detail-row">
           <span class="label">Title:</span>
@@ -408,76 +464,11 @@
         </div>
         <div class="detail-row">
           <span class="label">Amount:</span>
-          <span class="value">₹{{ formData.amount | number }}</span>
+          <span class="value">Rs. {{ formData.amount | number }}</span>
         </div>
       </div>
       <button class="btn-primary" (click)="showListViewScreen(); resetForm();">View All Requests</button>
     </div>
   </div>
 
-  <!-- ========== DETAIL VIEW MODAL ========== -->
-  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetailModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <div class="modal-header-left">
-          <span class="modal-icon">📄</span>
-          <h2>EP Request Details</h2>
-        </div>
-        <button class="modal-close" (click)="closeDetailModal()">×</button>
-      </div>
-
-      <div class="modal-body" *ngIf="selectedRequest">
-        <div class="detail-grid">
-          <div class="detail-item">
-            <label>Request ID</label>
-            <span class="detail-value"><strong>{{ selectedRequest.requestId }}</strong></span>
-          </div>
-          <div class="detail-item">
-            <label>Status</label>
-            <span class="detail-value">
-              <span class="status-badge" [class.status-approved]="selectedRequest.status === 'Approved'" 
-                                        [class.status-pending]="selectedRequest.status === 'Pending'"
-                                        [class.status-rejected]="selectedRequest.status === 'Rejected'">
-                {{ selectedRequest.status }}
-              </span>
-            </span>
-          </div>
-          <div class="detail-item">
-            <label>Date</label>
-            <span class="detail-value">{{ selectedRequest.date | date:'dd MMM yyyy' }}</span>
-          </div>
-          <div class="detail-item">
-            <label>Requester</label>
-            <span class="detail-value">{{ selectedRequest.requester }}</span>
-          </div>
-          <div class="detail-item">
-            <label>Department</label>
-            <span class="detail-value">{{ selectedRequest.department }}</span>
-          </div>
-          <div class="detail-item">
-            <label>Priority</label>
-            <span class="detail-value">
-              <span class="priority-badge" [class.priority-high]="selectedRequest.priority === 'High'" 
-                                         [class.priority-medium]="selectedRequest.priority === 'Medium'" 
-                                         [class.priority-low]="selectedRequest.priority === 'Low'">
-                {{ getPriorityLabel(selectedRequest.priority) }}
-              </span>
-            </span>
-          </div>
-          <div class="detail-item">
-            <label>Amount</label>
-            <span class="detail-value amount-highlight">₹{{ selectedRequest.amount | number }}</span>
-          </div>
-          <div class="detail-item">
-            <label>Title</label>
-            <span class="detail-value">{{ selectedRequest.title }}</span>
-          </div>
-        </div>
-        
-        <div class="detail-actions">
-          <button class="btn-close-modal" (click)="closeDetailModal()">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>

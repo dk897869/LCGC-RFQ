@@ -160,7 +160,6 @@
                   <th>Priority</th>
                   <th>Status</th>
                   <th>Date</th>
-                  <th>Amount</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -173,7 +172,6 @@
                   <td><span class="priority-pill" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
                   <td><span class="status-pill" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
                   <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
-                  <td class="amount">{{ formatAmount(req.amount) }}</td>
                   <td class="actions">
                     <button class="btn-icon view-btn" (click)="viewRequest(req)"><span class="icon">👁️</span> View</button>
                     <button class="btn-icon dots-btn">⋮</button>
@@ -247,7 +245,6 @@
                   <th>Priority</th>
                   <th>Status</th>
                   <th>Date</th>
-                  <th>Amount</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -260,7 +257,6 @@
                   <td><span class="priority-pill" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
                   <td><span class="status-pill" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
                   <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
-                  <td class="amount">{{ formatAmount(req.amount) }}</td>
                   <td class="actions">
                     <button class="btn-icon view-btn" (click)="viewRequest(req)"><span class="icon">👁️</span> View</button>
                     <button class="btn-icon dots-btn">⋮</button>
@@ -291,91 +287,170 @@
     
     <!-- ==================== STATUS TAB ==================== -->
     <ng-container *ngIf="!isLoading && activeTab === 'status'">
-      <!-- Mini status metrics grid -->
+      
+      <!-- Metrics row matching Image 2 -->
       <div class="ep-stats-metrics-grid">
         <div class="ep-mini-card">
-          <div class="lbl">Total Requests</div>
-          <div class="val">{{ allRequests.length }}</div>
+          <div class="card-icon-circle blue-icon">📋</div>
+          <div class="card-content-wrap">
+            <div class="lbl">Total Requests</div>
+            <div class="val">{{ allRequests.length }}</div>
+            <div class="sub-lbl">All time requests</div>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 100 30" class="spark-svg stroke-blue">
+              <path d="M0,25 Q15,5 30,20 T60,8 T90,22" fill="none" stroke-width="2"></path>
+            </svg>
+          </div>
         </div>
         <div class="ep-mini-card pending">
-          <div class="lbl">Pending</div>
-          <div class="val">{{ countByStatus('Pending') }}</div>
+          <div class="card-icon-circle orange-icon">⏳</div>
+          <div class="card-content-wrap">
+            <div class="lbl">Pending</div>
+            <div class="val">{{ countByStatus('Pending') }}</div>
+            <div class="sub-lbl">Awaiting approval</div>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 100 30" class="spark-svg stroke-orange">
+              <path d="M0,25 Q20,15 40,25 T70,18 T90,10" fill="none" stroke-width="2"></path>
+            </svg>
+          </div>
         </div>
         <div class="ep-mini-card approved">
-          <div class="lbl">Approved</div>
-          <div class="val">{{ countByStatus('Approved') }}</div>
+          <div class="card-icon-circle green-icon">✅</div>
+          <div class="card-content-wrap">
+            <div class="lbl">Approved</div>
+            <div class="val">{{ countByStatus('Approved') }}</div>
+            <div class="sub-lbl">Successfully approved</div>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 100 30" class="spark-svg stroke-green">
+              <path d="M0,25 Q15,22 30,10 T60,5 T90,2" fill="none" stroke-width="2"></path>
+            </svg>
+          </div>
         </div>
         <div class="ep-mini-card rejected">
-          <div class="lbl">Rejected</div>
-          <div class="val">{{ countByStatus('Rejected') }}</div>
+          <div class="card-icon-circle red-icon">❌</div>
+          <div class="card-content-wrap">
+            <div class="lbl">Rejected</div>
+            <div class="val">{{ countByStatus('Rejected') }}</div>
+            <div class="sub-lbl">Requests rejected</div>
+          </div>
+          <div class="sparkline-wrap">
+            <svg viewBox="0 0 100 30" class="spark-svg stroke-red">
+              <path d="M0,5 Q15,20 30,12 T60,25 T90,28" fill="none" stroke-width="2"></path>
+            </svg>
+          </div>
         </div>
       </div>
 
-      <div class="table-container">
-        <div class="table-header-row">
-          <h3>Status Overview</h3>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span class="stat-badge">Total: {{ filteredStatusList.length }}</span>
-            <button class="btn-export">📥 Export</button>
+      <!-- Split Layout: Request Status Overview & Status Breakdown -->
+      <div class="status-split-grid">
+        
+        <!-- Left: Donut Chart Overview Card -->
+        <div class="status-card-box donut-card">
+          <div class="card-box-header">
+            <h3>Request Status Overview</h3>
+          </div>
+          <div class="donut-chart-container">
+            <div class="donut-chart-wrap">
+              <div class="donut-chart" [style.background]="getDonutGradient()">
+                <div class="donut-hole">
+                  <div class="donut-center-pct">{{ getStatusPercentage('Approved') }}%</div>
+                  <div class="donut-center-lbl">Approved</div>
+                </div>
+              </div>
+            </div>
+            <div class="donut-legends">
+              <div class="legend-item">
+                <span class="dot dot-approved"></span>
+                <span class="legend-lbl">Approved</span>
+                <span class="legend-val">{{ countByStatus('Approved') }} ({{ getStatusPercentage('Approved') }}%)</span>
+              </div>
+              <div class="legend-item">
+                <span class="dot dot-pending"></span>
+                <span class="legend-lbl">Pending</span>
+                <span class="legend-val">{{ countByStatus('Pending') }} ({{ getStatusPercentage('Pending') }}%)</span>
+              </div>
+              <div class="legend-item">
+                <span class="dot dot-rejected"></span>
+                <span class="legend-lbl">Rejected</span>
+                <span class="legend-val">{{ countByStatus('Rejected') }} ({{ getStatusPercentage('Rejected') }}%)</span>
+              </div>
+              <div class="legend-item total-legend">
+                <span class="dot dot-total"></span>
+                <span class="legend-lbl">Total</span>
+                <span class="legend-val">{{ allRequests.length }} (100%)</span>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <ng-container *ngIf="filteredStatusList.length > 0; else noStatusData">
-          <div class="table-responsive">
-            <table class="ep-table status-overview-table">
+
+        <!-- Right: Status Breakdown Table Card -->
+        <div class="status-card-box breakdown-card">
+          <div class="card-box-header">
+            <h3>Status Breakdown</h3>
+          </div>
+          <div class="breakdown-table-wrap">
+            <table class="breakdown-table">
               <thead>
                 <tr>
-                  <th>Request ID</th>
-                  <th>Title</th>
-                  <th>Requester</th>
-                  <th>Department</th>
-                  <th>Priority</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th>Amount</th>
-                  <th>Actions</th>
+                  <th>STATUS</th>
+                  <th class="text-right">COUNT</th>
+                  <th class="text-right">PERCENTAGE</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let req of filteredStatusList; trackBy: trackById">
-                  <td><span class="mono">{{ req.requestId || req._id || req.id || '—' }}</span></td>
-                  <td class="title-cell" [title]="req.title">{{ req.title || req.description }}</td>
-                  <td>{{ req.requester }}<br><span class="sub-text">{{ req.email }}</span></td>
-                  <td>{{ req.department }}</td>
-                  <td><span class="priority-pill" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
-                  <td><span class="status-pill" [ngClass]="getStatusClass(req.status)">{{ req.status === 'Pending' ? 'In-Process' : req.status }}</span></td>
-                  <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
-                  <td class="amount">{{ formatAmount(req.amount) }}</td>
-                  <td class="actions">
-                    <button class="btn-icon view-btn" (click)="viewRequest(req)"><span class="icon">👁️</span> View</button>
-                    <button class="btn-icon dots-btn">⋮</button>
+                <tr>
+                  <td>
+                    <div class="status-indicator-label">
+                      <span class="indicator-icon green-icon">✓</span>
+                      Approved
+                    </div>
                   </td>
+                  <td class="text-right font-bold">{{ countByStatus('Approved') }}</td>
+                  <td class="text-right"><span class="breakdown-badge green-badge">{{ getStatusPercentage('Approved') }}%</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="status-indicator-label">
+                      <span class="indicator-icon orange-icon">⏳</span>
+                      Pending
+                    </div>
+                  </td>
+                  <td class="text-right font-bold">{{ countByStatus('Pending') }}</td>
+                  <td class="text-right"><span class="breakdown-badge orange-badge">{{ getStatusPercentage('Pending') }}%</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="status-indicator-label">
+                      <span class="indicator-icon red-icon">✗</span>
+                      Rejected
+                    </div>
+                  </td>
+                  <td class="text-right font-bold">{{ countByStatus('Rejected') }}</td>
+                  <td class="text-right"><span class="breakdown-badge red-badge">{{ getStatusPercentage('Rejected') }}%</span></td>
+                </tr>
+                <tr class="total-row">
+                  <td><strong>Total</strong></td>
+                  <td class="text-right font-bold">{{ allRequests.length }}</td>
+                  <td class="text-right"><span class="breakdown-badge blue-badge">100%</span></td>
                 </tr>
               </tbody>
             </table>
           </div>
-          
-          <div class="ep-pagination-bar">
-            <span class="showing-text">Showing 1 to {{ filteredStatusList.length }} of {{ filteredStatusList.length }} results</span>
-            <div class="pagination-controls">
-              <button class="pg-arrow">&lt;</button>
-              <button class="pg-num active">1</button>
-              <button class="pg-arrow">&gt;</button>
-              <select class="pg-size-select"><option>10 / page</option></select>
-            </div>
-          </div>
-        </ng-container>
-        <ng-template #noStatusData>
-          <!-- Empty state visual matching Image 3 status tab empty filters -->
-          <div class="ep-empty-state-view">
-            <div class="empty-icon-wrap">📋</div>
-            <h3>No requests match the selected filters</h3>
-            <p>Try adjusting your filters or search term</p>
-            <button class="btn-reset-filters" (click)="clearFilters()"><span class="icon">🔄</span> Reset All Filters</button>
-          </div>
-        </ng-template>
+        </div>
+
       </div>
+
+      <!-- Bottom footer showing last updated / status -->
+      <div class="status-bottom-strip">
+        <span class="info-text">ℹ️ Showing status summary</span>
+        <span class="time-text">🕒 Last updated: 16 Jul 2026, 10:26 PM</span>
+      </div>
+
     </ng-container>
+
     
   </div>
 </div>

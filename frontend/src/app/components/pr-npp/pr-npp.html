@@ -18,34 +18,49 @@
       <div class="head-row">
         <div>
           <h1>PR Process <span class="muted">› For Approval</span></h1>
-          <p class="head-sub">Create and manage Purchase Requisition (PR) and submit for approval</p>
+          <p class="head-sub">Create and manage Purchase Requisition (PR) with quotation comparison and submit for approval</p>
         </div>
-        <button class="btn-create" (click)="openForm()">
-          <span>＋</span> Create New PR
-        </button>
+        <div class="head-actions">
+          <button class="btn-check-status" (click)="refreshData()">
+            <span class="icon">📊</span> Check Status
+          </button>
+          <button class="btn-refresh" (click)="refreshData()">
+            <span>🔄</span> Refresh
+          </button>
+          <button class="btn-create" (click)="openForm()">
+            <span>＋</span> Create New PR
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" [(ngModel)]="searchTerm" (input)="refreshData()" placeholder="Search by PR No, Requester, Department, Title...">
+    <!-- Search Input matching mockup -->
+    <div class="search-panel-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" [(ngModel)]="searchTerm" (input)="refreshData()" placeholder="Search by PR No, Requester, Department, Title, RFQ...">
+      </div>
+      <button class="btn-filter-icon">
+        <span class="icon">🎛️</span>
+      </button>
     </div>
 
+    <!-- Status filter pills row -->
     <div class="filter-row">
       <button class="filter-pill" [class.active]="activeFilter==='All'" (click)="setFilter('All')">
-        📋 All <span class="count">{{ countByStatus('All') }}</span>
+        All <span class="count">{{ countByStatus('All') }}</span>
       </button>
       <button class="filter-pill" [class.active]="activeFilter==='Draft'" (click)="setFilter('Draft')">
-        📝 Draft <span class="count">{{ countByStatus('Draft') }}</span>
+        Draft <span class="count">{{ countByStatus('Draft') }}</span>
       </button>
       <button class="filter-pill" [class.active]="activeFilter==='Pending'" (click)="setFilter('Pending')">
-        ⏳ Pending <span class="count">{{ countByStatus('Pending') }}</span>
+        Pending <span class="count">{{ countByStatus('Pending') }}</span>
       </button>
       <button class="filter-pill" [class.active]="activeFilter==='Approved'" (click)="setFilter('Approved')">
-        ✅ Approved <span class="count">{{ countByStatus('Approved') }}</span>
+        Approved <span class="count">{{ countByStatus('Approved') }}</span>
       </button>
       <button class="filter-pill" [class.active]="activeFilter==='Rejected'" (click)="setFilter('Rejected')">
-        ❌ Rejected <span class="count">{{ countByStatus('Rejected') }}</span>
+        Rejected <span class="count">{{ countByStatus('Rejected') }}</span>
       </button>
     </div>
 
@@ -63,36 +78,48 @@
         <table class="data-table" *ngIf="displayRows.length">
           <thead>
             <tr>
-              <th>PR No</th>
-              <th>Requester</th>
-              <th>Department</th>
-              <th>Title</th>
-              <th>RFQ No</th>
-              <th>Items</th>
-              <th>Total Value</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Actions</th>
+              <th>PR NO</th>
+              <th>REQUESTER</th>
+              <th>DEPARTMENT</th>
+              <th>TITLE</th>
+              <th>RFQ NO</th>
+              <th>ITEMS</th>
+              <th>TOTAL VALUE</th>
+              <th>STATUS</th>
+              <th>DATE</th>
+              <th>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let row of displayRows; trackBy: trackByPR">
               <td><a class="pr-link" (click)="viewPR(row)">{{ row.serialNo }}</a></td>
-              <td>{{ row.name }}</td>
-              <td>{{ row.department }}</td>
-              <td>{{ row.titleOfActivity }}</td>
-              <td>{{ row.rfqNo || '—' }}</td>
-              <td>{{ row.items.length }}</td>
-              <td><strong>{{ formatCurrency(row.totalValue) }}</strong></td>
               <td>
-                <span class="status-badge" [ngClass]="getStatusClass(row.status)">
-                  {{ getStatusIcon(row.status) }} {{ getStatusLabel(row.status) }}
+                <div class="requester-cell">
+                  <div class="avatar-circle">{{ getInitials(row.name) }}</div>
+                  <div class="req-text-wrap">
+                    <span class="req-name">{{ row.name }}</span>
+                    <span class="req-email">{{ row.emailId || 'no-email@company.com' }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="dept-badge">{{ row.department }}</span>
+              </td>
+              <td class="title-cell">{{ row.titleOfActivity }}</td>
+              <td class="rfq-cell">{{ row.rfqNo || '—' }}</td>
+              <td class="center font-bold">{{ row.items ? row.items.length : 0 }}</td>
+              <td><strong class="total-val-txt">₹ {{ row.totalValue | number:'1.2-2' }}</strong></td>
+              <td>
+                <span class="status-badge" [ngClass]="row.status?.toLowerCase()">
+                  <span class="status-icon-dot"></span>
+                  {{ row.status === 'Pending' ? 'Pending Approval' : row.status }}
                 </span>
               </td>
-              <td>{{ row.requestDate | date:'dd MMM yy' }}</td>
+              <td class="date-cell">{{ row.requestDate | date:'dd MMM yy' }}</td>
               <td class="actions-cell">
                 <button class="action-btn view" (click)="viewPR(row)">👁️ View</button>
                 <button class="action-btn edit" (click)="editPR(row)" *ngIf="row.status === 'Draft'">✏️ Edit</button>
+                <button class="action-btn dots-btn">⋮</button>
               </td>
             </tr>
           </tbody>

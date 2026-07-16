@@ -172,6 +172,13 @@ export class PrRequest implements OnInit {
     }, 250);
   }
 
+  getInitials(name: string): string {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
   loadFromStorage(): void {
     if (typeof localStorage === 'undefined') {
       this.allPRs = [];
@@ -180,6 +187,119 @@ export class PrRequest implements OnInit {
     try {
       const saved = localStorage.getItem(this.STORAGE_KEY);
       this.allPRs = saved ? JSON.parse(saved) : [];
+      if (!this.allPRs || this.allPRs.length === 0) {
+        this.allPRs = [
+          {
+            id: '1',
+            prNumber: 'PR-1783880342190',
+            serialNo: 'PR-1783880342190',
+            name: 'Deepak Kumar',
+            requestDate: '2026-07-12',
+            department: 'Purchase',
+            contactNo: '98765 43210',
+            emailId: 'dk897869@gmail.com',
+            organization: 'Radiant Appliances',
+            departmentBudget: 1500000,
+            costCenter: 'Purchase Department',
+            rfqNo: 'RFQ-20260712234332-9516',
+            titleOfActivity: 'Quotation Comparison',
+            status: 'Pending',
+            totalValue: 100,
+            items: [{ id: 1, rfqNo: 'RFQ-20260712234332-9516', supplierName: 'Test', partCode: 'PC-1', partDescription: 'Air Conditioner 1.5 Ton', cndt: '', uom: 'Nos', qty: 1, currency: 'INR', unitPrice: 100, value: 100 }]
+          },
+          {
+            id: '2',
+            prNumber: 'PR-1782816181005',
+            serialNo: 'PR-1782816181005',
+            name: 'Deepak Kumar',
+            requestDate: '2026-06-30',
+            department: 'Purchase',
+            contactNo: '98765 43210',
+            emailId: 'dk897869@gmail.com',
+            organization: 'Radiant Appliances',
+            departmentBudget: 1500000,
+            costCenter: 'Purchase Department',
+            rfqNo: 'RFQ-20260623222837-9359',
+            titleOfActivity: 'Quotation Comparison',
+            status: 'Draft',
+            totalValue: 200,
+            items: [{ id: 1, rfqNo: 'RFQ-20260623222837-9359', supplierName: 'Test', partCode: 'PC-2', partDescription: 'Item 2', cndt: '', uom: 'Nos', qty: 1, currency: 'INR', unitPrice: 200, value: 200 }]
+          },
+          {
+            id: '3',
+            prNumber: 'PR-1782816181004',
+            serialNo: 'PR-1782816181004',
+            name: 'Deepak Kumar',
+            requestDate: '2026-06-30',
+            department: 'Purchase',
+            contactNo: '98765 43210',
+            emailId: 'dk897869@gmail.com',
+            organization: 'Radiant Appliances',
+            departmentBudget: 1500000,
+            costCenter: 'Purchase Department',
+            rfqNo: 'RFQ-20260628142350-1568',
+            titleOfActivity: 'Quotation Comparison',
+            status: 'Pending',
+            totalValue: 200,
+            items: [{ id: 1, rfqNo: 'RFQ-20260628142350-1568', supplierName: 'Test', partCode: 'PC-2', partDescription: 'Item 2', cndt: '', uom: 'Nos', qty: 1, currency: 'INR', unitPrice: 200, value: 200 }]
+          },
+          {
+            id: '4',
+            prNumber: 'PR-1782816181003',
+            serialNo: 'PR-1782816181003',
+            name: 'Deepak Kumar',
+            requestDate: '2026-06-30',
+            department: 'Purchase',
+            contactNo: '98765 43210',
+            emailId: 'dk897869@gmail.com',
+            organization: 'Radiant Appliances',
+            departmentBudget: 1500000,
+            costCenter: 'Purchase Department',
+            rfqNo: 'RFQ-20260630145602-8476',
+            titleOfActivity: 'Quotation Comparison',
+            status: 'Pending',
+            totalValue: 220,
+            items: [{ id: 1, rfqNo: 'RFQ-20260630145602-8476', supplierName: 'Test', partCode: 'PC-2', partDescription: 'Item 2', cndt: '', uom: 'Nos', qty: 2, currency: 'INR', unitPrice: 110, value: 220 }]
+          },
+          {
+            id: '5',
+            prNumber: 'PR-DRAFT-20260628-5635',
+            serialNo: 'PR-DRAFT-20260628-5635',
+            name: 'Deepak Kumar',
+            requestDate: '2026-06-27',
+            department: 'Purchase',
+            contactNo: '98765 43210',
+            emailId: 'dk897869@gmail.com',
+            organization: 'Radiant Appliances',
+            departmentBudget: 1500000,
+            costCenter: 'Purchase Department',
+            rfqNo: 'RFQ-20260628042627-9328',
+            titleOfActivity: 'hsj',
+            status: 'Pending',
+            totalValue: 20,
+            items: [{ id: 1, rfqNo: 'RFQ-20260628042627-9328', supplierName: 'Test', partCode: 'PC-2', partDescription: 'Item 2', cndt: '', uom: 'Nos', qty: 1, currency: 'INR', unitPrice: 20, value: 20 }]
+          },
+          {
+            id: '6',
+            prNumber: 'PR-DRAFT-20260628-5634',
+            serialNo: 'PR-DRAFT-20260628-5634',
+            name: 'Deepak Kumar',
+            requestDate: '2026-06-27',
+            department: 'Purchase',
+            contactNo: '98765 43210',
+            emailId: 'dk897869@gmail.com',
+            organization: 'Radiant Appliances',
+            departmentBudget: 1500000,
+            costCenter: 'Purchase Department',
+            rfqNo: 'RFQ-20260628042627-9328',
+            titleOfActivity: 'hsj',
+            status: 'Draft',
+            totalValue: 20,
+            items: [{ id: 1, rfqNo: 'RFQ-20260628042627-9328', supplierName: 'Test', partCode: 'PC-2', partDescription: 'Item 2', cndt: '', uom: 'Nos', qty: 1, currency: 'INR', unitPrice: 20, value: 20 }]
+          }
+        ];
+        this.saveToStorage();
+      }
       console.log('✅ Loaded PRs from storage:', this.allPRs.length);
     } catch (error) {
       console.error('❌ Error loading PRs:', error);

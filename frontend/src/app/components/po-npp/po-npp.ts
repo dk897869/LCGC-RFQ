@@ -105,6 +105,9 @@ export class PoNpp implements OnInit {
     titleOfActivity: 'Purchase Order Request',
     purposeAndObjective: '',
     priority: 'M',
+    employeeId: 'EMP01345',
+    location: 'Patiala, Punjab',
+    requestPurpose: 'Purchase of AC Unit',
 
     vendorCode: '',
     vendorName: '',
@@ -560,5 +563,17 @@ export class PoNpp implements OnInit {
 
   formatAmount(amount?: number): string {
     return amount ? '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '₹0.00';
+  }
+
+  customLogo: string | null = null;
+  onLogoUploaded(event: any): void {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.customLogo = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
   }
 }

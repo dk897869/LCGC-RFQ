@@ -285,8 +285,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
           .filter((r: any) => {
             const title = String(r.title || r.subject || r.titleOfActivity || '').trim();
             const requester = String(r.requester || r.requesterName || r.createdBy?.name || '').trim();
-            const amount = Number(r.amount ?? r.estimatedAmount ?? r.totalAmount ?? 0);
-            return title && title.toLowerCase() !== 'nm' && requester && amount > 0;
+            return title && title.toLowerCase() !== 'nm' && requester;
           })
           .map((r: any) => this.mapRecord(r));
         console.log('✅ Mapped Requests:', this.allRequests);
@@ -434,10 +433,8 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     }
     this.filteredRequests = list;
     
-    // For approvals tab
-    let approvalList = this.allRequests.filter(r =>
-      r.status === 'Pending' || r.status === 'In Process' || r.status === 'Approved'
-    );
+    // For approvals tab — show ALL requests so approvers can act on them
+    let approvalList = [...this.allRequests];
     if (this.filterPriority) {
       approvalList = approvalList.filter(r => r.priority === this.filterPriority);
     }
@@ -449,9 +446,6 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     }
     if (this.filterDate) {
       approvalList = approvalList.filter(r => r.requestDate?.startsWith(this.filterDate));
-    }
-    if (this.filterVendor) {
-      approvalList = approvalList.filter(r => r.vendor?.toLowerCase().includes(this.filterVendor.toLowerCase()));
     }
     this.approvalList = approvalList;
     
@@ -523,6 +517,29 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   countByStatus(status: string): number {
     if (status === 'All') return this.allRequests.length;
     return this.allRequests.filter(r => r.status === status).length;
+  }
+  
+  getStatusPercentage(status: string): number {
+    const total = this.allRequests.length;
+    if (total === 0) return 0;
+    const count = this.countByStatus(status);
+    return Math.round((count / total) * 100);
+  }
+
+  getDonutGradient(): string {
+    const total = this.allRequests.length;
+    if (total === 0) {
+      return 'conic-gradient(#e2e8f0 0% 100%)';
+    }
+    const appPct = this.getStatusPercentage('Approved');
+    const penPct = this.getStatusPercentage('Pending') + this.getStatusPercentage('In Process');
+    const rejPct = this.getStatusPercentage('Rejected');
+    
+    return `conic-gradient(
+      #10b981 0% ${appPct}%,
+      #f59e0b ${appPct}% ${appPct + penPct}%,
+      #ef4444 ${appPct + penPct}% 100%
+    )`;
   }
   
   getUniqueDepartments(): string[] {

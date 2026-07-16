@@ -563,10 +563,8 @@ export class CreateEPRequestModalComponent implements OnInit {
               <div class="section-title">🎯 Activity Overview</div>
               <div class="section-body">
                 <div class="info-grid">
-                  <div class="info-item"><label>Title of Activity</label><span>${this.formData.titleOfActivity}</span></div>
+                  <div class="info-item"><label>Activity</label><span>${this.formData.titleOfActivity}</span></div>
                   <div class="info-item"><label>Priority Level</label><span>${this.formData.priority}</span></div>
-                  <div class="info-item"><label>Vendor</label><span>${this.formData.vendor || '—'}</span></div>
-                  <div class="info-item"><label>Amount</label><span>₹${this.formData.amount?.toLocaleString() || '0'}</span></div>
                 </div>
                 ${this.formData.description ? `<p style="margin-top:16px;"><strong>Description:</strong><br>${this.formData.description}</p>` : ''}
                 ${this.formData.objective ? `<p style="margin-top:12px;"><strong>Objective:</strong><br>${this.formData.objective}</p>` : ''}

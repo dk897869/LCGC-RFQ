@@ -49,7 +49,6 @@
               <th>Priority</th>
               <th>Status</th>
               <th>Date</th>
-              <th>Amount</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -77,13 +76,12 @@
                 </span>
               </td>
               <td>{{ request.date | date:'dd MMM yy' }}</td>
-              <td><strong>{{ request.amount | number }}</strong></td>
               <td>
                 <button class="btn-view" (click)="viewRequest(request)">View</button>
               </td>
             </tr>
             <tr *ngIf="allRequests.length === 0">
-              <td colspan="9" class="empty-row">
+              <td colspan="8" class="empty-row">
                 <div class="empty-state">
                   <span class="empty-icon">No Data</span>
                   <p>No EP requests found. Click Create New EP Request to get started.</p>
@@ -376,10 +374,6 @@
                   {{ getPriorityLabel(selectedRequest?.priority || '') }}
                 </span>
               </span>
-            </div>
-            <div class="detail-field">
-              <label>Amount</label>
-              <span class="dv amount-highlight">Rs. {{ selectedRequest?.amount | number }}</span>
             </div>
             <div class="detail-field">
               <label>Request Date</label>

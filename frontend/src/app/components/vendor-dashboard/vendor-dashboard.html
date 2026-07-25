@@ -46,7 +46,7 @@
           <li><span class="dot dot-p"></span> Pending {{ statusBreakdown.pending }} ({{ pct(statusBreakdown.pending) }}%)</li>
           <li><span class="dot dot-s"></span> Submitted {{ statusBreakdown.submitted }} ({{ pct(statusBreakdown.submitted) }}%)</li>
           <li><span class="dot dot-sh"></span> Shortlisted {{ statusBreakdown.shortlisted }} ({{ pct(statusBreakdown.shortlisted) }}%)</li>
-          <li><span class="dot dot-a"></span> Awarded {{ statusBreakdown.awarded }} ({{ pct(statusBreakdown.awarded) }}%)</li>
+          <li><span class="dot dot-a"></span> Accepted {{ statusBreakdown.accepted }} ({{ pct(statusBreakdown.accepted) }}%)</li>
         </ul>
       </div>
     </div>
@@ -61,7 +61,7 @@
               <option value="Pending">Pending</option>
               <option value="Submitted">Submitted</option>
               <option value="Shortlisted">Shortlisted</option>
-              <option value="Awarded">Awarded</option>
+              <option value="Accepted">Accepted</option>
             </select>
             <input type="search" placeholder="Search…" [(ngModel)]="searchTerm" (input)="applyFilters()">
             <button type="button" class="vd-btn" (click)="loadData()">↻ Refresh</button>

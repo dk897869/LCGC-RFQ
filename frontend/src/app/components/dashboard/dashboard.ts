@@ -212,6 +212,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   partCount: number | null = null;
   recentRequests: any[] = [];
   activityFeed: ActivityItem[] = [];
+  vendorTrackingList: any[] = [];
 
   // Clock
   currentTime = '';
@@ -911,6 +912,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   loadUnifiedData(silent: boolean = false) {
     this.isLoading = true;
+    this.loadVendorTrackingData();
     this.authService.getUnifiedApprovals().subscribe({
       next: (res: any) => {
         const rows = res?.data || [];
@@ -1378,6 +1380,51 @@ export class DashboardComponent implements OnInit, OnDestroy {
   filterByRequester(name: string) {
     this.unifiedSearchTerm = name;
     this.applyUnifiedFilters();
+  }
+
+  loadVendorTrackingData() {
+    this.authService.getVendorRequests().subscribe({
+      next: (res: any) => {
+        const raw = res?.data || res || [];
+        const vendorMap = new Map<string, any>();
+
+        (Array.isArray(raw) ? raw : []).forEach((r: any) => {
+          const vendors = Array.isArray(r.vendors) ? r.vendors : [];
+          vendors.forEach((v: any) => {
+            const name = v.vendorName || v.name || 'Vendor';
+            const email = (v.email || name).toLowerCase().trim();
+            if (!email) return;
+            if (!vendorMap.has(email)) {
+              vendorMap.set(email, {
+                vendorName: name,
+                email: v.email || '—',
+                company: v.company || name,
+                totalAssigned: 0,
+                pendingCount: 0,
+                acceptedCount: 0,
+                rejectedCount: 0,
+                lastActive: r.updatedAt || r.createdDate || r.sentDate || ''
+              });
+            }
+            const item = vendorMap.get(email);
+            item.totalAssigned++;
+            const st = (v.status || 'Pending').toLowerCase();
+            if (st.includes('accept') || st.includes('approve') || st.includes('quoted')) item.acceptedCount++;
+            else if (st.includes('reject')) item.rejectedCount++;
+            else item.pendingCount++;
+          });
+        });
+
+        this.vendorTrackingList = Array.from(vendorMap.values()).map(v => ({
+          ...v,
+          rate: v.totalAssigned > 0 ? Math.round((v.acceptedCount / v.totalAssigned) * 100) : 0
+        }));
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.vendorTrackingList = [];
+      }
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────

@@ -39,7 +39,7 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
     orders: 0
   };
 
-  statusBreakdown = { pending: 0, submitted: 0, shortlisted: 0, awarded: 0 };
+  statusBreakdown = { pending: 0, submitted: 0, shortlisted: 0, accepted: 0 };
   rows: any[] = [];
   filteredRows: any[] = [];
   statusFilter = 'all';
@@ -232,35 +232,29 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
 
   loadData() {
     this.isLoading = true;
-    const started = Date.now();
     this.auth.getMyVendorRfqs().subscribe({
       next: (res: any) => {
-        const wait = Math.max(0, 2000 - (Date.now() - started));
-        setTimeout(() => {
-          const data = res?.data || [];
-          this.rows = data.map((r: any) => ({
-            id: String(r._id || r.id),
-            rfqNo: r.uniqueSerialNo || r.rfqNo || '—',
-            title: r.titleOfActivity || r.title || 'Untitled',
-            department: r.department || '—',
-            endDate: this.fmt(r.dueDate || r.endDate || r.requestDate),
-            status: this.normStatus(r.status),
-            requestedBy: r.requesterName || r.requester || '—',
-            raw: r
-          }));
-          this.computeStats();
-          this.applyFilters();
-          this.isLoading = false;
-          this.cdr.detectChanges();
-        }, wait);
+        const data = res?.data || [];
+        this.rows = data.map((r: any) => ({
+          id: String(r._id || r.id),
+          rfqNo: r.uniqueSerialNo || r.rfqNo || '—',
+          title: r.titleOfActivity || r.title || 'Untitled',
+          department: r.department || '—',
+          endDate: this.fmt(r.dueDate || r.endDate || r.requestDate),
+          status: this.normStatus(r.vendorStatus || r.status),
+          requestedBy: r.requesterName || r.requester || '—',
+          raw: r
+        }));
+        this.computeStats();
+        this.applyFilters();
+        this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
-        setTimeout(() => {
-          this.rows = [];
-          this.computeStats();
-          this.isLoading = false;
-          this.cdr.detectChanges();
-        }, 2000);
+        this.rows = [];
+        this.computeStats();
+        this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -275,7 +269,7 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
       pending: this.stats.pending,
       submitted: this.stats.submitted,
       shortlisted: this.rows.filter(r => r.status === 'Shortlisted').length,
-      awarded: this.stats.accepted
+      accepted: this.stats.accepted
     };
   }
 
@@ -301,17 +295,17 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
   statusClass(s: string): string {
     const m: Record<string, string> = {
       Pending: 'st-pending', Submitted: 'st-submitted', Shortlisted: 'st-shortlisted',
-      Awarded: 'st-awarded', Approved: 'st-awarded', Rejected: 'st-rejected'
+      Accepted: 'st-awarded', Awarded: 'st-awarded', Approved: 'st-awarded', Rejected: 'st-rejected'
     };
     return m[s] || 'st-pending';
   }
 
   private normStatus(s: string): string {
-    const v = String(s || 'Pending');
-    if (v.toLowerCase().includes('approve') || v.toLowerCase().includes('award')) return 'Awarded';
-    if (v.toLowerCase().includes('submit')) return 'Submitted';
-    if (v.toLowerCase().includes('short')) return 'Shortlisted';
-    if (v.toLowerCase().includes('reject')) return 'Rejected';
+    const v = String(s || 'Pending').toLowerCase();
+    if (v.includes('accept') || v.includes('award') || v.includes('approve') || v.includes('quoted')) return 'Accepted';
+    if (v.includes('submit')) return 'Submitted';
+    if (v.includes('short')) return 'Shortlisted';
+    if (v.includes('reject')) return 'Rejected';
     return 'Pending';
   }
 

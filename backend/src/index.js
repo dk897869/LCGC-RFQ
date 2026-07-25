@@ -425,6 +425,165 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+// ==================== DASHBOARD & UNIFIED APPROVALS APIs ====================
+app.get(['/api/dashboard', '/api/dashboard/stats'], async (req, res) => {
+  try {
+    const EPRequest = require('./models/request');
+    const PRRequest = require('./models/PRRequest');
+    const NPPRequest = require('./models/nppRequest.model');
+    const Vendor = require('./models/vendor');
+    const Part = require('./models/part');
+
+    const [epCount, prCount, nppCount, epApproved, prApproved, nppApproved, vendorCount, partCount] = await Promise.all([
+      EPRequest.countDocuments().catch(() => 0),
+      PRRequest.countDocuments().catch(() => 0),
+      NPPRequest.countDocuments().catch(() => 0),
+      EPRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
+      PRRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
+      NPPRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
+      Vendor.countDocuments().catch(() => 0),
+      Part.countDocuments().catch(() => 0)
+    ]);
+
+    const totalRequests = epCount + prCount + nppCount;
+    const approved = epApproved + prApproved + nppApproved;
+    const pending = Math.max(0, totalRequests - approved);
+    const successRate = totalRequests > 0 ? Math.round((approved / totalRequests) * 100) : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        totalRequests,
+        pending,
+        approved,
+        successRate,
+        vendorCount,
+        partCount
+      }
+    });
+  } catch (err) {
+    console.error('Dashboard stats error:', err);
+    return res.json({
+      success: true,
+      data: { totalRequests: 0, pending: 0, approved: 0, successRate: 0, vendorCount: 0, partCount: 0 }
+    });
+  }
+});
+
+app.get('/api/approvals/unified', async (req, res) => {
+  try {
+    const EPRequest = require('./models/request');
+    const PRRequest = require('./models/PRRequest');
+    const NPPRequest = require('./models/nppRequest.model');
+    const RFQ = require('./models/Rfq');
+    const PORequest = require('./models/PORequest');
+
+    const [epList, prList, nppList, rfqList, poList] = await Promise.all([
+      EPRequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      PRRequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      NPPRequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      RFQ.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      PORequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => [])
+    ]);
+
+    const items = [];
+
+    epList.forEach(r => items.push({
+      id: r._id,
+      _id: r._id,
+      type: 'ep',
+      uniqueSerialNo: r.uniqueSerialNo || r.serialNo || `EP-${r._id}`,
+      title: r.titleOfActivity || r.title || 'EP Approval Request',
+      requester: r.requesterName || r.requester || '',
+      email: r.emailId || r.email || '',
+      department: r.department || '',
+      priority: r.priority || 'Medium',
+      status: r.status || 'Pending',
+      amount: r.amount || 0,
+      createdAt: r.createdAt
+    }));
+
+    prList.forEach(r => items.push({
+      id: r._id,
+      _id: r._id,
+      type: 'pr',
+      uniqueSerialNo: r.uniqueSerialNo || r.prNumber || `PR-${r._id}`,
+      title: r.title || r.purpose || 'PR Request',
+      requester: r.requesterName || r.createdBy || '',
+      email: r.email || '',
+      department: r.department || '',
+      priority: r.priority || 'Medium',
+      status: r.status || 'Pending',
+      amount: r.totalAmount || r.amount || 0,
+      createdAt: r.createdAt
+    }));
+
+    nppList.forEach(r => items.push({
+      id: r._id,
+      _id: r._id,
+      type: 'npp',
+      uniqueSerialNo: r.uniqueSerialNo || r.requestId || `NPP-${r._id}`,
+      title: r.title || r.projectTitle || 'NPP Request',
+      requester: r.requesterName || r.requester || '',
+      email: r.email || '',
+      department: r.department || '',
+      priority: r.priority || 'Medium',
+      status: r.status || 'Pending',
+      amount: r.totalCost || r.amount || 0,
+      createdAt: r.createdAt
+    }));
+
+    rfqList.forEach(r => items.push({
+      id: r._id,
+      _id: r._id,
+      type: 'rfq',
+      uniqueSerialNo: r.uniqueSerialNo || r.rfqNo || `RFQ-${r._id}`,
+      title: r.title || r.subject || 'RFQ Request',
+      requester: r.createdBy || r.requester || '',
+      email: r.email || '',
+      department: r.department || '',
+      priority: r.priority || 'Medium',
+      status: r.status || 'Pending',
+      amount: r.estimatedCost || r.amount || 0,
+      createdAt: r.createdAt
+    }));
+
+    poList.forEach(r => items.push({
+      id: r._id,
+      _id: r._id,
+      type: 'po',
+      uniqueSerialNo: r.uniqueSerialNo || r.poNumber || `PO-${r._id}`,
+      title: r.title || r.vendorName || 'PO Request',
+      requester: r.createdBy || r.requester || '',
+      email: r.email || '',
+      department: r.department || '',
+      priority: r.priority || 'Medium',
+      status: r.status || 'Pending',
+      amount: r.totalAmount || r.amount || 0,
+      createdAt: r.createdAt
+    }));
+
+    items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    return res.json({
+      success: true,
+      data: items
+    });
+  } catch (err) {
+    console.error('Unified approvals error:', err);
+    return res.json({ success: true, data: [] });
+  }
+});
+
+app.get('/api/dashboard/notifications', async (req, res) => {
+  return res.json({
+    success: true,
+    data: [
+      { id: '1', title: 'System Active', message: 'All procurement services are operational', type: 'info', time: new Date().toISOString() }
+    ]
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
 });

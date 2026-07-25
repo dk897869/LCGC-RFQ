@@ -432,7 +432,7 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
     const startedAt = Date.now();
     this.cdr.detectChanges();
 
-    this.authService.createNppModuleRequest(type, payload).pipe(timeout(5000)).subscribe({
+    this.authService.createNppModuleRequest(type, payload).pipe(timeout(60000)).subscribe({
         next: (res) => {
           const waitMs = Math.max(0, 2000 - (Date.now() - startedAt));
           setTimeout(() => {

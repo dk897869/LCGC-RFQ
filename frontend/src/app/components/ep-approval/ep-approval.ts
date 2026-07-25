@@ -317,10 +317,10 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   loadRequests() {
     this.isLoading = true;
     forkJoin({
-      ep: this.authService.getAllEPApprovalRequests().pipe(timeout(8000), catchError(() => of([]))),
-      rfq: this.authService.getRFQs().pipe(timeout(8000), catchError(() => of([]))),
-      pr: this.authService.getPrNppRequests().pipe(timeout(8000), catchError(() => of([]))),
-      po: this.authService.getPoNppRequests().pipe(timeout(8000), catchError(() => of([])))
+      ep: this.authService.getAllEPApprovalRequests().pipe(timeout(60000), catchError(() => of([]))),
+      rfq: this.authService.getRFQs().pipe(timeout(60000), catchError(() => of([]))),
+      pr: this.authService.getPrNppRequests().pipe(timeout(60000), catchError(() => of([]))),
+      po: this.authService.getPoNppRequests().pipe(timeout(60000), catchError(() => of([])))
     }).subscribe({
       next: (res: any) => {
         let epList: EPRequest[] = [];

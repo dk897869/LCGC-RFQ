@@ -70,7 +70,7 @@ export class UserRightsComponent implements OnInit {
     forkJoin({
       me: this.authService.refreshUserRights().pipe(catchError(() => of(null))),
       requests: this.http.get<any>(`${this.apiUrl}/users/access-requests?status=pending`, { headers: this.getHeaders() }).pipe(
-        timeout(5000), 
+        timeout(60000), 
         catchError(() => of(null))
       )
     }).subscribe(({ requests }) => {
@@ -129,7 +129,7 @@ export class UserRightsComponent implements OnInit {
       moduleName: row.userRight,
       message: `Access requested by ${this.currentUserName} from User Rights page for ${row.userRight}.`
     }, { headers: this.getHeaders() }).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => of(null))
     ).subscribe(res => {
       if (res?.success || res) {

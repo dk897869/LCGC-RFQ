@@ -153,8 +153,8 @@ export class UserManagementComponent implements OnInit {
     }, 5200);
 
     forkJoin({
-      users: this.http.get<any>(this.apiUrl, { headers: this.getHeaders() }).pipe(timeout(5000), catchError(() => of(null))),
-      requests: this.http.get<any>(`${this.rightsUrl}?status=pending`, { headers: this.getHeaders() }).pipe(timeout(5000), catchError(() => of(null)))
+      users: this.http.get<any>(this.apiUrl, { headers: this.getHeaders() }).pipe(timeout(60000), catchError(() => of(null))),
+      requests: this.http.get<any>(`${this.rightsUrl}?status=pending`, { headers: this.getHeaders() }).pipe(timeout(60000), catchError(() => of(null)))
     }).subscribe(({ users, requests }) => {
       clearTimeout(fallbackTimer);
 
@@ -182,7 +182,7 @@ export class UserManagementComponent implements OnInit {
   loadUsers(): void {
     this.isLoading = true;
     this.http.get<any>(this.apiUrl, { headers: this.getHeaders() })
-      .pipe(timeout(5000), catchError(() => of(null)))
+      .pipe(timeout(60000), catchError(() => of(null)))
       .subscribe(res => {
         if (res) {
           const arr = res?.data || res?.users || (Array.isArray(res) ? res : []);
@@ -202,7 +202,7 @@ export class UserManagementComponent implements OnInit {
 
     this.isLoadingRequests = true;
     this.http.get<any>(`${this.rightsUrl}?status=pending`, { headers: this.getHeaders() })
-      .pipe(timeout(5000), catchError(() => of(null)))
+      .pipe(timeout(60000), catchError(() => of(null)))
       .subscribe(res => {
         if (res) {
           this.rightsRequests = this.normalizeRightsRequests(res?.data || []);

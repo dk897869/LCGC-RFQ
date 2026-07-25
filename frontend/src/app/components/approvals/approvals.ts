@@ -130,12 +130,12 @@ export class ApprovalsComponent implements OnInit, OnDestroy {
     }
     
     forkJoin({
-      ep: this.authService.getAllEPApprovalRequests().pipe(timeout(10000), catchError(() => of([]))),
-      rfq: this.authService.getRFQs().pipe(timeout(10000), catchError(() => of([]))),
-      npp: this.authService.getNppRequests().pipe(timeout(10000), catchError(() => of([]))),
-      pr: this.authService.getPrNppRequests().pipe(timeout(10000), catchError(() => of([]))),
-      po: this.authService.getPoNppRequests().pipe(timeout(10000), catchError(() => of([]))),
-      payment: this.authService.getPaymentNppRequests().pipe(timeout(10000), catchError(() => of([])))
+      ep: this.authService.getAllEPApprovalRequests().pipe(timeout(60000), catchError(() => of([]))),
+      rfq: this.authService.getRFQs().pipe(timeout(60000), catchError(() => of([]))),
+      npp: this.authService.getNppRequests().pipe(timeout(60000), catchError(() => of([]))),
+      pr: this.authService.getPrNppRequests().pipe(timeout(60000), catchError(() => of([]))),
+      po: this.authService.getPoNppRequests().pipe(timeout(60000), catchError(() => of([]))),
+      payment: this.authService.getPaymentNppRequests().pipe(timeout(60000), catchError(() => of([])))
     }).pipe(finalize(() => {
       if (!silent) {
         this.isLoading = false;

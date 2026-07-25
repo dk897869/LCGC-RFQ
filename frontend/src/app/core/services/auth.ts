@@ -267,7 +267,7 @@ export class AuthService {
     }, {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
     }).pipe(
-      timeout(30000),
+      timeout(60000),
       tap(res => {
         if (res?.success && this.isBrowser) {
           sessionStorage.setItem('verify_email', cleanEmail);
@@ -292,7 +292,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/send-sms-otp`, {
       mobile: cleanMobile, type
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => console.log('✅ SMS OTP sent:', res)),
       catchError((error) => {
         if (this.isBrowser) {
@@ -317,7 +317,7 @@ export class AuthService {
     }
     
     return this.http.post<any>(`${this.API_URL}/auth/verify-otp`, body, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => {
         if (res?.success && res?.token) this.storeAuthSession(res, true);
       }),
@@ -361,7 +361,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/send-registration-otp`, {
       email: cleanEmail
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) {
           const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -380,7 +380,7 @@ export class AuthService {
       email: email.trim().toLowerCase(),
       otp: cleanOtp
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) {
           const mockStored = sessionStorage.getItem('mock_reg_otp');
@@ -399,7 +399,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/send-mobile-otp`, {
       mobile: cleanMobile, type: type
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) {
           const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -417,7 +417,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/verify-mobile-otp`, {
       mobile: mobile.trim(), otp: cleanOtp, type: type
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) {
           const mockStored = sessionStorage.getItem('mock_mobile_otp');
@@ -441,7 +441,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/forgot-password`, {
       email: cleanEmail
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) {
           const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -466,7 +466,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/reset-password`, {
       email: email.trim().toLowerCase(), otp: cleanOtp, newPassword, confirmPassword
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) {
           const mockStored = sessionStorage.getItem('mock_fp_otp');
@@ -485,7 +485,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/forgot-password-link`, {
       email: cleanEmail
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) {
           const resetToken = 'mock_reset_' + Date.now();
@@ -504,7 +504,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/auth/reset-password-with-token`, {
       token: token.trim(), newPassword: newPassword.trim(), confirmPassword: confirmPassword.trim()
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser && token.startsWith('mock_reset_')) {
           return of({ success: true, message: 'Password reset successful (demo)' });
@@ -516,7 +516,7 @@ export class AuthService {
 
   checkResetToken(token: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/check-reset-token?token=${token}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser && token.startsWith('mock_reset_')) {
           return of({ success: true, isValid: true });
@@ -532,7 +532,7 @@ export class AuthService {
     const attempt = (i: number): Observable<any> => {
       if (i >= paths.length) return this.forgotPasswordOTP(email);
       return this.http.post<any>(`${this.API_URL}${paths[i]}`, body, this.getHttpOptions()).pipe(
-        timeout(10000), catchError(() => attempt(i + 1))
+        timeout(60000), catchError(() => attempt(i + 1))
       );
     };
     return attempt(0).pipe(
@@ -552,7 +552,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/notifications/rfq-email`, {
       rfqData, recipients, type: 'rfq_created'
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError(() => of({ success: false, message: 'Email notification failed', sent: false }))
     );
   }
@@ -561,7 +561,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/notifications/pr-email`, {
       prData, recipients, type: 'pr_created'
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError(() => of({ success: false, message: 'Email notification failed', sent: false }))
     );
   }
@@ -570,7 +570,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/notifications/po-email`, {
       poData, recipients, type: 'po_created'
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError(() => of({ success: false, message: 'Email notification failed', sent: false }))
     );
   }
@@ -579,7 +579,7 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/notifications/cash-purchase-email`, {
       purchaseData, recipients, type: 'cash_purchase'
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError(() => of({ success: false, message: 'Email notification failed', sent: false }))
     );
   }
@@ -588,14 +588,14 @@ export class AuthService {
     return this.http.post<any>(`${this.API_URL}/notifications/approval-email`, {
       requestData, requestType, approvers, type: 'approval_request'
     }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError(() => of({ success: false, message: 'Email notification failed', sent: false }))
     );
   }
 
   testEmail(email: string): Observable<any> {
     return this.http.get(`${this.API_URL}/auth/test-email?email=${email}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error) => {
         if (this.isBrowser) this.showToastMessage(`Test email would be sent to ${email}`, 'info');
         return of({ success: false, message: 'Email test failed' });
@@ -637,7 +637,7 @@ export class AuthService {
 
   refreshUserRights(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/me`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       tap(res => {
         const user = this.normalizeUser(res?.user || res?.data || res);
         if (user) this.persistCurrentUser(user);
@@ -675,7 +675,7 @@ export class AuthService {
 
   getLoggedInUser(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/me`, this.getHttpOptions()).pipe(
-      timeout(6000),
+      timeout(60000),
       tap(res => {
         const user = this.normalizeUser(res?.user || res?.data || res);
         if (user) this.persistCurrentUser(user);
@@ -692,7 +692,7 @@ export class AuthService {
 
   getProfile(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/me`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       tap(res => {
         if (res?.success && res.user && this.isBrowser) this.updateLocalUser(res.user);
       }),
@@ -703,7 +703,7 @@ export class AuthService {
   updateProfile(userId: string, data: any): Observable<any> {
     const { id, _id, ...cleanData } = data;
     return this.http.patch<any>(`${this.API_URL}/auth/profile`, cleanData, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       tap(res => {
         if ((res?.success || res?.data) && this.isBrowser) {
           this.updateLocalUser(res.data || res.user || cleanData);
@@ -716,7 +716,7 @@ export class AuthService {
   updatePassword(userId: string, currentPassword: string, newPassword: string): Observable<any> {
     const body = { currentPassword, newPassword, confirmPassword: newPassword };
     return this.http.post<any>(`${this.API_URL}/auth/change-password`, body, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(this.handleError('Update Password'))
     );
   }
@@ -732,7 +732,7 @@ export class AuthService {
 
   clearProfilePhoto(userId: string): Observable<any> {
     return this.http.delete<any>(`${this.API_URL}/auth/avatar`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       tap(res => { if (res?.success && this.isBrowser) this.updateLocalUser({ profileImage: '', avatar: '' }); }),
       catchError(() => of({ success: true }))
     );
@@ -790,21 +790,21 @@ export class AuthService {
 
   getDashboardData(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/dashboard`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(this.handleError('Dashboard Data'))
     );
   }
 
   getDepartments(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/departments`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(() => of({ success: true, departments: ['Purchase', 'IT', 'HR', 'Finance', 'R&D', 'Operations', 'Sales'] }))
     );
   }
 
   getManagers(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/managers`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(() => of({
         managers: [
           { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager', role: 'Manager' },
@@ -826,7 +826,7 @@ export class AuthService {
 
   getAllEPApprovalRequests(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/request`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(this.handleError('EP Approval Requests'))
     );
@@ -862,7 +862,7 @@ createEPRequest(data: any): Observable<any> {
   console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
   
   return this.http.post<any>(`${this.API_URL}/request`, payload, this.getHttpOptions()).pipe(
-    timeout(15000),
+    timeout(60000),
     tap(res => {
       console.log('✅ EP Request response:', res);
       if (res?.success && payload.requesterEmail) {
@@ -956,7 +956,7 @@ createEPRequest(data: any): Observable<any> {
     return this.ensureMinDuration(
       this.http.patch<any>(`${this.API_URL}/request/${id}/approve`, {
         comments, approvedBy: user?.email, approvedByRole: userRole
-      }, this.getHttpOptions()).pipe(timeout(15000)),
+      }, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       tap((res: any) => {
@@ -995,7 +995,7 @@ createEPRequest(data: any): Observable<any> {
     return this.ensureMinDuration(
       this.http.patch<any>(`${this.API_URL}/request/${id}/reject`, {
         comments, rejectedBy: user?.email, rejectedByRole: userRole
-      }, this.getHttpOptions()).pipe(timeout(15000)),
+      }, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       tap((res: any) => {
@@ -1021,7 +1021,7 @@ createEPRequest(data: any): Observable<any> {
 
   getEPRequestFullDetails(id: string | number): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/request/${id}/full`, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       map(res => {
         if (res?.data) {
           return {
@@ -1050,14 +1050,14 @@ createEPRequest(data: any): Observable<any> {
 
   getEPApprovalStats(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/request/stats`, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => of({ success: true, data: { approved: 0, rejected: 0, pending: 0 } }))
     );
   }
 
   getApprovedEPRequests(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/request?status=Approved`, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(() => of({ success: true, data: [] }))
     );
@@ -1083,7 +1083,7 @@ createEPRequest(data: any): Observable<any> {
     
     // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/certificates/generate`, payload, this.getHttpOptions()).pipe(timeout(15000)),
+      this.http.post<any>(`${this.API_URL}/certificates/generate`, payload, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       tap((res: any) => {
@@ -1128,7 +1128,7 @@ createEPRequest(data: any): Observable<any> {
       ? requestId : '';
       
     return this.http.get<any>(`${this.API_URL}/certificates?requestId=${validRequestId}`, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => {
         if (typeof localStorage !== 'undefined') {
           const certs = JSON.parse(localStorage.getItem('ep_certificates') || '[]');
@@ -1147,7 +1147,7 @@ createEPRequest(data: any): Observable<any> {
       this.http.get(`${this.API_URL}/certificates/${certificateId}/download`, {
         ...this.getHttpOptions(),
         responseType: 'blob'
-      }).pipe(timeout(15000)),
+      }).pipe(timeout(60000)),
       2000
     ).pipe(
       tap((blob: Blob) => {
@@ -1179,7 +1179,7 @@ createEPRequest(data: any): Observable<any> {
   getVendorSuggestions(items: any[]): Observable<any> {
     // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/quotation/suggestions`, { items }, this.getHttpOptions()).pipe(timeout(8000)),
+      this.http.post<any>(`${this.API_URL}/quotation/suggestions`, { items }, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       catchError(() => {
@@ -1200,7 +1200,7 @@ createEPRequest(data: any): Observable<any> {
     
     // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
     return this.ensureMinDuration(
-      this.http.get<any>(`${this.API_URL}/reports/${type}`, { ...this.getHttpOptions(), params }).pipe(timeout(8000)),
+      this.http.get<any>(`${this.API_URL}/reports/${type}`, { ...this.getHttpOptions(), params }).pipe(timeout(60000)),
       2000
     ).pipe(
       tap(() => this.showToastMessage('Report generated successfully!', 'success')),
@@ -1220,7 +1220,7 @@ createEPRequest(data: any): Observable<any> {
 
   notifyAdminsForEPRequest(requestData: any): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/notifications/ep-request`, requestData, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => {
         this.showToastMessage('Admins notified (demo mode)', 'info');
         return of({ success: true, message: 'Admins notified (demo)' });
@@ -1232,7 +1232,7 @@ createEPRequest(data: any): Observable<any> {
 
   getVendors(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/vendor`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(this.handleError('Get Vendors'))
     );
@@ -1258,7 +1258,7 @@ createEPRequest(data: any): Observable<any> {
 
 createTemporaryVendorAccount(data: any): Observable<any> {
   return this.http.post<any>(`${this.API_URL}/vendor/temporary-account`, data, this.getHttpOptions()).pipe(
-    timeout(15000),
+    timeout(60000),
     tap(res => {
       if (res?.success) {
         this.showToastMessage('Temporary vendor account created!', 'success');
@@ -1310,7 +1310,7 @@ findVendorByEmail(email: string): Observable<any> {
     ...this.getHttpOptions(),
     params: { email: email }
   }).pipe(
-    timeout(10000),
+    timeout(60000),
     map(res => {
       if (res?.success) {
         return res;
@@ -1329,7 +1329,7 @@ findVendorByEmail(email: string): Observable<any> {
 }
   getParts(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/part`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(this.handleError('Get Parts'))
     );
@@ -1359,7 +1359,7 @@ findVendorByEmail(email: string): Observable<any> {
 getPrComparison(prId: string): Observable<any> {
   const id = encodeURIComponent(prId || 'latest');
   return this.http.get<any>(`${this.API_URL}/pr/${id}/comparison`, this.getHttpOptions()).pipe(
-    timeout(15000),
+    timeout(60000),
     catchError(() => of({ success: true, items: [], recommendedVendor: null }))
   );
 }
@@ -1372,7 +1372,7 @@ getQuotationComparisonAuto(rfqNo?: string): Observable<any> {
     ...this.getHttpOptions(),
     params
   }).pipe(
-    timeout(15000),
+    timeout(60000),
     catchError(() => this.searchNppForms({ type: 'quotation-comparison', status: 'Submitted' }))
   );
 }
@@ -1384,7 +1384,7 @@ submitQuotationComparison(data: any): Observable<any> {
   console.log('🔑 Headers:', headers);
   
   return this.http.post(`${this.API_URL}/quotation-comparison/submit`, data, { headers }).pipe(
-    timeout(15000),
+    timeout(60000),
     tap((res: any) => {
       if (res?.success) {
         console.log('✅ Quotation comparison submitted successfully:', res);
@@ -1415,7 +1415,7 @@ getComparisons(): Observable<any> {
   const headers = this.getHeaders();
   
   return this.http.get(`${this.API_URL}/quotation-comparison/list`, { headers }).pipe(
-    timeout(10000),
+    timeout(60000),
     map((res: any) => {
       if (res?.success) {
         return res;
@@ -1435,7 +1435,7 @@ getSubmittedComparisons(): Observable<any> {
   const headers = this.getHeaders();
   
   return this.http.get(`${this.API_URL}/quotation-comparison/submitted`, { headers }).pipe(
-    timeout(10000),
+    timeout(60000),
     map((res: any) => {
       if (res?.success) {
         return res;
@@ -1455,7 +1455,7 @@ createPRFromComparison(data: any): Observable<any> {
   const headers = this.getHeaders();
   
   return this.http.post(`${this.API_URL}/pr/create-from-comparison`, data, { headers }).pipe(
-    timeout(15000),
+    timeout(60000),
     tap((res: any) => {
       if (res?.success) {
         console.log('✅ PR created from comparison:', res);
@@ -1548,7 +1548,7 @@ createPRFromComparison(data: any): Observable<any> {
 // Get quotation comparison by RFQ ID
 getQuotationComparisonByRfq(rfqId: string): Observable<any> {
   return this.http.get<any>(`${this.API_URL}/quotation/comparison/rfq/${rfqId}`, this.getHttpOptions()).pipe(
-    timeout(15000),
+    timeout(60000),
     catchError((error) => {
       // Fallback: try to search by RFQ number
       return this.searchNppForms({ rfqNo: rfqId, type: 'quotation-comparison' }).pipe(
@@ -1580,7 +1580,7 @@ getQuotationComparisonByRfq(rfqId: string): Observable<any> {
 
   getRFQs(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/rfq`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       map(res => {
         let data = [];
         if (res?.data && Array.isArray(res.data)) data = res.data;
@@ -1617,7 +1617,7 @@ getQuotationComparisonByRfq(rfqId: string): Observable<any> {
 
 getApprovedRFQs(): Observable<any> {
   return this.http.get<any>(`${this.API_URL}/rfq/approved`, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     map(res => {
       let data = [];
       if (res?.data && Array.isArray(res.data)) data = res.data;
@@ -1647,21 +1647,21 @@ getApprovedRFQs(): Observable<any> {
 
 updateVendorRequestStatus(rfqId: string, data: { vendorRequestCreated?: boolean; currentStage?: string }): Observable<any> {
   return this.http.patch<any>(`${this.API_URL}/rfq/${rfqId}/vendor-request`, data, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     catchError(this.handleError('Update Vendor Request Status'))
   );
 }
 
 updateQuotationStatus(rfqId: string, data: { quotationCompleted?: boolean; currentStage?: string }): Observable<any> {
   return this.http.patch<any>(`${this.API_URL}/rfq/${rfqId}/quotation-status`, data, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     catchError(this.handleError('Update Quotation Status'))
   );
 }
 
 selectWinner(rfqId: string, data: { winnerVendorId: string; winnerVendorName: string; winnerPrice: number }): Observable<any> {
   return this.http.post<any>(`${this.API_URL}/rfq/${rfqId}/select-winner`, data, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     tap(res => {
       if (res?.success) {
         this.showToastMessage(`Winner selected: ${data.winnerVendorName}`, 'success');
@@ -1673,7 +1673,7 @@ selectWinner(rfqId: string, data: { winnerVendorId: string; winnerVendorName: st
 
 getRFQWorkflowStatus(rfqId: string): Observable<any> {
   return this.http.get<any>(`${this.API_URL}/rfq/${rfqId}/workflow`, this.getHttpOptions()).pipe(
-    timeout(8000),
+    timeout(60000),
     catchError(() => {
       // Fallback: get the RFQ and extract workflow info
       return this.getRFQById(rfqId).pipe(
@@ -1699,7 +1699,7 @@ getRFQWorkflowStatus(rfqId: string): Observable<any> {
 
 createVendorRequest(data: any): Observable<any> {
   return this.http.post<any>(`${this.API_URL}/vendor-request`, data, this.getHttpOptions()).pipe(
-    timeout(15000),
+    timeout(60000),
     tap(res => {
       if (res?.success) {
         this.showToastMessage('Vendor request sent successfully!', 'success');
@@ -1715,7 +1715,7 @@ getVendorRequests(rfqId?: string): Observable<any> {
     url += `?rfqId=${rfqId}`;
   }
   return this.http.get<any>(url, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     map(res => this.asListResponse(res)),
     catchError(this.handleError('Get Vendor Requests'))
   );
@@ -1723,14 +1723,14 @@ getVendorRequests(rfqId?: string): Observable<any> {
 
 getVendorRequestByRfqId(rfqId: string): Observable<any> {
   return this.http.get<any>(`${this.API_URL}/vendor-request/${rfqId}`, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     catchError(this.handleError('Get Vendor Request by RFQ'))
   );
 }
 
 updateVendorRequest(id: string, data: any): Observable<any> {
   return this.http.patch<any>(`${this.API_URL}/vendor-request/${id}`, data, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     catchError(this.handleError('Update Vendor Request'))
   );
 }
@@ -1739,7 +1739,7 @@ updateVendorRequest(id: string, data: any): Observable<any> {
 
 submitQuotation(data: any): Observable<any> {
   return this.http.post<any>(`${this.API_URL}/quotation`, data, this.getHttpOptions()).pipe(
-    timeout(15000),
+    timeout(60000),
     tap(res => {
       if (res?.success) {
         this.showToastMessage('Quotation submitted successfully!', 'success');
@@ -1751,7 +1751,7 @@ submitQuotation(data: any): Observable<any> {
 
 getQuotations(rfqId: string): Observable<any> {
   return this.http.get<any>(`${this.API_URL}/quotation/${rfqId}`, this.getHttpOptions()).pipe(
-    timeout(10000),
+    timeout(60000),
     map(res => this.asListResponse(res)),
     catchError(this.handleError('Get Quotations'))
   );
@@ -1759,13 +1759,13 @@ getQuotations(rfqId: string): Observable<any> {
 
 getQuotationComparison(rfqId: string): Observable<any> {
   return this.http.get<any>(`${this.API_URL}/quotation/comparison/${rfqId}`, this.getHttpOptions()).pipe(
-    timeout(15000),
+    timeout(60000),
     catchError(this.handleError('Get Quotation Comparison'))
   );
 }
   getRFQById(id: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/rfq/${id}`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(this.handleError('Get RFQ By ID'))
     );
   }
@@ -1777,7 +1777,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     // the "creating RFQ..." loader is visible for ~2s before the success/error
     // toast fires, instead of an artificial delay before the call even starts.
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/rfq`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      this.http.post<any>(`${this.API_URL}/rfq`, data, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       tap((res: any) => {
@@ -1837,10 +1837,10 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getNppRequests(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/pr-npp`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(() => this.http.get<any>(`${this.API_URL}/npp-procurement`, this.getHttpOptions()).pipe(
-        timeout(8000),
+        timeout(60000),
         map(res => this.withId(this.asListResponse(res))),
         catchError(this.handleError('Get NPP Requests'))
       ))
@@ -1849,7 +1849,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getUnifiedApprovals(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/approvals/unified`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(() => of({ success: true, data: [] }))
     );
@@ -1857,7 +1857,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getPrNppRequests(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/pr-npp`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(() => of({ success: true, data: [] }))
     );
@@ -1865,7 +1865,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getPoNppRequests(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/po-npp`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(() => of({ success: true, data: [] }))
     );
@@ -1873,7 +1873,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getPaymentNppRequests(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/payment-npp`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.withId(this.asListResponse(res))),
       catchError(() => of({ success: true, data: [] }))
     );
@@ -1882,7 +1882,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
   createNppRequest(data: any): Observable<any> {
     // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     );
   }
@@ -1890,7 +1890,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
   createNppModuleRequest(type: string, data: any): Observable<any> {
     const normalizedType = this.normalizeNppType(type);
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/npp-forms/${normalizedType}`, { ...data, type: normalizedType }, this.getHttpOptions()).pipe(timeout(20000)),
+      this.http.post<any>(`${this.API_URL}/npp-forms/${normalizedType}`, { ...data, type: normalizedType }, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     );
   }
@@ -1899,7 +1899,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     console.log('📤 Creating PR NPP request:', data);
     // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      this.http.post<any>(`${this.API_URL}/pr-npp`, data, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       catchError((err) => {
@@ -1916,7 +1916,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     console.log('📤 Creating PO NPP request:', data);
     // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/po-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      this.http.post<any>(`${this.API_URL}/po-npp`, data, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       catchError((err) => {
@@ -1933,7 +1933,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     console.log('📤 Creating Payment Advice request:', data);
     // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/payment-npp`, data, this.getHttpOptions()).pipe(timeout(20000)),
+      this.http.post<any>(`${this.API_URL}/payment-npp`, data, this.getHttpOptions()).pipe(timeout(60000)),
       2000
     ).pipe(
       catchError((err) => {
@@ -1968,7 +1968,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
   approveRequestByType(type: string, id: string | number, comments = ''): Observable<any> {
     const endpoint = this.getApprovalEndpointByType(type);
     return this.http.patch<any>(`${this.API_URL}/${endpoint}/${id}/approve`, { comments }, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(() => this.http.patch<any>(`${this.API_URL}/approvals/${type}/${id}/approve`, { comments }, this.getHttpOptions())),
       catchError(() => this.updateRequestByType(type, id, { status: 'Approved', comments }))
     );
@@ -1984,7 +1984,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
   rejectRequestByType(type: string, id: string | number, comments = ''): Observable<any> {
     const endpoint = this.getApprovalEndpointByType(type);
     return this.http.patch<any>(`${this.API_URL}/${endpoint}/${id}/reject`, { comments }, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(() => this.http.patch<any>(`${this.API_URL}/approvals/${type}/${id}/reject`, { comments }, this.getHttpOptions())),
       catchError(() => this.updateRequestByType(type, id, { status: 'Rejected', comments }))
     );
@@ -2111,7 +2111,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     if (search) params.search = search;
 
     return this.http.get<any>(`${this.API_URL}/reports/generate`, { ...this.getHttpOptions(), params }).pipe(
-      timeout(15000),
+      timeout(60000),
       map(res => res || { success: true, data: { summary: {}, details: [] } }),
       catchError(() => of({ success: true, data: { summary: {}, details: [] }, message: 'Using local data' })),
       catchError(this.handleError('Get Reports'))
@@ -2126,21 +2126,21 @@ getQuotationComparison(rfqId: string): Observable<any> {
       ...this.getHttpOptions(),
       params: query as any
     }).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(() => of({ success: true, data: [] }))
     );
   }
 
   getNppFormBySerial(serialNo: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/npp-forms/serial/${encodeURIComponent(serialNo)}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(this.handleError('Get NPP Form by Serial'))
     );
   }
 
   getNppFormsByRfqNo(rfqNo: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/npp-forms/rfq/${encodeURIComponent(rfqNo)}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(this.handleError('Get NPP Forms by RFQ'))
     );
   }
@@ -2156,7 +2156,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
       params,
       responseType: 'blob'
     }).pipe(
-      timeout(30000),
+      timeout(60000),
       catchError(this.handleError('Export Report'))
     );
   }
@@ -2169,7 +2169,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     if (type) params.type = type;
 
     return this.http.get<any>(`${this.API_URL}/order-history`, { ...this.getHttpOptions(), params }).pipe(
-      timeout(10000),
+      timeout(60000),
       map(res => this.asListResponse(res)),
       catchError(() => of({ success: true, data: [] })),
       catchError(this.handleError('Get Order History'))
@@ -2178,7 +2178,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   saveOrderHistory(data: any): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/order-history`, data, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(() => {
         if (this.isBrowser) {
           const existing = localStorage.getItem('order_history');
@@ -2196,7 +2196,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getRfqItems(rfqId: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/rfq/${rfqId}/items`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.asListResponse(res)),
       catchError(this.handleError('Get RFQ Items'))
     );
@@ -2204,21 +2204,21 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   addRfqItem(rfqId: string, item: any): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/rfq/${rfqId}/items`, item, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(this.handleError('Add RFQ Item'))
     );
   }
 
   updateRfqItem(rfqId: string, itemId: string, item: any): Observable<any> {
     return this.http.put<any>(`${this.API_URL}/rfq/${rfqId}/items/${itemId}`, item, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(this.handleError('Update RFQ Item'))
     );
   }
 
   deleteRfqItem(rfqId: string, itemId: string): Observable<any> {
     return this.http.delete<any>(`${this.API_URL}/rfq/${rfqId}/items/${itemId}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError(this.handleError('Delete RFQ Item'))
     );
   }
@@ -2232,7 +2232,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     let headers = new HttpHeaders();
     if (token) headers = headers.set('Authorization', `Bearer ${token}`);
     return this.http.post<any>(`${this.API_URL}/rfq/${rfqId}/items/${itemId}/picture`, formData, { headers }).pipe(
-      timeout(30000),
+      timeout(60000),
       catchError(this.handleError('Upload Picture'))
     );
   }
@@ -2255,7 +2255,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     let url = `${this.API_URL}/rfq/export-excel`;
     if (rfqId) url += `?rfqId=${rfqId}`;
     return this.http.get(url, { ...this.getHttpOptions(), responseType: 'blob' }).pipe(
-      timeout(30000),
+      timeout(60000),
       catchError(this.handleError('Export Excel'))
     );
   }
@@ -2265,7 +2265,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
       ...this.getHttpOptions(),
       responseType: 'blob'
     }).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError(() => {
         const csvContent = 'Item Description,UOM,Quantity,Make,Alternative,Vendor Ref,Remark\nSample Item 1,PCS,10,Make A,Alt B,REF001,Test remark\nSample Item 2,KG,5,Make C,Alt D,REF002,Test remark 2';
         return of(new Blob([csvContent], { type: 'text/csv' }));
@@ -2280,7 +2280,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     let params: any = { search: searchTerm };
     if (category) params.category = category;
     return this.http.get<any>(`${this.API_URL}/parts/search`, { ...this.getHttpOptions(), params }).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.asListResponse(res)),
       catchError(this.handleError('Search Parts'))
     );
@@ -2288,7 +2288,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getPartByCode(partCode: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/parts/code/${partCode}`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(this.handleError('Get Part By Code'))
     );
   }
@@ -2299,7 +2299,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     let params: any = { search: searchTerm };
     if (category) params.category = category;
     return this.http.get<any>(`${this.API_URL}/vendors/search`, { ...this.getHttpOptions(), params }).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.asListResponse(res)),
       catchError(this.handleError('Search Vendors'))
     );
@@ -2307,7 +2307,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getVendorByCode(vendorCode: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/vendors/code/${vendorCode}`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(this.handleError('Get Vendor By Code'))
     );
   }
@@ -2316,7 +2316,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getApprovalWorkflow(requestId: string, type: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/approvals/${type}/${requestId}/workflow`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       map(res => this.asListResponse(res)),
       catchError(this.handleError('Get Approval Workflow'))
     );
@@ -2326,7 +2326,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     return this.http.patch<any>(`${this.API_URL}/approvals/${type}/${requestId}/approvers/${approverId}`,
       { status, comments }, this.getHttpOptions()
     ).pipe(
-      timeout(10000),
+      timeout(60000),
       tap(res => {
         if (res?.success && res?.data?.requesterEmail) {
           this.sendRfqEmailNotification({ type, status, comments, requestId }, [res.data.requesterEmail]).subscribe();
@@ -2340,7 +2340,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   generateSerialNumber(type: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/serial-number/${type}`, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => {
         const prefix = type === 'rfq' ? 'RFQ' : type === 'pr' ? 'PR' : type === 'po' ? 'PO' : 'PAY';
         const date = new Date();
@@ -2356,7 +2356,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   validateSerialNumber(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/serial-number/validate/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => {
         const isValid = serialNumber.length > 5;
         return of({ success: true, isValid, exists: false });
@@ -2369,7 +2369,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   searchBySerialNumber(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/search/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Search by serial number error:', error);
         return of({ success: false, message: error.error?.message || 'Search failed' });
@@ -2381,7 +2381,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
     let url = `${this.API_URL}/search/serials`;
     if (type && type !== 'all') url += `?type=${type}`;
     return this.http.get<any>(url, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Get all serial numbers error:', error);
         return of({ success: true, data: [] });
@@ -2391,7 +2391,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getRequestBySerialNumber(serialNumber: string, type: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/${type}/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Get request by serial number error:', error);
         return of({ success: false, message: error.error?.message || 'Request failed' });
@@ -2401,7 +2401,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   reuseRequestData(serialNumber: string, targetType: string): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/reuse/serial/${serialNumber}`, { targetType }, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Reuse request data error:', error);
         return of({ success: false, message: error.error?.message || 'Reuse failed' });
@@ -2411,7 +2411,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getRFQBySerial(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/rfq/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Get RFQ by serial error:', error);
         return of({ success: false, message: error.error?.message || 'RFQ not found' });
@@ -2421,7 +2421,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getPRBySerial(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/pr-npp/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Get PR by serial error:', error);
         return of({ success: false, message: error.error?.message || 'PR not found' });
@@ -2431,7 +2431,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getPOBySerial(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/po-npp/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Get PO by serial error:', error);
         return of({ success: false, message: error.error?.message || 'PO not found' });
@@ -2441,7 +2441,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getPaymentBySerial(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/payment-npp/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Get Payment by serial error:', error);
         return of({ success: false, message: error.error?.message || 'Payment not found' });
@@ -2451,7 +2451,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getEPBySerial(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/request/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       catchError((error: HttpErrorResponse) => {
         console.error('Get EP by serial error:', error);
         return of({ success: false, message: error.error?.message || 'EP request not found' });
@@ -2463,7 +2463,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getApprovedRfqBySerial(serialNumber: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/rfq/serial/${serialNumber}`, this.getHttpOptions()).pipe(
-      timeout(10000),
+      timeout(60000),
       map(res => {
         if (res?.data) {
           return {
@@ -2500,7 +2500,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   googleLogin(credential: string): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/auth/google`, { credential }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => { if (res?.success && res?.token) this.storeAuthSession(res, true); }),
       catchError(this.handleError('Google Login'))
     );
@@ -2508,7 +2508,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   googleLoginWithIdToken(idToken: string): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/auth/google-idtoken`, { idToken }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => { if (res?.success && res?.token) this.storeAuthSession(res, true); }),
       catchError(this.handleError('Google Login'))
     );
@@ -2516,7 +2516,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   facebookLogin(accessToken: string, userID: string): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/auth/facebook`, { accessToken, userID }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => { if (res?.success && res?.token) this.storeAuthSession(res, true); }),
       catchError(this.handleError('Facebook Login'))
     );
@@ -2524,7 +2524,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   facebookLoginWithData(facebookData: { id: string; email: string; name: string; picture?: string }): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/auth/facebook-data`, facebookData, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => { if (res?.success && res?.token) this.storeAuthSession(res, true); }),
       catchError(this.handleError('Facebook Login'))
     );
@@ -2532,14 +2532,14 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getTwitterRequestToken(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/twitter/request-token`, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       catchError(this.handleError('Get Twitter Request Token'))
     );
   }
 
   twitterLogin(oauthToken: string, oauthVerifier: string): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/auth/twitter`, { oauthToken, oauthVerifier }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => { if (res?.success && res?.token) this.storeAuthSession(res, true); }),
       catchError(this.handleError('Twitter Login'))
     );
@@ -2547,7 +2547,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   twitterOAuth2Login(accessToken: string): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/auth/twitter-oauth2`, { accessToken }, this.getHttpOptions()).pipe(
-      timeout(15000),
+      timeout(60000),
       tap(res => { if (res?.success && res?.token) this.storeAuthSession(res, true); }),
       catchError(this.handleError('Twitter OAuth2 Login'))
     );
@@ -2620,7 +2620,7 @@ getQuotationComparison(rfqId: string): Observable<any> {
       ? `${this.API_URL}/approvals/status-summary/${type}`
       : `${this.API_URL}/approvals/status-summary/all`;
     return this.http.get<any>(url, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(() => of({ success: true, data: { approved: 0, pending: 0, rejected: 0, inProcess: 0, total: 0 } }))
     );
   }
@@ -2686,21 +2686,21 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getNotifications(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/notifications`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(() => of({ success: true, data: [] }))
     );
   }
 
   markNotificationRead(notificationId: string): Observable<any> {
     return this.http.patch<any>(`${this.API_URL}/notifications/${notificationId}/read`, {}, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => of({ success: true }))
     );
   }
 
   markAllNotificationsRead(): Observable<any> {
     return this.http.patch<any>(`${this.API_URL}/notifications/read-all`, {}, this.getHttpOptions()).pipe(
-      timeout(5000),
+      timeout(60000),
       catchError(() => of({ success: true }))
     );
   }
@@ -2709,21 +2709,21 @@ getQuotationComparison(rfqId: string): Observable<any> {
 
   getVendorBids(vendorId: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/vendor/${vendorId}/bids`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(() => of({ success: true, data: [] }))
     );
   }
 
   getVendorNotifications(vendorId: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/vendor/${vendorId}/notifications`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(() => of({ success: true, data: [] }))
     );
   }
 
   getVendorActivities(vendorId: string): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/vendor/${vendorId}/activities`, this.getHttpOptions()).pipe(
-      timeout(8000),
+      timeout(60000),
       catchError(() => of({ success: true, data: [] }))
     );
   }

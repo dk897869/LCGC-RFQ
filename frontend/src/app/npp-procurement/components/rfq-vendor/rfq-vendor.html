@@ -269,19 +269,8 @@
               </div>
               <span class="status-badge" [ngClass]="getStatusBadgeClass(v.status)">{{ v.status }}</span>
             </div>
-            <div class="status-card-body">
-              <div class="field">
-                <label>Status</label>
-                <select [(ngModel)]="v.status">
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Remarks</label>
-                <textarea rows="2" [(ngModel)]="v.remarks" placeholder="Remarks (optional)"></textarea>
-              </div>
+            <div class="status-card-body" style="padding: 10px 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #475569;" *ngIf="v.remarks">
+              <strong>Vendor Remarks:</strong> {{ v.remarks }}
             </div>
           </div>
           <div class="empty-state" *ngIf="!statusVendors.length">
@@ -289,11 +278,8 @@
           </div>
         </div>
 
-        <div class="modal-actions">
-          <button class="btn-cancel" (click)="closeStatusModal()">Cancel</button>
-          <button class="btn-submit" (click)="saveVendorStatuses()" [disabled]="isSavingStatus">
-            {{ isSavingStatus ? 'Saving...' : 'Save Status' }}
-          </button>
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; margin-top: 16px;">
+          <button class="btn-cancel" (click)="closeStatusModal()" style="padding: 8px 20px; background: #0f2a5e; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Close</button>
         </div>
       </div>
     </div>

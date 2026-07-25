@@ -1401,18 +1401,29 @@ app.get('/api/pr/list', authMiddleware, moduleAccessMiddleware, async (req, res)
  */
 app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) => {
   try {
+    const mongoose = require('mongoose');
     const NPPRequest = require('./models/nppRequest.model');
-    const { id } = req.params;
+    let PrNpp = null;
+    try { PrNpp = require('./models/prNpp.model'); } catch (e) {}
     
-    const pr = await NPPRequest.findOne({
-      type: 'pr-request',
-      $or: [
-        { _id: id },
-        { uniqueSerialNo: id },
-        { prNumber: id },
-        { serialNo: id }
-      ]
-    });
+    const { id } = req.params;
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const orConditions = [
+      { uniqueSerialNo: id },
+      { prNumber: id },
+      { serialNo: id }
+    ];
+    if (isObjectId) {
+      orConditions.unshift({ _id: id });
+    }
+    
+    let pr = null;
+    if (PrNpp) {
+      pr = await PrNpp.findOne({ $or: orConditions });
+    }
+    if (!pr) {
+      pr = await NPPRequest.findOne({ $or: orConditions });
+    }
     
     if (!pr) {
       return res.status(404).json({
@@ -1425,9 +1436,9 @@ app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) 
       success: true,
       data: {
         id: pr._id,
-        prNumber: pr.uniqueSerialNo,
-        serialNo: pr.uniqueSerialNo,
-        name: pr.requesterName || '',
+        prNumber: pr.uniqueSerialNo || pr.prNumber || pr._id,
+        serialNo: pr.uniqueSerialNo || pr.serialNo || pr._id,
+        name: pr.requesterName || pr.name || '',
         requestDate: pr.requestDate || pr.createdAt?.split('T')[0],
         department: pr.department || 'Purchase',
         contactNo: pr.contactNo || '',
@@ -1437,22 +1448,22 @@ app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) 
         costCenter: 'Purchase Department',
         rfqNo: pr.rfqNo || '',
         titleOfActivity: pr.titleOfActivity || 'PR Request',
-        status: pr.status || 'Draft',
-        items: (pr.prItems || []).map(item => ({
+        status: pr.status || 'Pending',
+        items: (pr.prItems || pr.items || []).map(item => ({
           id: 0,
           rfqNo: item.rfqNo || '',
           supplierName: item.supplierName || '',
-          partCode: item.partCode || '',
-          partDescription: item.partDescription || '',
+          partCode: item.partCode || item.itemCode || '',
+          partDescription: item.partDescription || item.description || '',
           cndt: item.cndt || item.specification || '',
           uom: item.uom || 'Nos',
           qty: item.qty || 1,
           currency: 'INR',
           unitPrice: item.unitPrice || 0,
-          value: item.totalValue || 0
+          value: item.totalValue || item.amount || 0
         })),
-        totalValue: pr.amount || 0,
-        submittedDate: pr.submittedDate,
+        totalValue: pr.amount || pr.totalValue || 0,
+        submittedDate: pr.submittedDate || pr.requestDate,
         comparisonId: pr.comparisonId || '',
         createdAt: pr.createdAt,
         updatedAt: pr.updatedAt
@@ -1476,18 +1487,30 @@ app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) 
  */
 app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (req, res) => {
   try {
+    const mongoose = require('mongoose');
     const NPPRequest = require('./models/nppRequest.model');
+    let PrNpp = null;
+    try { PrNpp = require('./models/prNpp.model'); } catch (e) {}
+
     const { id } = req.params;
+    const { comments } = req.body || {};
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const orConditions = [
+      { uniqueSerialNo: id },
+      { prNumber: id },
+      { serialNo: id }
+    ];
+    if (isObjectId) {
+      orConditions.unshift({ _id: id });
+    }
     
-    const pr = await NPPRequest.findOne({
-      type: 'pr-request',
-      $or: [
-        { _id: id },
-        { uniqueSerialNo: id },
-        { prNumber: id },
-        { serialNo: id }
-      ]
-    });
+    let pr = null;
+    if (PrNpp) {
+      pr = await PrNpp.findOne({ $or: orConditions });
+    }
+    if (!pr) {
+      pr = await NPPRequest.findOne({ $or: orConditions });
+    }
     
     if (!pr) {
       return res.status(404).json({
@@ -1499,12 +1522,25 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
     pr.status = 'Approved';
     pr.approvedAt = new Date().toISOString();
     pr.approvedBy = req.user?.name || req.user?.email || 'Admin';
+    if (comments) {
+      pr.decisionRemarks = comments;
+      pr.remarks = comments;
+    }
+    if (Array.isArray(pr.stakeholders)) {
+      pr.stakeholders.forEach((s) => {
+        if (s.email === req.user?.email || s.name === req.user?.name) {
+          s.status = 'Approved';
+          s.dateTime = new Date().toLocaleString();
+          if (comments) s.remarks = comments;
+        }
+      });
+    }
     pr.updatedAt = new Date().toISOString();
     
     await pr.save();
-    console.log('✅ PR approved:', pr.uniqueSerialNo);
+    console.log('✅ PR approved:', pr.uniqueSerialNo || id);
     
-    res.json({
+    return res.json({
       success: true,
       message: 'PR approved successfully',
       data: pr
@@ -1512,7 +1548,7 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
     
   } catch (error) {
     console.error('❌ Error approving PR:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to approve PR',
       error: error.message
@@ -1527,19 +1563,30 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
  */
 app.post('/api/pr/:id/reject', authMiddleware, moduleAccessMiddleware, async (req, res) => {
   try {
+    const mongoose = require('mongoose');
     const NPPRequest = require('./models/nppRequest.model');
+    let PrNpp = null;
+    try { PrNpp = require('./models/prNpp.model'); } catch (e) {}
+
     const { id } = req.params;
-    const { comments } = req.body;
+    const { comments } = req.body || {};
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const orConditions = [
+      { uniqueSerialNo: id },
+      { prNumber: id },
+      { serialNo: id }
+    ];
+    if (isObjectId) {
+      orConditions.unshift({ _id: id });
+    }
     
-    const pr = await NPPRequest.findOne({
-      type: 'pr-request',
-      $or: [
-        { _id: id },
-        { uniqueSerialNo: id },
-        { prNumber: id },
-        { serialNo: id }
-      ]
-    });
+    let pr = null;
+    if (PrNpp) {
+      pr = await PrNpp.findOne({ $or: orConditions });
+    }
+    if (!pr) {
+      pr = await NPPRequest.findOne({ $or: orConditions });
+    }
     
     if (!pr) {
       return res.status(404).json({
@@ -1552,20 +1599,29 @@ app.post('/api/pr/:id/reject', authMiddleware, moduleAccessMiddleware, async (re
     pr.rejectionReason = comments || '';
     pr.rejectedAt = new Date().toISOString();
     pr.rejectedBy = req.user?.name || req.user?.email || 'Admin';
+    if (Array.isArray(pr.stakeholders)) {
+      pr.stakeholders.forEach((s) => {
+        if (s.email === req.user?.email || s.name === req.user?.name) {
+          s.status = 'Rejected';
+          s.dateTime = new Date().toLocaleString();
+          if (comments) s.remarks = comments;
+        }
+      });
+    }
     pr.updatedAt = new Date().toISOString();
     
     await pr.save();
-    console.log('❌ PR rejected:', pr.uniqueSerialNo);
+    console.log('❌ PR rejected:', pr.uniqueSerialNo || id);
     
-    res.json({
+    return res.json({
       success: true,
-      message: 'PR rejected',
+      message: 'PR rejected successfully',
       data: pr
     });
     
   } catch (error) {
     console.error('❌ Error rejecting PR:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to reject PR',
       error: error.message

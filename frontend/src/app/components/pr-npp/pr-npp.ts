@@ -165,11 +165,30 @@ export class PrRequest implements OnInit {
 
   loadAll(): void {
     this.isLoading = true;
-    this.loadFromStorage();
-    setTimeout(() => {
-      this.isLoading = false;
-      this.cdr.detectChanges();
-    }, 250);
+    this.auth.getPRList().subscribe({
+      next: (res: any) => {
+        const apiPRs: PrRequestData[] = res?.data || [];
+        this.loadFromStorage();
+        const localPRs = this.allPRs || [];
+        const map = new Map<string, PrRequestData>();
+        apiPRs.forEach(p => {
+          const key = (p.serialNo || p.prNumber || p.id || '').toString();
+          if (key) map.set(key, p);
+        });
+        localPRs.forEach(p => {
+          const key = (p.serialNo || p.prNumber || p.id || '').toString();
+          if (key && !map.has(key)) map.set(key, p);
+        });
+        this.allPRs = Array.from(map.values());
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadFromStorage();
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   getInitials(name: string): string {

@@ -528,6 +528,44 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     if (s === 'pending' || s === 'new' || s === 'submitted') return 'Pending';
     return 'Pending';
   }
+
+  getApprovalChainSerials(stakeholders: any[]): number[] {
+    if (!stakeholders || stakeholders.length === 0) return [];
+    const serials: number[] = [];
+    let currentGroupNum = 1;
+    for (let i = 0; i < stakeholders.length; i++) {
+      const current = stakeholders[i];
+      const prev = i > 0 ? stakeholders[i - 1] : null;
+      if (i === 0) {
+        serials.push(currentGroupNum);
+      } else {
+        const currentLine = (current.line || 'Parallel').toLowerCase();
+        const prevLine = (prev.line || 'Parallel').toLowerCase();
+        if (currentLine === 'parallel' && prevLine === 'parallel') {
+          serials.push(currentGroupNum);
+        } else {
+          currentGroupNum++;
+          serials.push(currentGroupNum);
+        }
+      }
+    }
+    return serials;
+  }
+
+  getGroupRowClass(stakeholders: any[], index: number): string {
+    if (!stakeholders || index < 0 || index >= stakeholders.length) return '';
+    const serials = this.getApprovalChainSerials(stakeholders);
+    const currentSerial = serials[index];
+    const prevSerial = index > 0 ? serials[index - 1] : null;
+    const nextSerial = index < stakeholders.length - 1 ? serials[index + 1] : null;
+    const isFirstInGroup = currentSerial !== prevSerial;
+    const isLastInGroup = currentSerial !== nextSerial;
+    let classes = [];
+    if (isFirstInGroup) classes.push('group-start');
+    if (isLastInGroup) classes.push('group-end');
+    if (!isFirstInGroup && !isLastInGroup) classes.push('group-middle');
+    return classes.join(' ');
+  }
   
   applyFilters() {
     // For requests tab
@@ -1396,49 +1434,6 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   closeToast() {
     this.toast = null;
     if (this.toastTimer) clearTimeout(this.toastTimer);
-  }
-  
-  getApprovalChainSerials(approversList: any[]): number[] {
-    if (!approversList || !approversList.length) return [];
-    const serials: number[] = [];
-    let currentSerial = 1;
-    let inParallelBlock = false;
-    
-    for (let i = 0; i < approversList.length; i++) {
-      const app = approversList[i];
-      const rawLine = app.line || app.lineMode || app.approvalType || 'Parallel';
-      const lineVal = String(rawLine).trim().toLowerCase();
-      
-      if (lineVal === 'parallel') {
-        if (!inParallelBlock) {
-          if (i > 0) {
-            currentSerial++;
-          }
-          inParallelBlock = true;
-        }
-        serials.push(currentSerial);
-      } else {
-        if (i > 0) {
-          currentSerial++;
-        }
-        inParallelBlock = false;
-        serials.push(currentSerial);
-      }
-    }
-    return serials;
-  }
-
-  getGroupRowClass(list: any[], index: number): string {
-    if (!list || !list.length) return '';
-    const serials = this.getApprovalChainSerials(list);
-    const cur = serials[index];
-    const prev = index > 0 ? serials[index - 1] : null;
-    const next = index < list.length - 1 ? serials[index + 1] : null;
-
-    if (cur === prev && cur === next) return 'group-row-middle';
-    if (cur === next && cur !== prev) return 'group-row-start';
-    if (cur === prev && cur !== next) return 'group-row-end';
-    return 'group-row-single';
   }
   
   trackById(index: number, item: EPRequest) {

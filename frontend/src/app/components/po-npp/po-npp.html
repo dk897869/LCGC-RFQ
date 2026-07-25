@@ -264,8 +264,15 @@
           <td colspan="2"><input type="date" [(ngModel)]="form.orderDate" name="orderDate"></td>
         </tr>
         <tr>
-          <td class="meta-label">Req No.</td>
-          <td colspan="2"><input [(ngModel)]="form.prNo" name="prNo" placeholder="PR/2026/0156"></td>
+          <td class="meta-label">Approved PR No.</td>
+          <td colspan="2">
+            <select [(ngModel)]="form.prNo" name="prNo" (change)="onPRSelected(form.prNo)" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; background: #f8fafc;">
+              <option value="">-- Select Approved PR --</option>
+              <option *ngFor="let pr of approvedPRsList" [value]="pr.serialNo || pr.prNumber">
+                {{ pr.serialNo || pr.prNumber }} - {{ pr.titleOfActivity || pr.name }} (₹{{ pr.totalValue || pr.amount }}) [{{ pr.status }}]
+              </option>
+            </select>
+          </td>
         </tr>
         <tr>
           <td class="meta-label">RFQ No.</td>

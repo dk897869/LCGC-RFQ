@@ -322,6 +322,47 @@
             <label>Comments:</label>
             <span>{{ selectedRequest.comments }}</span>
           </div>
+          
+          <!-- Approval Status Flow Table matching Image 2 -->
+          <div class="detail-group full-width" *ngIf="selectedRequest.stakeholders?.length" style="margin-top: 15px;">
+            <label style="font-size: 14px; font-weight: 700; color: #0f2a5e; margin-bottom: 8px; display: block;">👥 Approval Status Flow</label>
+            <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px;">
+              <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px;">
+                <thead>
+                  <tr style="background: #e2e8f0; color: #0f172a; font-weight: 700;">
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8; width: 40px; text-align: center;">#</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">Line</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">Name</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">Comments/Remarks</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">Designation</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">E-Mail</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">Contact No.</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">Organization</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #94a3b8;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let st of selectedRequest.stakeholders; let idx = index" [ngClass]="getGroupRowClass(selectedRequest.stakeholders, idx)">
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 700; border-left: 2px solid #475569; border-bottom: 1px solid #e2e8f0;">{{ getApprovalChainSerials(selectedRequest.stakeholders)[idx] }}</td>
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">
+                      <span style="font-weight: 600; font-size: 11px; padding: 2px 8px; border-radius: 10px;" [style.background]="(st.line || 'Parallel') === 'Parallel' ? '#e0e7ff' : '#fef3c7'" [style.color]="(st.line || 'Parallel') === 'Parallel' ? '#3730a3' : '#92400e'">
+                        {{ st.line || 'Parallel' }}
+                      </span>
+                    </td>
+                    <td style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #e2e8f0;">{{ st.name || st.managerName }}</td>
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{{ st.remarks || '—' }}</td>
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{{ st.designation || '—' }}</td>
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{{ st.email || '—' }}</td>
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{{ st.contactNo || '—' }}</td>
+                    <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{{ st.organization || '—' }}</td>
+                    <td style="padding: 8px 10px; border-right: 2px solid #475569; border-bottom: 1px solid #e2e8f0;">
+                      <span class="status-badge" [ngClass]="getStatusClass(st.status)">{{ st.status }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">

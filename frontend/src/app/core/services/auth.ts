@@ -248,6 +248,13 @@ export class AuthService {
     );
   }
 
+  getPRList(): Observable<any> {
+    const headers = this.getAuthHeaders();
+    return this.http.get<any>(`${this.API_URL}/pr/list`, { headers }).pipe(
+      catchError(() => of({ success: false, data: [] }))
+    );
+  }
+
   // ==================== OTP METHODS ====================
   
   sendOTP(email: string): Observable<any> {

@@ -1335,20 +1335,40 @@ app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, r
 app.get('/api/pr/list', authMiddleware, moduleAccessMiddleware, async (req, res) => {
   try {
     const NPPRequest = require('./models/nppRequest.model');
-    
-    const prs = await NPPRequest.find({
-      type: 'pr-request'
-    }).sort({ createdAt: -1 });
-    
-    console.log(`📋 Found ${prs.length} PRs`);
-    
-    // Format response to match frontend expectations
-    const formatted = prs.map(pr => ({
+    let PRRequest = null;
+    let PrNpp = null;
+    try { PRRequest = require('./models/PRRequest'); } catch (e) {}
+    try { PrNpp = require('./models/prNpp.model'); } catch (e) {}
+
+    const nppPRs = await NPPRequest.find({ type: 'pr-request' }).sort({ createdAt: -1 });
+    let prReqs = [];
+    let prNpps = [];
+    if (PRRequest) {
+      try { prReqs = await PRRequest.find({}).sort({ createdAt: -1 }); } catch (e) {}
+    }
+    if (PrNpp) {
+      try { prNpps = await PrNpp.find({}).sort({ createdAt: -1 }); } catch (e) {}
+    }
+
+    const allDocs = [...nppPRs, ...prReqs, ...prNpps];
+    const seen = new Set();
+    const uniqueDocs = [];
+    for (const doc of allDocs) {
+      const sNo = String(doc.uniqueSerialNo || doc.prNumber || doc.serialNo || doc._id || '').trim();
+      if (sNo && !seen.has(sNo)) {
+        seen.add(sNo);
+        uniqueDocs.push(doc);
+      }
+    }
+
+    console.log(`📋 Found ${uniqueDocs.length} unique PRs across models`);
+
+    const formatted = uniqueDocs.map(pr => ({
       id: pr._id,
-      prNumber: pr.uniqueSerialNo,
-      serialNo: pr.uniqueSerialNo,
-      name: pr.requesterName || '',
-      requestDate: pr.requestDate || pr.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+      prNumber: pr.uniqueSerialNo || pr.prNumber || pr.serialNo || pr._id,
+      serialNo: pr.uniqueSerialNo || pr.serialNo || pr.prNumber || pr._id,
+      name: pr.requesterName || pr.name || '',
+      requestDate: pr.requestDate || (pr.createdAt ? String(pr.createdAt).split('T')[0] : new Date().toISOString().split('T')[0]),
       department: pr.department || 'Purchase',
       contactNo: pr.contactNo || '',
       emailId: pr.emailId || '',
@@ -1357,33 +1377,33 @@ app.get('/api/pr/list', authMiddleware, moduleAccessMiddleware, async (req, res)
       costCenter: 'Purchase Department',
       rfqNo: pr.rfqNo || '',
       titleOfActivity: pr.titleOfActivity || 'PR Request',
-      status: pr.status || 'Draft',
-      items: (pr.prItems || []).map(item => ({
+      status: pr.status || 'Pending',
+      items: (pr.prItems || pr.items || []).map(item => ({
         id: 0,
         rfqNo: item.rfqNo || '',
         supplierName: item.supplierName || '',
-        partCode: item.partCode || '',
-        partDescription: item.partDescription || '',
+        partCode: item.partCode || item.itemCode || '',
+        partDescription: item.partDescription || item.description || '',
         cndt: item.cndt || item.specification || '',
         uom: item.uom || 'Nos',
         qty: item.qty || 1,
         currency: 'INR',
         unitPrice: item.unitPrice || 0,
-        value: item.totalValue || 0
+        value: item.totalValue || item.amount || 0
       })),
-      totalValue: pr.amount || 0,
+      totalValue: pr.amount || pr.totalValue || 0,
       submittedDate: pr.submittedDate || pr.updatedAt,
       comparisonId: pr.comparisonId || '',
       createdAt: pr.createdAt,
       updatedAt: pr.updatedAt
     }));
-    
+
     res.json({
       success: true,
       data: formatted,
       total: formatted.length
     });
-    
+
   } catch (error) {
     console.error('❌ Error fetching PRs:', error);
     res.status(500).json({

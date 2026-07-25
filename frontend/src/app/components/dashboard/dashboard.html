@@ -11,11 +11,9 @@
   <ng-container *ngIf="userRole !== 'Vendor'">
   <!-- SIDEBAR (fully removed from the DOM in focus mode so it can never overlap a module's own UI) -->
   <aside class="sidebar" *ngIf="!isFocusMode" [class.collapsed]="sidebarCollapsed">
-    <div class="sb-logo" style="padding: 12px 16px; display:flex; align-items:center; gap:10px;">
-      <img src="radiant-logo.png" alt="Radiant Appliances" style="height:40px; width:auto; object-fit:contain; filter:brightness(0) invert(1);" />
-      <div class="sb-logo__text" *ngIf="!sidebarCollapsed" style="display:none;">
-        <span class="sb-logo__name">Radiant</span>
-        <span class="sb-logo__sub">Appliances</span>
+    <div class="sb-logo" style="padding: 12px 16px; display:flex; align-items:center;">
+      <div style="background: #ffffff; padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <img src="radiant-logo.png" alt="Radiant Appliances" style="height: 34px; width: auto; object-fit: contain;" />
       </div>
     </div>
 

@@ -164,6 +164,8 @@ export class PoNpp implements OnInit {
     private cdr: ChangeDetectorRef
   ) {}
 
+  approvedPRsList: any[] = [];
+
   ngOnInit(): void {
     const user = this.authService.getUser();
     if (user) {
@@ -177,10 +179,29 @@ export class PoNpp implements OnInit {
     this.clockTimer = setInterval(() => this.updateClock(), 1000);
     this.loadOrders();
     this.loadManagerOptions();
+    this.loadApprovedPRs();
     
     // If PR data is passed, prefill the form
     if (this.prData) {
       this.prefillFromPR(this.prData);
+    }
+  }
+
+  loadApprovedPRs(): void {
+    this.authService.getPRList?.().subscribe({
+      next: (res: any) => {
+        const allPRs = res?.data || [];
+        this.approvedPRsList = allPRs.filter((p: any) => p.status === 'Approved' || p.status === 'Pending' || true);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onPRSelected(prNo: string): void {
+    if (!prNo) return;
+    const selected = this.approvedPRsList.find(p => (p.serialNo || p.prNumber || p.id) === prNo);
+    if (selected) {
+      this.prefillFromPR(selected);
     }
   }
 

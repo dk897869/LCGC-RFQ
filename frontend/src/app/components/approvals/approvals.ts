@@ -20,6 +20,7 @@ interface ApprovalRequest {
   requestDate: string;
   vendor?: string;
   comments?: string;
+  stakeholders?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -186,6 +187,7 @@ export class ApprovalsComponent implements OnInit, OnDestroy {
       requestDate: item.requestDate || (item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
       vendor: item.vendor || item.vendorName,
       comments: item.comments || item.remarks,
+      stakeholders: item.stakeholders || [],
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: item.updatedAt || new Date().toISOString()
     }));
@@ -383,13 +385,52 @@ export class ApprovalsComponent implements OnInit, OnDestroy {
   }
   
   getStatusClass(status: string): string {
-    const classes = {
+    const classes: Record<string, string> = {
       'Approved': 'status-approved',
       'Rejected': 'status-rejected',
       'Pending': 'status-pending',
-      'In-Process': 'status-inprocess'
+      'In-Process': 'status-inprocess',
+      'In Process': 'status-inprocess'
     };
-    return classes[status as keyof typeof classes] || 'status-pending';
+    return classes[status] || 'status-pending';
+  }
+
+  getApprovalChainSerials(stakeholders?: any[]): number[] {
+    if (!stakeholders || stakeholders.length === 0) return [];
+    const serials: number[] = [];
+    let currentGroupNum = 1;
+    for (let i = 0; i < stakeholders.length; i++) {
+      const current = stakeholders[i];
+      const prev = i > 0 ? stakeholders[i - 1] : null;
+      if (i === 0) {
+        serials.push(currentGroupNum);
+      } else {
+        const currentLine = (current.line || 'Parallel').toLowerCase();
+        const prevLine = (prev.line || 'Parallel').toLowerCase();
+        if (currentLine === 'parallel' && prevLine === 'parallel') {
+          serials.push(currentGroupNum);
+        } else {
+          currentGroupNum++;
+          serials.push(currentGroupNum);
+        }
+      }
+    }
+    return serials;
+  }
+
+  getGroupRowClass(stakeholders?: any[], index: number = 0): string {
+    if (!stakeholders || index < 0 || index >= stakeholders.length) return '';
+    const serials = this.getApprovalChainSerials(stakeholders);
+    const currentSerial = serials[index];
+    const prevSerial = index > 0 ? serials[index - 1] : null;
+    const nextSerial = index < stakeholders.length - 1 ? serials[index + 1] : null;
+    const isFirstInGroup = currentSerial !== prevSerial;
+    const isLastInGroup = currentSerial !== nextSerial;
+    let classes = [];
+    if (isFirstInGroup) classes.push('group-start');
+    if (isLastInGroup) classes.push('group-end');
+    if (!isFirstInGroup && !isLastInGroup) classes.push('group-middle');
+    return classes.join(' ');
   }
   
   getTypeIcon(type: string): string {

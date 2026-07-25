@@ -128,59 +128,27 @@ const uploadAvatar = multer({
   }
 });
 
-// Instant Health Check Endpoints (placed before DB readyState middleware so they never delay or fail)
-app.get(['/health', '/api/health', '/api/auth/health'], (req, res) => {
-  return res.status(200).json({
-    status: 'ok',
-    success: true,
-    message: 'Server is healthy and responsive 🚀',
-    dbState: mongoose.connection.readyState === 1 ? 'connected' : 'connecting',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Database connection
-connectDB();
-
-// Connection check middleware for database-dependent routes
-app.use((req, res, next) => {
-  if (req.path.includes('/health')) return next();
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({
-      success: false,
-      message: 'Database is connecting. Please try again in a moment.'
-    });
-  }
-  next();
-});
-
-// Update CORS configuration in index.js
+// ==================== CORS CONFIGURATION ====================
+// CORS must come FIRST before any route or middleware
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:3000',
   'http://localhost:5000',
   'https://lcgc-rfq.onrender.com',
   'https://lcgc-rfq-frontend.onrender.com',
-  'https://lcgc-rfq.onrender.com'  // Your frontend domain
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, Postman)
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
     if (!origin) return callback(null, true);
-    
     // Allow any *.onrender.com subdomain
-    if (origin.includes('.onrender.com')) {
-      return callback(null, true);
-    }
-    
+    if (origin.includes('.onrender.com')) return callback(null, true);
+    // Allow localhost on any port
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
     // Check exact allowlist
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    console.log(`⚠️ CORS request from: ${origin}`);
-    // Allow it anyway for production
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow everything else in production (open API)
     return callback(null, true);
   },
   credentials: true,
@@ -190,20 +158,14 @@ const corsOptions = {
   optionsSuccessStatus: 204,
   maxAge: 86400
 };
+
+// Apply CORS globally — must be before ALL routes
 app.use(cors(corsOptions));
 
-app.options('/{*path}', (req, res) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, Cache-Control');
-  res.header('Access-Control-Max-Age', '86400');
-  res.status(204).end();
-});
+// Preflight handler for all routes
+app.options('/{*path}', cors(corsOptions));
 
+// Extra safety: ensure CORS headers on every response
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {
@@ -215,23 +177,50 @@ app.use((req, res, next) => {
   next();
 });
 
+// ==================== INSTANT HEALTH CHECK ====================
+// Registered AFTER CORS (so browser gets CORS headers) but BEFORE DB middleware (so never blocked)
+app.get(['/health', '/api/health', '/api/auth/health'], (req, res) => {
+  return res.status(200).json({
+    status: 'ok',
+    success: true,
+    message: 'Server is healthy and responsive 🚀',
+    dbState: mongoose.connection.readyState === 1 ? 'connected' : 'connecting',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ==================== DATABASE ====================
+connectDB();
+
+// DB readyState gate — blocks DB-dependent routes until connected
+app.use((req, res, next) => {
+  if (req.path.includes('/health')) return next();
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database is connecting. Please try again in a moment.'
+    });
+  }
+  next();
+});
+
 // Security middleware (after CORS)
-app.use(helmet({
+app.use(require('helmet')({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "unsafe-none" },
   contentSecurityPolicy: false
 }));
 
 // Body parsing middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(require('express').json({ limit: "10mb" }));
+app.use(require('express').urlencoded({ extended: true, limit: "10mb" }));
 
 // Static files
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", require('express').static(require('path').join(__dirname, "uploads")));
 
 // Custom logging middleware
 app.use((req, res, next) => {
-  console.log(`📌 ${req.method} ${req.url} - Origin: ${req.headers.origin || 'no-origin'}`);
+  console.log(`📌 ${req.method} ${req.url}`);
   next();
 });
 

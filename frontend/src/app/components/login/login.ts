@@ -74,7 +74,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     if (remembered) { this.email = remembered; this.rememberMe = true; }
 
     this.serverWarmupMessage = 'Connecting to server...';
-    setTimeout(() => { this.serverWarmupMessage = ''; this.serverReady = true; }, 8000);
+    setTimeout(() => { this.serverWarmupMessage = ''; this.serverReady = true; }, 1500);
 
     if (this.isBrowser) {
       this.loadGoogleScript();
@@ -109,10 +109,10 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     document.head.appendChild(script);
   }
 
+  private googleRetryCount = 0;
   initGoogleButton() {
     if (!this.isBrowser) return;
     if (typeof google !== 'undefined' && google.accounts) {
-      console.log('Initializing Google button...');
       google.accounts.id.initialize({
         client_id: this.GOOGLE_CLIENT_ID,
         callback: this.handleGoogleCredentialResponse.bind(this),
@@ -137,12 +137,13 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
             type: 'standard'
           }
         );
-        console.log('Google button rendered');
       }
-      
-      google.accounts.id.prompt();
-    } else {
-      console.log('Google accounts not available yet, retrying...');
+      // NOTE: Do NOT call google.accounts.id.prompt() — it causes 403 /status errors
+      // when One Tap is blocked by browser cookie policies (SameSite/ITP).
+      // The rendered button is sufficient for user-initiated Google sign-in.
+      this.googleRetryCount = 0;
+    } else if (this.googleRetryCount < 10) {
+      this.googleRetryCount++;
       setTimeout(() => this.initGoogleButton(), 500);
     }
   }

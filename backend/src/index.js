@@ -128,11 +128,23 @@ const uploadAvatar = multer({
   }
 });
 
+// Instant Health Check Endpoints (placed before DB readyState middleware so they never delay or fail)
+app.get(['/health', '/api/health', '/api/auth/health'], (req, res) => {
+  return res.status(200).json({
+    status: 'ok',
+    success: true,
+    message: 'Server is healthy and responsive 🚀',
+    dbState: mongoose.connection.readyState === 1 ? 'connected' : 'connecting',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Database connection
 connectDB();
 
-// ✅ Add connection check middleware
+// Connection check middleware for database-dependent routes
 app.use((req, res, next) => {
+  if (req.path.includes('/health')) return next();
   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({
       success: false,
@@ -322,9 +334,7 @@ app.post('/api/auth/upload-avatar', (req, res) => {
 });
 
 // ==================== GOOGLE LOGIN API ====================
-// In index.js - make sure this route is before any middleware that might interfere
 app.post('/api/auth/google', async (req, res) => {
-  console.log('📥 Google login endpoint hit');
 
   try {
     const { credential } = req.body;
@@ -342,16 +352,15 @@ app.post('/api/auth/google', async (req, res) => {
     const { email, name, picture, sub: googleId } = decoded;
     const User = require('./models/user.model');
 
+    // Use lean() for fastest possible DB read
     let user = await User.findOne({
       $or: [{ googleId: googleId }, { email: email.toLowerCase() }]
-    });
+    }).select('name email role department contactNo organization profileImage rights mustChangePassword googleId').lean();
 
     if (!user) {
-      console.log('👤 Creating new user from Google login');
-      const randomPassword = crypto.randomBytes(20).toString('hex');
+      const randomPassword = require('crypto').randomBytes(20).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-      user = new User({
+      const newUser = new User({
         name: name || email.split('@')[0],
         email: email.toLowerCase(),
         googleId: googleId,
@@ -362,18 +371,15 @@ app.post('/api/auth/google', async (req, res) => {
         rights: {},
         isActive: true
       });
-
-      await user.save();
-      console.log('✅ New user created:', user.email);
+      await newUser.save();
+      user = newUser.toObject();
     } else if (!user.googleId) {
-      console.log('🔗 Linking Google account to existing user');
-      user.googleId = googleId;
-      if (picture && !user.profileImage) user.profileImage = picture;
-      await user.save();
+      // Link Google account to existing user (non-blocking)
+      User.updateOne({ _id: user._id }, { $set: { googleId, ...(picture && !user.profileImage ? { profileImage: picture } : {}) } }).catch(() => {});
     }
 
-    user.lastLogin = new Date();
-    await user.save();
+    // Fire-and-forget lastLogin update (non-blocking)
+    User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } }).catch(() => {});
 
     const token = jwt.sign(
       {
@@ -398,8 +404,8 @@ app.post('/api/auth/google', async (req, res) => {
         department: user.department || 'Purchase',
         contactNo: user.contactNo || '',
         organization: user.organization || 'Radiant Appliances',
-        profileImage: user.profileImage || '',
-        emailVerified: user.emailVerified,
+        profileImage: user.profileImage || picture || '',
+        emailVerified: true,
         rights: user.rights || {}
       }
     });

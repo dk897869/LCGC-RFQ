@@ -82,8 +82,9 @@ export class AuthService {
   }
 
   private pingServer(): void {
-    this.http.get(`${this.API_URL}/health`, { observe: 'response' })
-      .pipe(timeout(5000), catchError(() => of(null)))
+    if (!this.isBrowser) return;
+    this.http.get(`${this.API_URL}/health`)
+      .pipe(catchError(() => of(null)))
       .subscribe();
   }
 

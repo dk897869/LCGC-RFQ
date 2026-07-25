@@ -1488,13 +1488,15 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("📤 Login request for:", email);
-
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "Email and password required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    // Use .lean() + .select() for fastest possible DB read (plain JS object, no Mongoose overhead)
+    const user = await User.findOne({ email: email.toLowerCase() })
+      .select('name email password role department contactNo organization profileImage workspaces dateOfBirth rights mustChangePassword accessRequest emailVerified')
+      .lean();
+
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
@@ -1503,19 +1505,19 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    let match = false;
-    try {
-      match = await bcrypt.compare(password, user.password);
-    } catch (err) {
-      console.error("Login bcrypt error:", err.message);
-      match = false;
-    }
+    const match = await bcrypt.compare(password, user.password);
     if (!match) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const token = generateToken(user);
-    await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role, rights: user.rights || {} },
+      process.env.JWT_SECRET || 'lcgc-secret-key-2024',
+      { expiresIn: process.env.JWT_EXPIRES || "7d" }
+    );
+
+    // Fire-and-forget lastLogin update (non-blocking — doesn't delay the login response)
+    User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } }).catch(() => {});
 
     res.json({
       success: true,
@@ -1532,7 +1534,8 @@ exports.login = async (req, res) => {
         profileImage: user.profileImage || '',
         workspaces: user.workspaces || [],
         dateOfBirth: user.dateOfBirth,
-        rights: user.rights || {}
+        rights: user.rights || {},
+        mustChangePassword: user.mustChangePassword === true
       }
     });
 

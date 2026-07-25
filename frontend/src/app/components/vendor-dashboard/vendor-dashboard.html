@@ -11,9 +11,14 @@
       </div>
     </div>
     <div class="vd-hero-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-      <button (click)="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
-        🚪 Logout
-      </button>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" (click)="openProfileModal()" style="background: #2563eb; color: white; border: none; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+          👤 Profile &amp; Password
+        </button>
+        <button type="button" (click)="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+          🚪 Logout
+        </button>
+      </div>
       <div class="vd-clock" style="margin-top: 4px;">{{ currentTime }}</div>
       <div class="vd-date">{{ currentDate }}</div>
       <span class="vd-verified" style="margin-top: 4px;">✓ Verified Vendor</span>
@@ -100,7 +105,7 @@
 
 <!-- ==================== RFQ DETAIL MODAL ==================== -->
 <div class="modal-bg show" *ngIf="showDetailsModal" (click)="closeDetailsModal()" style="display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999;">
-  <div class="modal-box modal-box--wide" (click)="$event.stopPropagation()" style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+  <div class="modal-box modal-box--wide" (click)="$event.stopPropagation()" style="background: white; border-radius: 12px; max-width: 95vw; width: 95vw; max-height: 94vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
     <div class="modal-box__hdr modal-box__hdr--dark" style="background: #0f2a5e; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
       <h2 style="margin: 0; font-size: 20px;">📄 RFQ Request Details</h2>
       <button (click)="closeDetailsModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
@@ -146,8 +151,8 @@
 
       <!-- Items Section -->
       <div class="items-section">
-        <h4 style="margin: 0 0 12px; font-size: 14px; color: #0f2a5e; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Requested Items List</h4>
-        <div class="table-container" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <h4 style="margin: 0 0 12px; font-size: 14px; color: #0f2a5e; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Requested Items &amp; Pricing Proposal</h4>
+        <div class="table-container" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
             <thead>
               <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
@@ -155,7 +160,11 @@
                 <th style="padding: 10px 12px; color: #475569;">Part Description</th>
                 <th style="padding: 10px 12px; color: #475569;">Specification</th>
                 <th style="padding: 10px 12px; color: #475569; text-align: center;">UOM</th>
-                <th style="padding: 10px 12px; color: #475569; text-align: right;">Quantity</th>
+                <th style="padding: 10px 12px; color: #475569; text-align: right;">Qty</th>
+                <th style="padding: 10px 12px; color: #1e40af; width: 130px;" *ngIf="selectedRfq?.status === 'Pending'">Unit Price (₹) *</th>
+                <th style="padding: 10px 12px; color: #1e40af; width: 100px;" *ngIf="selectedRfq?.status === 'Pending'">GST (%)</th>
+                <th style="padding: 10px 12px; color: #1e40af; width: 120px;" *ngIf="selectedRfq?.status === 'Pending'">HSN Code</th>
+                <th style="padding: 10px 12px; color: #047857; text-align: right;" *ngIf="selectedRfq?.status === 'Pending'">Total (₹)</th>
               </tr>
             </thead>
             <tbody>
@@ -165,19 +174,52 @@
                 <td style="padding: 10px 12px; color: #64748b;">{{ item.specification || '—' }}</td>
                 <td style="padding: 10px 12px; text-align: center;">{{ item.uom || 'PCS' }}</td>
                 <td style="padding: 10px 12px; text-align: right; font-weight: 600;">{{ item.qty || item.quantity || 0 }}</td>
+                <td style="padding: 6px 12px;" *ngIf="selectedRfq?.status === 'Pending'">
+                  <input type="number" [(ngModel)]="item.unitPrice" min="0" placeholder="0.00" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; font-size: 13px; text-align: right;">
+                </td>
+                <td style="padding: 6px 12px;" *ngIf="selectedRfq?.status === 'Pending'">
+                  <input type="number" [(ngModel)]="item.gstPercent" min="0" max="100" placeholder="18" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; font-size: 13px; text-align: center;">
+                </td>
+                <td style="padding: 6px 12px;" *ngIf="selectedRfq?.status === 'Pending'">
+                  <input type="text" [(ngModel)]="item.hsnCode" placeholder="HSN/SAC" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; font-size: 13px;">
+                </td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #047857;" *ngIf="selectedRfq?.status === 'Pending'">
+                  ₹{{ (((item.unitPrice || 0) * (item.qty || item.quantity || 1)) * (1 + ((item.gstPercent || 0)/100))) | number:'1.2-2' }}
+                </td>
               </tr>
               <tr *ngIf="!(selectedRfq.raw?.rfqItems || selectedRfq.raw?.rfqVendorItems || selectedRfq.raw?.items || []).length">
-                <td colspan="5" style="padding: 16px; text-align: center; color: #64748b;">No items defined.</td>
+                <td colspan="9" style="padding: 16px; text-align: center; color: #64748b;">No items defined.</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+      <!-- Quotation & Remarks Section for accepting -->
+      <div *ngIf="selectedRfq?.status === 'Pending'" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <h4 style="margin: 0 0 12px; font-size: 14px; color: #0f2a5e;">Quotation Attachment &amp; Remarks</h4>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Attach Quotation (PDF, Excel, Images) *</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <label class="file-upload-label" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #e2e8f0; color: #334155; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; border: 1px dashed #cbd5e1;">
+                📎 {{ vendorAttachmentName || 'Choose File' }}
+                <input type="file" (change)="onVendorFileSelected($event)" style="display: none;">
+              </label>
+              <span *ngIf="vendorAttachmentName" style="font-size: 12px; color: #059669; font-weight: 500;">✓ File ready</span>
+            </div>
+          </div>
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Acceptance Remarks / Message</label>
+            <textarea [(ngModel)]="vendorRemarks" rows="2" placeholder="Enter any comments or terms..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; box-sizing: border-box; resize: vertical;"></textarea>
+          </div>
+        </div>
+      </div>
+
     </div>
     
     <div class="modal-box__ftr" style="background: #f8fafc; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0;">
       <button class="mbtn mbtn--cancel" (click)="closeDetailsModal()" style="padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-weight: 600;">Close</button>
-      <button *ngIf="selectedRfq?.status === 'Pending'" class="mbtn mbtn--approve" (click)="acceptRfq(selectedRfq)" [disabled]="isSubmitting" style="padding: 8px 16px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✓ Accept RFQ</button>
+      <button *ngIf="selectedRfq?.status === 'Pending'" class="mbtn mbtn--approve" (click)="acceptRfq(selectedRfq)" [disabled]="isSubmitting || !vendorAttachmentName" style="padding: 8px 16px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✓ Accept RFQ</button>
       <button *ngIf="selectedRfq?.status === 'Pending'" class="mbtn mbtn--reject" (click)="openRejectModal()" [disabled]="isSubmitting" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✗ Reject RFQ</button>
     </div>
   </div>
@@ -197,6 +239,47 @@
     <div class="modal-box__ftr" style="background: #f8fafc; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0;">
       <button class="mbtn mbtn--cancel" (click)="closeRejectModal()" style="padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer;">Cancel</button>
       <button class="mbtn mbtn--reject" (click)="submitRejection()" [disabled]="isSubmitting" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Confirm Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PROFILE & CHANGE PASSWORD MODAL ==================== -->
+<div class="modal-bg show" *ngIf="showProfileModal" (click)="closeProfileModal()" style="display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 100000;">
+  <div class="modal-box" (click)="$event.stopPropagation()" style="background: white; border-radius: 16px; max-width: 500px; width: 92vw; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden;">
+    <div class="modal-box__hdr" style="background: #0f2a5e; color: white; padding: 18px 24px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 16px; display: flex; align-items: center; gap: 8px;">👤 My Profile &amp; Security</span>
+      <button (click)="closeProfileModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div class="modal-box__body" style="padding: 24px; color: #1e293b;">
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 20px; font-size: 13px;">
+        <div style="margin-bottom: 6px;"><strong>Name:</strong> {{ vendorName }}</div>
+        <div style="margin-bottom: 6px;"><strong>Email:</strong> {{ vendorEmail }}</div>
+        <div style="margin-bottom: 6px;"><strong>Phone:</strong> {{ vendorPhone || '—' }}</div>
+        <div><strong>Vendor ID:</strong> {{ vendorId }}</div>
+      </div>
+      
+      <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #0f172a;">🔒 Change Password</h4>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Old / Current Password</label>
+          <input type="password" [(ngModel)]="oldPassword" placeholder="Enter current password" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">New Password</label>
+          <input type="password" [(ngModel)]="newPassword" placeholder="Enter new password" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Confirm New Password</label>
+          <input type="password" [(ngModel)]="confirmPassword" placeholder="Confirm new password" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-sizing: border-box;">
+        </div>
+      </div>
+    </div>
+    <div class="modal-box__ftr" style="background: #f8fafc; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0;">
+      <button class="mbtn mbtn--cancel" (click)="closeProfileModal()" style="padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-weight: 600;">Cancel</button>
+      <button (click)="submitPasswordChange()" [disabled]="isChangingPassword" style="padding: 8px 18px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+        {{ isChangingPassword ? 'Updating...' : '🔒 Update Password' }}
+      </button>
     </div>
   </div>
 </div>

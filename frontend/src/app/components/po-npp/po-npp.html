@@ -425,40 +425,81 @@
       </div>
 
       <!-- Approval Chain matching Image 4 layout -->
-      <div class="section-head-fidelity">
+      <div class="section-head-fidelity" style="display: flex; justify-content: space-between; align-items: center;">
         <div class="section-title-fidelity">👥 APPROVAL CHAIN</div>
         <button type="button" class="add-approver-btn-fidelity no-print" (click)="addApprover()">+ Add Approver</button>
       </div>
-      <table class="doc-table approval-table-fidelity">
-        <thead>
-          <tr>
-            <th>LEVEL</th>
-            <th>APPROVER</th>
-            <th>DESIGNATION</th>
-            <th>REMARKS</th>
-            <th>STATUS</th>
-            <th>APPROVED ON</th>
-            <th class="no-print">ACTION</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let approver of stakeholders; let i = index">
-            <td class="center font-bold">{{ i + 1 }}</td>
-            <td><input [(ngModel)]="approver.managerName" name="managerName{{i}}" placeholder="Deepak Kumar"></td>
-            <td><input [(ngModel)]="approver.designation" name="designation{{i}}" placeholder="Purchase Manager"></td>
-            <td><input [(ngModel)]="approver.remarks" name="approverRemarks{{i}}" placeholder="Approved"></td>
-            <td>
-              <span class="status-badge-chain green-badge-chain">
-                {{ approver.status || 'Approved' }}
-              </span>
-            </td>
-            <td>{{ currentDate | date:'dd MMM yyyy hh:mm a' }}</td>
-            <td class="no-print center">
-              <button type="button" class="remove-chain-btn" (click)="removeApprover(i)">×</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="approval-table-wrapper" style="overflow-x: auto; margin-top: 10px;">
+        <table class="doc-table approval-table-fidelity approval-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">#</th>
+              <th style="width: 100px;">LINE</th>
+              <th style="width: 220px;">NAME</th>
+              <th>COMMENTS/REMARKS</th>
+              <th style="width: 150px;">DESIGNATION</th>
+              <th style="width: 220px;">E-MAIL</th>
+              <th style="width: 150px;">CONTACT NO.</th>
+              <th style="width: 160px;">ORGANIZATION</th>
+              <th style="width: 110px; text-align: center;">STATUS</th>
+              <th style="width: 170px;">DATE/TIME</th>
+              <th style="width: 50px; text-align: center;" class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let approver of stakeholders; let i = index">
+              <td style="text-align: center; font-weight: bold; color: #64748b;">{{ getApprovalChainSerials(stakeholders)[i] }}</td>
+              <td>
+                <select [(ngModel)]="approver.line" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px;">
+                  <option value="Parallel">Parallel</option>
+                  <option value="Sequential">Sequential</option>
+                </select>
+              </td>
+              <td style="position: relative;">
+                <input type="text"
+                       [(ngModel)]="approver.managerName"
+                       (ngModelChange)="approver.managerName = $event"
+                       (focus)="approver.showSuggestions = true"
+                       (blur)="onManagerBlur(approver)"
+                       placeholder="Enter Name"
+                       class="manager-input-text"
+                       autocomplete="off"
+                       style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+                <div class="manager-suggestions" *ngIf="approver.showSuggestions && getFilteredManagers(approver.managerName).length > 0">
+                  <div class="suggestion-item"
+                       *ngFor="let m of getFilteredManagers(approver.managerName)"
+                       (mousedown)="selectManager(approver, m)">
+                    <span class="m-name">{{ m.name }}</span>
+                    <span class="m-designation">{{ m.designation || m.role || '' }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px; vertical-align: middle; padding-left: 8px;">{{ approver.designation }}</td>
+              <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px; vertical-align: middle; padding-left: 8px;">{{ approver.email }}</td>
+              <td>
+                <input type="text" [(ngModel)]="approver.contactNo" placeholder="Contact No." style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td>
+                <input type="text" [(ngModel)]="approver.organization" placeholder="Organization" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td style="text-align: center;">
+                <span class="status-badge-small status-pending" style="background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">
+                  {{ approver.status || 'Pending' }}
+                </span>
+              </td>
+              <td class="date-time-cell" style="font-size: 12px; color: #64748b; white-space: nowrap;">
+                {{ approver.dateTime || '' }}
+              </td>
+              <td style="text-align: center;" class="no-print">
+                <button type="button" class="remove-chain-btn" (click)="removeApprover(i)" style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer;">×</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <!-- Attachments matching Image 4 layout -->
       <div class="section-head-fidelity">
@@ -480,12 +521,15 @@
           <tr *ngFor="let att of attachments; let i = index">
             <td class="center">{{ i + 1 }}</td>
             <td>
-              <div class="file-name-wrap">
+              <div class="file-name-wrap" style="display: flex; align-items: center; gap: 8px;">
                 <span class="pdf-icon-fidelity">📕</span>
-                <input [(ngModel)]="att.fileName" name="fileName{{i}}" placeholder="Quotation_Raghavit.pdf">
+                <label style="cursor: pointer; color: #2563eb; text-decoration: underline; font-weight: 500;">
+                  {{ att.fileName || 'Choose file...' }}
+                  <input type="file" style="display: none;" (change)="onAttachmentFileSelected(att, $event)">
+                </label>
               </div>
             </td>
-            <td><input [(ngModel)]="att.fileSize" name="fileSize{{i}}" placeholder="245 KB" style="text-align: center;"></td>
+            <td>{{ att.fileSize || '—' }}</td>
             <td><span class="uploaded-by-badge">Deepak Kumar</span></td>
             <td>{{ currentDate | date:'dd MMM yyyy' }}</td>
             <td class="no-print center">

@@ -43,10 +43,13 @@ export class RegisterComponent implements OnInit, OnDestroy {
   
   // Role options
   roles = [
-    { value: 'Admin',   label: 'Admin',   desc: 'Full system access',          icon: '👑' },
-    { value: 'Manager', label: 'Manager', desc: 'Manage approvals & vendors',  icon: '📊' },
-    { value: 'User',    label: 'User',    desc: 'Standard access',             icon: '👤' },
-    { value: 'Viewer',  label: 'Viewer',  desc: 'Read-only access',            icon: '👁️' }
+    { value: 'Admin',         label: 'Admin',            desc: 'Full system access',                 icon: '👑' },
+    { value: 'Purchase Head', label: 'Purchase Head',   desc: 'Full procurement & approval rights',  icon: '🎖️' },
+    { value: 'Purchase',      label: 'Purchase Officer',desc: 'Procurement & RFQ management',        icon: '🛒' },
+    { value: 'Manager',       label: 'Manager',          desc: 'Manage approvals & vendors',         icon: '📊' },
+    { value: 'User',          label: 'User',             desc: 'Standard access',                    icon: '👤' },
+    { value: 'Vendor',        label: 'Vendor',           desc: 'Vendor Dashboard access',            icon: '🏢' },
+    { value: 'Viewer',        label: 'Viewer',           desc: 'Read-only access',                   icon: '👁️' }
   ];
 
   constructor(

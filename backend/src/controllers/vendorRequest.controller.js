@@ -206,9 +206,18 @@ exports.updateVendorStatus = async (req, res) => {
 
     vendor.status = status;
     if (remarks) vendor.remarks = remarks;
-    if (status === 'Quoted') {
+    if (status === 'Quoted' || status === 'Accepted' || status === 'Approved') {
       vendor.quotationSubmitted = true;
       vendor.submittedDate = new Date();
+    }
+
+    // Check if ALL invited vendors have accepted / quoted
+    const allAccepted = request.vendors.length > 0 && request.vendors.every(v => v.status === 'Accepted' || v.status === 'Quoted' || v.status === 'Approved');
+    if (allAccepted) {
+      request.status = 'Completed';
+      request.completedDate = new Date();
+    } else {
+      request.status = 'Sent';
     }
 
     await request.save();

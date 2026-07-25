@@ -112,7 +112,7 @@
                   <td><span class="status-pill" [ngClass]="getEpStatusClass(item.status)">{{ item.status }}</span></td>
                   <td>{{ formatDate(item.requestDate) }}</td>
                   <td class="actions">
-                    <button class="btn-icon edit-btn" (click)="viewItem(item)" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;"><span class="icon">✏️</span> Edit</button>
+                    <button class="btn-icon edit-btn" (click)="viewItem(item)" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;"><span class="icon">👁️</span> View Form</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'" 
                             class="btn-approve" (click)="approveItem(item)"><span class="icon">✅</span> Approve</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'" 
@@ -378,43 +378,83 @@
       <textarea class="rfq-textarea" [(ngModel)]="formData.objective" rows="3" placeholder="Objective" style="margin-top:10px;"></textarea>
 
       <!-- APPROVAL CHAIN -->
-      <div class="rfq-section-hdr" style="margin-top:20px;">
-        <span class="rfq-section-dot"></span>
-        <strong>APPROVAL CHAIN *</strong>
+      <div class="rfq-section-hdr" style="margin-top:20px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="rfq-section-dot"></span>
+          <strong>Team Approval Chain *</strong>
+        </div>
+        <button type="button" class="btn-add-approver" (click)="addApproverRow()">+ Add Approver</button>
       </div>
-      <div class="rfq-items-table-wrap">
-        <table class="rfq-items-table">
+      <div class="rfq-items-table-wrap approval-table-wrapper" style="margin-top: 10px;">
+        <table class="rfq-items-table approval-table">
           <thead>
             <tr>
-              <th>#</th><th>Manager Name</th><th>Email</th><th>Designation</th><th>Line</th><th>Remarks</th><th></th>
+              <th style="width: 50px; text-align: center;">#</th>
+              <th style="width: 100px;">LINE</th>
+              <th style="width: 220px;">NAME</th>
+              <th>COMMENTS/REMARKS</th>
+              <th style="width: 150px;">DESIGNATION</th>
+              <th style="width: 220px;">E-MAIL</th>
+              <th style="width: 150px;">CONTACT NO.</th>
+              <th style="width: 160px;">ORGANIZATION</th>
+              <th style="width: 110px; text-align: center;">STATUS</th>
+              <th style="width: 170px;">DATE/TIME</th>
+              <th style="width: 50px; text-align: center;"></th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let row of rfqApprovers; let i = index">
-              <td>{{ i + 1 }}</td>
+              <td style="text-align: center; font-weight: bold; color: #64748b;">{{ getApprovalChainSerials(rfqApprovers)[i] }}</td>
               <td>
-                <select [(ngModel)]="row.managerName" (ngModelChange)="onManagerChange(row, $event)">
-                  <option value="">Select Manager</option>
-                  <option *ngFor="let m of managerOptions" [value]="m.name">{{ m.name }} ({{ m.designation }})</option>
-                </select>
-                </td>
-              <td><input type="email" [(ngModel)]="row.email" (blur)="onApproverEmailChange(row, row.email)" placeholder="manager@company.com"></td>
-              <td><input type="text" [(ngModel)]="row.designation" placeholder="Designation"></td>
-              <td>
-                <select [(ngModel)]="row.line">
+                <select [(ngModel)]="row.line" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px;">
                   <option value="Parallel">Parallel</option>
                   <option value="Sequential">Sequential</option>
                 </select>
-                </td>
-              <td><input type="text" [(ngModel)]="row.remarks" placeholder="Remarks"></td>
+              </td>
+              <td style="position: relative;">
+                <input type="text"
+                       [(ngModel)]="row.managerName"
+                       (ngModelChange)="row.managerName = $event"
+                       (focus)="row.showSuggestions = true"
+                       (blur)="onManagerBlur(row)"
+                       placeholder="Enter Name"
+                       class="manager-input-text"
+                       autocomplete="off"
+                       style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+                <div class="manager-suggestions" *ngIf="row.showSuggestions && getFilteredManagers(row.managerName).length > 0">
+                  <div class="suggestion-item"
+                       *ngFor="let m of getFilteredManagers(row.managerName)"
+                       (mousedown)="selectManager(row, m)">
+                    <span class="m-name">{{ m.name }}</span>
+                    <span class="m-designation">{{ m.designation || m.role || '' }}</span>
+                  </div>
+                </div>
+              </td>
               <td>
-                <button type="button" class="rfq-remove-row-btn" (click)="removeApproverRow(i)"
-                  [disabled]="rfqApprovers.length <= 1">×</button>
-                </td>
-              </tr>
+                <input type="text" [(ngModel)]="row.remarks" placeholder="Remarks" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px;">{{ row.designation }}</td>
+              <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px;">{{ row.email }}</td>
+              <td>
+                <input type="text" [(ngModel)]="row.contactNo" placeholder="Contact No." style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td>
+                <input type="text" [(ngModel)]="row.organization" placeholder="Organization" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td style="text-align: center;">
+                <span class="status-badge-small status-pending" style="background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">
+                  {{ row.status || 'pending' }}
+                </span>
+              </td>
+              <td class="date-time-cell" style="font-size: 12px; color: #64748b; white-space: nowrap;">
+                {{ row.dateTime || '' }}
+              </td>
+              <td style="text-align: center;">
+                <button type="button" class="rfq-remove-row-btn" (click)="removeApproverRow(i)" style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer;">×</button>
+              </td>
+            </tr>
           </tbody>
         </table>
-        <button type="button" class="rfq-add-row-btn" (click)="addApproverRow()">+ Add Approver</button>
       </div>
 
       <!-- CC Recipients -->
@@ -460,19 +500,125 @@
 
 <!-- ====================== VIEW MODAL ====================== -->
 <div class="modal-overlay" *ngIf="showViewModal" (click)="closeViewModal()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
+  <div class="modal-card modal-card--wide" (click)="$event.stopPropagation()">
     <div class="modal-hdr">
-      <h3>RFQ Details</h3>
+      <h3>RFQ Details — {{ selectedItem?.uniqueSerialNo }}</h3>
       <button (click)="closeViewModal()">×</button>
     </div>
     <div class="modal-body" *ngIf="selectedItem">
-      <div class="detail-row"><label>Title:</label><span>{{ selectedItem.title }}</span></div>
-      <div class="detail-row"><label>Requester:</label><span>{{ selectedItem.requester }}</span></div>
-      <div class="detail-row"><label>Email:</label><span>{{ selectedItem.email }}</span></div>
-      <div class="detail-row"><label>Department:</label><span>{{ selectedItem.department }}</span></div>
-      <div class="detail-row"><label>Priority:</label><span class="priority-badge" [ngClass]="getPriorityClass(selectedItem.priority)">{{ selectedItem.priority }}</span></div>
-      <div class="detail-row"><label>Status:</label><span class="status-badge" [ngClass]="getEpStatusClass(selectedItem.status)">{{ selectedItem.status }}</span></div>
-      <div class="detail-row"><label>Description:</label><span>{{ selectedItem.description || '—' }}</span></div>
+      
+      <!-- Requester Information -->
+      <div class="rfq-user-info-card" style="margin-top: 15px;">
+        <div class="rfq-info-col">
+          <div class="rfq-info-row"><span class="rfq-info-label">Name:</span><span class="rfq-info-val">{{ selectedItem.requester }}</span></div>
+          <div class="rfq-info-row"><span class="rfq-info-label">Department:</span><span class="rfq-info-val">{{ selectedItem.department }}</span></div>
+          <div class="rfq-info-row"><span class="rfq-info-label">Email:</span><span class="rfq-info-val">{{ selectedItem.email }}</span></div>
+        </div>
+        <div class="rfq-info-col">
+          <div class="rfq-info-row"><span class="rfq-info-label">Request Date:</span><span class="rfq-info-val">{{ selectedItem.requestDate }}</span></div>
+          <div class="rfq-info-row"><span class="rfq-info-label">Contact:</span><span class="rfq-info-val">{{ selectedItem.contactNo || '—' }}</span></div>
+          <div class="rfq-info-row"><span class="rfq-info-label">Organization:</span><span class="rfq-info-val">{{ selectedItem.organization }}</span></div>
+        </div>
+      </div>
+
+      <!-- Activity Details -->
+      <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; font-size: 13.5px;">
+        <div style="margin-bottom: 8px;"><strong>Title of Activity:</strong> {{ selectedItem.title }}</div>
+        <div style="margin-bottom: 8px;"><strong>Priority:</strong> <span class="priority-badge" [ngClass]="getPriorityClass(selectedItem.priority)">{{ selectedItem.priority }}</span></div>
+        <div><strong>Description/Objective:</strong> {{ selectedItem.description || '—' }}</div>
+      </div>
+
+      <!-- Line Items -->
+      <div style="margin-top: 20px;">
+        <h4 style="margin-bottom: 10px; color: #0f2a5e; font-weight: 700;">📦 Line Items</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Item Description</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 80px;">UOM</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 60px; text-align: center;">Qty</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Make</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Alt / Similar</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Vendor Ref</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Remark</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of selectedItem.items" style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ item.description }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ item.uom }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">{{ item.qty }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ item.make || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ item.altSimilar || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ item.vendorRef || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ item.remark || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Attachments -->
+      <div style="margin-top: 20px;" *ngIf="selectedItem.attachments?.length">
+        <h4 style="margin-bottom: 10px; color: #0f2a5e; font-weight: 700;">📎 Attachments</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 60px; text-align: center;">S.No.</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">File Name</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 120px; text-align: center;">File Size</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Remark</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let att of selectedItem.attachments; let idx = index" style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">{{ idx + 1 }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ att.fileName }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">{{ att.fileSize || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ att.remark || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Team Approval Chain -->
+      <div style="margin-top: 20px;" *ngIf="selectedItem.stakeholders?.length">
+        <h4 style="margin-bottom: 10px; color: #0f2a5e; font-weight: 700;">👥 Team Approval Chain</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 50px; text-align: center;">#</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 90px;">Line</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Name</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Comments/Remarks</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Designation</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">E-Mail</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Contact No.</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0;">Organization</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 100px; text-align: center;">Status</th>
+              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 150px; text-align: center;">Date/Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let st of selectedItem.stakeholders; let idx = index" style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: #475569;">
+                {{ getApprovalChainSerials(selectedItem.stakeholders || [])[idx] }}
+              </td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.line || 'Parallel' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 600;">{{ st.stakeholder || st.managerName || st.name }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.comments || st.remarks || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.designation || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.email || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.contactNo || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.organization || '—' }}</td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">
+                <span class="status-badge-chain" [ngClass]="st.status?.toLowerCase()">{{ st.status }}</span>
+              </td>
+              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">{{ st.dateTime || st.date || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
     <div class="modal-ftr">
       <button class="btn-cancel" (click)="closeViewModal()">Close</button>

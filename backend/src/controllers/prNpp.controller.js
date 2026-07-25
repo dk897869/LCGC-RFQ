@@ -1,4 +1,5 @@
 const PrNpp = require('../models/prNpp.model');
+const PoNpp = require('../models/poNpp.model');
 const { sendMail } = require('../services/mail.service');
 const { generateBeautifulPDF } = require('../services/pdf.service');
 
@@ -159,6 +160,46 @@ const approvePrNpp = async (req, res) => {
     pr.approvedBy = userName;
     pr.approvalComments = comments;
     await pr.save();
+    
+    // Auto-create Purchase Order (PO) from Approved PR
+    try {
+      const existingPo = await PoNpp.findOne({ prNo: pr.uniqueSerialNo });
+      if (!existingPo) {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        const poSerialNo = `PO-${year}${month}${day}${hours}${minutes}-${random}`;
+
+        const newPo = new PoNpp({
+          uniqueSerialNo: poSerialNo,
+          orderNo: poSerialNo,
+          prNo: pr.uniqueSerialNo,
+          prId: pr._id,
+          rfqNo: pr.rfqNo || '',
+          titleOfActivity: pr.titleOfActivity || 'Purchase Order',
+          requesterName: pr.name || pr.requesterName || 'Requester',
+          department: pr.department || 'Purchase',
+          emailId: pr.emailId,
+          contactNo: pr.contactNo || '',
+          organization: pr.organization || '',
+          amount: pr.totalValue || 0,
+          vendorName: pr.selectedSupplier || (pr.items?.[0]?.supplierName) || 'Vendor',
+          status: 'Approved',
+          items: pr.items || [],
+          stakeholders: pr.stakeholders || [],
+          ccList: pr.ccList || [],
+          attachments: pr.attachments || []
+        });
+        await newPo.save();
+        console.log('✅ Auto-created PO from Approved PR:', poSerialNo);
+      }
+    } catch (poErr) {
+      console.error('⚠️ Error auto-creating PO from PR:', poErr.message);
+    }
     
     // Send approval email
     let pdfBuffer = null;

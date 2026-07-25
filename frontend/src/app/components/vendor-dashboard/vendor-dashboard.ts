@@ -50,9 +50,52 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
 
   showDetailsModal = false;
   showRejectModal = false;
+  showProfileModal = false;
   selectedRfq: any = null;
   rejectionRemarks = '';
   isSubmitting = false;
+  vendorAttachmentName = '';
+  vendorAttachmentData = '';
+  vendorRemarks = '';
+
+  oldPassword = '';
+  newPassword = '';
+  confirmPassword = '';
+  isChangingPassword = false;
+
+  openProfileModal() {
+    this.showProfileModal = true;
+    this.oldPassword = '';
+    this.newPassword = '';
+    this.confirmPassword = '';
+  }
+
+  closeProfileModal() {
+    this.showProfileModal = false;
+  }
+
+  submitPasswordChange() {
+    if (!this.newPassword || this.newPassword.length < 4) {
+      this.showToast('Please enter a valid new password (at least 4 chars)', 'error');
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.showToast('Passwords do not match', 'error');
+      return;
+    }
+    this.isChangingPassword = true;
+    this.auth.changePassword(this.oldPassword, this.newPassword).subscribe({
+      next: () => {
+        this.isChangingPassword = false;
+        this.showToast('Password updated successfully!', 'success');
+        this.closeProfileModal();
+      },
+      error: (err: any) => {
+        this.isChangingPassword = false;
+        this.showToast(err?.message || 'Failed to update password', 'error');
+      }
+    });
+  }
 
   constructor(private auth: AuthService, private cdr: ChangeDetectorRef, private router: Router) {}
 
@@ -69,17 +112,51 @@ export class VendorDashboardComponent implements OnInit, OnDestroy {
 
   viewRfqDetails(row: any) {
     this.selectedRfq = row;
+    const items = row.raw?.rfqItems || row.raw?.rfqVendorItems || row.raw?.items || [];
+    items.forEach((it: any) => {
+      if (it.unitPrice == null) it.unitPrice = 0;
+      if (it.gstPercent == null) it.gstPercent = 18;
+      if (it.hsnCode == null) it.hsnCode = '';
+    });
     this.showDetailsModal = true;
   }
 
   closeDetailsModal() {
     this.showDetailsModal = false;
     this.selectedRfq = null;
+    this.vendorAttachmentName = '';
+    this.vendorAttachmentData = '';
+    this.vendorRemarks = '';
+  }
+
+  onVendorFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.vendorAttachmentName = file.name;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.vendorAttachmentData = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   acceptRfq(row: any) {
     this.isSubmitting = true;
-    this.auth.acceptVendorRfq(row.id).subscribe({
+    const items = row.raw?.rfqItems || row.raw?.rfqVendorItems || row.raw?.items || [];
+    const payload = {
+      attachmentName: this.vendorAttachmentName,
+      attachmentData: this.vendorAttachmentData,
+      remarks: this.vendorRemarks,
+      items: items.map((it: any) => ({
+        description: it.partDescription || it.description || '',
+        price: it.unitPrice || 0,
+        gstPercent: it.gstPercent || 18,
+        hsnCode: it.hsnCode || '',
+        total: ((it.unitPrice || 0) * (it.qty || it.quantity || 1)) * (1 + ((it.gstPercent || 18) / 100))
+      }))
+    };
+    this.auth.acceptVendorRfq(row.id, payload).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
         this.showToast('RFQ Invitation Accepted Successfully! Notification sent.', 'success');

@@ -13,7 +13,7 @@ export interface VendorStatus {
   email: string;
   company?: string;
   phone?: string;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Quoted';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Quoted' | 'Accepted';
   remarks?: string;
   quotationSubmitted: boolean;
   quotationId?: string;
@@ -127,13 +127,47 @@ export class QuotationStatusComponent implements OnInit, OnDestroy {
   }
 
   private loadVendorRequests() {
-    if (typeof localStorage === 'undefined') { this.vendorRequests = []; return; }
-    try {
-      const saved = localStorage.getItem(VENDOR_STORAGE_KEY);
-      this.vendorRequests = saved ? JSON.parse(saved) : [];
-    } catch {
-      this.vendorRequests = [];
-    }
+    this.authService.getVendorRequests().subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || [];
+        this.vendorRequests = (Array.isArray(data) ? data : []).map((r: any) => {
+          const rfq = r.rfqId && typeof r.rfqId === 'object' ? r.rfqId : {};
+          return {
+            id: r._id || r.id,
+            rfqId: typeof r.rfqId === 'string' ? r.rfqId : rfq._id || '',
+            rfqNo: r.rfqNumber || rfq.uniqueSerialNo || '—',
+            title: rfq.titleOfActivity || r.title || '—',
+            requester: rfq.requesterName || r.requester || '—',
+            email: r.email || '',
+            department: rfq.department || r.department || '—',
+            priority: r.priority || 'Medium',
+            vendors: (r.vendors || []).map((v: any) => ({
+              serialNo: v.serialNo || 0,
+              vendorName: v.vendorName || v.name || '—',
+              email: v.email || '',
+              company: v.company || '',
+              phone: v.phone || '',
+              status: v.status || 'Pending',
+              remarks: v.remarks || '',
+              quotationSubmitted: v.quotationSubmitted || false,
+              quotationId: v.quotationId || '',
+              submittedDate: v.submittedDate || '',
+              viewedDate: v.viewedDate || ''
+            })),
+            stage: r.status || r.stage || 'Sent',
+            sentDate: r.createdDate || r.sentDate || '',
+            completedDate: r.completedDate || '',
+            createdDate: r.createdDate || '',
+            rfq: rfq
+          } as VendorRequestRecord;
+        });
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.vendorRequests = [];
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private loadQuotations() {
@@ -222,7 +256,7 @@ export class QuotationStatusComponent implements OnInit, OnDestroy {
   }
 
   getApprovedCount(vendors: VendorStatus[]): number {
-    return vendors?.filter(v => v.status === 'Approved').length || 0;
+    return vendors?.filter(v => v.status === 'Approved' || v.status === 'Accepted').length || 0;
   }
 
   getRejectedCount(vendors: VendorStatus[]): number {
@@ -263,6 +297,7 @@ export class QuotationStatusComponent implements OnInit, OnDestroy {
     const map: any = {
       'Pending': 'pending',
       'Approved': 'approved',
+      'Accepted': 'approved',
       'Rejected': 'rejected',
       'Quoted': 'quoted'
     };
@@ -273,6 +308,7 @@ export class QuotationStatusComponent implements OnInit, OnDestroy {
     const map: any = {
       'Pending': '⏳ Pending',
       'Approved': '✅ Approved',
+      'Accepted': '✅ Accepted',
       'Rejected': '❌ Rejected',
       'Quoted': '📄 Quoted',
       'NotSent': '📤 Not Sent',

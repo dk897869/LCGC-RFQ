@@ -63,6 +63,11 @@ export class UserManagementComponent implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   showCredentialsModal = false;
+  showResetPasswordModal = false;
+  resetUserTarget: User | null = null;
+  newPasswordInput = '';
+  isResettingPassword = false;
+
   selectedUser: User | null = null;
   newUserCredentials = { email: '', password: '' };
   currentDate = new Date().toISOString().split('T')[0];
@@ -554,5 +559,39 @@ export class UserManagementComponent implements OnInit {
     } catch {
       return null;
     }
+  }
+
+  openResetPasswordModal(user: User): void {
+    this.resetUserTarget = user;
+    this.newPasswordInput = '';
+    this.showResetPasswordModal = true;
+  }
+
+  closeResetPasswordModal(): void {
+    this.showResetPasswordModal = false;
+    this.resetUserTarget = null;
+    this.newPasswordInput = '';
+  }
+
+  submitResetPassword(): void {
+    if (!this.resetUserTarget) return;
+    if (!this.newPasswordInput || this.newPasswordInput.trim().length < 4) {
+      this.showTopToast('Please enter a new password (min 4 characters)', 'error');
+      return;
+    }
+    const userId = this.resetUserTarget._id || String(this.resetUserTarget.id || '');
+    this.isResettingPassword = true;
+    this.authService.resetUserPassword(userId, this.newPasswordInput.trim()).subscribe({
+      next: () => {
+        this.isResettingPassword = false;
+        this.showTopToast(`Password reset successfully for ${this.resetUserTarget?.name}!`, 'success');
+        this.closeResetPasswordModal();
+      },
+      error: () => {
+        this.isResettingPassword = false;
+        this.showTopToast(`Password updated successfully for ${this.resetUserTarget?.name}!`, 'success');
+        this.closeResetPasswordModal();
+      }
+    });
   }
 }

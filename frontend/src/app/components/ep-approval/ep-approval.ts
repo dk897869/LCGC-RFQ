@@ -3,7 +3,10 @@ import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CreateEPRequestModalComponent } from "../../modals Screen/Create Ep Request/create-ep-request-modal.component";
+import { forkJoin, of } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
 
 interface Approver {
   id?: number;
@@ -50,6 +53,7 @@ interface EPRequest {
   attachments?: any[];
   createdAt?: string;
   canApprove?: boolean;
+  type?: 'EP' | 'RFQ' | 'PR' | 'PO';
 }
 
 @Component({
@@ -87,6 +91,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   isSubmitting = false;
   
   // Filter states
+  filterType = 'All';
   filterPriority = '';
   filterStatus = '';
   filterDepartment = '';
@@ -178,6 +183,41 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   departmentOptions = ['Purchase', 'IT', 'HR', 'Finance', 'R&D', 'Operations', 'Sales', 'Production', 'Quality', 'Logistics'];
   
   currentUser: any = null;
+  Math = Math;
+
+  // Media Preview Zoom Modal State
+  showMediaModal = false;
+  mediaPreviewUrl = '';
+  mediaPreviewTitle = '';
+  mediaZoomScale = 1;
+
+  openMediaPreview(url: string, title?: string) {
+    if (!url) return;
+    this.mediaPreviewUrl = url;
+    this.mediaPreviewTitle = title || 'Attachment Preview';
+    this.mediaZoomScale = 1;
+    this.showMediaModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeMediaPreview() {
+    this.showMediaModal = false;
+    this.mediaPreviewUrl = '';
+    this.mediaPreviewTitle = '';
+    this.mediaZoomScale = 1;
+  }
+
+  zoomInMedia() {
+    this.mediaZoomScale = Math.min(3, +(this.mediaZoomScale + 0.25).toFixed(2));
+  }
+
+  zoomOutMedia() {
+    this.mediaZoomScale = Math.max(0.5, +(this.mediaZoomScale - 0.25).toFixed(2));
+  }
+
+  resetMediaZoom() {
+    this.mediaZoomScale = 1;
+  }
   
   // Toast
   toast: { message: string; type: 'success' | 'error' | 'info' } | null = null;
@@ -190,8 +230,13 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   constructor(
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
+
+  getSanitizedUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url || '');
+  }
   
   ngOnInit() {
     this.activeTab = this.initialTab;
@@ -205,6 +250,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     };
     this.initializeForm();
     this.loadRequests();
+    this.loadManagerOptions();
     if (this.showInlineCreateForm) {
       this.initInlineCreateForm();
     }
@@ -270,37 +316,105 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   
   loadRequests() {
     this.isLoading = true;
-    this.authService.getAllEPApprovalRequests().subscribe({
+    forkJoin({
+      ep: this.authService.getAllEPApprovalRequests().pipe(timeout(8000), catchError(() => of([]))),
+      rfq: this.authService.getRFQs().pipe(timeout(8000), catchError(() => of([]))),
+      pr: this.authService.getPrNppRequests().pipe(timeout(8000), catchError(() => of([]))),
+      po: this.authService.getPoNppRequests().pipe(timeout(8000), catchError(() => of([])))
+    }).subscribe({
       next: (res: any) => {
-        console.log('📥 EP Approval Response:', res);
-        let data = [];
-        if (res?.data && Array.isArray(res.data)) data = res.data;
-        else if (Array.isArray(res)) data = res;
-        else if (res?.requests && Array.isArray(res.requests)) data = res.requests;
-        else if (res?.result && Array.isArray(res.result)) data = res.result;
-        
-        console.log('📊 Data to map:', data);
-        
-        this.allRequests = data
-          .filter((r: any) => {
-            const title = String(r.title || r.subject || r.titleOfActivity || '').trim();
-            const requester = String(r.requester || r.requesterName || r.createdBy?.name || '').trim();
-            return title && title.toLowerCase() !== 'nm' && requester;
-          })
-          .map((r: any) => this.mapRecord(r));
-        console.log('✅ Mapped Requests:', this.allRequests);
-        
+        let epList: EPRequest[] = [];
+        let rfqList: EPRequest[] = [];
+        let prList: EPRequest[] = [];
+        let poList: EPRequest[] = [];
+
+        const epData = res.ep?.data || (Array.isArray(res.ep) ? res.ep : res.ep?.requests || []);
+        if (Array.isArray(epData)) {
+          epList = epData
+            .filter((r: any) => {
+              const title = String(r.title || r.subject || r.titleOfActivity || '').trim();
+              const requester = String(r.requester || r.requesterName || r.createdBy?.name || '').trim();
+              return title && title.toLowerCase() !== 'nm' && requester;
+            })
+            .map((r: any) => ({ ...this.mapRecord(r), type: 'EP' as const }));
+        }
+
+        const rfqData = res.rfq?.data || (Array.isArray(res.rfq) ? res.rfq : []);
+        if (Array.isArray(rfqData)) {
+          rfqList = rfqData.map((r: any) => ({
+            _id: r._id || r.id,
+            id: r._id || r.id,
+            requestId: r.rfqNo || r.uniqueSerialNo || `RFQ-${r._id?.slice(-6)}`,
+            title: r.title || r.rfqTitle || r.projectTitle || 'RFQ Requisition',
+            requester: r.requesterName || r.requester || r.createdBy?.name || 'Purchase Dept',
+            email: r.email || r.requesterEmail || '',
+            department: r.department || 'Purchase',
+            vendor: r.vendorName || (r.selectedVendors ? r.selectedVendors.join(', ') : 'Multiple Vendors'),
+            amount: Number(r.estimatedCost || r.amount || 0),
+            priority: this.mapPriorityFromBackend(r.priority),
+            status: this.normalizeStatus(r.status),
+            description: r.description || r.purpose || '',
+            objective: r.objective || '',
+            requestDate: r.createdDate || r.requestDate || (r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : ''),
+            type: 'RFQ' as const,
+            stakeholders: r.stakeholders || r.approvalChain || [],
+            attachments: r.attachments || []
+          }));
+        }
+
+        const prData = res.pr?.data || (Array.isArray(res.pr) ? res.pr : []);
+        if (Array.isArray(prData)) {
+          prList = prData.map((r: any) => ({
+            _id: r._id || r.id,
+            id: r._id || r.id,
+            requestId: r.prNo || r.uniqueSerialNo || `PR-${r._id?.slice(-6)}`,
+            title: r.title || r.purpose || 'Purchase Requisition (PR)',
+            requester: r.requesterName || r.requester || 'Requester',
+            email: r.email || '',
+            department: r.department || 'Procurement',
+            vendor: r.vendorName || 'N/A',
+            amount: Number(r.totalAmount || r.amount || 0),
+            priority: this.mapPriorityFromBackend(r.priority),
+            status: this.normalizeStatus(r.status),
+            description: r.remarks || r.purpose || '',
+            type: 'PR' as const,
+            stakeholders: r.approvers || r.stakeholders || [],
+            attachments: r.attachments || []
+          }));
+        }
+
+        const poData = res.po?.data || (Array.isArray(res.po) ? res.po : []);
+        if (Array.isArray(poData)) {
+          poList = poData.map((r: any) => ({
+            _id: r._id || r.id,
+            id: r._id || r.id,
+            requestId: r.poNo || r.uniqueSerialNo || `PO-${r._id?.slice(-6)}`,
+            title: r.title || `Purchase Order ${r.poNo || ''}`,
+            requester: r.requesterName || r.buyerName || 'Purchase Dept',
+            email: r.email || '',
+            department: r.department || 'Purchase',
+            vendor: r.vendorName || 'Supplier',
+            amount: Number(r.totalAmount || r.amount || 0),
+            priority: this.mapPriorityFromBackend(r.priority),
+            status: this.normalizeStatus(r.status),
+            description: r.terms || r.remarks || '',
+            type: 'PO' as const,
+            stakeholders: r.approvers || r.stakeholders || [],
+            attachments: r.attachments || []
+          }));
+        }
+
+        this.allRequests = [...epList, ...rfqList, ...prList, ...poList];
+        if (this.allRequests.length === 0) {
+          this.loadSampleData();
+        }
         this.applyFilters();
         this.isLoading = false;
-        this.showToast(`${this.allRequests.length} EP requests loaded`, 'success');
         this.cdr.detectChanges();
       },
       error: (err: any) => {
-        console.error('❌ Load error:', err);
         this.isLoading = false;
-        // Load sample data for demo if API fails
         this.loadSampleData();
-        this.showToast(err?.message || 'Failed to load EP requests, using sample data', 'error');
         this.cdr.detectChanges();
       }
     });
@@ -435,6 +549,9 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     
     // For approvals tab — show ALL requests so approvers can act on them
     let approvalList = [...this.allRequests];
+    if (this.filterType && this.filterType !== 'All') {
+      approvalList = approvalList.filter(r => (r.type || 'EP') === this.filterType);
+    }
     if (this.filterPriority) {
       approvalList = approvalList.filter(r => r.priority === this.filterPriority);
     }
@@ -1035,6 +1152,15 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     return this.authService.getUserRole() === 'Admin';
   }
 
+  isPurchaseHeadOrAdmin(): boolean {
+    const user = this.authService.getUser();
+    if (!user) return false;
+    const role = String(user.role || '').toLowerCase();
+    const dept = String(user.department || '').toLowerCase();
+    const desig = String(user.designation || '').toLowerCase();
+    return role === 'admin' || role === 'purchase' || dept.includes('purchase') || desig.includes('purchase') || desig.includes('head');
+  }
+
   approveFromViewModal(request: any) {
     const id = request._id || request.id;
     if (!id) return;
@@ -1236,6 +1362,28 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     }, 200);
   }
 
+  private loadManagerOptions() {
+    this.authService.getManagers().subscribe({
+      next: (res: any) => {
+        const list = res?.managers || res?.defaultApprovers || [];
+        this.managerOptions = Array.isArray(list) ? list : [];
+        if (!this.managerOptions.length) this.setDefaultManagers();
+      },
+      error: () => { this.setDefaultManagers(); }
+    });
+  }
+
+  private setDefaultManagers() {
+    this.managerOptions = [
+      { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
+      { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM' },
+      { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP' },
+      { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP' },
+      { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM' },
+      { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD' }
+    ];
+  }
+
   showToast(message: string, type: 'success' | 'error' | 'info') {
     if (this.toastTimer) clearTimeout(this.toastTimer);
     this.toast = { message, type };
@@ -1248,6 +1396,49 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   closeToast() {
     this.toast = null;
     if (this.toastTimer) clearTimeout(this.toastTimer);
+  }
+  
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const rawLine = app.line || app.lineMode || app.approvalType || 'Parallel';
+      const lineVal = String(rawLine).trim().toLowerCase();
+      
+      if (lineVal === 'parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
+  }
+
+  getGroupRowClass(list: any[], index: number): string {
+    if (!list || !list.length) return '';
+    const serials = this.getApprovalChainSerials(list);
+    const cur = serials[index];
+    const prev = index > 0 ? serials[index - 1] : null;
+    const next = index < list.length - 1 ? serials[index + 1] : null;
+
+    if (cur === prev && cur === next) return 'group-row-middle';
+    if (cur === next && cur !== prev) return 'group-row-start';
+    if (cur === prev && cur !== next) return 'group-row-end';
+    return 'group-row-single';
   }
   
   trackById(index: number, item: EPRequest) {

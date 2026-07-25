@@ -1,9 +1,10 @@
 // wcc-npp.component.ts
-import { Component, OnInit, Output, EventEmitter, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../../../core/services/auth';
 
 export interface RatingItem {
   head: string;
@@ -22,6 +23,11 @@ export interface Approver {
   line: 'Parallel' | 'Sequential';
   remarks: string;
   isFromApi: boolean;
+  contactNo?: string;
+  organization?: string;
+  dateTime?: string;
+  status?: string;
+  showSuggestions?: boolean;
 }
 
 export interface Certificate {
@@ -42,6 +48,8 @@ export class WccNppComponent implements OnInit {
   @Output() onSubmit = new EventEmitter<any>();
 
   private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
+  private authService = inject(AuthService);
 
   // Form Data
   form = {
@@ -127,33 +135,36 @@ export class WccNppComponent implements OnInit {
 
   ngOnInit() {
     this.fetchApprovers();
+    if (!this.approvers.length) {
+      this.addApprover();
+    }
   }
 
   // ==================== API METHODS ====================
   async fetchApprovers() {
     this.isLoadingApprovers = true;
     try {
-      // Your actual API endpoint - Replace with your backend URL
-      const response = await firstValueFrom(
-        this.http.get<any[]>('https://your-api.com/approvers')
-      );
-      this.availableApprovers = response;
-      this.showToast('Approvers loaded successfully', 'success');
+      const res: any = await firstValueFrom(this.authService.getManagers());
+      const list = res?.managers || res?.defaultApprovers || res || [];
+      this.availableApprovers = Array.isArray(list) ? list : [];
+      if (!this.availableApprovers.length) this.setDefaultApprovers();
     } catch (error) {
       console.error('API Error:', error);
-      // Demo data - Remove in production
-      this.availableApprovers = [
-        { id: '1', name: 'Dr. A P J Kalam', email: 'apj.kalam@lcgc.com', designation: 'Chief Scientific Advisor', department: 'Strategic Planning' },
-        { id: '2', name: 'Ratan Tata', email: 'ratan.tata@lcgc.com', designation: 'Chairman Emeritus', department: 'Board' },
-        { id: '3', name: 'Sundar Pichai', email: 'sundar.pichai@lcgc.com', designation: 'CEO - Technology', department: 'IT' },
-        { id: '4', name: 'Indra Nooyi', email: 'indra.nooyi@lcgc.com', designation: 'Strategic Advisor', department: 'Strategy' },
-        { id: '5', name: 'Wijay Parashar', email: 'wijay.parashar@lcgc.com', designation: 'Head - Depth', department: 'Engineering' },
-        { id: '6', name: 'Shailendra Chatha', email: 'shailendra.chatha@lcgc.com', designation: 'Head - Purchase', department: 'Procurement' }
-      ];
-      this.showToast('Using demo data. Connect API for live data.', 'info');
+      this.setDefaultApprovers();
     } finally {
       this.isLoadingApprovers = false;
     }
+  }
+
+  private setDefaultApprovers() {
+    this.availableApprovers = [
+      { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
+      { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM' },
+      { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP' },
+      { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP' },
+      { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM' },
+      { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD' }
+    ];
   }
 
   // ==================== APPROVER METHODS ====================
@@ -167,7 +178,11 @@ export class WccNppComponent implements OnInit {
       department: '',
       line: 'Parallel',
       remarks: '',
-      isFromApi: false
+      isFromApi: false,
+      contactNo: '',
+      organization: '',
+      status: 'Pending',
+      dateTime: new Date().toLocaleString()
     });
   }
 
@@ -180,15 +195,31 @@ export class WccNppComponent implements OnInit {
     }
   }
 
-  onApproverSelect(approver: Approver, selectedName: string) {
-    const selected = this.availableApprovers.find(a => a.name === selectedName);
-    if (selected) {
-      approver.name = selected.name;
-      approver.email = selected.email;
-      approver.designation = selected.designation;
-      approver.department = selected.department;
-      approver.isFromApi = true;
-    }
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.availableApprovers;
+    return this.availableApprovers.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || m.role || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectManager(approver: any, manager: any) {
+    approver.name = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation || manager.role || '';
+    approver.department = manager.department || '';
+    approver.showSuggestions = false;
+    approver.dateTime = new Date().toLocaleString();
+    approver.status = 'Pending';
+    approver.isFromApi = true;
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
   }
 
   // ==================== CC METHODS ====================
@@ -491,6 +522,35 @@ export class WccNppComponent implements OnInit {
   }
 
   // ==================== UTILITIES ====================
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const lineVal = app.line || app.lineMode || app.approvalType || 'Parallel';
+      
+      if (lineVal === 'Parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
+  }
+
   formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleString();
   }

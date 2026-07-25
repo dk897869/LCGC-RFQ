@@ -980,6 +980,10 @@
   overflow: auto;
   animation: slideUp 0.3s ease;
 
+  &.modal-card--wide {
+    max-width: 1000px;
+  }
+
   .modal-hdr {
     display: flex;
     justify-content: space-between;
@@ -1011,6 +1015,29 @@
     padding: 16px 24px;
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
+  }
+}
+
+// Status Badges for Team Approval Chain
+.status-badge-chain {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: inline-block;
+  
+  &.approved, &.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  }
+  &.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+  }
+  &.rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
   }
 }
 
@@ -1544,5 +1571,91 @@
   &:hover {
     background: #b91c1c !important;
     transform: translateY(-1px) !important;
+  }
+}
+
+// ── MANAGER SUGGESTIONS AUTOCOMPLETE STYLES ──
+.btn-add-approver {
+  padding: 6px 14px;
+  background: #10b981 !important;
+  border: none !important;
+  color: white !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s;
+  
+  &:hover { 
+    background: #059669 !important; 
+    transform: scale(1.02); 
+  }
+}
+
+.manager-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+  text-align: left;
+  
+  .suggestion-item {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:hover {
+      background: #eff6ff;
+    }
+    
+    .m-name {
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 13px;
+    }
+    
+    .m-designation {
+      color: #64748b;
+      font-size: 11px;
+    }
+  }
+}
+
+.approval-table {
+  input, select {
+    box-sizing: border-box !important;
+    height: 32px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    outline: none !important;
+    font-size: 13px !important;
+    transition: all 0.2s ease !important;
+    background: white !important;
+    
+    &:focus {
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+    }
+  }
+
+  td.readonly {
+    vertical-align: middle;
+    padding: 8px 10px;
   }
 }

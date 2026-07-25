@@ -320,45 +320,81 @@
         </table>
       </div>
 
-      <!-- ===== APPROVAL MATRIX ===== -->
-      <div class="section-header-inline">
-        <span class="section-flag">Approval</span>
-        <div class="approval-add-btns">
-          <button class="add-row-btn" (click)="addApprovalRow('Parallel')">＋ Parallel</button>
-          <button class="add-row-btn" (click)="addApprovalRow('Sequential')">＋ Sequential</button>
-        </div>
+      <!-- ===== Team Approval Chain ===== -->
+      <div class="section-header-inline" style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+        <span class="section-flag" style="font-weight: 800; color: #1e293b; font-size: 14px;">Team Approval Chain *</span>
+        <button type="button" class="btn-add-approver" (click)="addApprovalRow('Parallel')">+ Add Approver</button>
       </div>
-      <div class="table-scroll">
+      <div class="table-scroll approval-table-wrapper" style="margin-top: 10px; overflow-x: auto;">
         <table class="sheet-table approval-table">
           <thead>
             <tr>
-              <th>Line</th><th>Stakeholder</th><th>Comments / Remarks</th><th>Designation</th><th>Status</th><th>Date / Time</th><th></th>
+              <th style="width: 50px; text-align: center;">#</th>
+              <th style="width: 100px;">LINE</th>
+              <th style="width: 220px;">NAME</th>
+              <th>COMMENTS/REMARKS</th>
+              <th style="width: 150px;">DESIGNATION</th>
+              <th style="width: 220px;">E-MAIL</th>
+              <th style="width: 150px;">CONTACT NO.</th>
+              <th style="width: 160px;">ORGANIZATION</th>
+              <th style="width: 110px; text-align: center;">STATUS</th>
+              <th style="width: 170px;">DATE/TIME</th>
+              <th style="width: 50px; text-align: center;"></th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let a of activePR.approvalChain; let i = index">
+              <td style="text-align: center; font-weight: bold; color: #64748b;">{{ getApprovalChainSerials(activePR.approvalChain)[i] }}</td>
               <td>
-                <select class="cell-input" [(ngModel)]="a.line">
+                <select [(ngModel)]="a.line" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px;">
                   <option value="Parallel">Parallel</option>
                   <option value="Sequential">Sequential</option>
                 </select>
               </td>
-              <td><input class="cell-input" [(ngModel)]="a.stakeholder" placeholder="Name"></td>
-              <td><input class="cell-input" [(ngModel)]="a.comments" placeholder="Comments"></td>
-              <td><input class="cell-input" [(ngModel)]="a.designation" placeholder="Designation"></td>
-              <td>
-                <span class="approval-status" [ngClass]="getApprovalStatusClass(a.status)">{{ a.status }}</span>
+              <td style="position: relative;">
+                <input type="text"
+                       [(ngModel)]="a.stakeholder"
+                       (ngModelChange)="a.stakeholder = $event"
+                       (focus)="a.showSuggestions = true"
+                       (blur)="onManagerBlur(a)"
+                       placeholder="Enter Name"
+                       class="manager-input-text"
+                       autocomplete="off"
+                       style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+                <div class="manager-suggestions" *ngIf="a.showSuggestions && getFilteredManagers(a.stakeholder).length > 0">
+                  <div class="suggestion-item"
+                       *ngFor="let m of getFilteredManagers(a.stakeholder)"
+                       (mousedown)="selectManager(a, m)">
+                    <span class="m-name">{{ m.name }}</span>
+                    <span class="m-designation">{{ m.designation || m.role || '' }}</span>
+                  </div>
+                </div>
               </td>
-              <td>{{ a.dateTime ? (a.dateTime | date:'d-M-yy h:mm a') : '—' }}</td>
-              <td class="td-center"><button class="remove-btn" (click)="removeApprovalRow(i)" [disabled]="activePR.approvalChain.length === 1">✕</button></td>
+              <td>
+                <input type="text" [(ngModel)]="a.comments" placeholder="Remarks" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px; vertical-align: middle; padding-left: 8px;">{{ a.designation }}</td>
+              <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px; vertical-align: middle; padding-left: 8px;">{{ a.email }}</td>
+              <td>
+                <input type="text" [(ngModel)]="a.contactNo" placeholder="Contact No." style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td>
+                <input type="text" [(ngModel)]="a.organization" placeholder="Organization" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+              </td>
+              <td style="text-align: center;">
+                <span class="status-badge-small status-pending" style="background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">
+                  {{ a.status || 'pending' }}
+                </span>
+              </td>
+              <td class="date-time-cell" style="font-size: 12px; color: #64748b; white-space: nowrap;">
+                {{ a.dateTime || '' }}
+              </td>
+              <td style="text-align: center;">
+                <button type="button" class="remove-btn" (click)="removeApprovalRow(i)" style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer;">×</button>
+              </td>
             </tr>
           </tbody>
         </table>
-      </div>
-      <div class="approval-legend">
-        <span class="legend-chip in-process">In-Process</span>
-        <span class="legend-chip approved">Approved</span>
-        <span class="legend-chip rejected">Reject</span>
       </div>
 
       <!-- ===== ATTACHMENTS ===== -->
@@ -371,10 +407,13 @@
               <td class="td-center">{{ att.sNo }}</td>
               <td>{{ att.label }}</td>
               <td>
-                <label class="file-upload-btn">
-                  📎 {{ att.fileName || 'Choose file' }}
-                  <input type="file" hidden (change)="onAttachmentFileSelected(att, $event)">
-                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label class="file-upload-btn">
+                    📎 {{ att.fileName || 'Choose file' }}
+                    <input type="file" hidden (change)="onAttachmentFileSelected(att, $event)">
+                  </label>
+                  <button *ngIf="att.fileName" type="button" (click)="openMediaPreview(att.fileName, att.label || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                </div>
               </td>
               <td>{{ att.fileSize || '—' }}</td>
               <td><input class="cell-input" [(ngModel)]="att.remark" placeholder="Remark"></td>
@@ -398,6 +437,12 @@
         </div>
       </div>
 
+      <!-- ===== DECISION REMARKS (for Approvers) ===== -->
+      <div class="section-header-inline" *ngIf="currentPR && currentPR.status === 'Pending'"><span class="section-flag">Decision Remarks / Comments</span></div>
+      <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px;" *ngIf="currentPR && currentPR.status === 'Pending'">
+        <textarea [(ngModel)]="decisionRemarks" rows="2" placeholder="Enter approval or rejection comments here..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+      </div>
+
       <!-- ===== FOOTER ACTIONS ===== -->
       <div class="footer-actions">
         <div class="status-bar" *ngIf="currentPR">
@@ -405,17 +450,56 @@
           <span class="status-badge" [ngClass]="getStatusClass(currentPR.status)">{{ getStatusIcon(currentPR.status) }} {{ getStatusLabel(currentPR.status) }}</span>
           <span class="status-date" *ngIf="currentPR.submittedDate">Submitted: {{ currentPR.submittedDate | date:'dd MMM yyyy, hh:mm a' }}</span>
         </div>
-        <div class="action-right">
+        <div class="action-right" style="display: flex; gap: 10px; align-items: center;">
           <button class="action-btn secondary" (click)="saveDraft()">💾 Save</button>
           <button class="action-btn primary" (click)="submitForApproval()" [disabled]="isSubmitting">
             <span class="btn-spinner" *ngIf="isSubmitting">⟳</span>
             <span *ngIf="!isSubmitting">📤 Submit for Approval</span>
             <span *ngIf="isSubmitting">Submitting…</span>
           </button>
+          <button *ngIf="currentPR && currentPR.status === 'Pending'" type="button" (click)="confirmApproveWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #059669; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✓ Approve PR</button>
+          <button *ngIf="currentPR && currentPR.status === 'Pending'" type="button" (click)="confirmRejectWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✗ Reject PR</button>
         </div>
       </div>
 
     </div>
   </div>
 
+</div>
+
+<!-- ==================== MEDIA PREVIEW ZOOM MODAL ==================== -->
+<div class="modal-overlay" *ngIf="showMediaModal" (click)="closeMediaPreview()" style="display: flex; align-items: center; justify-content: center; z-index: 100000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+  <div class="media-zoom-card" (click)="$event.stopPropagation()" style="background: white; border-radius: 16px; width: 90vw; max-width: 1000px; height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+    <div class="media-zoom-hdr" style="background: #0f172a; color: white; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 18px;">📄</span>
+        <span style="font-weight: 700; font-size: 15px;">{{ mediaPreviewTitle || 'Attachment Preview' }}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 2px 6px;">
+          <button (click)="zoomOutMedia()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px 8px;" title="Zoom Out">−</button>
+          <span style="font-size: 12px; font-weight: 700; width: 45px; text-align: center;">{{ Math.round(mediaZoomScale * 100) }}%</span>
+          <button (click)="zoomInMedia()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px 8px;" title="Zoom In">+</button>
+          <button (click)="resetMediaZoom()" style="background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 4px 8px; margin-left: 4px;" title="Reset Zoom">Reset</button>
+        </div>
+        <a [href]="mediaPreviewUrl" download target="_blank" style="background: #2563eb; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+          ⬇ Download
+        </a>
+        <button (click)="closeMediaPreview()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0 4px; line-height: 1;">×</button>
+      </div>
+    </div>
+    <div class="media-zoom-body" style="flex: 1; background: #0f172a; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 20px; position: relative;">
+      <ng-container *ngIf="mediaPreviewUrl">
+        <img *ngIf="mediaPreviewUrl.startsWith('data:image') || mediaPreviewUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)/i)"
+             [src]="mediaPreviewUrl"
+             [style.transform]="'scale(' + mediaZoomScale + ')'"
+             style="max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; cursor: grab;"
+             alt="Attachment Preview">
+        <iframe *ngIf="!mediaPreviewUrl.startsWith('data:image') && !mediaPreviewUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)/i)"
+                [src]="getSanitizedUrl(mediaPreviewUrl)"
+                style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px;">
+        </iframe>
+      </ng-container>
+    </div>
+  </div>
 </div>

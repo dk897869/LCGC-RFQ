@@ -1339,6 +1339,47 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  get topRequesters(): any[] {
+    const counts: Record<string, { name: string; count: number; avatarColor: string; avatarText: string }> = {};
+    const colors = ['blue', 'green', 'orange', 'purple', 'teal'];
+    
+    this.unifiedRequests.forEach(r => {
+      const name = r.requester || 'Unknown';
+      if (!counts[name]) {
+        const parts = name.trim().split(/\s+/);
+        let initials = '';
+        if (parts.length > 1) {
+          initials = (parts[0][0] || '') + (parts[parts.length - 1][0] || '');
+        } else {
+          initials = (parts[0]?.substring(0, 2) || '??');
+        }
+        initials = initials.toUpperCase();
+        
+        const colorIdx = Object.keys(counts).length % colors.length;
+        counts[name] = {
+          name,
+          count: 0,
+          avatarColor: colors[colorIdx],
+          avatarText: initials
+        };
+      }
+      counts[name].count++;
+    });
+
+    const list = Object.values(counts).sort((a, b) => b.count - a.count);
+    const maxCount = list[0]?.count || 1;
+    
+    return list.map(item => ({
+      ...item,
+      percentage: Math.round((item.count / maxCount) * 100)
+    })).slice(0, 5);
+  }
+
+  filterByRequester(name: string) {
+    this.unifiedSearchTerm = name;
+    this.applyUnifiedFilters();
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // LIFECYCLE
   // ─────────────────────────────────────────────────────────────────────────

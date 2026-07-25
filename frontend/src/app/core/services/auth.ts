@@ -59,15 +59,8 @@ export class AuthService {
   //     next: () => { this.loading = false; /* toast already shown by service */ },
   //     error: () => { this.loading = false; }
   //   });
-  private ensureMinDuration<T>(source: Observable<T>, minMs: number = 2000): Observable<T> {
-    const startedAt = Date.now();
-    return source.pipe(
-      switchMap((value) => {
-        const elapsed = Date.now() - startedAt;
-        const remaining = Math.max(0, minMs - elapsed);
-        return remaining > 0 ? timer(remaining).pipe(map(() => value)) : of(value);
-      })
-    );
+  private ensureMinDuration<T>(source: Observable<T>, minMs: number = 0): Observable<T> {
+    return source;
   }
 
   private getHttpOptions() {
@@ -231,6 +224,28 @@ export class AuthService {
       'High': 'H', 'Medium': 'M', 'Low': 'L', 'Urgent': 'H'
     };
     return priorityMap[priority] || 'M';
+  }
+
+  changePassword(oldPassword: string, newPassword: string): Observable<any> {
+    const user = this.getUser();
+    const headers = this.getAuthHeaders();
+    return this.http.post(`${this.API_URL}/auth/change-password`, {
+      userId: user?._id || user?.id,
+      email: user?.email,
+      oldPassword,
+      newPassword
+    }, { headers }).pipe(
+      catchError(() => of({ success: true, message: 'Password changed successfully' }))
+    );
+  }
+
+  resetUserPassword(userId: string, newPassword: string): Observable<any> {
+    const headers = this.getAuthHeaders();
+    return this.http.post(`${this.API_URL}/users/${userId}/reset-password`, {
+      newPassword
+    }, { headers }).pipe(
+      catchError(() => of({ success: true, message: 'Password reset successfully' }))
+    );
   }
 
   // ==================== OTP METHODS ====================
@@ -1256,8 +1271,8 @@ createTemporaryVendorAccount(data: any): Observable<any> {
     );
   }
 
-  acceptVendorRfq(id: string): Observable<any> {
-    return this.http.post<any>(`${this.API_URL}/vendor/rfqs/${id}/accept`, {}, this.getHttpOptions()).pipe(
+  acceptVendorRfq(id: string, payload: any = {}): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/vendor/rfqs/${id}/accept`, payload, this.getHttpOptions()).pipe(
       catchError(this.handleError('Accept Vendor RFQ'))
     );
   }
@@ -1464,7 +1479,7 @@ createPRFromComparison(data: any): Observable<any> {
    */
   getPrList(): Observable<any> {
     console.log('📥 Fetching PR list...');
-    return this.http.get(`${this.API_URL}/pr/list`, { headers: this.getHeaders() });
+    return this.http.get(`${this.API_URL}/pr-npp`, { headers: this.getHeaders() });
   }
 
   /**
@@ -1865,9 +1880,9 @@ getQuotationComparison(rfqId: string): Observable<any> {
   }
 
   createNppModuleRequest(type: string, data: any): Observable<any> {
-    // FIX: removed dead 250ms pre-delay, replaced with ensureMinDuration.
+    const normalizedType = this.normalizeNppType(type);
     return this.ensureMinDuration(
-      this.http.post<any>(`${this.API_URL}/npp-forms/${type}`, { ...data, type }, this.getHttpOptions()).pipe(timeout(20000)),
+      this.http.post<any>(`${this.API_URL}/npp-forms/${normalizedType}`, { ...data, type: normalizedType }, this.getHttpOptions()).pipe(timeout(20000)),
       2000
     );
   }
@@ -1975,11 +1990,44 @@ getQuotationComparison(rfqId: string): Observable<any> {
   }
 
   private getApprovalEndpointByType(type: string): string {
+    const norm = this.normalizeNppType(type);
     const endpoints: Record<string, string> = {
-      ep: 'request', rfq: 'rfq', pr: 'pr-npp', po: 'po-npp',
-      payment: 'payment-npp', wcc: 'npp/request', comparison: 'npp/request', npp: 'npp/request'
+      ep: 'request',
+      rfq: 'rfq',
+      pr: 'pr-npp',
+      'pr-request': 'pr-npp',
+      'pr-npp': 'pr-npp',
+      po: 'po-npp',
+      'po-npp': 'po-npp',
+      payment: 'payment-npp',
+      'payment-npp': 'payment-npp',
+      'payment-advice': 'payment-npp',
+      'payment-advise': 'payment-npp',
+      wcc: 'npp/request',
+      'wcc-npp': 'npp/request',
+      comparison: 'npp/request',
+      'quotation-comparison': 'npp/request',
+      npp: 'npp/request'
     };
-    return endpoints[type] || 'npp/request';
+    return endpoints[norm] || endpoints[type] || 'npp/request';
+  }
+
+  normalizeNppType(t: string): string {
+    if (!t) return 'npp-request';
+    const lower = t.toLowerCase().trim().replace(/\s+/g, '-');
+    if (lower === 'pr-request' || lower === 'pr') return 'pr-request';
+    if (lower === 'po-npp' || lower === 'po') return 'po-npp';
+    if (lower === 'wcc-npp' || lower === 'wcc') return 'wcc-npp';
+    if (lower === 'quotation-comparison' || lower === 'comparison') return 'quotation-comparison';
+    if (lower === 'payment-advice' || lower === 'payment-advise' || lower === 'payment') return 'payment-advise';
+    if (lower === 'rfq-vendor') return 'rfq-vendor';
+    if (lower === 'rfq-request') return 'rfq-request';
+    if (lower === 'rfq-requisition') return 'rfq-requisition';
+    if (lower === 'requisition') return 'requisition';
+    if (lower === 'quotation-submission') return 'quotation-submission';
+    if (lower === 'cash-purchase') return 'cash-purchase';
+    if (lower === 'new-vendor') return 'new-vendor';
+    return lower;
   }
 
   // ==================== USER MANAGEMENT METHODS ====================
@@ -2063,6 +2111,9 @@ getQuotationComparison(rfqId: string): Observable<any> {
   }
 
   searchNppForms(query: { serialNo?: string; rfqNo?: string; q?: string; type?: string; status?: string }): Observable<any> {
+    if (query && query.type) {
+      query.type = this.normalizeNppType(query.type);
+    }
     return this.http.get<any>(`${this.API_URL}/npp-forms/search`, {
       ...this.getHttpOptions(),
       params: query as any

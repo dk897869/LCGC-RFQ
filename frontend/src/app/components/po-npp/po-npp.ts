@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
 
@@ -27,12 +27,17 @@ interface Approver {
   designation: string;
   status: string;
   remarks: string;
+  contactNo?: string;
+  organization?: string;
+  dateTime?: string;
+  showSuggestions?: boolean;
 }
 
 interface Attachment {
   fileName: string;
   fileSize: string;
   remark: string;
+  fileData?: string;
 }
 
 interface PoRequest {
@@ -143,7 +148,7 @@ export class PoNpp implements OnInit {
   ];
 
   stakeholders: Approver[] = [
-    { line: 'Sequential', managerName: '', email: '', designation: '', status: 'Pending', remarks: '' }
+    { line: 'Sequential', managerName: '', email: '', designation: '', status: 'Pending', remarks: '', contactNo: '', organization: '', dateTime: new Date().toLocaleString() }
   ];
 
   attachments: Attachment[] = [
@@ -151,10 +156,12 @@ export class PoNpp implements OnInit {
   ];
 
   ccEmails: string[] = [''];
+  managerOptions: { name: string; email: string; designation?: string; role?: string }[] = [];
 
   constructor(
     private authService: AuthService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -169,6 +176,7 @@ export class PoNpp implements OnInit {
     this.updateClock();
     this.clockTimer = setInterval(() => this.updateClock(), 1000);
     this.loadOrders();
+    this.loadManagerOptions();
     
     // If PR data is passed, prefill the form
     if (this.prData) {
@@ -257,7 +265,10 @@ export class PoNpp implements OnInit {
         email: s.email || '',
         designation: s.designation || '',
         status: s.status || 'Pending',
-        remarks: s.remarks || ''
+        remarks: s.remarks || '',
+        contactNo: s.contactNo || '',
+        organization: s.organization || '',
+        dateTime: s.dateTime || new Date().toLocaleString()
       }));
     }
     
@@ -330,7 +341,7 @@ export class PoNpp implements OnInit {
       this.showToast('error', 'Cannot approve: No ID found');
       return;
     }
-    this.authService.approveNppRequest(id).subscribe({
+    this.authService.approveRequestByType('po', id).subscribe({
       next: () => {
         po.status = 'Approved';
         this.showToast('success', `PO ${po.uniqueSerialNo || po.orderNo} approved!`);
@@ -349,7 +360,7 @@ export class PoNpp implements OnInit {
       this.showToast('error', 'Cannot reject: No ID found');
       return;
     }
-    this.authService.rejectNppRequest(id).subscribe({
+    this.authService.rejectRequestByType('po', id).subscribe({
       next: () => {
         po.status = 'Rejected';
         this.showToast('info', `PO ${po.uniqueSerialNo || po.orderNo} rejected.`);
@@ -388,7 +399,7 @@ export class PoNpp implements OnInit {
     this.form.rfqNo = '';
     this.form.selectedSupplier = '';
     this.items = [{ partNo: '', itemDescription: '', hsn: '', uom: 'Pcs', quantity: 1, rate: 0, discount: 0, gst: 18, deliveryDate: '', remark: '' }];
-    this.stakeholders = [{ line: 'Sequential', managerName: '', email: '', designation: '', status: 'Pending', remarks: '' }];
+    this.stakeholders = [{ line: 'Sequential', managerName: '', email: '', designation: '', status: 'Pending', remarks: '', contactNo: '', organization: '', dateTime: new Date().toLocaleString() }];
     this.attachments = [{ fileName: '', fileSize: '', remark: '' }];
     this.ccEmails = [''];
   }
@@ -445,15 +456,84 @@ export class PoNpp implements OnInit {
   }
 
   addApprover(): void {
-    this.stakeholders.push({ line: 'Sequential', managerName: '', email: '', designation: '', status: 'Pending', remarks: '' });
+    this.stakeholders.push({ line: 'Sequential', managerName: '', email: '', designation: '', status: 'Pending', remarks: '', contactNo: '', organization: '', dateTime: new Date().toLocaleString() });
   }
 
   removeApprover(index: number): void {
-    if (this.stakeholders.length > 1) this.stakeholders.splice(index, 1);
+    if (this.stakeholders.length > 1) {
+      this.stakeholders.splice(index, 1);
+    }
+  }
+
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.managerOptions;
+    return this.managerOptions.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || m.role || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectManager(approver: any, manager: any) {
+    approver.managerName = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation || manager.role || '';
+    approver.showSuggestions = false;
+    approver.dateTime = new Date().toLocaleString();
+    approver.status = 'Pending';
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  private loadManagerOptions() {
+    this.authService.getManagers().subscribe({
+      next: (res: any) => {
+        const list = res?.managers || res?.defaultApprovers || [];
+        this.managerOptions = Array.isArray(list) ? list : [];
+        if (!this.managerOptions.length) this.setDefaultManagers();
+      },
+      error: () => { this.setDefaultManagers(); }
+    });
+  }
+
+  private setDefaultManagers() {
+    this.managerOptions = [
+      { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
+      { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM' },
+      { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP' },
+      { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP' },
+      { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM' },
+      { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD' }
+    ];
   }
 
   addAttachment(): void {
     this.attachments.push({ fileName: '', fileSize: '', remark: '' });
+  }
+
+  onAttachmentFileSelected(row: Attachment, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    row.fileName = file.name;
+    row.fileSize = this.formatFileSize(file.size);
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      row.fileData = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    this.cdr.detectChanges();
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   removeAttachment(index: number): void {
@@ -559,6 +639,36 @@ export class PoNpp implements OnInit {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? dateStr : this.datePipe.transform(date, 'dd MMM yyyy') || dateStr;
+  }
+
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const rawLine = app.line || app.lineMode || app.approvalType || 'Parallel';
+      const lineVal = String(rawLine).trim().toLowerCase();
+      
+      if (lineVal === 'parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
   }
 
   formatAmount(amount?: number): string {

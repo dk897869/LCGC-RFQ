@@ -48,6 +48,11 @@ interface RFQApprover {
   designation: string;
   line: string;
   remarks: string;
+  contactNo?: string;
+  organization?: string;
+  status?: string;
+  dateTime?: string;
+  showSuggestions?: boolean;
 }
 
 @Component({
@@ -258,10 +263,14 @@ export class RfqComponent implements OnInit {
         email: s.email || '',
         designation: s.designation || '',
         line: s.line || 'Parallel',
-        remarks: s.remarks || ''
+        remarks: s.remarks || '',
+        contactNo: s.contactNo || '',
+        organization: s.organization || '',
+        status: s.status || 'pending',
+        dateTime: s.dateTime || new Date().toLocaleString()
       }));
     } else if (this.rfqApprovers.length === 0) {
-      this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
+      this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
     }
     
     // Set serial number fixed to avoid regeneration
@@ -491,7 +500,7 @@ export class RfqComponent implements OnInit {
     ];
     this.ccInput = '';
     this.ccList = [];
-    this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
+    this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
   }
@@ -517,7 +526,7 @@ export class RfqComponent implements OnInit {
     ];
     this.ccInput = '';
     this.ccList = [];
-    this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
+    this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
   }
@@ -580,19 +589,39 @@ export class RfqComponent implements OnInit {
   // ====================== APPROVER METHODS ======================
   
   addApproverRow() {
-    this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' });
+    this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() });
   }
 
   removeApproverRow(index: number) {
     this.rfqApprovers.splice(index, 1);
-    if (!this.rfqApprovers.length) this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' });
+    if (!this.rfqApprovers.length) {
+      this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() });
+    }
   }
 
-  onManagerChange(row: RFQApprover, selectedName: string) {
-    const manager = this.managerOptions.find(m => m.name === selectedName);
-    row.managerName = selectedName;
-    row.email = manager?.email || '';
-    row.designation = manager?.designation || manager?.role || '';
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.managerOptions;
+    return this.managerOptions.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || m.role || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectManager(approver: any, manager: any) {
+    approver.managerName = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation || manager.role || '';
+    approver.showSuggestions = false;
+    approver.dateTime = new Date().toLocaleString();
+    approver.status = 'pending';
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
   }
 
   onApproverEmailChange(row: RFQApprover, email: string) {
@@ -938,6 +967,36 @@ export class RfqComponent implements OnInit {
     if (s === 'approved') return 'approved';
     if (s === 'rejected') return 'rejected';
     return 'pending';
+  }
+
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const rawLine = app.line || app.lineMode || app.approvalType || 'Parallel';
+      const lineVal = String(rawLine).trim().toLowerCase();
+      
+      if (lineVal === 'parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
   }
 
   trackById(_: number, item: any) { 

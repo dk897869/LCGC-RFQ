@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnInit, Output, ChangeDetectorRef, OnDestroy }
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 // ============================================================
 //  INTERFACES
@@ -47,6 +48,9 @@ export interface ApprovalRow {
   status: 'Approved' | 'Rejected' | 'In-Process' | 'Pending';
   dateTime?: string;
   email?: string;
+  contactNo?: string;
+  organization?: string;
+  showSuggestions?: boolean;
 }
 
 export interface AttachmentRow {
@@ -145,6 +149,7 @@ export class PrRequest implements OnInit, OnDestroy {
   today: string = new Date().toISOString().split('T')[0];
 
   ccInput = '';
+  managerOptions: { name: string; email: string; designation?: string; role?: string }[] = [];
 
   uomOptions: string[] = ['Nos', 'Kg', 'Ltr', 'Mtr', 'Pcs', 'Set', 'Unit', 'Hour'];
   termsLabels: string[] = ['GST', 'Transport', 'Payment terms', 'Lead time'];
@@ -162,8 +167,86 @@ export class PrRequest implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private sanitizer: DomSanitizer
   ) {}
+
+  Math = Math;
+  showMediaModal = false;
+  mediaPreviewUrl = '';
+  mediaPreviewTitle = '';
+  mediaZoomScale = 1;
+  decisionRemarks = '';
+
+  openMediaPreview(url: string, title?: string) {
+    if (!url) return;
+    this.mediaPreviewUrl = url;
+    this.mediaPreviewTitle = title || 'Attachment Preview';
+    this.mediaZoomScale = 1;
+    this.showMediaModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeMediaPreview() {
+    this.showMediaModal = false;
+    this.mediaPreviewUrl = '';
+    this.mediaPreviewTitle = '';
+    this.mediaZoomScale = 1;
+  }
+
+  zoomInMedia() {
+    this.mediaZoomScale = Math.min(3, +(this.mediaZoomScale + 0.25).toFixed(2));
+  }
+
+  zoomOutMedia() {
+    this.mediaZoomScale = Math.max(0.5, +(this.mediaZoomScale - 0.25).toFixed(2));
+  }
+
+  resetMediaZoom() {
+    this.mediaZoomScale = 1;
+  }
+
+  getSanitizedUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url || '');
+  }
+
+  confirmApproveWithRemarks(pr: PrRequestData) {
+    if (!pr || (!pr.id && !pr.prNumber)) return;
+    this.isSubmitting = true;
+    const prId = pr.id || pr.prNumber;
+    this.authService.approvePR(prId).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        pr.status = 'Approved';
+        this.showToastMessage(`PR ${pr.prNumber} Approved successfully and moved to PO stage!`, 'success');
+        this.loadAll();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToastMessage(err?.message || 'Failed to approve PR', 'error');
+      }
+    });
+  }
+
+  confirmRejectWithRemarks(pr: PrRequestData) {
+    if (!pr || (!pr.id && !pr.prNumber)) return;
+    this.isSubmitting = true;
+    const prId = pr.id || pr.prNumber;
+    this.authService.rejectPR(prId, this.decisionRemarks).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        pr.status = 'Rejected';
+        this.showToastMessage(`PR ${pr.prNumber} Rejected successfully`, 'error');
+        this.loadAll();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToastMessage(err?.message || 'Failed to reject PR', 'error');
+      }
+    });
+  }
 
   // ============================================================
   //  LIFECYCLE
@@ -182,6 +265,7 @@ export class PrRequest implements OnInit, OnDestroy {
     this.clockTimer = setInterval(() => this.updateClock(), 1000);
     this.loadAll();
     this.generateSerialNo();
+    this.loadManagerOptions();
 
     this.refreshInterval = setInterval(() => {
       if (this.showListView) this.loadAll();
@@ -881,7 +965,16 @@ export class PrRequest implements OnInit, OnDestroy {
   // ============================================================
 
   addApprovalRow(line: 'Parallel' | 'Sequential' = 'Sequential'): void {
-    this.activePR.approvalChain.push({ line, stakeholder: '', comments: '', designation: '', status: 'Pending' });
+    this.activePR.approvalChain.push({ 
+      line, 
+      stakeholder: '', 
+      comments: '', 
+      designation: '', 
+      status: 'Pending',
+      contactNo: '',
+      organization: '',
+      dateTime: new Date().toLocaleString()
+    });
     this.cdr.detectChanges();
   }
 
@@ -893,6 +986,53 @@ export class PrRequest implements OnInit, OnDestroy {
     }
     pr.approvalChain.splice(index, 1);
     this.cdr.detectChanges();
+  }
+
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.managerOptions;
+    return this.managerOptions.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || m.role || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectManager(approver: any, manager: any) {
+    approver.stakeholder = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation || manager.role || '';
+    approver.showSuggestions = false;
+    approver.dateTime = new Date().toLocaleString();
+    approver.status = 'Pending';
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  private loadManagerOptions() {
+    this.authService.getManagers().subscribe({
+      next: (res: any) => {
+        const list = res?.managers || res?.defaultApprovers || [];
+        this.managerOptions = Array.isArray(list) ? list : [];
+        if (!this.managerOptions.length) this.setDefaultManagers();
+      },
+      error: () => { this.setDefaultManagers(); }
+    });
+  }
+
+  private setDefaultManagers() {
+    this.managerOptions = [
+      { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
+      { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM' },
+      { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP' },
+      { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP' },
+      { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM' },
+      { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD' }
+    ];
   }
 
   getApprovalStatusClass(status: string): string {
@@ -1032,6 +1172,48 @@ export class PrRequest implements OnInit, OnDestroy {
   getStatusIcon(status: string): string {
     const map: any = { Draft: '📝', Pending: '⏳', Approved: '✅', Rejected: '❌' };
     return map[status] || '📋';
+  }
+
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const lineVal = app.line || app.lineMode || app.approvalType || 'Parallel';
+      
+      if (lineVal === 'Parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
+  }
+
+  getGroupRowClass(list: any[], index: number): string {
+    if (!list || !list.length) return '';
+    const serials = this.getApprovalChainSerials(list);
+    const cur = serials[index];
+    const prev = index > 0 ? serials[index - 1] : null;
+    const next = index < list.length - 1 ? serials[index + 1] : null;
+
+    if (cur === prev && cur === next) return 'group-row-middle';
+    if (cur === next && cur !== prev) return 'group-row-start';
+    if (cur === prev && cur !== next) return 'group-row-end';
+    return 'group-row-single';
   }
 
   formatCurrency(value: number): string {

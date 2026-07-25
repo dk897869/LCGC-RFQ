@@ -545,36 +545,18 @@
             <div class="top-requesters-panel">
               <div class="requesters-hdr">
                 <h3>Top Requesters</h3>
-                <select class="chart-select"><option>6 Months</option></select>
+                <select class="chart-select"><option>All Time</option></select>
               </div>
               <div class="requesters-list">
-                <div class="req-user-item">
-                  <div class="user-avatar blue">AK</div>
+                <div class="req-user-item" *ngFor="let item of topRequesters" (click)="filterByRequester(item.name)" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='translateX(0)'">
+                  <div class="user-avatar" [ngClass]="item.avatarColor">{{ item.avatarText }}</div>
                   <div class="user-details">
-                    <div class="user-name-row"><span>Amit Kumar</span><strong>12 requests</strong></div>
-                    <div class="progress-bar"><div class="progress-fill blue" style="width: 75%;"></div></div>
+                    <div class="user-name-row"><span>{{ item.name }}</span><strong>{{ item.count }} request{{ item.count > 1 ? 's' : '' }}</strong></div>
+                    <div class="progress-bar"><div class="progress-fill" [ngClass]="item.avatarColor" [style.width.%]="item.percentage"></div></div>
                   </div>
                 </div>
-                <div class="req-user-item">
-                  <div class="user-avatar green">RS</div>
-                  <div class="user-details">
-                    <div class="user-name-row"><span>Rajesh Sharma</span><strong>9 requests</strong></div>
-                    <div class="progress-bar"><div class="progress-fill green" style="width: 55%;"></div></div>
-                  </div>
-                </div>
-                <div class="req-user-item">
-                  <div class="user-avatar orange">PS</div>
-                  <div class="user-details">
-                    <div class="user-name-row"><span>Priya Singh</span><strong>7 requests</strong></div>
-                    <div class="progress-bar"><div class="progress-fill orange" style="width: 40%;"></div></div>
-                  </div>
-                </div>
-                <div class="req-user-item">
-                  <div class="user-avatar purple">VJ</div>
-                  <div class="user-details">
-                    <div class="user-name-row"><span>Vikram Joshi</span><strong>6 requests</strong></div>
-                    <div class="progress-bar"><div class="progress-fill purple" style="width: 30%;"></div></div>
-                  </div>
+                <div class="req-user-item" *ngIf="!topRequesters.length">
+                  <div style="font-size: 13px; color: #64748b; padding: 10px 0; text-align: center; width: 100%;">No requests found yet.</div>
                 </div>
               </div>
             </div>

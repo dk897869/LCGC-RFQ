@@ -8,12 +8,14 @@ const vendorRequestVendorSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   status: { 
     type: String, 
-    enum: ['Pending', 'Approved', 'Rejected', 'Quoted'], 
+    enum: ['Pending', 'Approved', 'Rejected', 'Quoted', 'Accepted'], 
     default: 'Pending' 
   },
   remarks: { type: String, default: '' },
   quotationSubmitted: { type: Boolean, default: false },
   quotationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quotation' },
+  attachmentName: { type: String, default: '' },
+  attachmentData: { type: String, default: '' },
   submittedDate: { type: Date },
   viewedDate: { type: Date },
   emailSentDate: { type: Date }

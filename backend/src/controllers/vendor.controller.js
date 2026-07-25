@@ -456,7 +456,7 @@ exports.createTemporaryVendorAccount = async (req, res) => {
     }
 
     const tempPassword = password || makeTempPassword();
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    const hashedPassword = await bcrypt.hash(tempPassword, 8);
     
     const accountData = {
       name,
@@ -489,39 +489,41 @@ exports.createTemporaryVendorAccount = async (req, res) => {
       user = await User.create(accountData);
     }
 
-    // Send welcome email (non-blocking)
-    try {
-      const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER || 'dk897869@gmail.com',
-          pass: process.env.SMTP_PASS || 'jzix seng gfwe pyvm'
-        }
-      });
+    // Send welcome email asynchronously (non-blocking for instant response)
+    setImmediate(async () => {
+      try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: process.env.SMTP_USER || 'dk897869@gmail.com',
+            pass: process.env.SMTP_PASS || 'jzix seng gfwe pyvm'
+          }
+        });
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
-      
-      await transporter.sendMail({
-        from: `"LCGC RFQ System" <${process.env.SMTP_USER || 'dk897869@gmail.com'}>`,
-        to: email,
-        subject: 'Vendor Account Created - LCGC Portal',
-        html: `
-          <h2>Welcome to LCGC Vendor Portal</h2>
-          <p>Dear ${name || 'Vendor'},</p>
-          <p>Your vendor account has been created successfully.</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-          <p><a href="${frontendUrl}/login">Login Here</a></p>
-          <p>Please change your password after first login.</p>
-        `
-      });
-      console.log(`✅ Welcome email sent to ${email}`);
-    } catch (emailErr) {
-      console.error('⚠️ Welcome email error (non-blocking):', emailErr.message);
-    }
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+        
+        await transporter.sendMail({
+          from: `"LCGC RFQ System" <${process.env.SMTP_USER || 'dk897869@gmail.com'}>`,
+          to: email,
+          subject: 'Vendor Account Created - LCGC Portal',
+          html: `
+            <h2>Welcome to LCGC Vendor Portal</h2>
+            <p>Dear ${name || 'Vendor'},</p>
+            <p>Your vendor account has been created successfully.</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+            <p><a href="${frontendUrl}/login">Login Here</a></p>
+            <p>Please change your password after first login.</p>
+          `
+        });
+        console.log(`✅ Welcome email sent asynchronously to ${email}`);
+      } catch (emailErr) {
+        console.error('⚠️ Welcome email error (non-blocking):', emailErr.message);
+      }
+    });
 
     res.status(201).json({
       success: true,
@@ -661,6 +663,7 @@ exports.getMyVendorRfqs = async (req, res) => {
 exports.acceptVendorRfq = async (req, res) => {
   try {
     const { id } = req.params;
+    const { attachmentName, attachmentData, remarks } = req.body;
     const vendorEmail = req.user?.email?.toLowerCase();
     
     const emailsToMatch = [vendorEmail];
@@ -679,8 +682,6 @@ exports.acceptVendorRfq = async (req, res) => {
     let title = '';
     
     if (rfq) {
-      rfq.status = 'Approved';
-      await rfq.save();
       rfqNo = rfq.rfqNo || rfq.uniqueSerialNo || '—';
       requesterEmail = rfq.emailId;
       ccList = rfq.ccList || [];
@@ -690,7 +691,12 @@ exports.acceptVendorRfq = async (req, res) => {
       if (vReq) {
         const vIndex = vReq.vendors.findIndex(v => emailsToMatch.includes(v.email?.toLowerCase()));
         if (vIndex !== -1) {
-          vReq.vendors[vIndex].status = 'Approved';
+          vReq.vendors[vIndex].status = 'Accepted';
+          vReq.vendors[vIndex].attachmentName = attachmentName || '';
+          vReq.vendors[vIndex].attachmentData = attachmentData || '';
+          vReq.vendors[vIndex].remarks = remarks || '';
+          vReq.vendors[vIndex].submittedDate = new Date();
+          vReq.vendors[vIndex].quotationSubmitted = true;
           await vReq.save();
         }
       }
@@ -699,8 +705,6 @@ exports.acceptVendorRfq = async (req, res) => {
       if (!rfqDoc) {
         return res.status(404).json({ success: false, message: "RFQ request not found" });
       }
-      rfqDoc.status = 'Approved';
-      await rfqDoc.save();
       rfqNo = rfqDoc.uniqueSerialNo || '—';
       requesterEmail = rfqDoc.emailId;
       ccList = rfqDoc.ccTo || [];
@@ -710,10 +714,29 @@ exports.acceptVendorRfq = async (req, res) => {
       if (vReq) {
         const vIndex = vReq.vendors.findIndex(v => emailsToMatch.includes(v.email?.toLowerCase()));
         if (vIndex !== -1) {
-          vReq.vendors[vIndex].status = 'Approved';
+          vReq.vendors[vIndex].status = 'Accepted';
+          vReq.vendors[vIndex].attachmentName = attachmentName || '';
+          vReq.vendors[vIndex].attachmentData = attachmentData || '';
+          vReq.vendors[vIndex].remarks = remarks || '';
+          vReq.vendors[vIndex].submittedDate = new Date();
+          vReq.vendors[vIndex].quotationSubmitted = true;
           await vReq.save();
         }
       }
+    }
+
+    try {
+      const { createNotification } = require('../services/notification.service');
+      if (createNotification && requesterEmail) {
+        await createNotification(
+          requesterEmail,
+          'RFQ Invitation Accepted by Vendor',
+          `Vendor ${req.user?.name || req.user?.email} has accepted RFQ ${rfqNo} and uploaded the quotation document. Ready for cost comparison.`,
+          'info'
+        );
+      }
+    } catch (notifErr) {
+      console.error("Failed to create database notification:", notifErr);
     }
     
     if (requesterEmail) {

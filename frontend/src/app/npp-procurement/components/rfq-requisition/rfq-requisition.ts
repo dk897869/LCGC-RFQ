@@ -2,6 +2,7 @@ import { Component, Input, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import * as XLSX from 'xlsx';
 
 interface RFQItem {
@@ -26,6 +27,7 @@ interface RFQItem {
   objective?: string;
   stakeholders?: any[];
   ccList?: string[];
+  ccTo?: string[];
   attachments?: any[];
   items?: RFQLineItem[];
   approvalDate?: string;
@@ -36,7 +38,10 @@ interface RFQItem {
 }
 
 interface RFQLineItem {
+  partNo?: string;
   description: string;
+  specification?: string;
+  commodity?: string;
   uom: string;
   qty: number;
   make: string;
@@ -53,6 +58,11 @@ interface RFQApprover {
   designation: string;
   line: string;
   remarks: string;
+  contactNo?: string;
+  organization?: string;
+  status?: string;
+  dateTime?: string;
+  showSuggestions?: boolean;
 }
 
 interface RFQAttachment {
@@ -94,6 +104,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   showCreateModal = false;
   showViewModal = false;
   selectedItem: RFQItem | null = null;
+  decisionRemarks = '';
   isSubmitting = false;
   isEditMode = false;
   editingSerialNo = '';
@@ -106,7 +117,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   ccInput = '';
   ccList: string[] = [];
   managerOptions: { name: string; email: string; designation?: string; role?: string }[] = [];
-  rfqApprovers: RFQApprover[] = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
+  rfqApprovers: RFQApprover[] = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
   rfqAttachments: RFQAttachment[] = [{ name: 'Attachment 1', fileName: '' }];
 
   rfqLineItems: RFQLineItem[] = [
@@ -151,8 +162,90 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private sanitizer: DomSanitizer
   ) {}
+
+  Math = Math;
+  showMediaModal = false;
+  mediaPreviewUrl = '';
+  mediaPreviewTitle = '';
+  mediaZoomScale = 1;
+
+  openMediaPreview(url: string, title?: string) {
+    if (!url) return;
+    this.mediaPreviewUrl = url;
+    this.mediaPreviewTitle = title || 'Attachment Preview';
+    this.mediaZoomScale = 1;
+    this.showMediaModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeMediaPreview() {
+    this.showMediaModal = false;
+    this.mediaPreviewUrl = '';
+    this.mediaPreviewTitle = '';
+    this.mediaZoomScale = 1;
+  }
+
+  zoomInMedia() {
+    this.mediaZoomScale = Math.min(3, +(this.mediaZoomScale + 0.25).toFixed(2));
+  }
+
+  zoomOutMedia() {
+    this.mediaZoomScale = Math.max(0.5, +(this.mediaZoomScale - 0.25).toFixed(2));
+  }
+
+  resetMediaZoom() {
+    this.mediaZoomScale = 1;
+  }
+
+  getSanitizedUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url || '');
+  }
+
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const rawLine = app.line || app.lineMode || app.approvalType || 'Parallel';
+      const lineVal = String(rawLine).trim().toLowerCase();
+      
+      if (lineVal === 'parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
+  }
+
+  getGroupRowClass(list: any[], index: number): string {
+    if (!list || !list.length) return '';
+    const serials = this.getApprovalChainSerials(list);
+    const cur = serials[index];
+    const prev = index > 0 ? serials[index - 1] : null;
+    const next = index < list.length - 1 ? serials[index + 1] : null;
+
+    if (cur === prev && cur === next) return 'group-row-middle';
+    if (cur === next && cur !== prev) return 'group-row-start';
+    if (cur === prev && cur !== next) return 'group-row-end';
+    return 'group-row-single';
+  }
 
   ngOnInit() {
     this.currentDate = new Date();
@@ -297,10 +390,14 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
         email:       s.email || '',
         designation: s.designation || '',
         line:        s.line || 'Parallel',
-        remarks:     s.remarks || ''
+        remarks:     s.remarks || '',
+        contactNo:   s.contactNo || '',
+        organization: s.organization || '',
+        status:      s.status || 'pending',
+        dateTime:    s.dateTime || new Date().toLocaleString()
       }));
     } else if (!this.rfqApprovers.length) {
-      this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
+      this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
     }
 
     this.rfqDraftSerialNo = data.uniqueSerialNo || this.generateLocalSerial('RFQ');
@@ -516,12 +613,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   }
 
   viewItem(item: RFQItem) {
-    // Open the full form for editing if it's pending
-    if (item.status === 'Pending') {
-      this.openEditFromList(item);
-      return;
-    }
-    // For non-pending items, show the view modal
+    // For all items, show the view modal
     const id = item._id || item.id;
     if (id) {
       this.isPrefillLoading = true;
@@ -609,7 +701,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     ];
     this.ccInput        = '';
     this.ccList         = [];
-    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
+    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
     this.rfqAttachments = [{ name: 'Attachment 1', fileName: '' }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
@@ -633,7 +725,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     ];
     this.ccInput        = '';
     this.ccList         = [];
-    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' }];
+    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
     this.rfqAttachments = [{ name: 'Attachment 1', fileName: '' }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
@@ -693,20 +785,39 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   // ====================== APPROVERS ======================
 
   addApproverRow() {
-    this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' });
+    this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() });
   }
 
   removeApproverRow(index: number) {
     this.rfqApprovers.splice(index, 1);
-    if (!this.rfqApprovers.length) this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '' });
+    if (!this.rfqApprovers.length) {
+      this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() });
+    }
   }
 
-  onManagerLookup(row: RFQApprover, value: string) {
-    const term    = (value || '').trim().toLowerCase();
-    const manager = this.managerOptions.find(m => (m.name || '').toLowerCase() === term || (m.email || '').toLowerCase() === term);
-    row.managerName  = value;
-    row.email        = manager?.email || '';
-    row.designation  = manager?.designation || manager?.role || '';
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.managerOptions;
+    return this.managerOptions.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || m.role || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectManager(approver: any, manager: any) {
+    approver.managerName = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation || manager.role || '';
+    approver.showSuggestions = false;
+    approver.dateTime = new Date().toLocaleString();
+    approver.status = 'pending';
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
   }
 
   onApproverEmailChange(row: RFQApprover, email: string) {
@@ -956,9 +1067,58 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   closeViewModal() {
     this.showViewModal = false;
     this.selectedItem  = null;
+    this.decisionRemarks = '';
   }
 
   // ====================== APPROVE / REJECT WITH CONFIRM ======================
+
+  confirmApproveWithRemarks(item: RFQItem) {
+    const id = item._id || item.id;
+    if (!id) { this.showToast('error', 'Cannot approve: No ID found'); return; }
+    
+    this.isPrefillLoading = true;
+    this.authService.approveRFQ(String(id), this.decisionRemarks).subscribe({
+      next: () => {
+        this.isPrefillLoading = false;
+        item.status = 'Approved';
+        item.approvalDate = new Date().toISOString();
+        item.approvedBy = this.currentUser?.name || 'Admin';
+        item.currentStage = 'Vendor Request';
+        item.vendorRequestCreated = false;
+        this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
+        this.applyFilter();
+        this.showToast('success', `"${item.title}" approved successfully!`);
+        this.closeViewModal();
+        this.loadRFQs();
+      },
+      error: (err: any) => {
+        this.isPrefillLoading = false;
+        this.showToast('error', err?.message || 'Approval failed.');
+      }
+    });
+  }
+
+  confirmRejectWithRemarks(item: RFQItem) {
+    const id = item._id || item.id;
+    if (!id) { this.showToast('error', 'Cannot reject: No ID found'); return; }
+    
+    this.isPrefillLoading = true;
+    this.authService.rejectRFQ(String(id), this.decisionRemarks).subscribe({
+      next: () => {
+        this.isPrefillLoading = false;
+        item.status = 'Rejected';
+        this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
+        this.applyFilter();
+        this.showToast('success', `"${item.title}" rejected successfully!`);
+        this.closeViewModal();
+        this.loadRFQs();
+      },
+      error: (err: any) => {
+        this.isPrefillLoading = false;
+        this.showToast('error', err?.message || 'Rejection failed.');
+      }
+    });
+  }
 
   approveItem(item: RFQItem) {
     this.confirmItem       = item;
@@ -1032,8 +1192,10 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   // ====================== UTILITY ======================
 
   isAdminOrManager(): boolean {
-    const role = this.authService.getUserRole();
-    return role === 'Admin' || role === 'Manager';
+    const role = (this.authService.getUserRole() || '').toLowerCase();
+    const user = this.authService.getUser();
+    const dept = (user?.department || '').toLowerCase();
+    return role === 'admin' || role === 'manager' || role === 'purchase' || dept === 'purchase';
   }
 
   formatDate(d: string | undefined): string {
@@ -1062,6 +1224,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     if (s === 'rejected') return 'rejected';
     return 'pending';
   }
+
 
   trackById(_: number, item: any) {
     return item._id || item.id || _;

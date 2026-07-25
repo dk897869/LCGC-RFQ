@@ -88,28 +88,85 @@
 
       <!-- Section 3: Approval Chain - DYNAMIC FROM API -->
       <div class="section">
-        <div class="section-title">🔗 Approval Chain</div>
-        <div class="api-status" *ngIf="isLoadingApprovers">Loading approvers from API...</div>
-        <div class="approvers-list">
-          <div class="approver-row" *ngFor="let approver of approvers; let i=index">
-            <div class="approver-number">{{ i+1 }}</div>
-            <div class="approver-field">
-              <select [(ngModel)]="approver.name" (change)="onApproverSelect(approver, approver.name)">
-                <option value="">-- Select Approver --</option>
-                <option *ngFor="let a of availableApprovers" [value]="a.name">{{ a.name }} - {{ a.designation }}</option>
-              </select>
-            </div>
-            <div class="approver-field"><input type="email" [(ngModel)]="approver.email" placeholder="Email auto-fills" readonly></div>
-            <div class="approver-field"><input type="text" [(ngModel)]="approver.designation" placeholder="Designation auto-fills" readonly></div>
-            <div class="approver-field">
-              <select [(ngModel)]="approver.line"><option>Parallel</option><option>Sequential</option></select>
-            </div>
-            <div class="approver-field"><input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks"></div>
-            <button class="remove-btn" (click)="removeApprover(approver.id)" *ngIf="approvers.length > 1">🗑️</button>
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+          <span>🔗 Team Approval Chain</span>
+          <div>
+            <button type="button" class="btn-refresh" (click)="fetchApprovers()" style="margin-right: 8px;">⟳ Refresh Approvers</button>
+            <button type="button" class="btn-add-approver" (click)="addApprover()">+ Add Approver</button>
           </div>
         </div>
-        <button class="btn-add" (click)="addApprover()">+ Add Approver</button>
-        <button class="btn-refresh" (click)="fetchApprovers()">⟳ Refresh Approvers</button>
+        <div class="api-status" *ngIf="isLoadingApprovers">Loading approvers from API...</div>
+        <div class="approval-table-wrapper" style="overflow-x: auto; margin-top: 10px;">
+          <table class="doc-table approval-table-fidelity approval-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">#</th>
+                <th style="width: 100px;">LINE</th>
+                <th style="width: 220px;">NAME</th>
+                <th>COMMENTS/REMARKS</th>
+                <th style="width: 150px;">DESIGNATION</th>
+                <th style="width: 220px;">E-MAIL</th>
+                <th style="width: 150px;">CONTACT NO.</th>
+                <th style="width: 160px;">ORGANIZATION</th>
+                <th style="width: 110px; text-align: center;">STATUS</th>
+                <th style="width: 170px;">DATE/TIME</th>
+                <th style="width: 50px; text-align: center;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let approver of approvers; let i = index">
+                <td style="text-align: center; font-weight: bold; color: #64748b;">{{ getApprovalChainSerials(approvers)[i] }}</td>
+                <td>
+                  <select [(ngModel)]="approver.line" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px;">
+                    <option value="Parallel">Parallel</option>
+                    <option value="Sequential">Sequential</option>
+                  </select>
+                </td>
+                <td style="position: relative;">
+                  <input type="text"
+                         [(ngModel)]="approver.name"
+                         (ngModelChange)="approver.name = $event"
+                         (focus)="approver.showSuggestions = true"
+                         (blur)="onManagerBlur(approver)"
+                         placeholder="Enter Name"
+                         class="manager-input-text"
+                         autocomplete="off"
+                         style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+                  <div class="manager-suggestions" *ngIf="approver.showSuggestions && getFilteredManagers(approver.name).length > 0">
+                    <div class="suggestion-item"
+                         *ngFor="let m of getFilteredManagers(approver.name)"
+                         (mousedown)="selectManager(approver, m)">
+                      <span class="m-name">{{ m.name }}</span>
+                      <span class="m-designation">{{ m.designation || m.role || '' }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.remarks" placeholder="Remarks" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+                </td>
+                <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px; vertical-align: middle; padding-left: 8px;">{{ approver.designation }}</td>
+                <td class="readonly" style="color: #64748b; font-style: italic; font-size: 13px; vertical-align: middle; padding-left: 8px;">{{ approver.email }}</td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.contactNo" placeholder="Contact No." style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+                </td>
+                <td>
+                  <input type="text" [(ngModel)]="approver.organization" placeholder="Organization" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
+                </td>
+                <td style="text-align: center;">
+                  <span class="status-badge-small status-pending" style="background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">
+                    {{ approver.status || 'Pending' }}
+                  </span>
+                </td>
+                <td class="date-time-cell" style="font-size: 12px; color: #64748b; white-space: nowrap;">
+                  {{ approver.dateTime || '' }}
+                </td>
+                <td style="text-align: center;">
+                  <button type="button" class="remove-btn" (click)="removeApprover(approver.id)" [disabled]="approvers.length <= 1" style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer;">×</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Section 4: CC Recipients - DYNAMIC -->

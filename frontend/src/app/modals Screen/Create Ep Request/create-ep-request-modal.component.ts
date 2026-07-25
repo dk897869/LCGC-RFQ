@@ -2,6 +2,7 @@ import { Component, OnInit, Output, EventEmitter, ChangeDetectorRef } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 interface Approver {
   id?: number;
@@ -154,7 +155,49 @@ export class CreateEPRequestModalComponent implements OnInit {
   previewData: any = null;
   private toastTimer: any;
 
-  constructor(private cdr: ChangeDetectorRef, private authService: AuthService) {}
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService,
+    private sanitizer: DomSanitizer
+  ) {}
+
+  Math = Math;
+  showMediaModal = false;
+  mediaPreviewUrl = '';
+  mediaPreviewTitle = '';
+  mediaZoomScale = 1;
+
+  openMediaPreview(url: string, title?: string) {
+    if (!url) return;
+    this.mediaPreviewUrl = url;
+    this.mediaPreviewTitle = title || 'Attachment Preview';
+    this.mediaZoomScale = 1;
+    this.showMediaModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeMediaPreview() {
+    this.showMediaModal = false;
+    this.mediaPreviewUrl = '';
+    this.mediaPreviewTitle = '';
+    this.mediaZoomScale = 1;
+  }
+
+  zoomInMedia() {
+    this.mediaZoomScale = Math.min(3, +(this.mediaZoomScale + 0.25).toFixed(2));
+  }
+
+  zoomOutMedia() {
+    this.mediaZoomScale = Math.max(0.5, +(this.mediaZoomScale - 0.25).toFixed(2));
+  }
+
+  resetMediaZoom() {
+    this.mediaZoomScale = 1;
+  }
+
+  getSanitizedUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url || '');
+  }
 
   ngOnInit() {
     this.initializeForm();
@@ -748,13 +791,45 @@ export class CreateEPRequestModalComponent implements OnInit {
 
   // View request - opens full page detail view
   viewRequest(request: EPRequest) {
-    this.selectedRequest = request;
+    this.selectedRequest = { ...request };
     this.isViewMode = true;
     this.showListView = false;
     this.showFormView = true;
     this.showSuccessView = false;
     this.showDetailModal = false;
     this.actionRemarks = '';
+
+    const mongoId = request._id || request.id || request.requestId;
+    if (mongoId) {
+      this.authService.getEPRequestFullDetails(mongoId).subscribe({
+        next: (res: any) => {
+          if (res?.data || res?.request) {
+            const full = res.data || res.request;
+            this.selectedRequest = {
+              ...this.selectedRequest,
+              ...full,
+              id: full._id || full.id || this.selectedRequest?.id,
+              requestId: full.uniqueSerialNo || full.requestId || this.selectedRequest?.requestId,
+              title: full.titleOfActivity || full.title || this.selectedRequest?.title,
+              description: full.purposeAndObjective || full.description || (this.selectedRequest as any)?.description,
+              objective: full.objective || (this.selectedRequest as any)?.objective,
+              vendor: full.vendorName || full.vendor || (this.selectedRequest as any)?.vendor,
+              amount: full.estimatedAmount || full.amount || this.selectedRequest?.amount,
+              priority: full.priority || this.selectedRequest?.priority,
+              department: full.department || this.selectedRequest?.department,
+              requester: full.requesterName || full.requester || this.selectedRequest?.requester,
+              email: full.emailId || full.email || (this.selectedRequest as any)?.email,
+              contactNo: full.contactNo || (this.selectedRequest as any)?.contactNo,
+              organization: full.organization || (this.selectedRequest as any)?.organization,
+              attachments: full.attachments || (this.selectedRequest as any)?.attachments || [],
+              ccList: full.ccList || (this.selectedRequest as any)?.ccList || [],
+              stakeholders: full.approvalChain || full.stakeholders || (this.selectedRequest as any)?.stakeholders || []
+            };
+            this.cdr.detectChanges();
+          }
+        }
+      });
+    }
   }
 
   closeDetailModal() {
@@ -852,6 +927,15 @@ export class CreateEPRequestModalComponent implements OnInit {
     this.showToastMessage(`Total ${this.getTotalRequests()} EP request(s) found`, 'info');
   }
 
+  isPurchaseHeadOrAdmin(): boolean {
+    const user = this.authService.getUser();
+    if (!user) return false;
+    const role = String(user.role || '').toLowerCase();
+    const dept = String(user.department || '').toLowerCase();
+    const desig = String(user.designation || '').toLowerCase();
+    return role === 'admin' || role === 'purchase' || dept.includes('purchase') || desig.includes('purchase') || desig.includes('head');
+  }
+
   // Edit request - opens full form pre-filled with selected request data
   editRequest() {
     if (!this.selectedRequest) return;
@@ -867,5 +951,56 @@ export class CreateEPRequestModalComponent implements OnInit {
     this.showFormView = true;
     this.showSuccessView = false;
     this.showToastMessage('Form is now editable. Submit to update the request.', 'info');
+  }
+
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const rawLine = app.line || app.lineMode || app.approvalType || 'Parallel';
+      const lineVal = String(rawLine).trim().toLowerCase();
+      
+      if (lineVal === 'parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
+  }
+
+  getGroupRowClass(list: any[], index: number): string {
+    if (!list || !list.length) return '';
+    const serials = this.getApprovalChainSerials(list);
+    const cur = serials[index];
+    const prev = index > 0 ? serials[index - 1] : null;
+    const next = index < list.length - 1 ? serials[index + 1] : null;
+
+    if (cur === prev && cur === next) return 'group-row-middle';
+    if (cur === next && cur !== prev) return 'group-row-start';
+    if (cur === prev && cur !== next) return 'group-row-end';
+    return 'group-row-single';
+  }
+
+  formatDate(dateStr?: string): string {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`;
   }
 }

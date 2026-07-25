@@ -2745,3 +2745,94 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
     align-items: flex-start;
   }
 }
+
+// User Info Card style alignment
+.rfq-user-info-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  background: #fafbff;
+}
+
+.rfq-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rfq-info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  
+  .rfq-info-label {
+    font-weight: 700;
+    color: #1e40af;
+    min-width: 100px;
+  }
+  
+  .rfq-info-val {
+    color: #374151;
+    font-weight: 500;
+  }
+}
+
+// Status Badges for Team Approval Chain
+.status-badge-chain {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  
+  &.approved, &.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  }
+  &.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+  }
+  &.rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+}
+
+/* Approval Chain Visual Grouping Styles (Matching Image 2) */
+tr.group-row-start {
+  background-color: #f8fafc !important;
+  td {
+    border-top: 2px solid #64748b !important;
+    &:first-child { border-left: 2px solid #64748b !important; border-top-left-radius: 8px; }
+    &:last-child { border-right: 2px solid #64748b !important; border-top-right-radius: 8px; }
+  }
+}
+tr.group-row-middle {
+  background-color: #f8fafc !important;
+  td {
+    border-top: 1px dashed #cbd5e1 !important;
+    &:first-child { border-left: 2px solid #64748b !important; }
+    &:last-child { border-right: 2px solid #64748b !important; }
+  }
+}
+tr.group-row-end {
+  background-color: #f8fafc !important;
+  td {
+    border-top: 1px dashed #cbd5e1 !important;
+    border-bottom: 2px solid #64748b !important;
+    &:first-child { border-left: 2px solid #64748b !important; border-bottom-left-radius: 8px; }
+    &:last-child { border-right: 2px solid #64748b !important; border-bottom-right-radius: 8px; }
+  }
+}
+tr.group-row-single {
+  td {
+    border: 1px solid #e2e8f0;
+  }
+}

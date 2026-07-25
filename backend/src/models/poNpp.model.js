@@ -67,6 +67,10 @@ const poNppSchema = new mongoose.Schema({
   terms: { type: mongoose.Schema.Types.Mixed, default: [] },
   financeRows: { type: mongoose.Schema.Types.Mixed, default: [] },
   deliverySchedule: { type: mongoose.Schema.Types.Mixed, default: [] },
+  attachment1: { type: String },
+  attachment2: { type: String },
+  attachment3: { type: String },
+  attachments: { type: Array, default: [] },
   
   status: { type: String, default: 'Pending' },
   source: { type: String, default: 'PO-NPP' }

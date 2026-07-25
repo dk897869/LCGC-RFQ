@@ -2,8 +2,9 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-type VendorStatus = 'Pending' | 'Approved' | 'Rejected';
+type VendorStatus = 'Pending' | 'Approved' | 'Rejected' | 'Accepted' | 'Quoted';
 
 interface VendorEntry {
   serialNo: number;
@@ -82,6 +83,10 @@ interface ApprovalChainItem {
   status: 'Pending' | 'Approved' | 'Rejected';
   remarks: string;
   approvalDate?: string;
+  contactNo?: string;
+  organization?: string;
+  line?: string;
+  showSuggestions?: boolean;
 }
 
 interface QuotationRequest {
@@ -133,6 +138,31 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   showFormView = false;
   isLoading = false;
 
+  s1Attachments: any[] = [];
+  s2Attachments: any[] = [];
+  s3Attachments: any[] = [];
+
+  onVendorAttachmentUpload(vendorNum: 1 | 2 | 3, event: any) {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const att = {
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        preview: e.target.result,
+        url: e.target.result,
+        file: file
+      };
+      if (vendorNum === 1) this.s1Attachments.push(att);
+      else if (vendorNum === 2) this.s2Attachments.push(att);
+      else if (vendorNum === 3) this.s3Attachments.push(att);
+      this.showToastMessage(`Attachment uploaded for Supplier ${vendorNum}`, 'success');
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
+  }
+
   // ---------------- list search / filter ----------------
   searchTerm = '';
   activeFilter: 'All' | 'Pending' | 'Submitted' = 'Pending';
@@ -154,7 +184,7 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   isSubmitting = false;
   submitSuccess = false;
 
-  conditionOptions = ['GST', 'Transport', 'Payment Terms', 'Lead Time', 'Warranty', 'Delivery Location', 'Other'];
+  conditionOptions = ['GST %', 'HSN Code', 'Transport', 'Payment Terms', 'Lead Time', 'Warranty', 'Delivery Location', 'Other'];
 
   // ---------------- footer clock ----------------
   currentDate: Date = new Date();
@@ -187,7 +217,49 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   // ---------------- CC input ----------------
   ccInput = '';
 
-  constructor(private authService: AuthService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer
+  ) {}
+
+  Math = Math;
+  showMediaModal = false;
+  mediaPreviewUrl = '';
+  mediaPreviewTitle = '';
+  mediaZoomScale = 1;
+
+  openMediaPreview(url: string, title?: string) {
+    if (!url) return;
+    this.mediaPreviewUrl = url;
+    this.mediaPreviewTitle = title || 'Attachment Preview';
+    this.mediaZoomScale = 1;
+    this.showMediaModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeMediaPreview() {
+    this.showMediaModal = false;
+    this.mediaPreviewUrl = '';
+    this.mediaPreviewTitle = '';
+    this.mediaZoomScale = 1;
+  }
+
+  zoomInMedia() {
+    this.mediaZoomScale = Math.min(3, +(this.mediaZoomScale + 0.25).toFixed(2));
+  }
+
+  zoomOutMedia() {
+    this.mediaZoomScale = Math.max(0.5, +(this.mediaZoomScale - 0.25).toFixed(2));
+  }
+
+  resetMediaZoom() {
+    this.mediaZoomScale = 1;
+  }
+
+  getSanitizedUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url || '');
+  }
 
   ngOnInit(): void {
     this.updateClock();
@@ -240,11 +312,14 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
 
   loadAll() {
     this.isLoading = true;
+    // Clear stale localStorage data - we use API now
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(COMPARISON_STORAGE_KEY);
+    }
+    this.allRequests = [];
     this.loadVendorRequests();
-    this.loadRequestsFromStorage();
-    this.syncFromVendorRequests();
     this.fetchComparisonsFromAPI();
-    setTimeout(() => { this.isLoading = false; this.cdr.detectChanges(); }, 250);
+    setTimeout(() => { this.isLoading = false; this.cdr.detectChanges(); }, 1500);
   }
 
   private fetchComparisonsFromAPI() {
@@ -295,9 +370,9 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       suppliers: suppliers,
       totalAmount: apiData.totalAmount || 0,
       bestSupplier: apiData.bestSupplier || '',
-      supplier1Name: suppliers[0] ? (suppliers[0].name || suppliers[0].vendorName || (typeof suppliers[0] === 'string' ? suppliers[0] : 'Supplier 1')) : 'Supplier 1',
-      supplier2Name: suppliers[1] ? (suppliers[1].name || suppliers[1].vendorName || (typeof suppliers[1] === 'string' ? suppliers[1] : 'Supplier 2')) : 'Supplier 2',
-      supplier3Name: suppliers[2] ? (suppliers[2].name || suppliers[2].vendorName || (typeof suppliers[2] === 'string' ? suppliers[2] : 'Supplier 3')) : 'Supplier 3',
+      supplier1Name: this.getVendorNameStr(suppliers[0]) || 'Supplier 1',
+      supplier2Name: this.getVendorNameStr(suppliers[1]) || 'Supplier 2',
+      supplier3Name: this.getVendorNameStr(suppliers[2]) || 'Supplier 3',
       quotationItems: items.map((item: any, idx: number) => ({
         sNo: idx + 1,
         partCode: item.partCode || '',
@@ -325,7 +400,7 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       selectedSupplierIndex: 1,
       attachment1: '', attachment2: '', attachment3: '',
       approvalChain: apiData.approvalChain || [
-        { name: '', email: '', department: '', designation: '', status: 'Pending', remarks: '' }
+        { name: '', email: '', department: '', designation: '', status: 'Pending', remarks: '', contactNo: '', organization: '', line: 'Parallel', approvalDate: new Date().toLocaleString() }
       ],
       ccList: apiData.ccList || [],
       isHidden: apiData.status === 'Submitted'
@@ -333,13 +408,59 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   }
 
   private loadVendorRequests() {
-    if (typeof localStorage === 'undefined') { this.vendorRequests = []; return; }
-    try {
-      const saved = localStorage.getItem(VENDOR_STORAGE_KEY);
-      this.vendorRequests = saved ? JSON.parse(saved) : [];
-    } catch {
-      this.vendorRequests = [];
-    }
+    this.authService.getVendorRequests().subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || [];
+        this.vendorRequests = (Array.isArray(data) ? data : []).map((r: any) => {
+          const rfq = r.rfqId && typeof r.rfqId === 'object' ? r.rfqId : {};
+          const vendors = (r.vendors || []).map((v: any, idx: number) => ({
+            serialNo: idx + 1,
+            vendorName: v.vendorName || v.name || '—',
+            email: v.email || '',
+            company: v.company || '',
+            phone: v.phone || '',
+            status: v.status || 'Pending',
+            remarks: v.remarks || '',
+            respondedDate: v.submittedDate || ''
+          }));
+          // Determine stage: if any vendor accepted => 'Completed'
+          const hasAccepted = vendors.some((v: any) => v.status === 'Accepted' || v.status === 'Approved');
+          return {
+            id: r._id || r.id,
+            rfqId: typeof r.rfqId === 'string' ? r.rfqId : rfq._id || '',
+            rfqNo: r.rfqNumber || rfq.uniqueSerialNo || '—',
+            rfq: {
+              id: typeof r.rfqId === 'string' ? r.rfqId : rfq._id || '',
+              uniqueSerialNo: r.rfqNumber || rfq.uniqueSerialNo || '—',
+              title: rfq.titleOfActivity || r.title || '—',
+              requester: rfq.requesterName || r.requester || '—',
+              email: rfq.email || '',
+              department: rfq.department || r.department || '—',
+              priority: rfq.priority || 'Medium',
+              items: (rfq.items || r.items || []).map((it: any) => ({
+                description: it.itemDescription || it.description || it.partDescription || '',
+                uom: it.uom || 'Nos',
+                qty: it.quantity || it.qty || 1,
+                make: it.make || '',
+                altSimilar: it.alternativeSimilar || it.altSimilar || '',
+                remark: it.remark || ''
+              }))
+            } as ApprovedRFQSnapshot,
+            vendors: vendors,
+            stage: hasAccepted ? 'Completed' : (r.status || 'Sent'),
+            sentDate: r.createdDate || r.sentDate || '',
+            completedDate: hasAccepted ? (vendors.find((v: any) => v.status === 'Accepted' || v.status === 'Approved')?.respondedDate || new Date().toISOString()) : ''
+          } as VendorRequestRecord;
+        });
+        // Now sync from vendor requests after loading
+        this.syncFromVendorRequests();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.vendorRequests = [];
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadRequestsFromStorage() {
@@ -378,8 +499,12 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   }
 
   private buildQuotationRequest(vr: VendorRequestRecord): QuotationRequest {
-    const approved = vr.vendors.filter(v => v.status === 'Approved').slice(0, 3);
-    const supplierNames = [approved[0]?.vendorName || '', approved[1]?.vendorName || '', approved[2]?.vendorName || ''];
+    const approved = vr.vendors.filter(v => v.status === 'Approved' || v.status === 'Accepted').slice(0, 3);
+    const supplierNames = [
+      this.getVendorNameStr(approved[0]?.vendorName || approved[0]),
+      this.getVendorNameStr(approved[1]?.vendorName || approved[1]),
+      this.getVendorNameStr(approved[2]?.vendorName || approved[2])
+    ];
     const sourceItems = vr.rfq.items?.length ? vr.rfq.items : [{ description: '', uom: 'Nos', qty: 1 } as RFQLineItemView];
     const items: QuotationItem[] = sourceItems.map((it, i) => ({
       sNo: i + 1,
@@ -406,9 +531,9 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       suppliers: supplierNames.filter(s => !!s),
       totalAmount: 0,
       bestSupplier: '—',
-      supplier1Name: supplierNames[0],
-      supplier2Name: supplierNames[1],
-      supplier3Name: supplierNames[2],
+      supplier1Name: this.getVendorNameStr(supplierNames[0]) || 'Supplier 1',
+      supplier2Name: this.getVendorNameStr(supplierNames[1]) || 'Supplier 2',
+      supplier3Name: this.getVendorNameStr(supplierNames[2]) || 'Supplier 3',
       quotationItems: items,
       terms1: { gst: 'Extra', transport: '', leadTime: '', paymentTerms: '100% Against Proforma Invoice' },
       terms2: { gst: 'Extra', transport: '', leadTime: '', paymentTerms: '100% Against Proforma Invoice' },
@@ -423,7 +548,7 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       selectedSupplierIndex: 1,
       attachment1: '', attachment2: '', attachment3: '',
       approvalChain: [
-        { name: '', email: '', department: '', designation: '', status: 'Pending', remarks: '' }
+        { name: '', email: '', department: '', designation: '', status: 'Pending', remarks: '', contactNo: '', organization: '', line: 'Parallel', approvalDate: new Date().toLocaleString() }
       ],
       ccList: [],
       isHidden: false
@@ -557,11 +682,11 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     if (!this.current) return;
 
     if (this.activeVendorSlot === 1) {
-      this.current.supplier1Name = result.name || result.vendorName;
+      this.current.supplier1Name = this.getVendorNameStr(result.name || result.vendorName || result);
     } else if (this.activeVendorSlot === 2) {
-      this.current.supplier2Name = result.name || result.vendorName;
+      this.current.supplier2Name = this.getVendorNameStr(result.name || result.vendorName || result);
     } else if (this.activeVendorSlot === 3) {
-      this.current.supplier3Name = result.name || result.vendorName;
+      this.current.supplier3Name = this.getVendorNameStr(result.name || result.vendorName || result);
     }
 
     this.vendorSearchResults = [];
@@ -800,7 +925,11 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       department: '',
       designation: '',
       status: 'Pending',
-      remarks: ''
+      remarks: '',
+      contactNo: '',
+      organization: '',
+      line: 'Parallel',
+      approvalDate: new Date().toLocaleString()
     });
     this.cdr.detectChanges();
   }
@@ -815,23 +944,56 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  getApprovalStatusClass(status: string): string {
-    const map: any = { Approved: 'approved', Rejected: 'rejected', 'In-Process': 'in-process', Pending: 'pending' };
-    return map[status] || 'pending';
+  getFilteredManagers(query: string): any[] {
+    const term = (query || '').toLowerCase().trim();
+    if (!term) return this.managerOptions;
+    return this.managerOptions.filter(m => 
+      (m.name || '').toLowerCase().includes(term) ||
+      (m.designation || m.role || '').toLowerCase().includes(term)
+    );
   }
 
-  onApproverLookup(row: ApprovalChainItem, value: string) {
-    const term = (value || '').trim().toLowerCase();
-    const manager = this.managerOptions.find(m => 
-      (m.name || '').toLowerCase() === term || 
-      (m.email || '').toLowerCase() === term
-    );
-    if (manager) {
-      row.name = manager.name;
-      row.email = manager.email;
-      row.department = manager.department || '';
-      row.designation = manager.designation || manager.role || '';
+  selectManager(approver: any, manager: any) {
+    approver.name = manager.name;
+    approver.email = manager.email;
+    approver.designation = manager.designation || manager.role || '';
+    approver.department = manager.department || '';
+    approver.showSuggestions = false;
+    approver.approvalDate = new Date().toLocaleString();
+    approver.status = 'Pending';
+  }
+
+  onManagerBlur(approver: any) {
+    setTimeout(() => {
+      approver.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  private getVendorNameStr(vendor: any): string {
+    if (!vendor) return '';
+    if (typeof vendor === 'string') return vendor;
+    if (typeof vendor === 'object') {
+      if (vendor.name && typeof vendor.name === 'string') return vendor.name;
+      if (vendor.vendorName && typeof vendor.vendorName === 'string') return vendor.vendorName;
+      if (vendor.vendor && typeof vendor.vendor === 'string') return vendor.vendor;
+      if (vendor.vendor && typeof vendor.vendor === 'object') {
+        const v = vendor.vendor;
+        if (v.name && typeof v.name === 'string') return v.name;
+        if (v.vendorName && typeof v.vendorName === 'string') return v.vendorName;
+      }
+      if (vendor.vendorName && typeof vendor.vendorName === 'object') {
+        const vn = vendor.vendorName;
+        if (vn.name && typeof vn.name === 'string') return vn.name;
+        if (vn.vendorName && typeof vn.vendorName === 'string') return vn.vendorName;
+      }
+      if (vendor.name && typeof vendor.name === 'object') {
+        const n = vendor.name;
+        if (n.name && typeof n.name === 'string') return n.name;
+      }
+      if (vendor.company && typeof vendor.company === 'string') return vendor.company;
     }
+    return 'Supplier';
   }
 
   onApproverEmailChange(row: ApprovalChainItem, email: string) {
@@ -1072,6 +1234,35 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   }
 
   // ====================== UTIL ======================
+
+  getApprovalChainSerials(approversList: any[]): number[] {
+    if (!approversList || !approversList.length) return [];
+    const serials: number[] = [];
+    let currentSerial = 1;
+    let inParallelBlock = false;
+    
+    for (let i = 0; i < approversList.length; i++) {
+      const app = approversList[i];
+      const lineVal = app.line || app.lineMode || app.approvalType || 'Parallel';
+      
+      if (lineVal === 'Parallel') {
+        if (!inParallelBlock) {
+          if (i > 0) {
+            currentSerial++;
+          }
+          inParallelBlock = true;
+        }
+        serials.push(currentSerial);
+      } else {
+        if (i > 0) {
+          currentSerial++;
+        }
+        inParallelBlock = false;
+        serials.push(currentSerial);
+      }
+    }
+    return serials;
+  }
 
   getPriorityLabel(p: string): string {
     const map: any = { H: 'High', M: 'Medium', L: 'Low' };

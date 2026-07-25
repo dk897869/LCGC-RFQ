@@ -511,11 +511,11 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   
   private mapPriorityFromBackend(priority: string): EPRequest['priority'] {
     if (!priority) return 'Medium';
-    const p = priority.toString().toUpperCase();
-    if (p === 'H' || p === 'HIGH' || p === 'URGENT') return 'High';
-    if (p === 'M' || p === 'MEDIUM') return 'Medium';
+    const p = priority.toString().toUpperCase().trim();
+    if (p === 'H' || p === 'HIGH') return 'High';
+    if (p === 'URGENT' || p === 'U') return 'Urgent';
     if (p === 'L' || p === 'LOW') return 'Low';
-    if (p === 'High' || p === 'Medium' || p === 'Low' || p === 'Urgent') return p as EPRequest['priority'];
+    // default Medium for M, MEDIUM, or anything unrecognized
     return 'Medium';
   }
   

@@ -9,7 +9,9 @@
   
   <!-- Sidebar -->
   <div class="ep-sidebar" *ngIf="!hideInternalSidebar">
-    <div class="sidebar-brand">📋 LCGC</div>
+    <div class="sidebar-brand" style="display:flex;align-items:center;justify-content:center;padding:12px 8px;">
+      <img src="radiant-logo.png" alt="Radiant" style="height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1);" />
+    </div>
     <div class="sidebar-section-label">EP APPROVAL</div>
     <div class="sidebar-menu">
       <div class="sidebar-item" [class.active]="activeTab === 'requests'" (click)="setTab('requests')">

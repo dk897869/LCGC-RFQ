@@ -701,6 +701,10 @@ export class CreateEPRequestModalComponent implements OnInit {
       contactNo: this.formData.contactNo,
       organization: this.formData.organization,
       description: this.formData.description,
+      priority: this.formData.priority,  // ✅ Fixed: include priority in submission
+      vendor: this.formData.vendor,
+      amount: this.formData.amount,
+      objective: this.formData.objective,
       status: 'Pending',
       stakeholders: this.approvers
         .filter(a => a.managerName && a.email)

@@ -634,7 +634,7 @@ export class NppProcurementComponent implements OnInit, OnChanges, OnDestroy {
           <p>Serial No: ${cert.serialNo}</p>
           <p>Generated: ${new Date(cert.generatedAt).toLocaleString()}</p>
           <hr><p>This certifies that the work has been completed satisfactorily.</p>
-          <p style="margin-top:40px;"><strong>LCGC Resolute Group</strong></p></div></body></html>`);
+          <p style="margin-top:40px;"><strong>Radiant Appliances & Electronics</strong></p></div></body></html>`);
       }
     }
   }

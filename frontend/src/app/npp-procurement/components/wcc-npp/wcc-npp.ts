@@ -500,7 +500,7 @@ export class WccNppComponent implements OnInit {
     </head>
     <body>
       <div class="cert">
-        <div class="header"><h1>WORK COMPLETION CERTIFICATE</h1><p>LCGC Resolute Group</p></div>
+        <div class="header"><h1>WORK COMPLETION CERTIFICATE</h1><p>Radiant Appliances & Electronics</p></div>
         <div class="body">
           <div class="serial">Certificate No: ${cert.serialNo}</div>
           <div class="grid">

@@ -530,7 +530,7 @@ app.get(['/api/dashboard', '/api/dashboard/stats', '/api/dashboard/full-stats'],
         // Full dynamic structure for Admin Dashboard
         kpi: {
           totalUsers,
-          totalRfqs: rfqCount || (epCount + prCount),
+          totalRfqs: totalRequests,
           purchaseRequests: prCount,
           purchaseOrders: poCount,
           totalSpend,

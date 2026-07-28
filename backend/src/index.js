@@ -593,6 +593,7 @@ app.get('/api/approvals/unified', async (req, res) => {
     const items = [];
 
     epList.forEach(r => items.push({
+      ...r,
       id: r._id,
       _id: r._id,
       type: 'ep',
@@ -603,11 +604,17 @@ app.get('/api/approvals/unified', async (req, res) => {
       department: r.department || '',
       priority: r.priority || 'Medium',
       status: r.status || 'Pending',
-      amount: r.amount || 0,
-      createdAt: r.createdAt
+      amount: 0, // EP requests have no financial amount
+      createdAt: r.createdAt,
+      objective: r.objective || r.objectiveOfActivity || '',
+      justification: r.justification || '',
+      vendorName: r.vendorName || r.vendor || '',
+      approvalChain: r.approvalChain || [],
+      ccEmails: r.ccEmails || r.ccEmail || []
     }));
 
     prList.forEach(r => items.push({
+      ...r,
       id: r._id,
       _id: r._id,
       type: 'pr',
@@ -623,6 +630,7 @@ app.get('/api/approvals/unified', async (req, res) => {
     }));
 
     nppList.forEach(r => items.push({
+      ...r,
       id: r._id,
       _id: r._id,
       type: 'npp',
@@ -638,21 +646,29 @@ app.get('/api/approvals/unified', async (req, res) => {
     }));
 
     rfqList.forEach(r => items.push({
+      ...r,
       id: r._id,
       _id: r._id,
       type: 'rfq',
       uniqueSerialNo: r.uniqueSerialNo || r.rfqNo || `RFQ-${r._id}`,
       title: r.title || r.subject || 'RFQ Request',
+      itemDescription: r.itemDescription || r.description || r.title || '',
+      partNo: r.partNo || r.partNumber || '',
+      specification: r.specification || r.specifications || '',
+      make: r.make || r.brand || '',
       requester: r.createdBy || r.requester || '',
       email: r.email || '',
       department: r.department || '',
       priority: r.priority || 'Medium',
       status: r.status || 'Pending',
       amount: r.estimatedCost || r.amount || 0,
-      createdAt: r.createdAt
+      createdAt: r.createdAt,
+      approvalChain: r.approvalChain || [],
+      ccEmails: r.ccEmails || r.ccEmail || []
     }));
 
     poList.forEach(r => items.push({
+      ...r,
       id: r._id,
       _id: r._id,
       type: 'po',

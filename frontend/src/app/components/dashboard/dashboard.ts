@@ -331,7 +331,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   ];
 
-  selectedUnifiedRequest: UnifiedRequest | null = null;
+  selectedUnifiedRequest: any = null;
   showUnifiedViewModal = false;
   isEditMode = false;
   editedRequestData: any = {};
@@ -357,6 +357,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   };
 
   adminDeptWise: any[] = [];
+  budgetStats = {
+    totalBudget: 50000000,
+    usedAmount: 0,
+    remainingAmount: 50000000,
+    percentage: 0
+  };
   pheadFilterStatus = 'all';
   pheadFilterDepartment = 'all';
   pheadFilterVendor = 'all';
@@ -1026,8 +1032,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }, 10000);
   }
 
-  private mapUnifiedRow(r: any): UnifiedRequest {
+  private mapUnifiedRow(r: any): any {
     return {
+      ...r,
       id: String(r.id || r._id || ''),
       type: (r.type || 'npp') as UnifiedRequest['type'],
       uniqueSerialNo: r.serialNo || r.uniqueSerialNo || '',
@@ -1037,9 +1044,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       department: r.department || '',
       priority: r.priority || 'Medium',
       status: r.status || 'Pending',
-      amount: Number(r.amount || 0),
+      amount: r.type === 'ep' ? 0 : Number(r.amount || 0),
       requestDate: r.requestDate || r.createdAt || '',
-      vendor: r.vendor || r.vendorName || ''
+      vendor: r.vendor || r.vendorName || '',
+      itemDescription: r.itemDescription || r.description || r.title || '',
+      partNo: r.partNo || r.partNumber || '',
+      specification: r.specification || r.specifications || '',
+      make: r.make || r.brand || '',
+      objective: r.objective || r.objectiveOfActivity || '',
+      justification: r.justification || '',
+      ccEmails: r.ccEmails || r.ccEmail || [],
+      approvalChain: r.approvalChain || []
     };
   }
 
@@ -1110,6 +1125,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
         if (d.kpi) {
           this.adminKpi = { ...this.adminKpi, ...d.kpi };
+          const used = d.kpi.totalSpend || 0;
+          const total = 50000000;
+          const remaining = Math.max(0, total - used);
+          const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+          this.budgetStats = { totalBudget: total, usedAmount: used, remainingAmount: remaining, percentage: pct };
         }
         if (d.requestStatusDistribution) {
           this.adminStatusDist = { ...this.adminStatusDist, ...d.requestStatusDistribution };

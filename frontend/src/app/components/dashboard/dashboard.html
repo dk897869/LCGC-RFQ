@@ -1043,17 +1043,17 @@
                 <div class="gauge-ring">
                   <svg viewBox="0 0 36 36" class="gauge-svg">
                     <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" stroke-width="4"/>
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="62 38" stroke-dashoffset="25"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="4" [attr.stroke-dasharray]="budgetStats.percentage + ' ' + (100 - budgetStats.percentage)" stroke-dashoffset="25"/>
                   </svg>
                   <div class="gauge-center">
-                    <div class="val">62%</div>
+                    <div class="val">{{ budgetStats.percentage }}%</div>
                     <div class="lbl">Utilized</div>
                   </div>
                 </div>
                 <div class="budget-stats">
-                  <div class="annual">Total Budget: <strong>₹5.00 Cr</strong></div>
-                  <div class="stat-line"><span class="dot blue"></span> Used Amount: <strong>₹3.10 Cr</strong></div>
-                  <div class="stat-line"><span class="dot gray"></span> Remaining: <strong>₹1.90 Cr</strong></div>
+                  <div class="annual">Total Budget: <strong>₹{{ (budgetStats.totalBudget / 10000000) | number:'1.2-2' }} Cr</strong></div>
+                  <div class="stat-line"><span class="dot blue"></span> Used Amount: <strong>₹{{ (budgetStats.usedAmount / 100000) | number:'1.2-2' }} Lakh</strong></div>
+                  <div class="stat-line"><span class="dot gray"></span> Remaining: <strong>₹{{ (budgetStats.remainingAmount / 10000000) | number:'1.2-2' }} Cr</strong></div>
                 </div>
               </div>
             </div>
@@ -1234,11 +1234,86 @@
     </div>
   </div>
 
+  <!-- FULL SCREEN VIEW DETAILS MODAL (COMPREHENSIVE ALL FORM FIELDS) -->
   <div class="modal-bg show" *ngIf="showUnifiedViewModal" (click)="closeUnifiedViewModal()">
-    <div class="modal-box modal-box--wide" (click)="$event.stopPropagation()">
-      <div class="modal-box__hdr modal-box__hdr--dark"><h2>📄 Full Request Details</h2><button (click)="closeUnifiedViewModal()">✕</button></div>
-      <div class="modal-box__body" *ngIf="selectedUnifiedRequest"><div class="detail-grid"><div class="detail-item"><label>Type</label><span class="tbadge" [ngClass]="'tbadge--' + selectedUnifiedRequest.type">{{ getTypeLabel(selectedUnifiedRequest.type) }}</span></div><div class="detail-item"><label>Serial No</label><code>{{ selectedUnifiedRequest.uniqueSerialNo }}</code></div><div class="detail-item detail-item--full"><label>Title</label><span>{{ selectedUnifiedRequest.title }}</span></div><div class="detail-item"><label>Requester</label><span>{{ selectedUnifiedRequest.requester }}</span></div><div class="detail-item"><label>Amount</label><strong>{{ formatAmount(selectedUnifiedRequest.amount) }}</strong></div><div class="detail-item"><label>Status</label><span class="sbadge" [ngClass]="getUnifiedStatusClass(selectedUnifiedRequest.status)">{{ selectedUnifiedRequest.status }}</span></div></div><div class="remarks-row"><label>Remarks</label><textarea [(ngModel)]="approvalRemarks" rows="2"></textarea></div></div>
-      <div class="modal-box__ftr"><button class="mbtn mbtn--cancel" (click)="closeUnifiedViewModal()">Close</button><button class="mbtn mbtn--approve" *ngIf="selectedUnifiedRequest?.status === 'Pending'" (click)="approveUnifiedRequest(selectedUnifiedRequest!)">✓ Approve</button><button class="mbtn mbtn--reject" *ngIf="selectedUnifiedRequest?.status === 'Pending'" (click)="rejectUnifiedRequest(selectedUnifiedRequest!)">✗ Reject</button></div>
+    <div class="modal-box modal-box--wide" style="width: 90vw; max-width: 1000px; max-height: 90vh; overflow-y: auto;" (click)="$event.stopPropagation()">
+      <div class="modal-box__hdr modal-box__hdr--dark">
+        <h2>📄 Full Request Details — {{ selectedUnifiedRequest?.uniqueSerialNo || selectedUnifiedRequest?.id }}</h2>
+        <button (click)="closeUnifiedViewModal()">✕</button>
+      </div>
+
+      <div class="modal-box__body" *ngIf="selectedUnifiedRequest" style="padding: 24px; font-size: 14px;">
+        
+        <!-- Document Badge Header -->
+        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="font-size: 36px;">
+            {{ selectedUnifiedRequest.type === 'ep' ? '🚨' : selectedUnifiedRequest.type === 'rfq' ? '📋' : selectedUnifiedRequest.type === 'pr' ? '🛍️' : '📄' }}
+          </div>
+          <div style="flex: 1;">
+            <h3 style="margin: 0; font-size: 18px; color: #0f172a;">{{ selectedUnifiedRequest.title }}</h3>
+            <div style="color: #64748b; font-size: 13px; margin-top: 4px;">
+              Request Type: <strong>{{ getTypeLabel(selectedUnifiedRequest.type) }}</strong> | Serial No: <code>{{ selectedUnifiedRequest.uniqueSerialNo }}</code>
+            </div>
+          </div>
+          <span class="sbadge" [ngClass]="getUnifiedStatusClass(selectedUnifiedRequest?.status || 'Pending')">{{ selectedUnifiedRequest?.status }}</span>
+        </div>
+
+        <!-- Comprehensive Details Grid -->
+        <div class="detail-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div class="detail-item"><label style="font-weight: 700; color: #475569; font-size: 12px; display: block; margin-bottom: 4px;">Requested By</label><span>{{ selectedUnifiedRequest.requester }}</span></div>
+          <div class="detail-item"><label style="font-weight: 700; color: #475569; font-size: 12px; display: block; margin-bottom: 4px;">Email</label><span>{{ selectedUnifiedRequest.email || '—' }}</span></div>
+          <div class="detail-item"><label style="font-weight: 700; color: #475569; font-size: 12px; display: block; margin-bottom: 4px;">Department</label><span>{{ selectedUnifiedRequest.department || 'General' }}</span></div>
+          <div class="detail-item"><label style="font-weight: 700; color: #475569; font-size: 12px; display: block; margin-bottom: 4px;">Priority</label><span class="pbadge" [ngClass]="'pbadge--' + (selectedUnifiedRequest.priority || 'medium').toLowerCase()">{{ selectedUnifiedRequest.priority }}</span></div>
+          <div class="detail-item"><label style="font-weight: 700; color: #475569; font-size: 12px; display: block; margin-bottom: 4px;">Request Date</label><span>{{ selectedUnifiedRequest.requestDate | date:'medium' }}</span></div>
+          
+          <!-- FINANCIAL AMOUNT: ONLY SHOWN IF NOT EP REQUEST -->
+          <div class="detail-item" *ngIf="selectedUnifiedRequest.type !== 'ep'">
+            <label style="font-weight: 700; color: #475569; font-size: 12px; display: block; margin-bottom: 4px;">Amount (₹)</label>
+            <strong style="font-size: 16px; color: #059669;">₹{{ selectedUnifiedRequest.amount | number:'1.0-0' }}</strong>
+          </div>
+        </div>
+
+        <!-- RFQ Specific Details -->
+        <div *ngIf="selectedUnifiedRequest.type === 'rfq' || selectedUnifiedRequest.type === 'npp' || selectedUnifiedRequest.type === 'pr'" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+          <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">RFQ & Technical Form Data</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Item Description</label><div style="font-weight: 600;">{{ selectedUnifiedRequest.itemDescription || selectedUnifiedRequest.title }}</div></div>
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Part Number</label><div><code>{{ selectedUnifiedRequest.partNo || '—' }}</code></div></div>
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Specifications</label><div>{{ selectedUnifiedRequest.specification || 'Standard Industrial' }}</div></div>
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Make / Brand</label><div>{{ selectedUnifiedRequest.make || 'OEM Standard' }}</div></div>
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Vendor Name</label><div>{{ selectedUnifiedRequest.vendor || 'Vendor Partner' }}</div></div>
+          </div>
+        </div>
+
+        <!-- EP Specific Details -->
+        <div *ngIf="selectedUnifiedRequest.type === 'ep'" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+          <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Emergency Procurement Form Data</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Title of Activity</label><div style="font-weight: 600;">{{ selectedUnifiedRequest.title }}</div></div>
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Objective</label><div>{{ selectedUnifiedRequest.objective || 'Operational Emergency' }}</div></div>
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Justification</label><div>{{ selectedUnifiedRequest.justification || 'Urgent requirement to avoid plant shutdown' }}</div></div>
+            <div><label style="font-weight: 700; color: #64748b; font-size: 12px;">Recommended Vendor</label><div>{{ selectedUnifiedRequest.vendorName || selectedUnifiedRequest.vendor || 'OEM Vendor' }}</div></div>
+          </div>
+        </div>
+
+        <!-- Remarks Section -->
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+          <label style="font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Approver Remarks / Comments</label>
+          <textarea [(ngModel)]="approvalRemarks" rows="3" placeholder="Enter remarks before approving or rejecting..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; font-size: 13px;"></textarea>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons Footer -->
+      <div class="modal-box__ftr" style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="mbtn mbtn--cancel" (click)="closeUnifiedViewModal()">Close</button>
+        <button class="mbtn mbtn--approve" style="background: #059669; color: white; padding: 8px 18px; font-weight: 700; border-radius: 6px; cursor: pointer;" (click)="approveUnifiedRequest(selectedUnifiedRequest!)">
+          ✔ Approve Immediately
+        </button>
+        <button class="mbtn mbtn--reject" style="background: #dc2626; color: white; padding: 8px 18px; font-weight: 700; border-radius: 6px; cursor: pointer;" (click)="rejectUnifiedRequest(selectedUnifiedRequest!)">
+          ✖ Reject Immediately
+        </button>
+      </div>
     </div>
   </div>
 

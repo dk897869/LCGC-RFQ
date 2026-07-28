@@ -426,47 +426,151 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ==================== DASHBOARD & UNIFIED APPROVALS APIs ====================
-app.get(['/api/dashboard', '/api/dashboard/stats'], async (req, res) => {
+// ==================== DASHBOARD & UNIFIED APPROVALS APIs ====================
+app.get(['/api/dashboard', '/api/dashboard/stats', '/api/dashboard/full-stats'], async (req, res) => {
   try {
+    const User = require('./models/user.model');
     const EPRequest = require('./models/request');
     const PRRequest = require('./models/PRRequest');
     const NPPRequest = require('./models/nppRequest.model');
+    const RFQ = require('./models/Rfq');
+    const PORequest = require('./models/PORequest');
     const Vendor = require('./models/vendor');
     const Part = require('./models/part');
+    const OrderHistory = require('./models/OrderHistory');
 
-    const [epCount, prCount, nppCount, epApproved, prApproved, nppApproved, vendorCount, partCount] = await Promise.all([
+    // 1. Basic Counts (100% Dynamic from MongoDB)
+    const [
+      totalUsers,
+      epCount, prCount, nppCount, rfqCount, poCount,
+      epPending, prPending, nppPending, rfqPending, poPending,
+      epApproved, prApproved, nppApproved, rfqApproved, poApproved,
+      epRejected, prRejected, nppRejected, rfqRejected, poRejected,
+      activeVendors, partCount
+    ] = await Promise.all([
+      User.countDocuments().catch(() => 0),
       EPRequest.countDocuments().catch(() => 0),
       PRRequest.countDocuments().catch(() => 0),
       NPPRequest.countDocuments().catch(() => 0),
+      RFQ.countDocuments().catch(() => 0),
+      PORequest.countDocuments().catch(() => 0),
+      EPRequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
+      PRRequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
+      NPPRequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
+      RFQ.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
+      PORequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
       EPRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
       PRRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
       NPPRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
+      RFQ.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
+      PORequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
+      EPRequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
+      PRRequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
+      NPPRequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
+      RFQ.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
+      PORequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
       Vendor.countDocuments().catch(() => 0),
       Part.countDocuments().catch(() => 0)
     ]);
 
-    const totalRequests = epCount + prCount + nppCount;
-    const approved = epApproved + prApproved + nppApproved;
-    const pending = Math.max(0, totalRequests - approved);
-    const successRate = totalRequests > 0 ? Math.round((approved / totalRequests) * 100) : 0;
+    const totalRequests = epCount + prCount + nppCount + rfqCount + poCount;
+    const totalPending = epPending + prPending + nppPending + rfqPending + poPending;
+    const totalApproved = epApproved + prApproved + nppApproved + rfqApproved + poApproved;
+    const totalRejected = epRejected + prRejected + nppRejected + rfqRejected + poRejected;
+    const totalCompleted = Math.max(0, totalRequests - (totalPending + totalApproved + totalRejected));
+
+    // Spend calculation (Dynamic sum from approved POs & Requests)
+    const approvedPOs = await PORequest.find({ status: { $regex: /^approved$/i } }).select('totalAmount amount').lean().catch(() => []);
+    const poSpend = approvedPOs.reduce((sum, p) => sum + Number(p.totalAmount || p.amount || 0), 0);
+    const approvedEPs = await EPRequest.find({ status: { $regex: /^approved$/i } }).select('amount').lean().catch(() => []);
+    const epSpend = approvedEPs.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const totalSpend = poSpend + epSpend;
+
+    // 2. Fetch Live Recent RFQs & Requests
+    const recentRfqsList = await RFQ.find().sort({ createdAt: -1 }).limit(10).lean().catch(() => []);
+
+    // 3. Department Wise Requests (Dynamic Mongo Aggregation)
+    const deptAgg = await RFQ.aggregate([
+      { $group: { _id: "$department", count: { $sum: 1 } } }
+    ]).catch(() => []);
+
+    const departmentWise = deptAgg.map(d => ({
+      name: d._id || 'General',
+      count: d.count
+    }));
+
+    // 4. Vendor Spend Aggregation (Dynamic)
+    const vendorAgg = await PORequest.aggregate([
+      { $group: { _id: "$vendorName", totalSpend: { $sum: "$totalAmount" }, count: { $sum: 1 } } },
+      { $sort: { totalSpend: -1 } },
+      { $limit: 5 }
+    ]).catch(() => []);
+
+    const topVendors = vendorAgg.map(v => ({
+      name: v._id || 'Vendor Partner',
+      orders: v.count,
+      totalSpend: v.totalSpend || 0,
+      rating: 5
+    }));
+
+    // 5. System Activity (Dynamic from OrderHistory)
+    const logs = await OrderHistory.find().sort({ timestamp: -1 }).limit(6).lean().catch(() => []);
 
     return res.json({
       success: true,
       data: {
+        // Flat legacy fields for backward compatibility
         totalRequests,
-        pending,
-        approved,
-        successRate,
-        vendorCount,
-        partCount
+        pending: totalPending,
+        approved: totalApproved,
+        successRate: totalRequests > 0 ? Math.round((totalApproved / totalRequests) * 100) : 0,
+        vendorCount: activeVendors,
+        partCount,
+        
+        // Full dynamic structure for Admin Dashboard
+        kpi: {
+          totalUsers,
+          totalRfqs: rfqCount || (epCount + prCount),
+          purchaseRequests: prCount,
+          purchaseOrders: poCount,
+          totalSpend,
+          activeVendors,
+          pendingApprovals: totalPending,
+          approvedCount: totalApproved,
+          rejectedCount: totalRejected,
+          completedCount: totalCompleted,
+          totalRequests
+        },
+        requestStatusDistribution: {
+          pending: totalPending,
+          approved: totalApproved,
+          rejected: totalRejected,
+          completed: totalCompleted,
+          total: totalRequests
+        },
+        departmentWise,
+        topVendors,
+        recentRfqs: recentRfqsList.map(r => ({
+          id: r._id,
+          rfqNo: r.rfqNo || r.uniqueSerialNo || `RFQ-${r._id}`,
+          title: r.title || r.subject || 'RFQ Request',
+          department: r.department || 'Production',
+          requestedBy: r.createdBy || r.requester || 'User',
+          amount: r.estimatedCost || r.amount || 0,
+          status: r.status || 'Pending Approval',
+          createdDate: r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          responseBy: r.responseBy ? new Date(r.responseBy).toISOString().split('T')[0] : 'In 5 Days'
+        })),
+        recentActivity: logs.map(l => ({
+          text: l.details || l.action || 'System Action',
+          time: l.timestamp ? new Date(l.timestamp).toLocaleString('en-IN') : 'Recently',
+          icon: '⚡'
+        }))
       }
     });
   } catch (err) {
     console.error('Dashboard stats error:', err);
-    return res.json({
-      success: true,
-      data: { totalRequests: 0, pending: 0, approved: 0, successRate: 0, vendorCount: 0, partCount: 0 }
-    });
+    return res.status(500).json({ success: false, message: err.message });
   }
 });
 

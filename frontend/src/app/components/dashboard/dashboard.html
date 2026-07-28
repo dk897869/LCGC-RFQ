@@ -794,10 +794,10 @@
                     </td>
                     <td>{{ row.createdBy }}</td>
                     <td class="action-cell">
-                      <button class="act-icon-btn view" title="View" (click)="showToast('Viewing ' + row.no, 'info')">👁️ View</button>
-                      <button class="act-icon-btn edit" title="Edit">✏️</button>
-                      <button class="act-icon-btn check" title="Approve" (click)="showToast('Approved ' + row.no, 'success')">✔</button>
-                      <button class="act-icon-btn close" title="Reject" (click)="showToast('Rejected ' + row.no, 'warning')">✖</button>
+                      <button class="act-icon-btn view" title="View" (click)="viewFullForm(row.raw || row)">👁️ View</button>
+                      <button class="act-icon-btn edit" title="Edit" (click)="viewFullForm(row.raw || row)">✏️</button>
+                      <button class="act-icon-btn check" title="Approve" (click)="approvePheadPending(row.raw || row)">✔</button>
+                      <button class="act-icon-btn close" title="Reject" (click)="rejectPheadPending(row.raw || row)">✖</button>
                       <button class="act-icon-btn more" title="More">•••</button>
                     </td>
                   </tr>
@@ -1151,10 +1151,10 @@
                     <td>{{ row.createdDate }}</td>
                     <td>{{ row.responseBy }}</td>
                     <td class="action-cell">
-                      <button class="act-icon-btn view" title="View" (click)="showToast('Viewing ' + row.no, 'info')">👁️</button>
-                      <button class="act-icon-btn edit" title="Edit">✏️</button>
-                      <button class="act-icon-btn check" title="Approve" (click)="showToast('Approved ' + row.no, 'success')">✔</button>
-                      <button class="act-icon-btn close" title="Reject" (click)="showToast('Rejected ' + row.no, 'warning')">✖</button>
+                      <button class="act-icon-btn view" title="View" (click)="viewFullForm(row.raw || row)">👁️</button>
+                      <button class="act-icon-btn edit" title="Edit" (click)="viewFullForm(row.raw || row)">✏️</button>
+                      <button class="act-icon-btn check" title="Approve" (click)="approvePheadPending(row.raw || row)">✔</button>
+                      <button class="act-icon-btn close" title="Reject" (click)="rejectPheadPending(row.raw || row)">✖</button>
                     </td>
                   </tr>
                 </tbody>

@@ -679,6 +679,67 @@ app.get('/api/approvals/unified', async (req, res) => {
   }
 });
 
+// ==================== UNIFIED APPROVAL & REJECTION ENDPOINTS ====================
+app.patch('/api/approvals/:type/:id/approve', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { comments } = req.body || {};
+    let updated = null;
+
+    if (type === 'ep') {
+      const EPRequest = require('./models/request');
+      updated = await EPRequest.findByIdAndUpdate(id, { status: 'Approved', approvalComments: comments }, { new: true });
+    } else if (type === 'pr') {
+      const PRRequest = require('./models/PRRequest');
+      updated = await PRRequest.findByIdAndUpdate(id, { status: 'Approved', comments }, { new: true });
+    } else if (type === 'npp') {
+      const NPPRequest = require('./models/nppRequest.model');
+      updated = await NPPRequest.findByIdAndUpdate(id, { status: 'Approved', comments }, { new: true });
+    } else if (type === 'rfq') {
+      const RFQ = require('./models/Rfq');
+      updated = await RFQ.findByIdAndUpdate(id, { status: 'Approved', comments }, { new: true });
+    } else if (type === 'po') {
+      const PORequest = require('./models/PORequest');
+      updated = await PORequest.findByIdAndUpdate(id, { status: 'Approved', comments }, { new: true });
+    }
+
+    return res.json({ success: true, message: 'Request approved successfully', data: updated });
+  } catch (err) {
+    console.error('Approve error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.patch('/api/approvals/:type/:id/reject', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { comments } = req.body || {};
+    let updated = null;
+
+    if (type === 'ep') {
+      const EPRequest = require('./models/request');
+      updated = await EPRequest.findByIdAndUpdate(id, { status: 'Rejected', approvalComments: comments }, { new: true });
+    } else if (type === 'pr') {
+      const PRRequest = require('./models/PRRequest');
+      updated = await PRRequest.findByIdAndUpdate(id, { status: 'Rejected', comments }, { new: true });
+    } else if (type === 'npp') {
+      const NPPRequest = require('./models/nppRequest.model');
+      updated = await NPPRequest.findByIdAndUpdate(id, { status: 'Rejected', comments }, { new: true });
+    } else if (type === 'rfq') {
+      const RFQ = require('./models/Rfq');
+      updated = await RFQ.findByIdAndUpdate(id, { status: 'Rejected', comments }, { new: true });
+    } else if (type === 'po') {
+      const PORequest = require('./models/PORequest');
+      updated = await PORequest.findByIdAndUpdate(id, { status: 'Rejected', comments }, { new: true });
+    }
+
+    return res.json({ success: true, message: 'Request rejected successfully', data: updated });
+  } catch (err) {
+    console.error('Reject error:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.get('/api/dashboard/notifications', async (req, res) => {
   return res.json({
     success: true,

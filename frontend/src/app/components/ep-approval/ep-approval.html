@@ -770,165 +770,173 @@
   </div>
 </div>
 
-<!-- ==================== VIEW REQUEST FULL PAGE ==================== -->
-<div class="ep-full-page-container" *ngIf="showViewModal && selectedRequestCopy">
-  <div class="full-page-inner">
+<!-- ==================== VIEW REQUEST POPUP MODAL OVERLAY ==================== -->
+<div class="ep-modal-backdrop" *ngIf="showViewModal && selectedRequestCopy" (click)="closeViewModal()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+  <div class="ep-modal-window" (click)="$event.stopPropagation()" style="width: 95vw; max-width: 1100px; max-height: 90vh; background: #ffffff; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; overflow: hidden; animation: modalPop 0.25s ease-out;">
     
-    <div class="full-page-header">
-      <div class="back-nav">
-        <button class="btn-back" (click)="closeViewModal()">← Back to List</button>
-        <span class="breadcrumb-item">/ EP Request Details</span>
+    <!-- Modal Header Bar -->
+    <div class="modal-header-bar" style="padding: 18px 24px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 22px;">📄</span>
+        <div>
+          <h2 style="font-size: 18px; font-weight: 700; margin: 0; color: #f8fafc;">EP Approval Request ({{ selectedRequestCopy.requestId }})</h2>
+          <span style="font-size: 12px; color: #94a3b8;">Detailed Request Record & Approval Chain</span>
+        </div>
       </div>
-      <div class="header-main">
-        <h2>📄 EP Approval Request ({{ selectedRequestCopy.requestId }})</h2>
-        <span class="status-badge" [ngClass]="getStatusClass(selectedRequestCopy.status)">{{ selectedRequestCopy.status }}</span>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span class="status-badge" [ngClass]="getStatusClass(selectedRequestCopy.status)" style="font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px;">{{ selectedRequestCopy.status }}</span>
+        <button (click)="closeViewModal()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Close Modal">✕</button>
       </div>
     </div>
-    
-    <div class="full-page-body" *ngIf="selectedRequestCopy">
-      <!-- Requester Information -->
-      <div class="form-section">
-        <div class="section-title">
+
+    <!-- Modal Body Content -->
+    <div class="modal-body-content" style="padding: 24px; overflow-y: auto; flex: 1; background: #f8fafc;">
+      
+      <!-- Requester Information Card -->
+      <div class="form-section" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">👤</span>
           Requester Information
         </div>
-        <div class="rfq-user-info-card" style="margin-top: 15px;">
-          <div class="rfq-info-col">
-            <div class="rfq-info-row"><span class="rfq-info-label">Name:</span><span class="rfq-info-val">{{ selectedRequestCopy.requester }}</span></div>
-            <div class="rfq-info-row"><span class="rfq-info-label">Department:</span><span class="rfq-info-val">{{ selectedRequestCopy.department }}</span></div>
-            <div class="rfq-info-row"><span class="rfq-info-label">Email:</span><span class="rfq-info-val">{{ selectedRequestCopy.email }}</span></div>
+        <div class="rfq-user-info-card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 13px;">
+          <div class="rfq-info-col" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Name:</span> <strong class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedRequestCopy.requester }}</strong></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Department:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedRequestCopy.department }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Email:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedRequestCopy.email }}</span></div>
           </div>
-          <div class="rfq-info-col">
-            <div class="rfq-info-row"><span class="rfq-info-label">Request Date:</span><span class="rfq-info-val">{{ selectedRequestCopy.requestDate }}</span></div>
-            <div class="rfq-info-row"><span class="rfq-info-label">Contact:</span><span class="rfq-info-val">{{ selectedRequestCopy.contactNo || '—' }}</span></div>
-            <div class="rfq-info-row"><span class="rfq-info-label">Organization:</span><span class="rfq-info-val">{{ selectedRequestCopy.organization }}</span></div>
+          <div class="rfq-info-col" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Request Date:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedRequestCopy.requestDate }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Contact:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedRequestCopy.contactNo || '—' }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Organization:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedRequestCopy.organization }}</span></div>
           </div>
         </div>
       </div>
       
-      <!-- Activity Overview -->
-      <div class="form-section">
-        <div class="section-title">
+      <!-- Activity Overview Card -->
+      <div class="form-section" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">🎯</span>
           Activity Overview
         </div>
-        <div class="info-card" style="padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13.5px;">
-          <div style="margin-bottom: 10px;"><strong>Title of Activity:</strong> {{ selectedRequestCopy.title }}</div>
-          <div style="margin-bottom: 10px;"><strong>Priority:</strong> <span class="priority-badge" [ngClass]="getPriorityClass(selectedRequestCopy.priority)">{{ selectedRequestCopy.priority }}</span></div>
-          <div style="margin-bottom: 10px;"><strong>Description:</strong></div>
-          <div style="padding: 12px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; min-height: 80px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; color: #334155; line-height: 1.5;">{{ selectedRequestCopy.description || '—' }}</div>
-          <div style="margin-top: 10px;" *ngIf="selectedRequestCopy.objective">
-            <strong>Objective:</strong>
-            <div style="padding: 10px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 4px; color: #334155;">{{ selectedRequestCopy.objective }}</div>
+        <div style="font-size: 13.5px;">
+          <div style="margin-bottom: 12px;"><span style="color: #64748b; font-weight: 600;">Title of Activity:</span> <strong style="color: #0f172a; font-size: 15px; margin-left: 8px;">{{ selectedRequestCopy.title }}</strong></div>
+          <div style="margin-bottom: 12px;"><span style="color: #64748b; font-weight: 600;">Priority:</span> <span class="priority-badge" [ngClass]="getPriorityClass(selectedRequestCopy.priority)" style="margin-left: 8px;">{{ selectedRequestCopy.priority }}</span></div>
+          <div style="margin-bottom: 8px;"><span style="color: #64748b; font-weight: 600;">Description:</span></div>
+          <div style="padding: 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; min-height: 70px; color: #334155; line-height: 1.6;">{{ selectedRequestCopy.description || '—' }}</div>
+          <div style="margin-top: 14px;" *ngIf="selectedRequestCopy.objective">
+            <span style="color: #64748b; font-weight: 600;">Objective:</span>
+            <div style="padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 6px; color: #334155;">{{ selectedRequestCopy.objective }}</div>
           </div>
         </div>
       </div>
 
-      <!-- Attachments Section in View Modal -->
-      <div class="form-section" *ngIf="selectedRequestCopy.attachments?.length">
-        <div class="section-title">
+      <!-- Attached Documents Section -->
+      <div class="form-section" *ngIf="selectedRequestCopy.attachments?.length" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">📎</span>
           Attached Documents / Images
         </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-          <div *ngFor="let att of selectedRequestCopy.attachments" style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
-            <span style="font-size: 18px;">📄</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+          <div *ngFor="let att of selectedRequestCopy.attachments" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
+            <span style="font-size: 20px;">📄</span>
             <div>
               <div style="font-weight: 600; color: #0f172a;">{{ att.name || 'Attachment' }}</div>
               <div style="font-size: 11px; color: #64748b;" *ngIf="att.fileSize">{{ att.fileSize }}</div>
             </div>
-            <button type="button" (click)="openMediaPreview(att.url || att.preview || att.data, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <button type="button" (click)="openMediaPreview(att.url || att.preview || att.data, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
               👁️ View
             </button>
           </div>
         </div>
       </div>
 
-      <!-- CC Recipients in View Modal -->
-      <div class="form-section" *ngIf="selectedRequestCopy.ccList?.length">
-        <div class="section-title">
+      <!-- CC Recipients -->
+      <div class="form-section" *ngIf="selectedRequestCopy.ccList?.length" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">📧</span>
           CC Recipients
         </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-          <span *ngFor="let cc of selectedRequestCopy.ccList" style="background: #eef2ff; color: #1e40af; border: 1px solid #c7d2fe; padding: 4px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 600;">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span *ngFor="let cc of selectedRequestCopy.ccList" style="background: #eef2ff; color: #1e40af; border: 1px solid #c7d2fe; padding: 4px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 600;">
             {{ cc }}
           </span>
         </div>
       </div>
 
-      <!-- Stakeholders / Approval status -->
-      <div class="form-section" *ngIf="selectedRequestCopy.stakeholders?.length">
-        <div class="section-title">
+      <!-- Approval Status Flow Table -->
+      <div class="form-section" *ngIf="selectedRequestCopy.stakeholders?.length" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">👥</span>
           Approval Status Flow
         </div>
-        <div class="approval-table-wrapper">
-          <table class="approval-table">
+        <div class="approval-table-wrapper" style="overflow-x: auto;">
+          <table class="approval-table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
             <thead>
-              <tr>
-                <th>#</th>
-                <th>Line</th>
-                <th>Name</th>
-                <th>Comments/Remarks</th>
-                <th>Designation</th>
-                <th>E-Mail</th>
-                <th>Contact No.</th>
-                <th>Organization</th>
-                <th>Status</th>
-                <th>Date/Time</th>
+              <tr style="background: #f1f5f9; color: #475569; border-bottom: 2px solid #e2e8f0;">
+                <th style="padding: 12px;">#</th>
+                <th style="padding: 12px;">Line</th>
+                <th style="padding: 12px;">Name</th>
+                <th style="padding: 12px;">Comments/Remarks</th>
+                <th style="padding: 12px;">Designation</th>
+                <th style="padding: 12px;">E-Mail</th>
+                <th style="padding: 12px;">Contact No.</th>
+                <th style="padding: 12px;">Organization</th>
+                <th style="padding: 12px;">Status</th>
+                <th style="padding: 12px;">Date/Time</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let st of selectedRequestCopy.stakeholders; let idx = index" [ngClass]="getGroupRowClass(selectedRequestCopy.stakeholders, idx)">
-                <td>{{ getApprovalChainSerials(selectedRequestCopy.stakeholders)[idx] }}</td>
-                <td>
-                  <span style="font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 10px;" [style.background]="(st.line || 'Parallel') === 'Parallel' ? '#e0e7ff' : '#fef3c7'" [style.color]="(st.line || 'Parallel') === 'Parallel' ? '#3730a3' : '#92400e'">
+              <tr *ngFor="let st of selectedRequestCopy.stakeholders; let idx = index" style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px;">{{ getApprovalChainSerials(selectedRequestCopy.stakeholders)[idx] }}</td>
+                <td style="padding: 12px;">
+                  <span style="font-weight: 600; font-size: 11.5px; padding: 3px 10px; border-radius: 12px;" [style.background]="(st.line || 'Parallel') === 'Parallel' ? '#e0e7ff' : '#fef3c7'" [style.color]="(st.line || 'Parallel') === 'Parallel' ? '#3730a3' : '#92400e'">
                     {{ st.line || 'Parallel' }}
                   </span>
                 </td>
-                <td><strong>{{ st.name || st.managerName }}</strong></td>
-                <td>{{ st.remarks || '—' }}</td>
-                <td>{{ st.designation || '—' }}</td>
-                <td>{{ st.email || '—' }}</td>
-                <td>{{ st.contactNo || '—' }}</td>
-                <td>{{ st.organization || '—' }}</td>
-                <td>
+                <td style="padding: 12px;"><strong>{{ st.name || st.managerName }}</strong></td>
+                <td style="padding: 12px;">{{ st.remarks || '—' }}</td>
+                <td style="padding: 12px;">{{ st.designation || '—' }}</td>
+                <td style="padding: 12px;">{{ st.email || '—' }}</td>
+                <td style="padding: 12px;">{{ st.contactNo || '—' }}</td>
+                <td style="padding: 12px;">{{ st.organization || '—' }}</td>
+                <td style="padding: 12px;">
                   <span class="status-badge" [ngClass]="getStatusClass(st.status)">
                     {{ st.status }}
                   </span>
                 </td>
-                <td>{{ st.dateTime ? (st.dateTime | date:'M/d/yy h:mm a') : '—' }}</td>
+                <td style="padding: 12px; color: #64748b;">{{ st.dateTime ? (st.dateTime | date:'M/d/yy h:mm A') : '—' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Remarks / Comments (Visible for pending requests) -->
-      <div class="form-section" *ngIf="selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)">
-        <div class="section-title">
+      <!-- Decision Remarks for Pending Requests -->
+      <div class="form-section" *ngIf="selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">💬</span>
           Decision Remarks / Comments
         </div>
-        <div class="info-card" style="margin-top: 10px;">
-          <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
-            <label style="font-size: 11px; font-weight: 700; color: #475569;">REMARKS / COMMENTS FOR APPROVAL OR REJECTION</label>
-            <textarea [(ngModel)]="selectedRequestCopy.approvalComments" rows="3" placeholder="Enter approval or rejection remarks here..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
-          </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 11px; font-weight: 700; color: #475569;">ENTER APPROVAL OR REJECTION REMARKS</label>
+          <textarea [(ngModel)]="selectedRequestCopy.approvalComments" rows="3" placeholder="Enter approval or rejection remarks here..." style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
         </div>
       </div>
 
     </div>
     
-    <div class="full-page-footer">
-      <button class="btn-cancel" (click)="closeViewModal()">Close</button>
-      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)" class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-        ✓ Approve
-      </button>
-      <button *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)" class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-        ✗ Reject
-      </button>
+    <!-- Modal Footer -->
+    <div class="modal-footer-bar" style="padding: 16px 24px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+      <button class="btn-cancel" (click)="closeViewModal()" style="padding: 9px 20px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer;">Close</button>
+      
+      <ng-container *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)">
+        <button class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          ✓ Approve
+        </button>
+        <button class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          ✗ Reject
+        </button>
+      </ng-container>
     </div>
     
   </div>

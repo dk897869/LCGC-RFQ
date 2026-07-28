@@ -72,14 +72,14 @@
               </div>
               <div class="user-info-cell">
                 <strong>{{ user.name }}</strong>
-                <span class="user-role-badge" [ngClass]="user.role === 'Admin' ? 'role-admin' : user.role === 'Manager' ? 'role-manager' : user.role === 'Senior Manager' ? 'role-senior' : 'role-user'">
+                <span class="user-role-badge" [ngClass]="user.role === 'Admin' ? 'role-admin' : user.role === 'Purchase Head' ? 'role-phead' : user.role === 'Manager' ? 'role-manager' : user.role === 'Senior Manager' ? 'role-senior' : 'role-user'">
                   {{ user.role }}
                 </span>
               </div>
             </td>
             <td class="email-cell">{{ user.email }}</td>
             <td>
-              <span class="role-badge" [class.admin]="user.role === 'Admin'" [class.manager]="user.role === 'Manager'" [class.senior]="user.role === 'Senior Manager'">
+              <span class="role-badge" [class.admin]="user.role === 'Admin'" [class.phead]="user.role === 'Purchase Head'" [class.manager]="user.role === 'Manager'" [class.senior]="user.role === 'Senior Manager'">
                 {{ user.role }}
               </span>
             </td>

@@ -55,7 +55,7 @@ const authMiddleware = async (req, res, next) => {
 
 const moduleAccessMiddleware = (req, res, next) => {
   const user = req.user;
-  const seniorRoles = ['Admin', 'Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+  const seniorRoles = ['Admin', 'Purchase Head', 'Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
   if (seniorRoles.includes(user?.role)) return next();
 
   const rights = user?.rights || {};

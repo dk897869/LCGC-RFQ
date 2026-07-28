@@ -164,7 +164,16 @@
         <!-- Role Selection -->
         <div class="field">
           <label>Role</label>
-          <div class="role-grid">
+          <div class="role-grid" style="grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));">
+            <button type="button"
+                    class="role-card"
+                    [class.selected]="selectedRole === 'Purchase Head'"
+                    (click)="selectedRole = 'Purchase Head'">
+              <span class="role-icon">🎖️</span>
+              <span class="role-label">Purchase Head</span>
+              <span class="role-desc">Full procurement & approvals</span>
+              <span class="check-badge" *ngIf="selectedRole === 'Purchase Head'">✓</span>
+            </button>
             <button type="button"
                     class="role-card"
                     [class.selected]="selectedRole === 'Admin'"

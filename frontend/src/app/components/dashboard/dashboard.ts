@@ -337,6 +337,72 @@ export class DashboardComponent implements OnInit, OnDestroy {
   editedRequestData: any = {};
   approvalRemarks = '';
 
+  // Purchase Head Dashboard Specific Data & Handlers
+  pheadFilterStatus = 'all';
+  pheadFilterDepartment = 'all';
+  pheadFilterVendor = 'all';
+  pheadDateRange = '01 Jul 2026 - 28 Jul 2026';
+  pheadSearchTerm = '';
+
+  pheadVendorPerformance = [
+    { name: 'ABC Pvt Ltd', rfqs: 28, accepted: 22, rejected: 6, respTime: '1.8 Days', success: 78, rating: 5 },
+    { name: 'XYZ Industries', rfqs: 24, accepted: 18, rejected: 6, respTime: '2.2 Days', success: 75, rating: 4.5 },
+    { name: 'Global Supplies', rfqs: 20, accepted: 16, rejected: 4, respTime: '2.5 Days', success: 80, rating: 4.5 },
+    { name: 'Ultra Solutions', rfqs: 18, accepted: 12, rejected: 6, respTime: '3.1 Days', success: 66, rating: 4 },
+    { name: 'Maxima Corp', rfqs: 15, accepted: 11, rejected: 4, respTime: '2.0 Days', success: 72, rating: 4.5 }
+  ];
+
+  pheadVendorTracking = [
+    { name: 'ABC Pvt Ltd', sent: 12, responded: 10, accepted: 8, pending: 2, expired: 0, lastActivity: '28 Jul 2026' },
+    { name: 'XYZ Industries', sent: 15, responded: 12, accepted: 9, pending: 3, expired: 0, lastActivity: '27 Jul 2026' },
+    { name: 'Global Supplies', sent: 10, responded: 7, accepted: 5, pending: 2, expired: 1, lastActivity: '27 Jul 2026' },
+    { name: 'Ultra Solutions', sent: 8, responded: 6, accepted: 4, pending: 2, expired: 0, lastActivity: '26 Jul 2026' },
+    { name: 'Maxima Corp', sent: 6, responded: 4, accepted: 3, pending: 1, expired: 1, lastActivity: '25 Jul 2026' }
+  ];
+
+  pheadPendingApprovals = [
+    { id: 'PR-221', type: 'PR', priority: 'High', dept: 'Production', amount: 620000, requestedBy: 'Rohit Verma', waitingSince: '2 Days', title: 'Raw Material - Steel' },
+    { id: 'RFQ-221', type: 'RFQ', priority: 'High', dept: 'Maintenance', amount: 1250000, requestedBy: 'Amit Singh', waitingSince: '4 Days', title: 'Electrical Components' },
+    { id: 'PR-220', type: 'PR', priority: 'Medium', dept: 'IT', amount: 360000, requestedBy: 'Neha Sharma', waitingSince: '1 Day', title: 'Workstation Setup' },
+    { id: 'RFQ-219', type: 'RFQ', priority: 'Medium', dept: 'Admin', amount: 225000, requestedBy: 'Vikram Joshi', waitingSince: '3 Days', title: 'Office Furniture' }
+  ];
+
+  pheadNotifications = [
+    { id: '1', title: '12 RFQs are pending for your approval', time: '10:30 AM', icon: '🔔', type: 'warning' },
+    { id: '2', title: '3 Vendor quotations will expire today', time: '09:15 AM', icon: '⏱️', type: 'warning' },
+    { id: '3', title: 'Budget limit exceeded for PR-210', time: 'Yesterday', icon: '⚠️', type: 'error' },
+    { id: '4', title: 'Vendor response is overdue for 5 RFQs', time: 'Yesterday', icon: '📢', type: 'info' },
+    { id: '5', title: 'PO-117 is awaiting finance approval', time: '26 Jul 2026', icon: '🔒', type: 'info' }
+  ];
+
+  pheadRecentActivities = [
+    { id: '1', text: 'XYZ Industries uploaded quotation for RFQ-220', time: '10:20 AM', icon: '📥', color: '#2563eb' },
+    { id: '2', text: 'You approved RFQ-218', time: 'Yesterday, 04:25 PM', icon: '✅', color: '#16a34a' },
+    { id: '3', text: 'Global Supplies accepted PO-118', time: 'Yesterday, 03:10 PM', icon: '📋', color: '#9333ea' },
+    { id: '4', text: 'PR-215 rejected by Finance', time: 'Yesterday, 11:20 AM', icon: '❌', color: '#dc2626' },
+    { id: '5', text: 'Quotation for RFQ-217 expired', time: '26 Jul 2026', icon: '⏳', color: '#ca8a04' }
+  ];
+
+  pheadAllRequests = [
+    { no: 'RFQ-221', type: 'RFQ', dept: 'Production', vendor: 'ABC Pvt Ltd', item: 'Raw Material - Steel', amount: 1250000, createdDate: '28 Jul 2026', responseBy: '01 Aug 2026', status: 'Pending Approval', createdBy: 'Rohit Verma' },
+    { no: 'RFQ-220', type: 'RFQ', dept: 'Maintenance', vendor: 'XYZ Industries', item: 'Electrical Components', amount: 875000, createdDate: '27 Jul 2026', responseBy: '31 Jul 2026', status: 'Quotation Received', createdBy: 'Amit Singh' },
+    { no: 'EP-015', type: 'EP Request', dept: 'IT', vendor: 'Global Supplies', item: 'Workstation Setup', amount: 340000, createdDate: '26 Jul 2026', responseBy: '30 Jul 2026', status: 'Approved', createdBy: 'Neha Sharma' },
+    { no: 'RFQ-219', type: 'RFQ', dept: 'Admin', vendor: 'Ultra Solutions', item: 'Office Furniture', amount: 225000, createdDate: '25 Jul 2026', responseBy: '29 Jul 2026', status: 'Rejected', createdBy: 'Vikram Joshi' },
+    { no: 'RFQ-218', type: 'PRQ', dept: 'Production', vendor: 'Maxima Corp', item: 'Packaging Material', amount: 460000, createdDate: '24 Jul 2026', responseBy: '28 Jul 2026', status: 'Completed', createdBy: 'Rohit Verma' }
+  ];
+
+  approvePheadPending(item: any) {
+    item.status = 'Approved';
+    this.pheadPendingApprovals = this.pheadPendingApprovals.filter(p => p.id !== item.id);
+    this.showToast(`Request ${item.id} approved successfully!`, 'success');
+  }
+
+  rejectPheadPending(item: any) {
+    item.status = 'Rejected';
+    this.pheadPendingApprovals = this.pheadPendingApprovals.filter(p => p.id !== item.id);
+    this.showToast(`Request ${item.id} rejected.`, 'info');
+  }
+
   // Bulk Selection
   selectAllChecked: boolean = false;
   showBulkActions: boolean = false;

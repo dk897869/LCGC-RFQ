@@ -13,6 +13,7 @@ const { sendSmsOtp, verifySmsOtp } = require("../services/twilio.service");
 // Senior approver roles - includes all roles that can approve EP requests (INCLUDING VENDOR)
 const SENIOR_APPROVER_ROLES = new Set([
   "Admin",
+  "Purchase Head",
   "Manager",
   "Senior Manager",
   "Vendor",

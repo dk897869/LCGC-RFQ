@@ -366,8 +366,462 @@
           </div>
         </div>
 
+        <!-- PURCHASE HEAD DASHBOARD (Shown for Purchase Head role) -->
+        <div *ngIf="userRole === 'Purchase Head'" class="phead-dash" style="margin-top: 24px;">
+
+          <!-- METRIC KPI CARDS (TOP 8 CARDS) -->
+          <div class="phead-kpi-grid">
+            <div class="phead-kpi-card blue">
+              <div class="kpi-icon blue">📋</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total RFQs</div>
+                <div class="kpi-val">248</div>
+                <div class="kpi-sub green">▲ 12% vs last month</div>
+              </div>
+            </div>
+
+            <div class="phead-kpi-card orange">
+              <div class="kpi-icon orange">⏳</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Pending</div>
+                <div class="kpi-val orange">36</div>
+                <div class="kpi-sub orange">Needs Action</div>
+              </div>
+            </div>
+
+            <div class="phead-kpi-card green">
+              <div class="kpi-icon green">✅</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Approved</div>
+                <div class="kpi-val green">188</div>
+                <div class="kpi-sub green">75% of total</div>
+              </div>
+            </div>
+
+            <div class="phead-kpi-card red">
+              <div class="kpi-icon red">🚫</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Rejected</div>
+                <div class="kpi-val red">24</div>
+                <div class="kpi-sub red">10% of total</div>
+              </div>
+            </div>
+
+            <div class="phead-kpi-card purple">
+              <div class="kpi-icon purple">₹</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total Value</div>
+                <div class="kpi-val purple">₹2.48 Cr</div>
+                <div class="kpi-sub purple">Total RFQ Value</div>
+              </div>
+            </div>
+
+            <div class="phead-kpi-card indigo">
+              <div class="kpi-icon indigo">👥</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Vendors</div>
+                <div class="kpi-val indigo">67</div>
+                <div class="kpi-sub indigo">Active Vendors</div>
+              </div>
+            </div>
+
+            <div class="phead-kpi-card cyan">
+              <div class="kpi-icon cyan">⏱️</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Avg Response</div>
+                <div class="kpi-val cyan">2.8 Days</div>
+                <div class="kpi-sub cyan">Vendor Response</div>
+              </div>
+            </div>
+
+            <div class="phead-kpi-card emerald">
+              <div class="kpi-icon emerald">📈</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Cost Saving</div>
+                <div class="kpi-val emerald">₹18.4 Lakh</div>
+                <div class="kpi-sub emerald">This Year</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTION BUTTONS BAR (8 BUTTONS) -->
+          <div class="phead-actions-bar">
+            <button class="phead-act-btn btn-blue" (click)="navigateToNppTab('rfq-npp-form')"><span>＋</span> Create RFQ</button>
+            <button class="phead-act-btn btn-purple" (click)="navigateToNppTab('pr-request')"><span>＋</span> Create PR</button>
+            <button class="phead-act-btn btn-green" (click)="navigateToModule('po-npp')"><span>＋</span> Create PO</button>
+            <button class="phead-act-btn btn-orange" (click)="navigateToModule('vendors')"><span>＋</span> Add Vendor</button>
+            <button class="phead-act-btn btn-cyan" (click)="navigateToModule('bidding')"><span>⚖️</span> Compare Quotations</button>
+            <button class="phead-act-btn btn-pink" (click)="navigateToEpApproval('approvals')">
+              <span>⚙️</span> Pending Approvals <span class="btn-badge">36</span>
+            </button>
+            <button class="phead-act-btn btn-darkblue" (click)="openReportsModal()"><span>📊</span> Reports</button>
+            <button class="phead-act-btn btn-export" (click)="exportReportToExcel()"><span>📥</span> Export</button>
+          </div>
+
+          <!-- MIDDLE ROW 1: BREAKDOWN, VENDOR PERFORMANCE, VENDOR TRACKING -->
+          <div class="phead-grid-3">
+            <!-- RFQ Approval Breakdown -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>RFQ Approval Breakdown</h3>
+                <select class="phead-mini-select"><option>This Month</option></select>
+              </div>
+              <div class="breakdown-chart-wrap">
+                <div class="donut-ring">
+                  <svg viewBox="0 0 36 36" class="donut-svg">
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" stroke-width="3.5"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="3.5" stroke-dasharray="12.4 87.6" stroke-dashoffset="25"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" stroke-width="3.5" stroke-dasharray="4.8 95.2" stroke-dashoffset="-12.4"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" stroke-width="3.5" stroke-dasharray="3.4 96.6" stroke-dashoffset="-17.2"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8b5cf6" stroke-width="3.5" stroke-dasharray="2.1 97.9" stroke-dashoffset="-20.6"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#06b6d4" stroke-width="3.5" stroke-dasharray="77.3 22.7" stroke-dashoffset="-22.7"/>
+                  </svg>
+                  <div class="donut-center">
+                    <div class="val">145</div>
+                    <div class="lbl">Total</div>
+                  </div>
+                </div>
+                <div class="donut-legend-list">
+                  <div class="legend-row"><span class="dot blue"></span><span class="label">Department Manager</span><strong class="val">18</strong></div>
+                  <div class="legend-row"><span class="dot orange"></span><span class="label">Purchase Head</span><strong class="val">7</strong></div>
+                  <div class="legend-row"><span class="dot green"></span><span class="label">Finance</span><strong class="val">5</strong></div>
+                  <div class="legend-row"><span class="dot purple"></span><span class="label">MD Approval</span><strong class="val">3</strong></div>
+                  <div class="legend-row"><span class="dot cyan"></span><span class="label">Completed</span><strong class="val">112</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vendor Performance (Top 5) -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Vendor Performance (Top 5)</h3>
+                <button class="phead-link-btn" (click)="navigateToModule('supplier-performance')">View All</button>
+              </div>
+              <div class="phead-table-wrap">
+                <table class="phead-mini-table">
+                  <thead>
+                    <tr>
+                      <th>Vendor</th>
+                      <th>RFQs</th>
+                      <th>Accepted</th>
+                      <th>Rejected</th>
+                      <th>Resp. Time</th>
+                      <th>Success %</th>
+                      <th>Rating</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let vp of pheadVendorPerformance">
+                      <td><strong>{{ vp.name }}</strong></td>
+                      <td>{{ vp.rfqs }}</td>
+                      <td class="text-green">{{ vp.accepted }}</td>
+                      <td class="text-red">{{ vp.rejected }}</td>
+                      <td>{{ vp.respTime }}</td>
+                      <td><strong>{{ vp.success }}%</strong></td>
+                      <td><span class="stars">★★★★★</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Vendor Tracking -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Vendor Tracking</h3>
+                <button class="phead-link-btn" (click)="navigateToModule('vendors')">View All</button>
+              </div>
+              <div class="phead-table-wrap">
+                <table class="phead-mini-table">
+                  <thead>
+                    <tr>
+                      <th>Vendor</th>
+                      <th>RFQ Sent</th>
+                      <th>Responded</th>
+                      <th>Accepted</th>
+                      <th>Pending</th>
+                      <th>Expired</th>
+                      <th>Last Activity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let vt of pheadVendorTracking">
+                      <td><strong>{{ vt.name }}</strong></td>
+                      <td>{{ vt.sent }}</td>
+                      <td>{{ vt.responded }}</td>
+                      <td class="text-green">{{ vt.accepted }}</td>
+                      <td class="text-orange">{{ vt.pending }}</td>
+                      <td class="text-gray">{{ vt.expired }}</td>
+                      <td class="text-muted">{{ vt.lastActivity }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- MIDDLE ROW 2: SPEND TREND, BUDGET UTILIZATION, COST SAVING, LIFECYCLE OVERVIEW -->
+          <div class="phead-grid-4">
+            <!-- Purchase Spend Trend -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Purchase Spend Trend (This Year)</h3>
+                <select class="phead-mini-select"><option>This Year</option></select>
+              </div>
+              <div class="spend-trend-body">
+                <svg viewBox="0 0 320 110" class="spend-svg">
+                  <path d="M 10 90 Q 30 70, 50 65 T 90 40 T 130 50 T 170 30 T 210 45 T 250 25 T 290 35 T 310 20" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+                  <path d="M 10 90 Q 30 70, 50 65 T 90 40 T 130 50 T 170 30 T 210 45 T 250 25 T 290 35 T 310 20 L 310 100 L 10 100 Z" fill="rgba(37, 99, 235, 0.08)"/>
+                </svg>
+                <div class="spend-months">
+                  <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Budget Utilization -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Budget Utilization</h3>
+              </div>
+              <div class="budget-gauge-wrap">
+                <div class="gauge-ring">
+                  <svg viewBox="0 0 36 36" class="gauge-svg">
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" stroke-width="4"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="62 38" stroke-dashoffset="25"/>
+                  </svg>
+                  <div class="gauge-center">
+                    <div class="val">62%</div>
+                    <div class="lbl">Used</div>
+                  </div>
+                </div>
+                <div class="budget-stats">
+                  <div class="annual">Annual Budget: <strong>₹5.00 Cr</strong></div>
+                  <div class="stat-line"><span class="dot blue"></span> Used Amount: <strong>₹3.10 Cr</strong></div>
+                  <div class="stat-line"><span class="dot gray"></span> Remaining: <strong>₹1.90 Cr</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cost Saving -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Cost Saving (This Year)</h3>
+                <select class="phead-mini-select"><option>This Year</option></select>
+              </div>
+              <div class="cost-saving-bars">
+                <div class="bar-col">
+                  <div class="bar-top">₹2.66 Cr</div>
+                  <div class="bar-fill blue" style="height: 90px;"></div>
+                  <div class="bar-lbl">Original Price</div>
+                </div>
+                <div class="bar-col">
+                  <div class="bar-top">₹2.48 Cr</div>
+                  <div class="bar-fill green" style="height: 78px;"></div>
+                  <div class="bar-lbl">Final Price</div>
+                </div>
+                <div class="saving-callout">
+                  <div class="lbl">Savings</div>
+                  <div class="val">₹18.4 Lakh</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RFQ Lifecycle Overview -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>RFQ Lifecycle Overview</h3>
+                <button class="phead-link-btn" (click)="navigateToNppTab('rfq-npp-form')">View All</button>
+              </div>
+              <div class="lifecycle-list">
+                <div class="step-item"><span class="icon blue">📝</span><span class="label">Created</span><strong class="val">248</strong></div>
+                <div class="step-item"><span class="icon orange">⏳</span><span class="label">Approval</span><strong class="val">145</strong></div>
+                <div class="step-item"><span class="icon purple">👥</span><span class="label">Vendor Invited</span><strong class="val">120</strong></div>
+                <div class="step-item"><span class="icon cyan">📥</span><span class="label">Quotation Received</span><strong class="val">98</strong></div>
+                <div class="step-item"><span class="icon pink">⚖️</span><span class="label">Comparison</span><strong class="val">72</strong></div>
+                <div class="step-item"><span class="icon green">📋</span><span class="label">Purchase Order</span><strong class="val">56</strong></div>
+                <div class="step-item"><span class="icon emerald">✓</span><span class="label">Completed</span><strong class="val">42</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LOWER ROW: PENDING APPROVALS, RECENT ACTIVITIES, NOTIFICATIONS -->
+          <div class="phead-grid-bottom">
+            <!-- Pending Approvals with Quick Actions -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Pending Approvals</h3>
+                <button class="phead-link-btn" (click)="navigateToEpApproval('approvals')">View All</button>
+              </div>
+              <div class="pending-list">
+                <div class="pending-row" *ngFor="let item of pheadPendingApprovals">
+                  <div class="pbadge" [ngClass]="'pbadge--' + item.priority.toLowerCase()">{{ item.priority }}</div>
+                  <div class="item-details">
+                    <div class="no-title">
+                      <strong>{{ item.id }}</strong> <span class="type-tag">{{ item.type }}</span>
+                    </div>
+                    <div class="sub-info">{{ item.dept }} • Requested By {{ item.requestedBy }}</div>
+                  </div>
+                  <div class="amount-col">
+                    <div class="amount">₹{{ item.amount | number:'1.0-0' }}</div>
+                    <div class="waiting">Waiting Since {{ item.waitingSince }}</div>
+                  </div>
+                  <div class="action-btns">
+                    <button class="btn-approve" (click)="approvePheadPending(item)">Approve</button>
+                    <button class="btn-reject" (click)="rejectPheadPending(item)">Reject</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Recent Activities</h3>
+                <button class="phead-link-btn" (click)="navigateToEpApproval('requests')">View All</button>
+              </div>
+              <div class="activity-timeline">
+                <div class="act-item" *ngFor="let a of pheadRecentActivities">
+                  <div class="act-icon" [style.color]="a.color">{{ a.icon }}</div>
+                  <div class="act-content">
+                    <div class="act-text">{{ a.text }}</div>
+                    <div class="act-time">{{ a.time }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="phead-card">
+              <div class="phead-card-hdr">
+                <h3>Notifications</h3>
+                <button class="phead-link-btn" (click)="toggleNotificationPanel($event)">View All</button>
+              </div>
+              <div class="notif-feed">
+                <div class="notif-row" *ngFor="let n of pheadNotifications">
+                  <div class="notif-icon">{{ n.icon }}</div>
+                  <div class="notif-content">
+                    <div class="notif-title">{{ n.title }}</div>
+                    <div class="notif-time">{{ n.time }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ALL RFQS & EP REQUESTS DATATABLE -->
+          <div class="phead-card phead-table-card">
+            <div class="phead-table-hdr">
+              <h3>All RFQs & EP Requests</h3>
+              
+              <div class="table-filters-bar">
+                <div class="tab-filters">
+                  <button class="tab-btn active">All</button>
+                  <button class="tab-btn">RFQ</button>
+                  <button class="tab-btn">EP Request</button>
+                </div>
+
+                <div class="filter-controls">
+                  <select class="fselect" [(ngModel)]="pheadFilterStatus">
+                    <option value="all">Status: All</option>
+                    <option value="Pending Approval">Pending Approval</option>
+                    <option value="Quotation Received">Quotation Received</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+
+                  <select class="fselect" [(ngModel)]="pheadFilterDepartment">
+                    <option value="all">Department: All</option>
+                    <option value="Production">Production</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="IT">IT</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+
+                  <select class="fselect" [(ngModel)]="pheadFilterVendor">
+                    <option value="all">Vendor: All</option>
+                    <option value="ABC Pvt Ltd">ABC Pvt Ltd</option>
+                    <option value="XYZ Industries">XYZ Industries</option>
+                    <option value="Global Supplies">Global Supplies</option>
+                    <option value="Ultra Solutions">Ultra Solutions</option>
+                  </select>
+
+                  <div class="date-picker-btn">
+                    <span>📅</span> {{ pheadDateRange }}
+                  </div>
+
+                  <button class="phead-act-btn btn-export"><span>⚡</span> Filters</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="datatable-responsive">
+              <table class="phead-main-table">
+                <thead>
+                  <tr>
+                    <th>RFQ / EP No.</th>
+                    <th>Type</th>
+                    <th>Department</th>
+                    <th>Vendor</th>
+                    <th>Title / Item</th>
+                    <th>Amount (₹)</th>
+                    <th>Created Date</th>
+                    <th>Response By</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of pheadAllRequests">
+                    <td><strong class="code-link">{{ row.no }}</strong></td>
+                    <td><span class="tag-type">{{ row.type }}</span></td>
+                    <td>{{ row.dept }}</td>
+                    <td><strong>{{ row.vendor }}</strong></td>
+                    <td>{{ row.item }}</td>
+                    <td><strong>₹{{ row.amount | number:'1.0-0' }}</strong></td>
+                    <td>{{ row.createdDate }}</td>
+                    <td>{{ row.responseBy }}</td>
+                    <td>
+                      <span class="sbadge" [ngClass]="{
+                        'sbadge--pending': row.status === 'Pending Approval',
+                        'sbadge--quoted': row.status === 'Quotation Received',
+                        'sbadge--approved': row.status === 'Approved',
+                        'sbadge--rejected': row.status === 'Rejected',
+                        'sbadge--completed': row.status === 'Completed'
+                      }">{{ row.status }}</span>
+                    </td>
+                    <td>{{ row.createdBy }}</td>
+                    <td class="action-cell">
+                      <button class="act-icon-btn view" title="View" (click)="showToast('Viewing ' + row.no, 'info')">👁️ View</button>
+                      <button class="act-icon-btn edit" title="Edit">✏️</button>
+                      <button class="act-icon-btn check" title="Approve" (click)="showToast('Approved ' + row.no, 'success')">✔</button>
+                      <button class="act-icon-btn close" title="Reject" (click)="showToast('Rejected ' + row.no, 'warning')">✖</button>
+                      <button class="act-icon-btn more" title="More">•••</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="datatable-footer">
+              <div class="info">Showing 1 to 5 of 248 entries</div>
+              <div class="pagination">
+                <button class="pg-btn active">1</button>
+                <button class="pg-btn">2</button>
+                <button class="pg-btn">3</button>
+                <span class="dots">...</span>
+                <button class="pg-btn">50</button>
+                <button class="pg-btn next">❯</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
         <!-- DETAILED ADMIN / MANAGER DASHBOARD -->
-        <div *ngIf="userRole !== 'User'" class="admin-dashboard-container">
+        <div *ngIf="userRole !== 'User' && userRole !== 'Purchase Head'" class="admin-dashboard-container">
           
           <!-- Left Column (Charts, Mini Cards, Stay Updated) -->
           <div class="dash-col dash-col--left">

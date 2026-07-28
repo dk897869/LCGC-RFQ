@@ -83,6 +83,7 @@ export class UserManagementComponent implements OnInit {
 
   roleOptions = [
     { value: 'Admin', label: 'Admin' }, 
+    { value: 'Purchase Head', label: 'Purchase Head' },
     { value: 'Manager', label: 'Manager' },
     { value: 'Senior Manager', label: 'Senior Manager' },
     { value: 'User', label: 'User' },

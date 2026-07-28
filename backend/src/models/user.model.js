@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver', 'Vendor', 'User', 'Viewer'],
+    enum: ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver', 'Vendor', 'User', 'Viewer'],
     default: 'User'
   },
   contactNo: { 
@@ -237,7 +237,7 @@ userSchema.methods.hasRight = function(rightName) {
 
 // Check if user is admin or senior role (can approve EP requests)
 userSchema.methods.canApproveEP = function() {
-  const seniorRoles = ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+  const seniorRoles = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
   return seniorRoles.includes(this.role);
 };
 

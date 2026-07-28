@@ -375,8 +375,8 @@
               <div class="kpi-icon blue">📋</div>
               <div class="kpi-content">
                 <div class="kpi-label">Total RFQs</div>
-                <div class="kpi-val">248</div>
-                <div class="kpi-sub green">▲ 12% vs last month</div>
+                <div class="kpi-val">{{ adminKpi.totalRfqs }}</div>
+                <div class="kpi-sub green">Real Mongo Record Count</div>
               </div>
             </div>
 
@@ -384,7 +384,7 @@
               <div class="kpi-icon orange">⏳</div>
               <div class="kpi-content">
                 <div class="kpi-label">Pending</div>
-                <div class="kpi-val orange">36</div>
+                <div class="kpi-val orange">{{ adminKpi.pendingApprovals }}</div>
                 <div class="kpi-sub orange">Needs Action</div>
               </div>
             </div>
@@ -393,8 +393,8 @@
               <div class="kpi-icon green">✅</div>
               <div class="kpi-content">
                 <div class="kpi-label">Approved</div>
-                <div class="kpi-val green">188</div>
-                <div class="kpi-sub green">75% of total</div>
+                <div class="kpi-val green">{{ adminKpi.approvedCount }}</div>
+                <div class="kpi-sub green">Approved Count</div>
               </div>
             </div>
 
@@ -402,8 +402,8 @@
               <div class="kpi-icon red">🚫</div>
               <div class="kpi-content">
                 <div class="kpi-label">Rejected</div>
-                <div class="kpi-val red">24</div>
-                <div class="kpi-sub red">10% of total</div>
+                <div class="kpi-val red">{{ adminKpi.rejectedCount }}</div>
+                <div class="kpi-sub red">Rejected Count</div>
               </div>
             </div>
 
@@ -411,7 +411,7 @@
               <div class="kpi-icon purple">₹</div>
               <div class="kpi-content">
                 <div class="kpi-label">Total Value</div>
-                <div class="kpi-val purple">₹2.48 Cr</div>
+                <div class="kpi-val purple">₹{{ (adminKpi.totalSpend / 10000000) | number:'1.2-2' }} Cr</div>
                 <div class="kpi-sub purple">Total RFQ Value</div>
               </div>
             </div>
@@ -420,7 +420,7 @@
               <div class="kpi-icon indigo">👥</div>
               <div class="kpi-content">
                 <div class="kpi-label">Vendors</div>
-                <div class="kpi-val indigo">67</div>
+                <div class="kpi-val indigo">{{ adminKpi.activeVendors }}</div>
                 <div class="kpi-sub indigo">Active Vendors</div>
               </div>
             </div>
@@ -438,7 +438,7 @@
               <div class="kpi-icon emerald">📈</div>
               <div class="kpi-content">
                 <div class="kpi-label">Cost Saving</div>
-                <div class="kpi-val emerald">₹18.4 Lakh</div>
+                <div class="kpi-val emerald">₹{{ (costSavingStats.savings / 100000) | number:'1.1-1' }} Lakh</div>
                 <div class="kpi-sub emerald">This Year</div>
               </div>
             </div>
@@ -452,7 +452,7 @@
             <button class="phead-act-btn btn-orange" (click)="navigateToModule('vendors')"><span>＋</span> Add Vendor</button>
             <button class="phead-act-btn btn-cyan" (click)="navigateToModule('bidding')"><span>⚖️</span> Compare Quotations</button>
             <button class="phead-act-btn btn-pink" (click)="navigateToEpApproval('approvals')">
-              <span>⚙️</span> Pending Approvals <span class="btn-badge">36</span>
+              <span>⚙️</span> Pending Approvals <span class="btn-badge">{{ adminKpi.pendingApprovals }}</span>
             </button>
             <button class="phead-act-btn btn-darkblue" (click)="openReportsModal()"><span>📊</span> Reports</button>
             <button class="phead-act-btn btn-export" (click)="exportReportToExcel()"><span>📥</span> Export</button>
@@ -477,16 +477,16 @@
                     <circle cx="18" cy="18" r="15.915" fill="none" stroke="#06b6d4" stroke-width="3.5" stroke-dasharray="77.3 22.7" stroke-dashoffset="-22.7"/>
                   </svg>
                   <div class="donut-center">
-                    <div class="val">145</div>
+                    <div class="val">{{ approvalBreakdown.total }}</div>
                     <div class="lbl">Total</div>
                   </div>
                 </div>
                 <div class="donut-legend-list">
-                  <div class="legend-row"><span class="dot blue"></span><span class="label">Department Manager</span><strong class="val">18</strong></div>
-                  <div class="legend-row"><span class="dot orange"></span><span class="label">Purchase Head</span><strong class="val">7</strong></div>
-                  <div class="legend-row"><span class="dot green"></span><span class="label">Finance</span><strong class="val">5</strong></div>
-                  <div class="legend-row"><span class="dot purple"></span><span class="label">MD Approval</span><strong class="val">3</strong></div>
-                  <div class="legend-row"><span class="dot cyan"></span><span class="label">Completed</span><strong class="val">112</strong></div>
+                  <div class="legend-row"><span class="dot blue"></span><span class="label">Department Manager</span><strong class="val">{{ approvalBreakdown.deptManager }}</strong></div>
+                  <div class="legend-row"><span class="dot orange"></span><span class="label">Purchase Head</span><strong class="val">{{ approvalBreakdown.purchaseHead }}</strong></div>
+                  <div class="legend-row"><span class="dot green"></span><span class="label">Finance</span><strong class="val">{{ approvalBreakdown.finance }}</strong></div>
+                  <div class="legend-row"><span class="dot purple"></span><span class="label">MD Approval</span><strong class="val">{{ approvalBreakdown.mdApproval }}</strong></div>
+                  <div class="legend-row"><span class="dot cyan"></span><span class="label">Completed</span><strong class="val">{{ approvalBreakdown.completed }}</strong></div>
                 </div>
               </div>
             </div>
@@ -588,17 +588,17 @@
                 <div class="gauge-ring">
                   <svg viewBox="0 0 36 36" class="gauge-svg">
                     <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" stroke-width="4"/>
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="62 38" stroke-dashoffset="25"/>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563eb" stroke-width="4" [attr.stroke-dasharray]="budgetStats.percentage + ' ' + (100 - budgetStats.percentage)" stroke-dashoffset="25"/>
                   </svg>
                   <div class="gauge-center">
-                    <div class="val">62%</div>
+                    <div class="val">{{ budgetStats.percentage }}%</div>
                     <div class="lbl">Used</div>
                   </div>
                 </div>
                 <div class="budget-stats">
-                  <div class="annual">Annual Budget: <strong>₹5.00 Cr</strong></div>
-                  <div class="stat-line"><span class="dot blue"></span> Used Amount: <strong>₹3.10 Cr</strong></div>
-                  <div class="stat-line"><span class="dot gray"></span> Remaining: <strong>₹1.90 Cr</strong></div>
+                  <div class="annual">Annual Budget: <strong>₹{{ (budgetStats.totalBudget / 10000000) | number:'1.2-2' }} Cr</strong></div>
+                  <div class="stat-line"><span class="dot blue"></span> Used Amount: <strong>₹{{ (budgetStats.usedAmount / 100000) | number:'1.2-2' }} Lakh</strong></div>
+                  <div class="stat-line"><span class="dot gray"></span> Remaining: <strong>₹{{ (budgetStats.remainingAmount / 10000000) | number:'1.2-2' }} Cr</strong></div>
                 </div>
               </div>
             </div>
@@ -611,18 +611,18 @@
               </div>
               <div class="cost-saving-bars">
                 <div class="bar-col">
-                  <div class="bar-top">₹2.66 Cr</div>
+                  <div class="bar-top">₹{{ (costSavingStats.originalPrice / 10000000) | number:'1.2-2' }} Cr</div>
                   <div class="bar-fill blue" style="height: 90px;"></div>
                   <div class="bar-lbl">Original Price</div>
                 </div>
                 <div class="bar-col">
-                  <div class="bar-top">₹2.48 Cr</div>
+                  <div class="bar-top">₹{{ (costSavingStats.finalPrice / 10000000) | number:'1.2-2' }} Cr</div>
                   <div class="bar-fill green" style="height: 78px;"></div>
                   <div class="bar-lbl">Final Price</div>
                 </div>
                 <div class="saving-callout">
                   <div class="lbl">Savings</div>
-                  <div class="val">₹18.4 Lakh</div>
+                  <div class="val">₹{{ (costSavingStats.savings / 100000) | number:'1.1-1' }} Lakh</div>
                 </div>
               </div>
             </div>
@@ -634,13 +634,13 @@
                 <button class="phead-link-btn" (click)="navigateToNppTab('rfq-npp-form')">View All</button>
               </div>
               <div class="lifecycle-list">
-                <div class="step-item"><span class="icon blue">📝</span><span class="label">Created</span><strong class="val">248</strong></div>
-                <div class="step-item"><span class="icon orange">⏳</span><span class="label">Approval</span><strong class="val">145</strong></div>
-                <div class="step-item"><span class="icon purple">👥</span><span class="label">Vendor Invited</span><strong class="val">120</strong></div>
-                <div class="step-item"><span class="icon cyan">📥</span><span class="label">Quotation Received</span><strong class="val">98</strong></div>
-                <div class="step-item"><span class="icon pink">⚖️</span><span class="label">Comparison</span><strong class="val">72</strong></div>
-                <div class="step-item"><span class="icon green">📋</span><span class="label">Purchase Order</span><strong class="val">56</strong></div>
-                <div class="step-item"><span class="icon emerald">✓</span><span class="label">Completed</span><strong class="val">42</strong></div>
+                <div class="step-item"><span class="icon blue">📝</span><span class="label">Created</span><strong class="val">{{ lifecycleStats.created }}</strong></div>
+                <div class="step-item"><span class="icon orange">⏳</span><span class="label">Approval</span><strong class="val">{{ lifecycleStats.approval }}</strong></div>
+                <div class="step-item"><span class="icon purple">👥</span><span class="label">Vendor Invited</span><strong class="val">{{ lifecycleStats.vendorInvited }}</strong></div>
+                <div class="step-item"><span class="icon cyan">📥</span><span class="label">Quotation Received</span><strong class="val">{{ lifecycleStats.quotationsReceived }}</strong></div>
+                <div class="step-item"><span class="icon pink">⚖️</span><span class="label">Comparison</span><strong class="val">{{ lifecycleStats.underEvaluation }}</strong></div>
+                <div class="step-item"><span class="icon green">📋</span><span class="label">Purchase Order</span><strong class="val">{{ lifecycleStats.poCreated }}</strong></div>
+                <div class="step-item"><span class="icon emerald">✓</span><span class="label">Completed</span><strong class="val">{{ lifecycleStats.completed }}</strong></div>
               </div>
             </div>
           </div>
@@ -765,7 +765,6 @@
                     <th>Department</th>
                     <th>Vendor</th>
                     <th>Title / Item</th>
-                    <th>Amount (₹)</th>
                     <th>Created Date</th>
                     <th>Response By</th>
                     <th>Status</th>
@@ -780,7 +779,6 @@
                     <td>{{ row.dept }}</td>
                     <td><strong>{{ row.vendor }}</strong></td>
                     <td>{{ row.item }}</td>
-                    <td><strong>₹{{ row.amount | number:'1.0-0' }}</strong></td>
                     <td>{{ row.createdDate }}</td>
                     <td>{{ row.responseBy }}</td>
                     <td>
@@ -1125,7 +1123,6 @@
                     <th>Title / Item</th>
                     <th>Department</th>
                     <th>Requested By</th>
-                    <th>Amount (₹)</th>
                     <th>Status</th>
                     <th>Created Date</th>
                     <th>Response By</th>
@@ -1138,7 +1135,7 @@
                     <td>{{ row.item }}</td>
                     <td>{{ row.dept }}</td>
                     <td>{{ row.createdBy }}</td>
-                    <td><strong>₹{{ row.amount | number:'1.0-0' }}</strong></td>
+                    <td>
                     <td>
                       <span class="sbadge" [ngClass]="{
                         'sbadge--pending': row.status === 'Pending Approval',

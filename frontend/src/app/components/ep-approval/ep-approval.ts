@@ -190,12 +190,52 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   mediaPreviewUrl = '';
   mediaPreviewTitle = '';
   mediaZoomScale = 1;
+  isPdfMedia = false;
+  isImageMedia = false;
+  sanitizedMediaUrl: SafeResourceUrl | null = null;
 
-  openMediaPreview(url: string, title?: string) {
-    if (!url) return;
-    this.mediaPreviewUrl = url;
-    this.mediaPreviewTitle = title || 'Attachment Preview';
+  openMediaPreview(attachmentOrUrl: any, title?: string) {
+    if (!attachmentOrUrl) {
+      this.showToast('Please upload a file first to view preview.', 'info');
+      return;
+    }
+    
+    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || '');
+    const name = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || attachmentOrUrl.fileName : '') || 'Attachment Preview';
+    
+    if (!url || (!url.startsWith('data:') && !url.startsWith('http') && !url.startsWith('blob:'))) {
+      this.showToast('Please upload a valid PDF or image file first to view preview.', 'info');
+      return;
+    }
+
+    this.mediaPreviewTitle = name;
     this.mediaZoomScale = 1;
+
+    // Check if image or PDF
+    const lowerUrl = url.toLowerCase();
+    this.isImageMedia = url.startsWith('data:image') || /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(lowerUrl);
+    this.isPdfMedia = url.startsWith('data:application/pdf') || lowerUrl.includes('.pdf') || url.startsWith('blob:');
+
+    // If base64 PDF data, convert to Blob URL so Chrome/Edge native PDF viewer renders scrollable PDF
+    if (url.startsWith('data:application/pdf;base64,')) {
+      try {
+        const base64Data = url.split(',')[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        url = URL.createObjectURL(blob);
+        this.isPdfMedia = true;
+      } catch (e) {
+        console.error('PDF Blob conversion error', e);
+      }
+    }
+
+    this.mediaPreviewUrl = url;
+    this.sanitizedMediaUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
     this.showMediaModal = true;
     this.cdr.detectChanges();
   }
@@ -205,6 +245,9 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     this.mediaPreviewUrl = '';
     this.mediaPreviewTitle = '';
     this.mediaZoomScale = 1;
+    this.isPdfMedia = false;
+    this.isImageMedia = false;
+    this.sanitizedMediaUrl = null;
   }
 
   zoomInMedia() {
@@ -529,6 +572,23 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     return 'Pending';
   }
 
+  getLineRowspan(stakeholders: any[], index: number): number {
+    if (!stakeholders || index < 0 || index >= stakeholders.length) return 0;
+    const currentLine = (stakeholders[index].line || 'Parallel').trim();
+    if (index > 0 && (stakeholders[index - 1].line || 'Parallel').trim() === currentLine) {
+      return 0;
+    }
+    let count = 1;
+    for (let i = index + 1; i < stakeholders.length; i++) {
+      if ((stakeholders[i].line || 'Parallel').trim() === currentLine) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }
+
   getApprovalChainSerials(stakeholders: any[]): number[] {
     if (!stakeholders || stakeholders.length === 0) return [];
     const serials: number[] = [];
@@ -756,6 +816,22 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
   
+  // Approver Detail Modal State
+  showApproverModal = false;
+  selectedApproverDetail: any = null;
+
+  openApproverDetail(approver: any) {
+    if (!approver) return;
+    this.selectedApproverDetail = approver;
+    this.showApproverModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeApproverDetail() {
+    this.showApproverModal = false;
+    this.selectedApproverDetail = null;
+  }
+
   // Attachment Methods
   onFileSelected(attachment: Attachment, event: any) {
     const file = event.target.files[0];
@@ -767,18 +843,19 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       }
       
       attachment.file = file;
+      (attachment as any).fileName = file.name;
       attachment.fileSize = this.formatFileSize(file.size);
+      (attachment as any).fileType = file.type;
       
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          attachment.preview = e.target.result;
-          this.cdr.detectChanges();
-        };
-        reader.readAsDataURL(file);
-      } else {
-        attachment.preview = '📄 ' + (file.type.split('/')[1]?.toUpperCase() || 'FILE');
-      }
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const dataUrl = e.target.result;
+        attachment.preview = dataUrl;
+        (attachment as any).url = dataUrl;
+        (attachment as any).data = dataUrl;
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(file);
     }
   }
   
@@ -838,201 +915,144 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     const previewWindow = window.open('', '_blank');
     if (!previewWindow) return;
     
-    const approversHtml = this.approvers.filter(a => a.managerName).map((a, idx) => `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${a.line}</td>
-        <td>${a.managerName}</td>
-        <td>${a.designation}</td>
-        <td>${a.email}</td>
-        <td><span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:12px;">${a.status}</span></td>
-        <td>${a.dateTime || '—'}</td>
-        <td>${a.remarks || '—'}</td>
-      </tr>
-    `).join('');
+    const activeApprovers = this.approvers.filter(a => a.managerName);
+    const approversHtml = activeApprovers.map((a, idx) => {
+      const rowspan = this.getLineRowspan(activeApprovers, idx);
+      const isFirstRow = idx === 0;
+      
+      let approvalCol = isFirstRow ? `<th rowspan="${activeApprovers.length}" style="background:#e2e8f0; font-weight:700; text-align:center; vertical-align:middle; border:1px solid #cbd5e1; padding:10px;">Approval</th>` : '';
+      let lineCol = rowspan > 0 ? `<td rowspan="${rowspan}" style="text-align:center; vertical-align:middle; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">${a.line || 'Parallel'}</td>` : '';
+
+      return `
+        <tr>
+          ${approvalCol}
+          ${lineCol}
+          <td colspan="2" style="padding:8px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">${a.managerName}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:#475569;">${a.remarks || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:#334155;">${a.designation || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:${(a.status as any) === 'Approved' || (a.status as any) === 'approved' ? '#059669' : '#d97706'}; font-weight:700;">${a.status || 'In-Process'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:#64748b; font-size:12px;">${a.dateTime || '—'}</td>
+        </tr>
+      `;
+    }).join('');
     
-    const attachmentsHtml = this.attachments.filter(a => a.file).map((a, idx) => `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${a.name}</td>
-        <td>${a.fileSize}</td>
-        <td>${a.remark || '—'}</td>
-      </tr>
-    `).join('');
+    const validAttachments = this.attachments.filter(a => a.file);
+    const attachmentsHtml = validAttachments.map((a, idx) => {
+      let attachmentCol = idx === 0 ? `<th rowspan="${validAttachments.length}" style="background:#e2e8f0; font-weight:700; text-align:center; vertical-align:middle; border:1px solid #cbd5e1; padding:10px;">Attachments</th>` : '';
+      return `
+        <tr>
+          ${attachmentCol}
+          <td style="padding:8px; border:1px solid #cbd5e1; text-align:center;">${idx + 1}</td>
+          <td colspan="3" style="padding:8px; border:1px solid #cbd5e1;">${a.name}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${a.fileSize}</td>
+          <td colspan="2" style="padding:8px; border:1px solid #cbd5e1;">${a.remark || '—'}</td>
+        </tr>
+      `;
+    }).join('');
     
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>EP Request Preview - ${this.formData.titleOfActivity}</title>
+        <title>EP Request Preview - ${this.selectedRequestCopy.title || this.selectedRequestCopy.titleOfActivity}</title>
         <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f0f4f8;
-            padding: 40px;
-          }
-          .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-          }
-          .header {
-            background: linear-gradient(135deg, #0f2a5e, #1e4a8a);
-            color: white;
-            padding: 30px;
-          }
-          .header h1 { margin: 0; font-size: 24px; }
-          .header p { margin: 8px 0 0; opacity: 0.8; }
-          .content { padding: 30px; }
-          .section {
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            overflow: hidden;
-          }
-          .section-title {
-            background: #f8fafc;
-            padding: 12px 20px;
-            font-weight: 700;
-            color: #0f2a5e;
-            border-bottom: 1px solid #e2e8f0;
-          }
-          .section-body { padding: 20px; }
-          .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-          }
-          .info-item label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #64748b;
-            display: block;
-            margin-bottom: 4px;
-          }
-          .info-item span {
-            font-size: 14px;
-            color: #0f172a;
-            font-weight: 500;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-          }
-          th {
-            background: #f1f5f9;
-            padding: 10px 12px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 1px solid #e2e8f0;
-          }
-          td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #f1f5f9;
-          }
-          .amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e40af;
-          }
-          .footer {
-            background: #f8fafc;
-            padding: 16px;
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            border-top: 1px solid #e2e8f0;
-          }
+          * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+          body { background: white; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; color: #0f172a; margin-top: 20px; }
+          th, td { border: 1px solid #94a3b8; padding: 8px 12px; }
+          th { background: #f1f5f9; font-weight: 700; text-align: left; }
+          .section-label { background: #e2e8f0; text-align: center; font-weight: 700; vertical-align: middle; width: 140px; }
+          .label { background: #f8fafc; font-weight: 600; width: 120px; text-align: center; }
+          .val { text-align: center; }
           @media print {
-            body { padding: 0; background: white; }
+            body { padding: 0; }
             .btn-print { display: none; }
           }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <h1>EP Approval Request</h1>
-            <p>Radiant Appliances - ${new Date().toLocaleDateString()}</p>
-          </div>
-          <div class="content">
-            <div class="section">
-              <div class="section-title">📋 Requester Information</div>
-              <div class="section-body">
-                <div class="info-grid">
-                  <div class="info-item"><label>Name</label><span>${this.formData.requesterName}</span></div>
-                  <div class="info-item"><label>Department</label><span>${this.formData.department}</span></div>
-                  <div class="info-item"><label>Email ID</label><span>${this.formData.emailId}</span></div>
-                  <div class="info-item"><label>Contact No.</label><span>${this.formData.contactNo}</span></div>
-                  <div class="info-item"><label>Organization</label><span>${this.formData.organization}</span></div>
-                  <div class="info-item"><label>Request Date</label><span>${this.formData.requestDate}</span></div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="section">
-              <div class="section-title">🎯 Activity Overview</div>
-              <div class="section-body">
-                <div class="info-grid">
-                  <div class="info-item"><label>Title of Activity</label><span>${this.formData.titleOfActivity}</span></div>
-                  <div class="info-item"><label>Vendor / Supplier</label><span>${this.formData.vendor}</span></div>
-                  <div class="info-item"><label>Amount / Cost</label><span class="amount">₹${this.formData.amount.toLocaleString('en-IN')}</span></div>
-                  <div class="info-item"><label>Priority Level</label><span>${this.formData.priority}</span></div>
-                </div>
-                ${this.formData.description ? `<p style="margin-top:16px;"><strong>Description:</strong><br>${this.formData.description}</p>` : ''}
-                ${this.formData.objective ? `<p style="margin-top:12px;"><strong>Objective:</strong><br>${this.formData.objective}</p>` : ''}
-              </div>
-            </div>
-            
-            ${approversHtml ? `
-            <div class="section">
-              <div class="section-title">👥 Approval Chain</div>
-              <div class="section-body">
-                <table>
-                  <thead><tr><th>#</th><th>Line</th><th>Manager</th><th>Designation</th><th>Email</th><th>Status</th><th>Date/Time</th><th>Remarks</th></tr></thead>
-                  <tbody>${approversHtml}</tbody>
-                </table>
-              </div>
-            </div>
-            ` : ''}
-            
-            ${attachmentsHtml ? `
-            <div class="section">
-              <div class="section-title">📎 Attachments</div>
-              <div class="section-body">
-                <table>
-                  <thead><tr><th>S.No.</th><th>Attachment</th><th>File Size</th><th>Remark</th></tr></thead>
-                  <tbody>${attachmentsHtml}</tbody>
-                </table>
-              </div>
-            </div>
-            ` : ''}
-            
-            ${this.ccList.length ? `
-            <div class="section">
-              <div class="section-title">📧 CC Recipients</div>
-              <div class="section-body">
-                <ul style="margin:0;padding-left:20px;">
-                  ${this.ccList.map(cc => `<li>${cc}</li>`).join('')}
-                </ul>
-              </div>
-            </div>
-            ` : ''}
-          </div>
-          <div class="footer">
-            This is a preview of your EP Request. Please verify all details before submitting.
-          </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: #1e3a8a; margin: 0;">EP Approval Request</h2>
+          <button class="btn-print" onclick="window.print()" style="background:#2563eb; color:white; border:none; padding:10px 24px; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px; box-shadow:0 4px 6px rgba(37,99,235,0.2);">🖨️ Print Request</button>
         </div>
-        <div style="text-align:center; margin-top:20px;">
-          <button onclick="window.print()" class="btn-print" style="padding:10px 24px;background:#1e3a8a;color:white;border:none;border-radius:8px;cursor:pointer;">🖨️ Print / Save as PDF</button>
-        </div>
+
+        <table>
+          <tbody>
+            <!-- Requester Information -->
+            <tr>
+              <th rowspan="3" class="section-label">Requester<br>Information</th>
+              <th class="label">Name</th>
+              <td colspan="2" class="val" style="font-weight:700;">${this.selectedRequestCopy.requester || this.selectedRequestCopy.requesterName || ''}</td>
+              <th class="label">Request Date</th>
+              <td colspan="2" class="val">${this.selectedRequestCopy.date || this.selectedRequestCopy.requestDate || ''}</td>
+            </tr>
+            <tr>
+              <th class="label">Department</th>
+              <td colspan="2" class="val">${this.selectedRequestCopy.department || ''}</td>
+              <th class="label">Contact No.</th>
+              <td colspan="2" class="val">${this.selectedRequestCopy.contactNo || '—'}</td>
+            </tr>
+            <tr>
+              <th class="label">Email ID</th>
+              <td colspan="2" class="val"><a href="mailto:${this.selectedRequestCopy.emailId || this.selectedRequestCopy.email}" style="color:#2563eb;">${this.selectedRequestCopy.emailId || this.selectedRequestCopy.email || ''}</a></td>
+              <th class="label">Organization</th>
+              <td colspan="2" class="val">${this.selectedRequestCopy.organization || ''}</td>
+            </tr>
+
+            <!-- Activity Overview -->
+            <tr>
+              <th class="section-label">Activity Overview</th>
+              <th class="label">Title of Activity</th>
+              <td colspan="3" style="font-weight:600;">${this.selectedRequestCopy.title || this.selectedRequestCopy.titleOfActivity || ''}</td>
+              <th class="label">Priority</th>
+              <td class="val">${this.selectedRequestCopy.priority || ''}</td>
+            </tr>
+
+            <!-- Description -->
+            <tr>
+              <th class="section-label">Description</th>
+              <td colspan="6" style="padding: 16px; white-space: pre-wrap; vertical-align: top; line-height: 1.5; min-height: 120px;">${this.selectedRequestCopy.description || this.selectedRequestCopy.objective || this.selectedRequestCopy.purpose || ''}</td>
+            </tr>
+
+            <!-- Approval Chain Header -->
+            ${activeApprovers.length > 0 ? `
+            <tr>
+              <th rowspan="${activeApprovers.length + 1}" class="section-label">Approval</th>
+              <th class="label">Line</th>
+              <th colspan="2" class="label">Stakeholder</th>
+              <th class="label">Comments/Remarks</th>
+              <th class="label">Designation</th>
+              <th class="label">Status</th>
+              <th class="label">Date/Time</th>
+            </tr>
+            ${approversHtml}
+            ` : ''}
+
+            <!-- Attachments Header -->
+            ${validAttachments.length > 0 ? `
+            <tr>
+              <th rowspan="${validAttachments.length + 1}" class="section-label">Attachments</th>
+              <th class="label">S. No.</th>
+              <th colspan="3" class="label">Attachment</th>
+              <th class="label">File Size</th>
+              <th colspan="2" class="label">Remark</th>
+            </tr>
+            ${attachmentsHtml}
+            ` : ''}
+
+            <!-- CC To -->
+            ${this.ccList.length > 0 ? `
+            <tr>
+              <th class="section-label">CC to</th>
+              <td colspan="6" class="val" style="padding: 12px;">
+                <div style="font-weight: 700; margin-bottom: 6px;">Mail ID</div>
+                ${this.ccList.map(email => `<a href="mailto:${email}" style="color:#2563eb; display:block; margin-bottom:4px;">${email};</a>`).join('')}
+              </td>
+            </tr>
+            ` : ''}
+          </tbody>
+        </table>
       </body>
       </html>
     `;

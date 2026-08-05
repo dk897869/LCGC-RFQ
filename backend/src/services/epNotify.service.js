@@ -357,6 +357,7 @@ module.exports = {
   sendEPRequestApprovedEmail,
   sendEPRequestRejectedEmail,
   sendNewEPRequestEmail,
+  sendNextEPApproverEmail: sendNewEPRequestEmail,
   sendEPCCNotificationEmail,
   sendEPBulkCCNotifications,
   sendRFQCreatedEmail,

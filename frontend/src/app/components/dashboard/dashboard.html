@@ -1294,43 +1294,85 @@
           </div>
         </div>
 
-        <!-- SECTION 3: APPROVAL STATUS FLOW TABLE -->
-        <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <!-- SECTION 3: APPROVAL STATUS FLOW TABLE (IMAGE 5 MERGED FORMAT) -->
+        <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
             📊 Approval Status Flow
           </h3>
           <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; border: 1px solid #cbd5e1;">
               <thead>
-                <tr style="background: #f1f5f9; color: #475569; border-bottom: 2px solid #e2e8f0;">
-                  <th style="padding: 10px 12px;">#</th>
-                  <th style="padding: 10px 12px;">Line</th>
-                  <th style="padding: 10px 12px;">Name</th>
-                  <th style="padding: 10px 12px;">Comments/Remarks</th>
-                  <th style="padding: 10px 12px;">Designation</th>
-                  <th style="padding: 10px 12px;">E-Mail</th>
-                  <th style="padding: 10px 12px;">Contact No.</th>
-                  <th style="padding: 10px 12px;">Organization</th>
-                  <th style="padding: 10px 12px;">Status</th>
+                <tr style="background: #e2e8f0; color: #0f172a; border-bottom: 2px solid #cbd5e1; font-weight: 700;">
+                  <th style="padding: 10px 12px; width: 90px; text-align: center; background: #cbd5e1; color: #0f172a;"></th>
+                  <th style="padding: 10px 12px; width: 100px; text-align: center; border-right: 1px solid #cbd5e1;">Line</th>
+                  <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Stakeholder</th>
+                  <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Comments/Remarks</th>
+                  <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Designation</th>
+                  <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Status</th>
                   <th style="padding: 10px 12px;">Date/Time</th>
                 </tr>
               </thead>
               <tbody>
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                  <td style="padding: 10px 12px;">1</td>
-                  <td style="padding: 10px 12px;"><span style="background: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Parallel</span></td>
-                  <td style="padding: 10px 12px;"><strong>{{ selectedUnifiedRequest.requester || 'Deepak Kumar' }}</strong></td>
-                  <td style="padding: 10px 12px;">{{ approvalRemarks || 'yes' }}</td>
-                  <td style="padding: 10px 12px;">Admin</td>
-                  <td style="padding: 10px 12px;">{{ selectedUnifiedRequest.email || 'dlk897869@gmail.com' }}</td>
-                  <td style="padding: 10px 12px;">—</td>
-                  <td style="padding: 10px 12px;">—</td>
-                  <td style="padding: 10px 12px;">
-                    <span [style.color]="selectedUnifiedRequest.status?.toLowerCase() === 'approved' ? '#059669' : selectedUnifiedRequest.status?.toLowerCase() === 'rejected' ? '#dc2626' : '#d97706'" style="font-weight: 700;">
-                      {{ selectedUnifiedRequest.status }}
+                <ng-container *ngIf="selectedUnifiedRequest.stakeholders?.length">
+                  <tr *ngFor="let st of selectedUnifiedRequest.stakeholders; let idx = index" style="border-bottom: 1px solid #cbd5e1;">
+                    
+                    <!-- Outer Merged "Approval" Cell -->
+                    <td *ngIf="idx === 0" [attr.rowspan]="selectedUnifiedRequest.stakeholders.length" style="background: #e2e8f0; font-weight: 700; text-align: center; vertical-align: middle; font-size: 14px; color: #0f172a; border-right: 2px solid #cbd5e1;">
+                      Approval
+                    </td>
+
+                    <!-- Merged Line (Parallel / Sequential) Cell -->
+                    <td *ngIf="getLineRowspan(selectedUnifiedRequest.stakeholders, idx) > 0"
+                        [attr.rowspan]="getLineRowspan(selectedUnifiedRequest.stakeholders, idx)"
+                        style="text-align: center; vertical-align: middle; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1; color: #334155;">
+                      {{ st.line || 'Parallel' }}
+                    </td>
+
+                    <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">
+                      {{ st.name || st.managerName }}
+                    </td>
+                    <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #475569;">
+                      {{ st.remarks || '—' }}
+                    </td>
+                    <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">
+                      {{ st.designation || '—' }}
+                    </td>
+                    <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">
+                      <span [style.color]="st.status === 'Approved' ? '#059669' : st.status === 'Rejected' ? '#dc2626' : '#2563eb'" style="font-weight: 700;">
+                        {{ st.status || 'In-Process' }}
+                      </span>
+                    </td>
+                    <td style="padding: 10px 12px; color: #64748b; font-size: 12px;">
+                      {{ st.dateTime ? (st.dateTime | date:'M-d-yy h:mm a') : '—' }}
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <!-- Fallback single row if stakeholders array is empty -->
+                <tr *ngIf="!selectedUnifiedRequest.stakeholders?.length" style="border-bottom: 1px solid #cbd5e1;">
+                  <td style="background: #e2e8f0; font-weight: 700; text-align: center; vertical-align: middle; font-size: 14px; color: #0f172a; border-right: 2px solid #cbd5e1; padding: 12px;">
+                    Approval
+                  </td>
+                  <td style="text-align: center; vertical-align: middle; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1; color: #334155;">
+                    Parallel
+                  </td>
+                  <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">
+                    {{ selectedUnifiedRequest.requester || 'Deepak Kumar' }}
+                  </td>
+                  <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #475569;">
+                    {{ approvalRemarks || 'yes' }}
+                  </td>
+                  <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">
+                    Admin
+                  </td>
+                  <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">
+                    <span [style.color]="selectedUnifiedRequest.status?.toLowerCase() === 'approved' ? '#059669' : selectedUnifiedRequest.status?.toLowerCase() === 'rejected' ? '#dc2626' : '#2563eb'" style="font-weight: 700;">
+                      {{ selectedUnifiedRequest.status || 'In-Process' }}
                     </span>
                   </td>
-                  <td style="padding: 10px 12px; color: #64748b;">{{ selectedUnifiedRequest.requestDate | date:'medium' }}</td>
+                  <td style="padding: 10px 12px; color: #64748b; font-size: 12px;">
+                    {{ selectedUnifiedRequest.requestDate | date:'M-d-yy h:mm a' }}
+                  </td>
                 </tr>
               </tbody>
             </table>

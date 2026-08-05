@@ -5,7 +5,7 @@ const { sendMail } = require('../services/mail.service');
 const { generatePDFFromRequest } = require('../services/pdf.service');
 const epNotify = require('../services/epNotify.service');
 
-const SENIOR_APPROVER_ROLES = ['Admin', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+const SENIOR_APPROVER_ROLES = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
 const memoryEpRequests = [];
 const isDbConnected = () => mongoose.connection.readyState === 1;
 

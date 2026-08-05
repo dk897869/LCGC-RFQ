@@ -188,7 +188,7 @@
                     <div *ngIf="att.preview || att.file" class="file-preview" style="display: flex; align-items: center; gap: 6px;">
                       <span *ngIf="att.preview && att.preview.startsWith('data:image')"><img [src]="att.preview" class="preview-image" alt="Preview"></span>
                       <span *ngIf="!att.preview || !att.preview.startsWith('data:image')" class="file-icon">{{ $any(att).fileName || att.name || 'File' }}</span>
-                      <button type="button" (click)="openMediaPreview(att.preview || $any(att).url || att.name, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
+                      <button type="button" (click)="openMediaPreview(att)" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
                         👁️ View
                       </button>
                     </div>
@@ -418,8 +418,8 @@
               <div style="font-weight: 600; color: #0f172a;">{{ att.name || 'Attachment' }}</div>
               <div style="font-size: 11px; color: #64748b;" *ngIf="att.fileSize">{{ att.fileSize }}</div>
             </div>
-            <button type="button" (click)="openMediaPreview(att.url || att.preview || att.data, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-              👁️ View
+            <button type="button" (click)="openMediaPreview(att)" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              👁️ View Preview
             </button>
           </div>
         </div>
@@ -435,47 +435,59 @@
         </div>
       </div>
 
-      <!-- Team Approval Chain -->
-      <div class="form-section" *ngIf="$any(selectedRequest)?.stakeholders?.length">
-        <div class="section-title"><span class="section-icon">👥</span> Team Approval Chain</div>
-        <div class="section-body" style="overflow-x: auto;">
-          <table class="approval-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <!-- Approval Status Flow Table (Image 5 Merged Format + View Info Action) -->
+      <div class="form-section" *ngIf="$any(selectedRequest)?.stakeholders?.length" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <span class="section-icon">👥</span>
+          Approval Status Flow
+        </div>
+        <div class="approval-table-wrapper" style="overflow-x: auto;">
+          <table class="approval-table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; border: 1px solid #cbd5e1;">
             <thead>
-              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                <th style="padding: 10px; width: 45px; text-align: center;">#</th>
-                <th style="padding: 10px; width: 90px;">Line</th>
-                <th style="padding: 10px;">Name</th>
-                <th style="padding: 10px;">Comments/Remarks</th>
-                <th style="padding: 10px;">Designation</th>
-                <th style="padding: 10px;">E-Mail</th>
-                <th style="padding: 10px;">Contact No.</th>
-                <th style="padding: 10px;">Organization</th>
-                <th style="padding: 10px; width: 100px; text-align: center;">Status</th>
-                <th style="padding: 10px; width: 150px; text-align: center;">Date/Time</th>
+              <tr style="background: #e2e8f0; color: #0f172a; border-bottom: 2px solid #cbd5e1; font-weight: 700;">
+                <th style="padding: 10px 12px; width: 90px; text-align: center; background: #cbd5e1; color: #0f172a;"></th>
+                <th style="padding: 10px 12px; width: 100px; text-align: center; border-right: 1px solid #cbd5e1;">Line</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Stakeholder</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Comments/Remarks</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Status</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Date/Time</th>
+                <th style="padding: 10px 12px; text-align: center;">Action</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let st of $any(selectedRequest).stakeholders; let idx = index" style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 10px; text-align: center; font-weight: 700; color: #475569;">
-                  {{ getApprovalChainSerials($any(selectedRequest).stakeholders)[idx] }}
+              <tr *ngFor="let st of $any(selectedRequest).stakeholders; let idx = index" style="border-bottom: 1px solid #cbd5e1;">
+                
+                <!-- Outer Merged "Approval" Cell -->
+                <td *ngIf="idx === 0" [attr.rowspan]="$any(selectedRequest).stakeholders.length" style="background: #e2e8f0; font-weight: 700; text-align: center; vertical-align: middle; font-size: 14px; color: #0f172a; border-right: 2px solid #cbd5e1;">
+                  Approval
                 </td>
-                <td style="padding: 10px;">
-                  <span style="font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 10px;" [style.background]="(st.line || 'Parallel') === 'Parallel' ? '#e0e7ff' : '#fef3c7'" [style.color]="(st.line || 'Parallel') === 'Parallel' ? '#3730a3' : '#92400e'">
-                    {{ st.line || 'Parallel' }}
+
+                <!-- Merged Line (Parallel / Sequential) Cell -->
+                <td *ngIf="getLineRowspan($any(selectedRequest).stakeholders, idx) > 0"
+                    [attr.rowspan]="getLineRowspan($any(selectedRequest).stakeholders, idx)"
+                    style="text-align: center; vertical-align: middle; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1; color: #334155;">
+                  {{ st.line || 'Parallel' }}
+                </td>
+
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">
+                  {{ st.name || st.managerName }}
+                </td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #475569;">
+                  {{ st.remarks || st.comments || '—' }}
+                </td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">
+                  <span [style.color]="st.status === 'Approved' || st.status === 'approved' ? '#059669' : st.status === 'Rejected' || st.status === 'rejected' ? '#dc2626' : '#2563eb'" style="font-weight: 700;">
+                    {{ st.status || 'In-Process' }}
                   </span>
                 </td>
-                <td style="padding: 10px;"><strong>{{ st.name || st.managerName }}</strong></td>
-                <td style="padding: 10px;">{{ st.remarks || st.comments || '—' }}</td>
-                <td style="padding: 10px;">{{ st.designation || '—' }}</td>
-                <td style="padding: 10px;">{{ st.email || '—' }}</td>
-                <td style="padding: 10px;">{{ st.contactNo || '—' }}</td>
-                <td style="padding: 10px;">{{ st.organization || '—' }}</td>
-                <td style="padding: 10px; text-align: center;">
-                  <span class="status-badge" [class.status-approved]="st.status === 'Approved' || st.status === 'approved'" [class.status-pending]="st.status === 'Pending' || st.status === 'pending'" [class.status-rejected]="st.status === 'Rejected' || st.status === 'rejected'">
-                    {{ st.status }}
-                  </span>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #64748b;">
+                  {{ st.dateTime ? (st.dateTime | date:'M/d/yy h:mm a') : '—' }}
                 </td>
-                <td style="padding: 10px; text-align: center; font-size: 12px; color: #64748b;">{{ st.dateTime ? (st.dateTime | date:'M/d/yy h:mm a') : '—' }}</td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <button type="button" (click)="openApproverDetail(st)" style="background: #1e293b; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap;">
+                    👁️ View Info
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -582,16 +594,89 @@
     </div>
     <div class="media-zoom-body" style="flex: 1; background: #0f172a; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 20px; position: relative;">
       <ng-container *ngIf="mediaPreviewUrl">
-        <img *ngIf="mediaPreviewUrl.startsWith('data:image') || mediaPreviewUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)/i)"
+        <!-- Image Preview -->
+        <img *ngIf="isImageMedia"
              [src]="mediaPreviewUrl"
              [style.transform]="'scale(' + mediaZoomScale + ')'"
              style="max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; cursor: grab;"
              alt="Attachment Preview">
-        <iframe *ngIf="!mediaPreviewUrl.startsWith('data:image') && !mediaPreviewUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)/i)"
-                [src]="getSanitizedUrl(mediaPreviewUrl)"
+
+        <!-- PDF Document Native Viewer with Full Scrolling -->
+        <object *ngIf="isPdfMedia && sanitizedMediaUrl"
+                [data]="sanitizedMediaUrl"
+                type="application/pdf"
+                style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          <iframe [src]="sanitizedMediaUrl" style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px;">
+            <p style="color: white; padding: 20px; text-align: center;">PDF Preview unavailable. <a [href]="mediaPreviewUrl" target="_blank" style="color: #60a5fa;">Click here to download PDF</a></p>
+          </iframe>
+        </object>
+
+        <!-- Other File Types Fallback -->
+        <iframe *ngIf="!isImageMedia && !isPdfMedia && sanitizedMediaUrl"
+                [src]="sanitizedMediaUrl"
                 style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px;">
         </iframe>
       </ng-container>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== APPROVER DETAIL MODAL ==================== -->
+<div class="modal-overlay" *ngIf="showApproverModal" (click)="closeApproverModal()" style="display: flex; align-items: center; justify-content: center; z-index: 9999999; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); position: fixed; inset: 0;">
+  <div class="approver-detail-card" (click)="$event.stopPropagation()" style="background: white; border-radius: 16px; width: 90vw; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+    
+    <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 20px 24px; color: white; display: flex; align-items: flex-start; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+          👤
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 17px; font-weight: 700;">{{ selectedApproverDetail?.name || selectedApproverDetail?.managerName }}</h3>
+          <span style="font-size: 12px; color: #e2e8f0;">{{ selectedApproverDetail?.designation || 'Approver Stakeholder' }}</span>
+        </div>
+      </div>
+      <button (click)="closeApproverModal()" style="background: none; border: none; color: white; font-size: 22px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s;">✕</button>
+    </div>
+    
+    <div style="padding: 24px; font-size: 13.5px; color: #334155; display: flex; flex-direction: column; gap: 14px; background: #fff;">
+      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+        <span style="color: #64748b; font-weight: 600;">Approval Line:</span>
+        <span style="font-weight: 700; color: #4338ca; background: #eef2ff; padding: 2px 10px; border-radius: 12px; font-size: 12px;">{{ selectedApproverDetail?.line || 'Parallel' }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+        <span style="color: #64748b; font-weight: 600;">Status:</span>
+        <span [style.color]="selectedApproverDetail?.status === 'Approved' || selectedApproverDetail?.status === 'approved' ? '#059669' : selectedApproverDetail?.status === 'Rejected' || selectedApproverDetail?.status === 'rejected' ? '#dc2626' : '#2563eb'" style="font-weight: 700;">
+          {{ selectedApproverDetail?.status || 'In-Process' }}
+        </span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+        <span style="color: #64748b; font-weight: 600;">Email Address:</span>
+        <strong style="color: #0f172a;">{{ selectedApproverDetail?.email || '—' }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+        <span style="color: #64748b; font-weight: 600;">Contact Number:</span>
+        <strong style="color: #0f172a;">{{ selectedApproverDetail?.contactNo || '—' }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+        <span style="color: #64748b; font-weight: 600;">Organization:</span>
+        <strong style="color: #0f172a;">{{ selectedApproverDetail?.organization || 'Radiant Appliances' }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+        <span style="color: #64748b; font-weight: 600;">Date & Time:</span>
+        <span style="color: #64748b;">{{ selectedApproverDetail?.dateTime || '—' }}</span>
+      </div>
+      <div>
+        <span style="color: #64748b; font-weight: 600; display: block; margin-bottom: 6px;">Approver Remarks:</span>
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; color: #1e293b; min-height: 60px; line-height: 1.5;">
+          {{ selectedApproverDetail?.remarks || selectedApproverDetail?.comments || 'No remarks entered yet.' }}
+        </div>
+      </div>
+    </div>
+    
+    <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+      <button (click)="closeApproverModal()" style="background: #0f172a; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+        Close Info
+      </button>
     </div>
   </div>
 </div>

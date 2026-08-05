@@ -1337,6 +1337,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.showToast('Report exported!', 'success');
   }
 
+  getLineRowspan(stakeholders: any[], index: number): number {
+    if (!stakeholders || index < 0 || index >= stakeholders.length) return 0;
+    const currentLine = (stakeholders[index].line || 'Parallel').trim();
+    if (index > 0 && (stakeholders[index - 1].line || 'Parallel').trim() === currentLine) {
+      return 0;
+    }
+    let count = 1;
+    for (let i = index + 1; i < stakeholders.length; i++) {
+      if ((stakeholders[i].line || 'Parallel').trim() === currentLine) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }
+
   showToast(message: string, type: 'success' | 'error' | 'info' | 'warning', duration: number = 4000) {
     const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
     const toast: Toast = { id: ++this.toastIdCounter, type, message, icon: icons[type] };

@@ -942,17 +942,12 @@ createEPRequest(data: any): Observable<any> {
     const user = this.getUser();
     const userRole = user?.role || '';
     
-    const allowedRoles = ['Admin', 'Manager', 'Senior Manager'];
+    const allowedRoles = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
     if (!allowedRoles.includes(userRole)) {
-      this.showToastMessage('You are not authorized to approve this request. Only Admin, Manager, or Senior Manager can approve.', 'error');
+      this.showToastMessage('You are not authorized to approve this request. Only Admin, Purchase Head, Manager, or Senior Manager can approve.', 'error');
       return throwError(() => ({ success: false, message: 'Not authorized' }));
     }
     
-    // FIX: removed the artificial `setTimeout(..., 250)` pre-delay that ran
-    // before the HTTP call even started — it added latency with no benefit.
-    // `ensureMinDuration` now keeps a loader visible for ~2s (tied to whatever
-    // loading flag your component sets before calling .subscribe()) without
-    // slowing down calls that already take longer than that.
     return this.ensureMinDuration(
       this.http.patch<any>(`${this.API_URL}/request/${id}/approve`, {
         comments, approvedBy: user?.email, approvedByRole: userRole
@@ -968,8 +963,11 @@ createEPRequest(data: any): Observable<any> {
       }),
       catchError((error) => {
         let errorMsg = error?.error?.message || 'Failed to approve EP request';
-        if (error?.status === 403) errorMsg = 'You do not have permission to approve this request.';
+        if (errorMsg === 'epNotify.sendNextEPApproverEmail is not a function') {
+           errorMsg = 'Approval partially succeeded, but email notification failed.';
+        }
         this.showToastMessage(errorMsg, 'error');
+        console.error('Approval API error:', error);
         return throwError(() => error);
       })
     );
@@ -979,9 +977,9 @@ createEPRequest(data: any): Observable<any> {
     const user = this.getUser();
     const userRole = user?.role || '';
     
-    const allowedRoles = ['Admin', 'Manager', 'Senior Manager'];
+    const allowedRoles = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
     if (!allowedRoles.includes(userRole)) {
-      this.showToastMessage('You are not authorized to reject this request.', 'error');
+      this.showToastMessage('You are not authorized to reject this request. Only Admin, Purchase Head, Manager, or Senior Manager can reject.', 'error');
       return throwError(() => ({ success: false, message: 'Not authorized' }));
     }
     

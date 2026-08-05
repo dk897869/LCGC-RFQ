@@ -376,7 +376,7 @@
               <div class="kpi-content">
                 <div class="kpi-label">Total RFQs</div>
                 <div class="kpi-val">{{ adminKpi.totalRfqs }}</div>
-                <div class="kpi-sub green">Real Mongo Record Count</div>
+                <div class="kpi-sub green">Total System Requests</div>
               </div>
             </div>
 
@@ -444,19 +444,7 @@
             </div>
           </div>
 
-          <!-- ACTION BUTTONS BAR (8 BUTTONS) -->
-          <div class="phead-actions-bar">
-            <button class="phead-act-btn btn-blue" (click)="navigateToNppTab('rfq-npp-form')"><span>＋</span> Create RFQ</button>
-            <button class="phead-act-btn btn-purple" (click)="navigateToNppTab('pr-request')"><span>＋</span> Create PR</button>
-            <button class="phead-act-btn btn-green" (click)="navigateToModule('po-npp')"><span>＋</span> Create PO</button>
-            <button class="phead-act-btn btn-orange" (click)="navigateToModule('vendors')"><span>＋</span> Add Vendor</button>
-            <button class="phead-act-btn btn-cyan" (click)="navigateToModule('bidding')"><span>⚖️</span> Compare Quotations</button>
-            <button class="phead-act-btn btn-pink" (click)="navigateToEpApproval('approvals')">
-              <span>⚙️</span> Pending Approvals <span class="btn-badge">{{ adminKpi.pendingApprovals }}</span>
-            </button>
-            <button class="phead-act-btn btn-darkblue" (click)="openReportsModal()"><span>📊</span> Reports</button>
-            <button class="phead-act-btn btn-export" (click)="exportReportToExcel()"><span>📥</span> Export</button>
-          </div>
+          <!-- ACTION BUTTONS BAR (REMOVED as per user request to clean up UI) -->
 
           <!-- MIDDLE ROW 1: BREAKDOWN, VENDOR PERFORMANCE, VENDOR TRACKING -->
           <div class="phead-grid-3">

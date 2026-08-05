@@ -357,6 +357,7 @@ const approveRequest = async (req, res) => {
       });
     }
     
+    // If Senior Approver overrides, they act on behalf of the first pending approver
     let currentApprover = request.getCurrentApprover();
     if (!currentApprover && isSeniorApprover(req.user)) {
       currentApprover = request.stakeholders?.find(s => s.status === 'Pending') || null;
@@ -367,12 +368,18 @@ const approveRequest = async (req, res) => {
         message: "No pending approver found"
       });
     }
+
+    // Find all pending steps that belong to the SAME person (so if they are assigned 3 times, we approve all 3)
+    const targetEmail = currentApprover.email;
+    const stakeholdersToApprove = request.stakeholders.filter(s => s.status === 'Pending' && s.email === targetEmail);
     
-    // Update current approver status
-    currentApprover.status = 'Approved';
-    currentApprover.remarks = comments || '';
-    currentApprover.dateTime = new Date();
-    currentApprover.approvedBy = userName;
+    // Update all matching approver statuses
+    stakeholdersToApprove.forEach(st => {
+      st.status = 'Approved';
+      st.remarks = comments || '';
+      st.dateTime = new Date();
+      st.approvedBy = userName;
+    });
     
     // Check if there are more approvers
     const remainingPending = request.stakeholders.filter(s => s.status === 'Pending');

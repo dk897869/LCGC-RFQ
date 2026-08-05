@@ -843,7 +843,7 @@
               <div style="font-weight: 600; color: #0f172a;">{{ att.name || 'Attachment' }}</div>
               <div style="font-size: 11px; color: #64748b;" *ngIf="att.fileSize">{{ att.fileSize }}</div>
             </div>
-            <button type="button" (click)="openMediaPreview(att.url || att.preview || att.data, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            <button type="button" (click)="openMediaPreview(att, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
               👁️ View
             </button>
           </div>
@@ -907,6 +907,9 @@
                   <span [style.color]="st.status === 'Approved' ? '#059669' : st.status === 'Rejected' ? '#dc2626' : '#2563eb'" style="font-weight: 700;">
                     {{ st.status || 'In-Process' }}
                   </span>
+                  <div *ngIf="st.status === 'Approved' && st.approvedBy && st.approvedBy !== (st.name || st.managerName)" style="font-size: 10px; color: #64748b; margin-top: 2px;">
+                    by {{ st.approvedBy }}
+                  </div>
                 </td>
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #64748b; font-size: 12px;">
                   {{ st.dateTime ? (st.dateTime | date:'M-d-yy h:mm a') : '—' }}
@@ -923,7 +926,7 @@
       </div>
 
       <!-- Decision Remarks for Pending Requests -->
-      <div class="form-section" *ngIf="selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+      <div class="form-section" *ngIf="selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
         <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">💬</span>
           Decision Remarks / Comments
@@ -940,7 +943,7 @@
     <div class="modal-footer-bar" style="padding: 16px 24px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
       <button class="btn-cancel" (click)="closeViewModal()" style="padding: 9px 20px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer;">Close</button>
       
-      <ng-container *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && (isAdminUser() || selectedRequestCopy.canApprove)">
+      <ng-container *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove">
         <button class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
           ✓ Approve
         </button>

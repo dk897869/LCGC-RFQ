@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 
 const rfqItemSchema = new mongoose.Schema({
+  partNo: { type: String, default: '' },
   itemDescription: { type: String, required: true },
+  specification: { type: String, default: '' },
+  commodity: { type: String, default: '' },
   uom: { type: String, default: 'PCS' },
   quantity: { type: Number, required: true, default: 0 },
   make: { type: String, default: '' },

@@ -132,7 +132,7 @@
                   <td><span class="status-pill" [ngClass]="getEpStatusClass(item.status)">{{ item.status }}</span></td>
                   <td>{{ formatDate(item.requestDate) }}</td>
                   <td class="actions">
-                    <button class="btn-icon edit-btn" (click)="viewItem(item)" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;"><span class="icon">👁️</span> View Form</button>
+                    <button class="btn-icon edit-btn" (click)="viewItem(item)" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;"><span class="icon">👁️</span> View</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'"
                             class="btn-approve" (click)="approveItem(item)"><span class="icon">✅</span> Approve</button>
                     <button *ngIf="isAdminOrManager() && item.status === 'Pending'"
@@ -527,14 +527,12 @@
       <button type="button" class="rfq-add-row-btn" (click)="addLineItem()">+ Add row</button>
     </div>
 
-    <!-- Purpose & Objective -->
+    <!-- Purpose -->
     <div class="rfq-section-hdr">
       <span class="rfq-section-dot"></span>
-      <strong>PURPOSE &amp; OBJECTIVE</strong>
+      <strong>PURPOSE</strong>
     </div>
     <textarea class="rfq-textarea" [(ngModel)]="formData.description" rows="3" placeholder="Purpose"></textarea>
-    <textarea class="rfq-textarea" [(ngModel)]="formData.objective" rows="3" placeholder="Objective" style="margin-top:10px;"></textarea>
-
     <!-- Attachments -->
     <div class="rfq-section-hdr" style="margin-top:20px;">
       <span class="rfq-section-dot"></span>
@@ -652,7 +650,7 @@
 
   <!-- Footer -->
   <div class="rfq-create-ftr">
-    <button type="button" class="btn-cancel" (click)="saveDraft()" [disabled]="isSubmitting">💾 Save Draft</button>
+    <button type="button" class="btn-cancel" (click)="saveDraft()" [disabled]="isSubmitting">💾 Save</button>
     <button type="button" class="btn-cancel" (click)="closeCreateModal()">Cancel</button>
     <button type="button" class="btn-submit" (click)="submitRFQ()" [disabled]="isSubmitting">
       <span class="btn-spin" *ngIf="isSubmitting"></span>
@@ -670,149 +668,119 @@
 </div>
 
 <!-- ===================== VIEW MODAL ===================== -->
-<div class="modal-overlay" *ngIf="showViewModal" (click)="closeViewModal()">
-  <div class="modal-card rfq-view-card" (click)="$event.stopPropagation()">
-    <div class="modal-hdr">
-      <h3>📄 RFQ Details</h3>
-      <button (click)="closeViewModal()">×</button>
-    </div>
-    <div class="modal-body" *ngIf="selectedItem">
-      <!-- RFQ Serial & Status -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: linear-gradient(135deg, #eef2ff, #f0f9ff); border-radius: 12px; border: 1px solid #c7d2fe;">
+<div class="ep-modal-backdrop" *ngIf="showViewModal && selectedItem" (click)="closeViewModal()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+  <div class="ep-modal-window" (click)="$event.stopPropagation()" style="width: 95vw; max-width: 1100px; max-height: 90vh; background: #ffffff; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; overflow: hidden; animation: modalPop 0.25s ease-out;">
+    
+    <!-- Modal Header Bar -->
+    <div class="modal-header-bar" style="padding: 18px 24px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 22px;">📄</span>
         <div>
-          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6366f1; letter-spacing: 0.5px;">RFQ Serial Number</span>
-          <div style="font-size: 18px; font-weight: 800; color: #1e40af; font-family: monospace;">{{ selectedItem.uniqueSerialNo || '—' }}</div>
-        </div>
-        <div style="text-align: right;">
-          <span class="status-badge" [ngClass]="getEpStatusClass(selectedItem.status)" style="font-size: 13px; padding: 6px 16px;">{{ selectedItem.status }}</span>
+          <h2 style="font-size: 18px; font-weight: 700; margin: 0; color: #f8fafc;">RFQ Details ({{ selectedItem.uniqueSerialNo || '—' }})</h2>
+          <span style="font-size: 12px; color: #94a3b8;">Detailed Request Record & Approval Chain</span>
         </div>
       </div>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span class="status-badge" [ngClass]="getEpStatusClass(selectedItem.status)" style="font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px;">{{ selectedItem.status }}</span>
+        <button (click)="closeViewModal()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Close Modal">✕</button>
+      </div>
+    </div>
 
+    <!-- Modal Body Content -->
+    <div class="modal-body-content" style="padding: 24px; overflow-y: auto; flex: 1; background: #f8fafc;">
+      
       <!-- Requester Information Card -->
-      <div class="rfq-user-info-card" style="margin-top: 15px;">
-        <div class="rfq-info-col">
-          <div class="rfq-info-row"><span class="rfq-info-label">Name:</span><span class="rfq-info-val">{{ selectedItem.requester }}</span></div>
-          <div class="rfq-info-row"><span class="rfq-info-label">Department:</span><span class="rfq-info-val">{{ selectedItem.department }}</span></div>
-          <div class="rfq-info-row"><span class="rfq-info-label">Email:</span><span class="rfq-info-val">{{ selectedItem.email }}</span></div>
+      <div class="form-section" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <span class="section-icon">👤</span>
+          Requester Information
         </div>
-        <div class="rfq-info-col">
-          <div class="rfq-info-row"><span class="rfq-info-label">Request Date:</span><span class="rfq-info-val">{{ formatDate(selectedItem.requestDate) }}</span></div>
-          <div class="rfq-info-row"><span class="rfq-info-label">Contact:</span><span class="rfq-info-val">{{ selectedItem.contactNo || '—' }}</span></div>
-          <div class="rfq-info-row"><span class="rfq-info-label">Organization:</span><span class="rfq-info-val">{{ selectedItem.organization || '—' }}</span></div>
+        <div class="rfq-user-info-card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 13px;">
+          <div class="rfq-info-col" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Name:</span> <strong class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedItem.requester }}</strong></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Department:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedItem.department }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Email:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedItem.email }}</span></div>
+          </div>
+          <div class="rfq-info-col" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Request Date:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ formatDate(selectedItem.requestDate) }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Contact:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedItem.contactNo || '—' }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label" style="color: #64748b; font-weight: 600;">Organization:</span> <span class="rfq-info-val" style="color: #0f172a; margin-left: 8px;">{{ selectedItem.organization || '—' }}</span></div>
+          </div>
         </div>
       </div>
-
-      <!-- Activity Details -->
-      <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; font-size: 13.5px;">
-        <div style="margin-bottom: 8px;"><strong>Title of Activity:</strong> {{ selectedItem.title }}</div>
-        <div style="margin-bottom: 8px;"><strong>Priority:</strong> <span class="priority-badge" [ngClass]="getPriorityClass(selectedItem.priority)">{{ selectedItem.priority }}</span></div>
-        <div style="margin-bottom: 8px;"><strong>Description:</strong> {{ selectedItem.description || '—' }}</div>
-        <div><strong>Objective:</strong> {{ selectedItem.objective || '—' }}</div>
-      </div>
-
-      <div class="view-section" *ngIf="selectedItem.items?.length">
-        <h4>📦 Items</h4>
-        <table class="view-items-table">
-          <thead>
-            <tr>
-              <th>Part No.</th>
-              <th>Description</th>
-              <th>Specification</th>
-              <th>Commodity</th>
-              <th>UOM</th>
-              <th>Qty</th>
-              <th>Make</th>
-              <th>Alt / Similar</th>
-              <th>Remark</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of selectedItem.items">
-              <td><strong>{{ item.partNo || '—' }}</strong></td>
-              <td>{{ $any(item).itemDescription || item.description }}</td>
-              <td>{{ item.specification || '—' }}</td>
-              <td>{{ item.commodity || '—' }}</td>
-              <td>{{ item.uom }}</td>
-              <td>{{ $any(item).quantity || item.qty }}</td>
-              <td>{{ item.make }}</td>
-              <td>{{ $any(item).alternativeSimilar || item.altSimilar }}</td>
-              <td>{{ item.remark }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Team Approval Chain -->
-      <div class="view-section" *ngIf="selectedItem.stakeholders?.length">
-        <h4 style="margin-bottom: 10px; color: #0f2a5e; font-weight: 700;">👥 Team Approval Chain</h4>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
-              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 50px; text-align: center;">#</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 90px;">Line</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0;">Name</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0;">Comments/Remarks</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0;">Designation</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0;">E-Mail</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0;">Contact No.</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0;">Organization</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 100px; text-align: center;">Status</th>
-              <th style="padding: 10px; border: 1px solid #e2e8f0; width: 150px; text-align: center;">Date/Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let st of selectedItem.stakeholders; let idx = index" [ngClass]="getGroupRowClass(selectedItem.stakeholders || [], idx)" style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: #475569;">
-                {{ getApprovalChainSerials(selectedItem.stakeholders || [])[idx] }}
-              </td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.line || 'Parallel' }}</td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 600;">{{ st.stakeholder || st.managerName || st.name }}</td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.comments || st.remarks || '—' }}</td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.designation || '—' }}</td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.email || '—' }}</td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.contactNo || '—' }}</td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0;">{{ st.organization || '—' }}</td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">
-                <span class="status-badge-chain" [ngClass]="st.status?.toLowerCase()">{{ st.status }}</span>
-              </td>
-              <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">{{ st.dateTime || st.date || '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- CC Recipients -->
-      <div class="view-section" *ngIf="selectedItem.ccTo?.length">
-        <h4 style="margin-bottom: 10px; color: #0f2a5e; font-weight: 700;">📧 CC Recipients</h4>
-        <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; display: flex; flex-wrap: wrap; gap: 8px;">
-          <span *ngFor="let cc of selectedItem.ccTo" style="background: rgba(30, 64, 175, 0.08); color: #1e40af; padding: 4px 10px; border-radius: 20px; font-size: 12.5px; font-weight: 600;">
-            {{ cc }}
-          </span>
+      
+      <!-- Activity Overview Card -->
+      <div class="form-section" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <span class="section-icon">🎯</span>
+          Activity Overview
+        </div>
+        <div style="font-size: 13.5px;">
+          <div style="margin-bottom: 12px;"><span style="color: #64748b; font-weight: 600;">Title of Activity:</span> <strong style="color: #0f172a; font-size: 15px; margin-left: 8px;">{{ selectedItem.title }}</strong></div>
+          <div style="margin-bottom: 12px;"><span style="color: #64748b; font-weight: 600;">Priority:</span> <span class="priority-badge" [ngClass]="getPriorityClass(selectedItem.priority)" style="margin-left: 8px;">{{ selectedItem.priority }}</span></div>
+          <div style="margin-bottom: 8px;"><span style="color: #64748b; font-weight: 600;">Purpose:</span></div>
+          <div style="padding: 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; min-height: 70px; color: #334155; line-height: 1.6;">{{ selectedItem.description || '—' }}</div>
         </div>
       </div>
 
-      <!-- Decision Remarks Block (for pending requests) -->
-      <div class="view-section" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 20px;" *ngIf="selectedItem.status === 'Pending' && isAdminOrManager()">
-        <h4 style="margin-bottom: 10px; color: #0f2a5e; font-weight: 700;">✍️ Decision Remarks</h4>
-        <textarea [(ngModel)]="decisionRemarks" rows="2" class="rfq-textarea" placeholder="Enter approval/rejection remarks here..."></textarea>
-      </div>
-
-      <!-- Approved RFQ notice -->
-      <div class="approved-notice" *ngIf="selectedItem.status === 'Approved'">
-        <span class="notice-icon">🚀</span>
-        <div>
-          <strong>RFQ Approved</strong>
-          <p>This RFQ has been approved and moved to Vendor Request stage.</p>
+      <!-- Items Section (Specific to RFQ) -->
+      <div class="form-section" *ngIf="selectedItem.items?.length" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <span class="section-icon">📦</span>
+          Items
+        </div>
+        <div class="approval-table-wrapper" style="overflow-x: auto;">
+          <table class="approval-table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; border: 1px solid #cbd5e1;">
+            <thead>
+              <tr style="background: #e2e8f0; color: #0f172a; border-bottom: 2px solid #cbd5e1; font-weight: 700;">
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Part No.</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Description</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Specification</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Commodity</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">UOM</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Qty</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Make</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Alt / Similar</th>
+                <th style="padding: 10px 12px;">Remark</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of selectedItem.items" style="border-bottom: 1px solid #cbd5e1;">
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">{{ item.partNo || '—' }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">{{ $any(item).itemDescription || item.description || '—' }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">{{ item.specification || '—' }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">{{ item.commodity || '—' }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">{{ item.uom || '—' }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">{{ $any(item).quantity || item.qty || '—' }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">{{ item.make || '—' }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #334155;">{{ $any(item).alternativeSimilar || item.altSimilar || $any(item).alternative || '—' }}</td>
+                <td style="padding: 10px 12px; color: #475569;">{{ item.remark || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
-    <div class="modal-ftr">
-      <button class="btn-cancel" (click)="closeViewModal()">Close</button>
-      <button *ngIf="isAdminOrManager() && selectedItem?.status === 'Pending'" class="btn-approve" (click)="confirmApproveWithRemarks(selectedItem!)">✓ Approve</button>
-      <button *ngIf="isAdminOrManager() && selectedItem?.status === 'Pending'" class="btn-reject" (click)="confirmRejectWithRemarks(selectedItem!)">✗ Reject</button>
-    </div>
-  </div>
-</div>
+
+      <!-- Attached Documents Section -->
+      <div class="form-section" *ngIf="selectedItem.attachments?.length" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <span class="section-icon">📎</span>
+          Attached Documents / Images
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+          <div *ngFor="let att of selectedItem.attachments" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
+            <span style="font-size: 20px;">📄</span>
+            <div>
+              <div style="font-weight: 600; color: #0f172a;">{{ att.name || 'Attachment' }}</div>
+              <div style="font-size: 11px; color: #64748b;" *ngIf="att.fileSize">{{ att.fileSize }}</div>
+            </div>
+            <button type="button" (click)="openMediaPreview(att.fileName || $any(att).url || $any(att).file, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
+              👁️ View
+            </button>
+          </div>
+        </div>
+      </div>
+
 
 <!-- ===================== APPROVE CONFIRMATION MODAL ===================== -->
 <div class="modal-overlay" *ngIf="showApproveConfirm" (click)="showApproveConfirm = false">

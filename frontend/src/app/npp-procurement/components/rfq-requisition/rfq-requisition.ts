@@ -234,6 +234,23 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     return serials;
   }
 
+  getLineRowspan(stakeholders: any[], index: number): number {
+    if (!stakeholders || index < 0 || index >= stakeholders.length) return 0;
+    const currentLine = (stakeholders[index].line || 'Parallel').trim();
+    if (index > 0 && (stakeholders[index - 1].line || 'Parallel').trim() === currentLine) {
+      return 0;
+    }
+    let count = 1;
+    for (let i = index + 1; i < stakeholders.length; i++) {
+      if ((stakeholders[i].line || 'Parallel').trim() === currentLine) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }
+
   getGroupRowClass(list: any[], index: number): string {
     if (!list || !list.length) return '';
     const serials = this.getApprovalChainSerials(list);
@@ -1062,6 +1079,221 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  // Preview PDF
+  previewPDF() {
+    this.generatePreviewHTML();
+  }
+  
+  private generatePreviewHTML() {
+    const previewWindow = window.open('', '_blank');
+    if (!previewWindow) return;
+    
+    const activeApprovers = this.rfqApprovers.filter(a => a.managerName);
+    const approversHtml = activeApprovers.map((a, idx) => {
+      const rowspan = this.getLineRowspan(activeApprovers, idx);
+      
+      let lineCol = rowspan > 0 ? `<td rowspan="${rowspan}" style="text-align:center; vertical-align:middle; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">${a.line || 'Parallel'}</td>` : '';
+
+      return `
+        <tr>
+          ${lineCol}
+          <td style="padding:8px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">${a.managerName}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:#475569;">${a.remarks || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:#334155;">${a.designation || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:${(a.status as any) === 'Approved' || (a.status as any) === 'approved' ? '#059669' : '#d97706'}; font-weight:700;">${a.status || 'In-Process'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; color:#64748b; font-size:12px;">${a.dateTime || '—'}</td>
+        </tr>
+      `;
+    }).join('');
+    
+    const validAttachments = this.rfqAttachments.filter(a => a.fileName || a.name);
+    const attachmentsHtml = validAttachments.map((a, idx) => {
+      return `
+        <tr>
+          <td style="padding:8px; border:1px solid #cbd5e1; text-align:center;">${idx + 1}</td>
+          <td colspan="4" style="padding:8px; border:1px solid #cbd5e1;">${a.name || a.fileName}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const validItems = this.rfqLineItems.filter(i => i.description);
+    const itemsHtml = validItems.map((item, idx) => {
+      return `
+        <tr>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.partNo || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.description || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.specification || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.commodity || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.uom || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.qty || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.make || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.altSimilar || '—'}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1;">${item.remark || '—'}</td>
+        </tr>
+      `;
+    }).join('');
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>RFQ Preview - ${this.formData.title}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+          body { background: white; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; color: #0f172a; margin-top: 20px; }
+          th, td { border: 1px solid #94a3b8; padding: 8px 12px; }
+          th { background: #f1f5f9; font-weight: 700; text-align: left; }
+          .section-label { background: #e2e8f0; text-align: center; font-weight: 700; vertical-align: middle; width: 140px; }
+          .label { background: #f8fafc; font-weight: 600; width: 120px; text-align: center; }
+          .val { text-align: center; }
+          @media print {
+            body { padding: 0; }
+            .btn-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: #1e3a8a; margin: 0;">RFQ Request</h2>
+          <button class="btn-print" onclick="window.print()" style="background:#2563eb; color:white; border:none; padding:10px 24px; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px; box-shadow:0 4px 6px rgba(37,99,235,0.2);">🖨️ Print Request</button>
+        </div>
+
+        <table>
+          <tbody>
+            <!-- Requester Information -->
+            <tr>
+              <th rowspan="3" class="section-label">Requester<br>Information</th>
+              <th class="label">Name</th>
+              <td colspan="2" class="val" style="font-weight:700;">${this.formData.requester || ''}</td>
+              <th class="label">Request Date</th>
+              <td colspan="2" class="val">${new Date().toLocaleDateString('en-GB')}</td>
+            </tr>
+            <tr>
+              <th class="label">Department</th>
+              <td colspan="2" class="val">${this.formData.department || ''}</td>
+              <th class="label">Contact No.</th>
+              <td colspan="2" class="val">${this.formData.contactNo || '—'}</td>
+            </tr>
+            <tr>
+              <th class="label">Email Id</th>
+              <td colspan="2" class="val">${this.formData.email || ''}</td>
+              <th class="label">Organization</th>
+              <td colspan="2" class="val">${this.formData.organization || '—'}</td>
+            </tr>
+
+            <!-- Activity Details -->
+            <tr>
+              <th class="section-label">Activity<br>Details</th>
+              <th class="label">Title</th>
+              <td colspan="2" class="val" style="font-weight:700;">${this.formData.title || ''}</td>
+              <th class="label">Priority</th>
+              <td colspan="2" class="val">${this.formData.priority || 'Medium'}</td>
+            </tr>
+            <tr>
+              <th class="section-label">Purpose</th>
+              <td colspan="6">${this.formData.description || '—'}</td>
+            </tr>
+            
+            <!-- Items Table -->
+            ${validItems.length ? `
+            <tr>
+              <th colspan="7" style="background:#e2e8f0; font-size:14px; padding:10px; text-align:center;">Items List</th>
+            </tr>
+            <tr>
+              <td colspan="7" style="padding:0; border:none;">
+                <table style="margin-top:0;">
+                  <thead>
+                    <tr>
+                      <th>Part No.</th>
+                      <th>Description</th>
+                      <th>Specification</th>
+                      <th>Commodity</th>
+                      <th>UOM</th>
+                      <th>Qty</th>
+                      <th>Make</th>
+                      <th>Alt / Similar</th>
+                      <th>Remark</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemsHtml}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+
+            <!-- CC Recipients -->
+            ${this.ccList.length ? `
+            <tr>
+              <th class="section-label">CC Recipients</th>
+              <td colspan="6">${this.ccList.join(', ')}</td>
+            </tr>
+            ` : ''}
+            
+            <!-- Attached Documents -->
+            ${validAttachments.length ? `
+            <tr>
+              <th colspan="7" style="background:#e2e8f0; font-size:14px; padding:10px; text-align:center;">Attached Documents</th>
+            </tr>
+            <tr>
+              <td colspan="7" style="padding:0; border:none;">
+                <table style="margin-top:0;">
+                  <thead>
+                    <tr>
+                      <th style="width:50px; text-align:center;">#</th>
+                      <th colspan="4">Document Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${attachmentsHtml}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+            
+            <!-- Approval Chain -->
+            ${activeApprovers.length ? `
+            <tr>
+              <th colspan="7" style="background:#e2e8f0; font-size:14px; padding:10px; text-align:center;">Approval Chain Flow</th>
+            </tr>
+            <tr>
+              <td colspan="7" style="padding:0; border:none;">
+                <table style="margin-top:0;">
+                  <thead>
+                    <tr>
+                      <th style="width:90px; text-align:center;">Line</th>
+                      <th colspan="2">Stakeholder</th>
+                      <th>Comments/Remarks</th>
+                      <th>Designation</th>
+                      <th>Status</th>
+                      <th>Date/Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${approversHtml}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            ` : ''}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 40px; font-size: 11px; color: #64748b; text-align: center;">
+          <p>This is a system-generated preview. Do not reply to this document.</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    previewWindow.document.write(html);
+    previewWindow.document.close();
   }
 
   closeViewModal() {

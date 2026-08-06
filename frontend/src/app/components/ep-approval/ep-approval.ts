@@ -918,14 +918,11 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     const activeApprovers = this.approvers.filter(a => a.managerName);
     const approversHtml = activeApprovers.map((a, idx) => {
       const rowspan = this.getLineRowspan(activeApprovers, idx);
-      const isFirstRow = idx === 0;
       
-      let approvalCol = isFirstRow ? `<th rowspan="${activeApprovers.length}" style="background:#e2e8f0; font-weight:700; text-align:center; vertical-align:middle; border:1px solid #cbd5e1; padding:10px;">Approval</th>` : '';
       let lineCol = rowspan > 0 ? `<td rowspan="${rowspan}" style="text-align:center; vertical-align:middle; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">${a.line || 'Parallel'}</td>` : '';
 
       return `
         <tr>
-          ${approvalCol}
           ${lineCol}
           <td colspan="2" style="padding:8px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">${a.managerName}</td>
           <td style="padding:8px; border:1px solid #cbd5e1; color:#475569;">${a.remarks || '—'}</td>
@@ -938,10 +935,8 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     
     const validAttachments = this.attachments.filter(a => a.file);
     const attachmentsHtml = validAttachments.map((a, idx) => {
-      let attachmentCol = idx === 0 ? `<th rowspan="${validAttachments.length}" style="background:#e2e8f0; font-weight:700; text-align:center; vertical-align:middle; border:1px solid #cbd5e1; padding:10px;">Attachments</th>` : '';
       return `
         <tr>
-          ${attachmentCol}
           <td style="padding:8px; border:1px solid #cbd5e1; text-align:center;">${idx + 1}</td>
           <td colspan="3" style="padding:8px; border:1px solid #cbd5e1;">${a.name}</td>
           <td style="padding:8px; border:1px solid #cbd5e1;">${a.fileSize}</td>

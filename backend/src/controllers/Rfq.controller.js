@@ -122,7 +122,10 @@ const createRFQ = async (req, res) => {
     let processedItems = [];
     if (items && Array.isArray(items)) {
       processedItems = items.map(item => ({
+        partNo: item.partNo || '',
         itemDescription: item.itemDescription || item.description || '',
+        specification: item.specification || '',
+        commodity: item.commodity || '',
         uom: item.uom || 'Pcs',
         quantity: item.quantity || item.qty || 1,
         make: item.make || '',
@@ -145,13 +148,13 @@ const createRFQ = async (req, res) => {
     if (stakeholders && Array.isArray(stakeholders)) {
       processedStakeholders = stakeholders.map(s => ({
         line: s.line || 'Parallel',
-        managerName: s.managerName || '',
+        managerName: s.managerName || s.name || '',
         email: s.email || '',
         designation: s.designation || '',
         status: 'Pending',
         remarks: s.remarks || '',
         dateTime: null
-      })).filter(s => s.email);
+      })).filter(s => s.managerName || s.email);
     }
 
     const uniqueSerialNo = generateSerialNumber();

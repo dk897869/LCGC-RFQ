@@ -830,7 +830,7 @@ export class RfqComponent implements OnInit {
       return; 
     }
     
-    const validApprovers = this.rfqApprovers.filter(a => a.email);
+    const validApprovers = this.rfqApprovers.filter(a => a.managerName || a.email);
     if (!validApprovers.length) { 
       this.showToast('error', 'Please add at least one approver.'); 
       return; 

@@ -943,6 +943,8 @@
 .rfq-create-ftr {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 20px 28px;
   border-top: 1px solid #e2e8f0;

@@ -10,7 +10,7 @@ interface Approver {
   managerName: string;
   email: string;
   designation: string;
-  status: 'pending' | 'approved' | 'rejected' | 'waiting';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'In-Process';
   dateTime: string;
   remarks: string;
   contactNo?: string;
@@ -40,6 +40,10 @@ interface EPRequest {
   amount: number;
   email?: string;
   createdAt?: string;
+  stakeholders?: any[];
+  canApprove?: boolean;
+  approvalComments?: string;
+  queryAssignedTo?: string;
 }
 
 @Component({
@@ -94,7 +98,7 @@ export class CreateEPRequestModalComponent implements OnInit {
       managerName: '',
       email: '',
       designation: '',
-      status: 'pending',
+      status: 'Pending',
       dateTime: '',
       remarks: '',
       contactNo: '',
@@ -176,9 +180,17 @@ export class CreateEPRequestModalComponent implements OnInit {
       return;
     }
     
-    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || '');
+    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.fileUrl || attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || '');
     const name = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || (attachmentOrUrl as any).fileName : '') || 'Attachment Preview';
     
+    if (url && !url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
+      if (url.startsWith('/')) {
+        url = `https://lcgc-rfq.onrender.com${url}`;
+      } else {
+        url = `https://lcgc-rfq.onrender.com/${url}`;
+      }
+    }
+
     if (!url || (!url.startsWith('data:') && !url.startsWith('http') && !url.startsWith('blob:'))) {
       this.showToastMessage('Please upload a valid PDF or image file first to view preview.', 'info');
       return;
@@ -410,7 +422,7 @@ export class CreateEPRequestModalComponent implements OnInit {
       managerName: '',
       email: '',
       designation: '',
-      status: 'pending',
+      status: 'Pending',
       dateTime: '',
       remarks: '',
       contactNo: '',
@@ -528,32 +540,27 @@ export class CreateEPRequestModalComponent implements OnInit {
     const activeApprovers = this.approvers.filter(a => a.managerName);
     const approversHtml = activeApprovers.map((a, idx) => {
       const rowspan = this.getLineRowspan(activeApprovers, idx);
-      const isFirstRow = idx === 0;
-      
-      let approvalCol = isFirstRow ? `<th rowspan="${activeApprovers.length}" style="background:#e2e8f0; font-weight:700; text-align:center; vertical-align:middle; border:1px solid #cbd5e1; padding:10px;">Approval</th>` : '';
       let lineCol = rowspan > 0 ? `<td rowspan="${rowspan}" style="text-align:center; vertical-align:middle; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">${a.line || 'Parallel'}</td>` : '';
 
       return `
         <tr>
-          ${approvalCol}
           ${lineCol}
-          <td colspan="2" style="padding:8px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">${a.managerName}</td>
+          <td style="padding:8px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">${a.managerName}</td>
           <td style="padding:8px; border:1px solid #cbd5e1; color:#475569;">${a.remarks || '—'}</td>
           <td style="padding:8px; border:1px solid #cbd5e1; color:#334155;">${a.designation || '—'}</td>
           <td style="padding:8px; border:1px solid #cbd5e1; color:${(a.status as any) === 'Approved' || (a.status as any) === 'approved' ? '#059669' : '#d97706'}; font-weight:700;">${a.status || 'In-Process'}</td>
           <td style="padding:8px; border:1px solid #cbd5e1; color:#64748b; font-size:12px;">${a.dateTime || '—'}</td>
         </tr>
+
       `;
     }).join('');
     
     const validAttachments = this.attachments.filter(a => a.file);
     const attachmentsHtml = validAttachments.map((a, idx) => {
-      let attachmentCol = idx === 0 ? `<th rowspan="${validAttachments.length}" style="background:#e2e8f0; font-weight:700; text-align:center; vertical-align:middle; border:1px solid #cbd5e1; padding:10px;">Attachments</th>` : '';
       return `
         <tr>
-          ${attachmentCol}
           <td style="padding:8px; border:1px solid #cbd5e1; text-align:center;">${idx + 1}</td>
-          <td colspan="3" style="padding:8px; border:1px solid #cbd5e1;">${a.name}</td>
+          <td colspan="2" style="padding:8px; border:1px solid #cbd5e1;">${a.name}</td>
           <td style="padding:8px; border:1px solid #cbd5e1;">${a.fileSize}</td>
           <td colspan="2" style="padding:8px; border:1px solid #cbd5e1;">${a.remark || '—'}</td>
         </tr>
@@ -613,10 +620,10 @@ export class CreateEPRequestModalComponent implements OnInit {
             <!-- Activity Overview -->
             <tr>
               <th class="section-label">Activity Overview</th>
-              <th class="label">Title of Activity</th>
-              <td colspan="3" style="font-weight:600;">${this.formData.titleOfActivity}</td>
+              <th class="label" colspan="1">Title of Activity</th>
+              <td colspan="2" class="val" style="font-weight:600;">${this.formData.titleOfActivity}</td>
               <th class="label">Priority</th>
-              <td class="val">${this.formData.priority}</td>
+              <td colspan="2" class="val">${this.formData.priority}</td>
             </tr>
 
             <!-- Description -->
@@ -630,7 +637,7 @@ export class CreateEPRequestModalComponent implements OnInit {
             <tr>
               <th rowspan="${activeApprovers.length + 1}" class="section-label">Approval</th>
               <th class="label">Line</th>
-              <th colspan="2" class="label">Stakeholder</th>
+              <th class="label">Stakeholder</th>
               <th class="label">Comments/Remarks</th>
               <th class="label">Designation</th>
               <th class="label">Status</th>
@@ -644,7 +651,7 @@ export class CreateEPRequestModalComponent implements OnInit {
             <tr>
               <th rowspan="${validAttachments.length + 1}" class="section-label">Attachments</th>
               <th class="label">S. No.</th>
-              <th colspan="3" class="label">Attachment</th>
+              <th colspan="2" class="label">Attachment</th>
               <th class="label">File Size</th>
               <th colspan="2" class="label">Remark</th>
             </tr>
@@ -721,7 +728,7 @@ export class CreateEPRequestModalComponent implements OnInit {
           designation: a.designation || '',
           line: a.line,
           approvalOrder: idx + 1,
-          status: 'Pending',
+          status: a.status,
           remarks: a.remarks || ''
         })),
       attachments: this.attachments
@@ -762,7 +769,7 @@ export class CreateEPRequestModalComponent implements OnInit {
         managerName: '',
         email: '',
         designation: '',
-        status: 'pending',
+        status: 'Pending',
         dateTime: '',
         remarks: ''
       }
@@ -816,6 +823,16 @@ export class CreateEPRequestModalComponent implements OnInit {
         next: (res: any) => {
           if (res?.data || res?.request) {
             const full = res.data || res.request;
+            let canApprove = false;
+            const stakeholders = full.approvalChain || full.stakeholders || (this.selectedRequest as any)?.stakeholders || [];
+            if (stakeholders && Array.isArray(stakeholders)) {
+              const pending = stakeholders.filter((s: any) => s.status === 'Pending');
+              if (pending.length > 0) {
+                const currentUser = this.authService.getCurrentUser();
+                canApprove = pending[0].email === currentUser?.email || pending[0].name === currentUser?.name;
+              }
+            }
+
             this.selectedRequest = {
               ...this.selectedRequest,
               ...full,
@@ -834,7 +851,8 @@ export class CreateEPRequestModalComponent implements OnInit {
               organization: full.organization || (this.selectedRequest as any)?.organization,
               attachments: full.attachments || (this.selectedRequest as any)?.attachments || [],
               ccList: full.ccList || (this.selectedRequest as any)?.ccList || [],
-              stakeholders: full.approvalChain || full.stakeholders || (this.selectedRequest as any)?.stakeholders || []
+              stakeholders: stakeholders,
+              canApprove: canApprove
             };
             this.cdr.detectChanges();
           }
@@ -964,15 +982,66 @@ export class CreateEPRequestModalComponent implements OnInit {
     this.showToastMessage('Form is now editable. Submit to update the request.', 'info');
   }
 
+  // === View Mode Approver Actions ===
+
+  addApproverInView() {
+    if (!this.selectedRequest) return;
+    if (!this.selectedRequest.stakeholders) this.selectedRequest.stakeholders = [];
+    this.selectedRequest.stakeholders.push({
+      name: '',
+      email: '',
+      designation: 'Admin',
+      organization: 'Radiant Appliances',
+      status: 'Pending',
+      line: 'Parallel',
+      isNew: true
+    });
+    this.showToastMessage('Approver row added.', 'success');
+  }
+
+  deleteApproverInView(idx: number) {
+    if (!this.selectedRequest || !this.selectedRequest.stakeholders) return;
+    this.selectedRequest.stakeholders.splice(idx, 1);
+    this.showToastMessage('Approver removed.', 'info');
+  }
+
+  approveFromViewModal(req: any) {
+    if (!req) return;
+    // Mock approval or wire to actual backend
+    this.showToastMessage('Action recorded: Approved', 'success');
+    // Implement API call here...
+  }
+
+  rejectFromViewModal(req: any) {
+    if (!req) return;
+    this.showToastMessage('Action recorded: Rejected', 'error');
+  }
+
+  queryFromViewModal(req: any) {
+    if (!req) return;
+    this.showToastMessage('Action recorded: Query sent', 'info');
+  }
+
   getLineRowspan(stakeholders: any[], currentIndex: number): number {
     if (!stakeholders || stakeholders.length === 0) return 0;
-    const currentLine = stakeholders[currentIndex].line || 'Parallel';
-    if (currentIndex > 0 && (stakeholders[currentIndex - 1].line || 'Parallel') === currentLine) {
-      return 0; // Hide this cell, it's merged with the previous one
+    const current = stakeholders[currentIndex];
+    const currentLine = current.line || 'Parallel';
+    
+    if (currentIndex > 0) {
+      const prev = stakeholders[currentIndex - 1];
+      const prevLine = prev.line || 'Parallel';
+      // If lines match AND they are both not new (or both new), they can merge.
+      // Actually, if current is new and prev is not, break merge.
+      if (prevLine === currentLine && prev.isNew === current.isNew) {
+        return 0; // Hide this cell, it's merged with the previous one
+      }
     }
+    
     let rowspan = 1;
     for (let i = currentIndex + 1; i < stakeholders.length; i++) {
-      if ((stakeholders[i].line || 'Parallel') === currentLine) {
+      const next = stakeholders[i];
+      const nextLine = next.line || 'Parallel';
+      if (nextLine === currentLine && next.isNew === current.isNew) {
         rowspan++;
       } else {
         break;

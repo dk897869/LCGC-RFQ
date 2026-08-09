@@ -621,7 +621,7 @@ $shadow-lg:   0 20px 40px rgba(15,23,42,.16);
 //  FORM FOOTER
 // ════════════════════════════════════════════════════════════════
 .rfq-create-ftr {
-  display: flex; justify-content: flex-end; gap: 12px;
+  display: flex; justify-content: flex-end; gap: 12px; align-items: center; flex-wrap: wrap;
   padding: 20px 28px; border-top: 1px solid #e2e8f0;
   background: #f8fafc; position: sticky; bottom: 0; z-index: 5;
 

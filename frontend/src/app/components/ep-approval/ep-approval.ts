@@ -200,9 +200,17 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
     
-    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || '');
+    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.fileUrl || attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || '');
     const name = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || attachmentOrUrl.fileName : '') || 'Attachment Preview';
     
+    if (url && !url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
+      if (url.startsWith('/')) {
+        url = `https://lcgc-rfq.onrender.com${url}`;
+      } else {
+        url = `https://lcgc-rfq.onrender.com/${url}`;
+      }
+    }
+
     if (!url || (!url.startsWith('data:') && !url.startsWith('http') && !url.startsWith('blob:'))) {
       this.showToast('Please upload a valid PDF or image file first to view preview.', 'info');
       return;
@@ -1250,6 +1258,53 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
         this.showToast(err?.message || 'Failed to reject request', 'error');
       }
     });
+  }
+
+  queryFromViewModal(request: any) {
+    const id = request._id || request.id;
+    if (!id) return;
+    const remarks = this.selectedRequestCopy.approvalComments || '';
+    const queryAssignedTo = this.selectedRequestCopy.queryAssignedTo || '';
+    
+    if (!queryAssignedTo) {
+      this.showToast('Please select or enter an email to assign the query', 'error');
+      return;
+    }
+    
+    this.isSubmitting = true;
+    this.authService.queryEPRequest(id, remarks, queryAssignedTo).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        this.showToast('Query assigned successfully', 'success');
+        this.closeViewModal();
+        this.loadRequests();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.showToast(err?.message || 'Failed to assign query', 'error');
+      }
+    });
+  }
+
+  addApproverInView() {
+    if (!this.selectedRequestCopy) return;
+    if (!this.selectedRequestCopy.stakeholders) this.selectedRequestCopy.stakeholders = [];
+    this.selectedRequestCopy.stakeholders.push({
+      name: '',
+      email: '',
+      designation: 'Admin',
+      organization: 'Radiant Appliances',
+      status: 'Pending',
+      line: 'Parallel',
+      isNew: true
+    });
+    this.showToast('Approver row added.', 'success');
+  }
+
+  deleteApproverInView(idx: number) {
+    if (!this.selectedRequestCopy || !this.selectedRequestCopy.stakeholders) return;
+    this.selectedRequestCopy.stakeholders.splice(idx, 1);
+    this.showToast('Approver row removed.', 'info');
   }
 
   closeViewModal() {

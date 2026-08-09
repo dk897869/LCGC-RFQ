@@ -117,7 +117,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   ccInput = '';
   ccList: string[] = [];
   managerOptions: { name: string; email: string; designation?: string; role?: string }[] = [];
-  rfqApprovers: RFQApprover[] = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
+  rfqApprovers: RFQApprover[] = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'Pending', dateTime: new Date().toLocaleString() }];
   rfqAttachments: RFQAttachment[] = [{ name: 'Attachment 1', fileName: '' }];
 
   rfqLineItems: RFQLineItem[] = [
@@ -403,7 +403,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
 
     if (data.stakeholders && data.stakeholders.length > 0) {
       this.rfqApprovers = data.stakeholders.map((s: any) => ({
-        managerName: s.managerName || s.name || '',
+        managerName: s.stakeholder || s.managerName || s.name || '',
         email:       s.email || '',
         designation: s.designation || '',
         line:        s.line || 'Parallel',
@@ -414,7 +414,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
         dateTime:    s.dateTime || new Date().toLocaleString()
       }));
     } else if (!this.rfqApprovers.length) {
-      this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
+      this.rfqApprovers = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'Pending', dateTime: new Date().toLocaleString() }];
     }
 
     this.rfqDraftSerialNo = data.uniqueSerialNo || this.generateLocalSerial('RFQ');
@@ -509,7 +509,8 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
       approvedBy:      r.approvedBy || '',
       currentStage:    r.currentStage || 'RFQ',
       vendorRequestCreated: r.vendorRequestCreated || false,
-      quotationCompleted:   r.quotationCompleted || false
+      quotationCompleted:   r.quotationCompleted || false,
+      stakeholders:         r.stakeholders || r.approvers || []
     };
   }
 
@@ -597,6 +598,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
       this.showToast('info', 'Only pending RFQs can be edited.');
       return;
     }
+    this.showViewModal = false;
     this.isEditMode = true;
     this.editingSerialNo = item.uniqueSerialNo || '';
     // Load the full data from the backend
@@ -718,7 +720,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     ];
     this.ccInput        = '';
     this.ccList         = [];
-    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
+    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'Pending', dateTime: new Date().toLocaleString() }];
     this.rfqAttachments = [{ name: 'Attachment 1', fileName: '' }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
@@ -742,7 +744,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     ];
     this.ccInput        = '';
     this.ccList         = [];
-    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() }];
+    this.rfqApprovers   = [{ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'Pending', dateTime: new Date().toLocaleString() }];
     this.rfqAttachments = [{ name: 'Attachment 1', fileName: '' }];
     this.rfqSerialFixed = false;
     this.importFileName = '';
@@ -802,13 +804,13 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   // ====================== APPROVERS ======================
 
   addApproverRow() {
-    this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() });
+    this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'Pending', dateTime: new Date().toLocaleString() });
   }
 
   removeApproverRow(index: number) {
     this.rfqApprovers.splice(index, 1);
     if (!this.rfqApprovers.length) {
-      this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'pending', dateTime: new Date().toLocaleString() });
+      this.rfqApprovers.push({ managerName: '', email: '', designation: '', line: 'Parallel', remarks: '', contactNo: '', organization: '', status: 'Pending', dateTime: new Date().toLocaleString() });
     }
   }
 
@@ -990,7 +992,7 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
       this.showToast('error', 'Requester name is required.');
       return;
     }
-    const validApprovers = this.rfqApprovers.filter(a => a.email);
+    const validApprovers = this.rfqApprovers.filter(a => a.managerName || a.email);
     if (!validApprovers.length) {
       this.showToast('error', 'Please add at least one approver.');
       return;
@@ -998,10 +1000,18 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     const validItems = this.rfqLineItems
       .filter(item => item.description && item.description.trim())
       .map(item => ({
-        itemDescription: item.description, uom: item.uom || 'Pcs', quantity: item.qty || 1,
-        make: item.make || '', alternativeSimilar: item.altSimilar || '',
-        pictureExistingVendorReference: item.vendorRef || '', remark: item.remark || '',
-        pictureName: item.photoName || '', picturePreview: item.photoPreview || ''
+        partNo: item.partNo || '',
+        itemDescription: item.description, 
+        specification: item.specification || '',
+        commodity: item.commodity || '',
+        uom: item.uom || 'Pcs', 
+        quantity: item.qty || 1,
+        make: item.make || '', 
+        alternativeSimilar: item.altSimilar || '',
+        pictureExistingVendorReference: item.vendorRef || '', 
+        remark: item.remark || '',
+        pictureName: item.photoName || '', 
+        picturePreview: item.photoPreview || ''
       }));
     if (!validItems.length) {
       this.showToast('error', 'Please add at least one item with description.');
@@ -1024,8 +1034,12 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
       purposeAndObjective: this.formData.description || '',
       items:             validItems,
       ccTo:              this.ccList,
+      stakeholders:      validApprovers.map(a => ({
+        ...a,
+        status: (a.status === 'approved' || a.status === 'Approved') ? 'Approved' : 'Pending'
+      })),
       attachments:       this.rfqAttachments.filter(a => a.fileName),
-      status:            'Pending',
+      status: 'Pending',
       requestDate:       new Date().toISOString()
     };
 
@@ -1428,6 +1442,11 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     const user = this.authService.getUser();
     const dept = (user?.department || '').toLowerCase();
     return role === 'admin' || role === 'manager' || role === 'purchase' || dept === 'purchase';
+  }
+
+  canEditRFQ(): boolean {
+    const role = (this.authService.getUserRole() || '').toLowerCase();
+    return role === 'admin' || role === 'purchase head';
   }
 
   formatDate(d: string | undefined): string {

@@ -144,12 +144,18 @@
       <div class="form-section">
         <div class="section-title"><span class="section-icon">Target</span> Activity Overview</div>
         <div class="section-body">
-          <div class="form-grid">
-            <div class="field-group full-width">
+          <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+            <div class="field-group">
               <label>Activity <span class="required">*</span></label>
               <input type="text" [(ngModel)]="formData.titleOfActivity" placeholder="Enter title of the activity">
             </div>
-            <div class="field-group full-width">
+            <div class="field-group">
+              <label>Priority <span class="required">*</span></label>
+              <select [(ngModel)]="formData.priority">
+                <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
+              </select>
+            </div>
+            <div class="field-group full-width" style="grid-column: 1 / -1;">
               <label>Description</label>
               <textarea [(ngModel)]="formData.description" rows="3" placeholder="Describe the activity..."></textarea>
             </div>
@@ -185,10 +191,10 @@
                     </label>
                   </td>
                   <td class="preview-cell">
-                    <div *ngIf="att.preview || att.file" class="file-preview" style="display: flex; align-items: center; gap: 6px;">
-                      <span *ngIf="att.preview && att.preview.startsWith('data:image')"><img [src]="att.preview" class="preview-image" alt="Preview"></span>
-                      <span *ngIf="!att.preview || !att.preview.startsWith('data:image')" class="file-icon">{{ $any(att).fileName || att.name || 'File' }}</span>
-                      <button type="button" (click)="openMediaPreview(att)" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
+                    <div *ngIf="att.preview || att.file" class="file-preview" style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+                      <span *ngIf="att.preview && att.preview.startsWith('data:image')"><img [src]="att.preview" class="preview-image" alt="Preview" style="max-height: 40px; border-radius: 4px;"></span>
+                      <span *ngIf="!att.preview || !att.preview.startsWith('data:image')" class="file-icon" style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #475569; font-weight: 500;" [title]="$any(att).fileName || att.name || 'File'">{{ $any(att).fileName || att.name || 'File' }}</span>
+                      <button type="button" (click)="openMediaPreview(att)" style="background: #3b82f6; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         👁️ View
                       </button>
                     </div>
@@ -260,9 +266,9 @@
                   <td><input type="text" [(ngModel)]="approver.organization" placeholder="Organization" class="input-sm"></td>
                   <td>
                     <span class="status-badge-small"
-                      [class.status-pending]="approver.status === 'pending'"
-                      [class.status-approved]="approver.status === 'approved'"
-                      [class.status-rejected]="approver.status === 'rejected'">
+                      [class.status-pending]="approver.status === 'Pending'"
+                      [class.status-approved]="approver.status === 'Approved'"
+                      [class.status-rejected]="approver.status === 'Rejected'">
                       {{ approver.status }}
                     </span>
                   </td>
@@ -331,40 +337,32 @@
 
     <div class="form-body">
       <div class="form-section">
-        <div class="section-title"><span class="section-icon">📋</span> Request Information</div>
-        <div class="section-body">
-          <div class="detail-info-grid">
-            <div class="detail-field">
-              <label>Request ID</label>
-              <span class="dv req-id">{{ selectedRequest?.requestId || selectedRequest?.id }}</span>
+        <div class="section-title"><span class="section-icon">👤</span> Requester Information</div>
+        <div class="rfq-user-info-card" style="margin-top: 15px;">
+          <div class="rfq-info-col">
+            <div class="rfq-info-row"><span class="rfq-info-label">Name:</span><span class="rfq-info-val">{{ selectedRequest?.requester }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label">Department:</span><span class="rfq-info-val">{{ selectedRequest?.department }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label">Email:</span><span class="rfq-info-val">{{ $any(selectedRequest)?.email || '—' }}</span></div>
+          </div>
+          <div class="rfq-info-col">
+            <div class="rfq-info-row"><span class="rfq-info-label">Request Date:</span><span class="rfq-info-val">{{ selectedRequest?.date | date:'dd MMM yyyy' }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label">Contact:</span><span class="rfq-info-val">{{ $any(selectedRequest)?.contactNo || '—' }}</span></div>
+            <div class="rfq-info-row"><span class="rfq-info-label">Organization:</span><span class="rfq-info-val">{{ $any(selectedRequest)?.organization || 'Radiant Appliances' }}</span></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-section">
+        <div class="section-title"><span class="section-icon">🎯</span> Activity Overview</div>
+        <div class="info-card">
+          <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+            <div class="form-field">
+              <label>TITLE OF ACTIVITY</label>
+              <div class="read-only-val">{{ selectedRequest?.title }}</div>
             </div>
-            <div class="detail-field">
-              <label>Title / Activity</label>
-              <span class="dv">{{ selectedRequest?.title }}</span>
-            </div>
-            <div class="detail-field">
-              <label>Requester</label>
-              <span class="dv">{{ selectedRequest?.requester }}</span>
-            </div>
-            <div class="detail-field">
-              <label>Department</label>
-              <span class="dv">{{ selectedRequest?.department }}</span>
-            </div>
-            <div class="detail-field">
-              <label>Email</label>
-              <span class="dv">{{ $any(selectedRequest)?.email || '—' }}</span>
-            </div>
-            <div class="detail-field">
-              <label>Contact No.</label>
-              <span class="dv">{{ $any(selectedRequest)?.contactNo || '—' }}</span>
-            </div>
-            <div class="detail-field">
-              <label>Organization</label>
-              <span class="dv">{{ $any(selectedRequest)?.organization || 'Radiant Appliances' }}</span>
-            </div>
-            <div class="detail-field">
-              <label>Priority</label>
-              <span class="dv">
+            <div class="form-field">
+              <label>PRIORITY</label>
+              <div class="read-only-val">
                 <span class="priority-badge"
                   [class.priority-high]="selectedRequest?.priority === 'High'"
                   [class.priority-medium]="selectedRequest?.priority === 'Medium'"
@@ -372,41 +370,17 @@
                   [class.priority-urgent]="selectedRequest?.priority === 'Urgent'">
                   {{ getPriorityLabel(selectedRequest?.priority || '') }}
                 </span>
-              </span>
+              </div>
             </div>
-            <div class="detail-field">
-              <label>Request Date</label>
-              <span class="dv">{{ selectedRequest?.date | date:'dd MMM yyyy' }}</span>
-            </div>
-            <div class="detail-field">
-              <label>Status</label>
-              <span class="dv">
-                <span class="status-badge"
-                  [class.status-approved]="selectedRequest?.status === 'Approved'"
-                  [class.status-pending]="selectedRequest?.status === 'Pending'"
-                  [class.status-rejected]="selectedRequest?.status === 'Rejected'">
-                  {{ selectedRequest?.status }}
-                </span>
-              </span>
+            <div class="form-field full-width" style="grid-column: 1 / -1;" *ngIf="$any(selectedRequest)?.description || $any(selectedRequest)?.objective">
+              <label>DESCRIPTION</label>
+              <div class="read-only-val" style="min-height: 80px; white-space: pre-wrap;">{{ $any(selectedRequest)?.description || $any(selectedRequest)?.objective }}</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Description & Purpose -->
-      <div class="form-section" *ngIf="$any(selectedRequest)?.description || $any(selectedRequest)?.objective">
-        <div class="section-title"><span class="section-icon">🎯</span> Activity Overview &amp; Description</div>
-        <div class="section-body" style="padding: 16px; background: #f8fafc; border-radius: 12px; font-size: 13.5px;">
-          <div style="margin-bottom: 10px;" *ngIf="$any(selectedRequest)?.description">
-            <strong>Description:</strong>
-            <div style="padding: 12px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 4px; color: #334155; line-height: 1.5; white-space: pre-wrap;">{{ $any(selectedRequest)?.description }}</div>
-          </div>
-          <div style="margin-top: 10px;" *ngIf="$any(selectedRequest)?.objective">
-            <strong>Objective / Purpose:</strong>
-            <div style="padding: 10px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 4px; color: #334155;">{{ $any(selectedRequest)?.objective }}</div>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Attached Documents -->
       <div class="form-section" *ngIf="$any(selectedRequest)?.attachments?.length">
@@ -425,21 +399,18 @@
         </div>
       </div>
 
-      <!-- CC Recipients -->
-      <div class="form-section" *ngIf="$any(selectedRequest)?.ccList?.length">
-        <div class="section-title"><span class="section-icon">📧</span> CC Recipients</div>
-        <div class="section-body" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-          <span *ngFor="let cc of $any(selectedRequest).ccList" style="background: #eef2ff; color: #1e40af; border: 1px solid #c7d2fe; padding: 4px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 600;">
-            {{ cc }}
-          </span>
-        </div>
-      </div>
+
 
       <!-- Approval Status Flow Table (Image 5 Merged Format + View Info Action) -->
       <div class="form-section" *ngIf="$any(selectedRequest)?.stakeholders?.length" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-          <span class="section-icon">👥</span>
-          Approval Status Flow
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-icon">👥</span>
+            Approval Status Flow
+          </div>
+          <div style="display: flex; gap: 8px;" *ngIf="selectedRequest?.status === 'Pending'">
+            <button type="button" class="btn-add-approver" (click)="addApproverInView()" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">+ Add Approver</button>
+          </div>
         </div>
         <div class="approval-table-wrapper" style="overflow-x: auto;">
           <table class="approval-table" style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; border: 1px solid #cbd5e1;">
@@ -449,6 +420,8 @@
                 <th style="padding: 10px 12px; width: 100px; text-align: center; border-right: 1px solid #cbd5e1;">Line</th>
                 <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Stakeholder</th>
                 <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Comments/Remarks</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Designation</th>
+                <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Organization</th>
                 <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Status</th>
                 <th style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">Date/Time</th>
                 <th style="padding: 10px 12px; text-align: center;">Action</th>
@@ -466,14 +439,45 @@
                 <td *ngIf="getLineRowspan($any(selectedRequest).stakeholders, idx) > 0"
                     [attr.rowspan]="getLineRowspan($any(selectedRequest).stakeholders, idx)"
                     style="text-align: center; vertical-align: middle; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1; color: #334155;">
-                  {{ st.line || 'Parallel' }}
+                  <ng-container *ngIf="!st.isNew">{{ st.line || 'Parallel' }}</ng-container>
+                  <select *ngIf="st.isNew" [(ngModel)]="st.line" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                    <option value="Parallel">Parallel</option>
+                    <option value="Sequential">Sequential</option>
+                  </select>
                 </td>
 
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">
-                  {{ st.name || st.managerName }}
+                  <ng-container *ngIf="!st.isNew">{{ st.name || st.managerName }}</ng-container>
+                  <ng-container *ngIf="st.isNew">
+                    <input type="text"
+                           [(ngModel)]="st.managerName"
+                           (ngModelChange)="onManagerLookup(st, $event)"
+                           (focus)="st.showSuggestions = true"
+                           (blur)="onManagerBlur(st)"
+                           placeholder="Enter name..."
+                           style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;"
+                           autocomplete="off">
+                    <div class="manager-suggestions" *ngIf="st.showSuggestions && getFilteredManagers(st.managerName).length > 0" style="position: absolute; background: white; border: 1px solid #cbd5e1; z-index: 10;">
+                      <div class="suggestion-item"
+                           *ngFor="let m of getFilteredManagers(st.managerName)"
+                           (mousedown)="selectManager(st, m)"
+                           style="padding: 6px; cursor: pointer;">
+                        <span class="m-name">{{ m.name }}</span>
+                        <span class="m-designation" style="font-size: 11px; color: #64748b;"> - {{ m.designation }}</span>
+                      </div>
+                    </div>
+                  </ng-container>
                 </td>
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #475569;">
-                  {{ st.remarks || st.comments || '—' }}
+                  <ng-container *ngIf="!st.isNew">{{ st.remarks || st.comments || '—' }}</ng-container>
+                  <input *ngIf="st.isNew" type="text" [(ngModel)]="st.remarks" placeholder="Remarks" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
+                </td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #475569;">
+                  {{ st.designation || '—' }}
+                </td>
+                <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #475569;">
+                  <ng-container *ngIf="!st.isNew">{{ st.organization || 'Radiant Appliances' }}</ng-container>
+                  <input *ngIf="st.isNew" type="text" [(ngModel)]="st.organization" placeholder="Organization" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
                 </td>
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">
                   <span [style.color]="st.status === 'Approved' || st.status === 'approved' ? '#059669' : st.status === 'Rejected' || st.status === 'rejected' ? '#dc2626' : '#2563eb'" style="font-weight: 700;">
@@ -483,9 +487,12 @@
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #64748b;">
                   {{ st.dateTime ? (st.dateTime | date:'M/d/yy h:mm a') : '—' }}
                 </td>
-                <td style="padding: 10px 12px; text-align: center;">
+                <td style="padding: 10px 12px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
                   <button type="button" (click)="openApproverDetail(st)" style="background: #1e293b; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap;">
                     👁️ View Info
+                  </button>
+                  <button *ngIf="selectedRequest?.status === 'Pending'" type="button" (click)="deleteApproverInView(idx)" style="background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; padding: 5px 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;" title="Delete Approver">
+                    🗑️
                   </button>
                 </td>
               </tr>
@@ -493,30 +500,44 @@
           </table>
         </div>
       </div>
+      
+      <!-- Note: Check Approval Action moved below CC Recipients -->
 
-      <!-- Approval Action: only show when request is still Pending -->
-      <div class="form-section approval-action-section" *ngIf="selectedRequest?.status === 'Pending'">
-        <div class="section-title"><span class="section-icon">Check</span> Approval Action</div>
-        <div class="section-body">
-          <div class="approval-action-body">
-            <div class="action-info">
-              <p>Take action on this EP Approval Request. Your decision will be recorded with timestamp.</p>
-            </div>
-            <div class="remarks-field">
-              <label>Remarks / Comments</label>
-              <textarea [(ngModel)]="actionRemarks" placeholder="Enter your remarks before approving or rejecting..." rows="3"></textarea>
-            </div>
-            <div class="action-buttons">
-              <button class="btn-approve" (click)="approveRequest()" [disabled]="isActioning">
-                {{ isActioning ? 'Processing...' : 'Approve' }}
-              </button>
-              <button class="btn-reject" (click)="rejectRequest()" [disabled]="isActioning">
-                {{ isActioning ? 'Processing...' : 'Reject' }}
-              </button>
-            </div>
-          </div>
+      <!-- CC Recipients -->
+      <div class="form-section" *ngIf="$any(selectedRequest)?.ccList?.length" style="margin-top: 20px;">
+        <div class="section-title"><span class="section-icon">📧</span> CC Recipients</div>
+        <div class="section-body" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <span *ngFor="let cc of $any(selectedRequest).ccList" style="background: #eef2ff; color: #1e40af; border: 1px solid #c7d2fe; padding: 4px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 600;">
+            {{ cc }}
+          </span>
         </div>
       </div>
+
+      <!-- Check Approval Action -->
+      <div class="form-section" *ngIf="selectedRequest?.status === 'Pending' && selectedRequest?.canApprove" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div class="section-title" style="font-weight: 700; font-size: 16px; color: #0f172a; margin-bottom: 8px;">Check Approval Action</div>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Take action on this EP Approval Request. Your decision will be recorded with timestamp.</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="font-size: 11px; font-weight: 700; color: #475569;">REMARKS / COMMENTS</label>
+          <textarea [(ngModel)]="$any(selectedRequest).approvalComments" rows="4" placeholder="Enter your remarks before approving, rejecting, or querying..." style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+        
+        <!-- Query Assignment Input -->
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+          <label style="font-size: 11px; font-weight: 700; color: #475569;">ASSIGN QUERY (ENTER EMAIL TO REQUEST DOCUMENT/PROOF)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="email" [(ngModel)]="$any(selectedRequest).queryAssignedTo" placeholder="Enter email address (e.g., user@example.com)..." style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: white;">
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+          <button (click)="approveFromViewModal(selectedRequest)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 30px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;">Approve</button>
+          <button (click)="rejectFromViewModal(selectedRequest)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 30px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;">Reject</button>
+          <button (click)="queryFromViewModal(selectedRequest)" style="background: #f59e0b; color: white; border: none; border-radius: 8px; padding: 10px 30px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;">❓ Query</button>
+        </div>
+      </div>
+
 
       <!-- Already actioned message -->
       <div class="form-section actioned-notice" *ngIf="selectedRequest?.status === 'Approved' || selectedRequest?.status === 'Rejected'">
@@ -623,60 +644,30 @@
 
 <!-- ==================== APPROVER DETAIL MODAL ==================== -->
 <div class="modal-overlay" *ngIf="showApproverModal" (click)="closeApproverModal()" style="display: flex; align-items: center; justify-content: center; z-index: 9999999; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); position: fixed; inset: 0;">
-  <div class="approver-detail-card" (click)="$event.stopPropagation()" style="background: white; border-radius: 16px; width: 90vw; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-    
-    <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 20px 24px; color: white; display: flex; align-items: flex-start; justify-content: space-between;">
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-          👤
-        </div>
-        <div>
-          <h3 style="margin: 0; font-size: 17px; font-weight: 700;">{{ selectedApproverDetail?.name || selectedApproverDetail?.managerName }}</h3>
-          <span style="font-size: 12px; color: #e2e8f0;">{{ selectedApproverDetail?.designation || 'Approver Stakeholder' }}</span>
-        </div>
+
+    <div class="ep-modal-window" (click)="$event.stopPropagation()" style="width: 400px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalPop 0.2s ease-out;">
+      <div style="padding: 16px 20px; background: #0f172a; color: white; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 15px; font-weight: 600;">👤 Approver Information</h3>
+        <button (click)="closeApproverModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0;">&times;</button>
       </div>
-      <button (click)="closeApproverModal()" style="background: none; border: none; color: white; font-size: 22px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s;">✕</button>
-    </div>
-    
-    <div style="padding: 24px; font-size: 13.5px; color: #334155; display: flex; flex-direction: column; gap: 14px; background: #fff;">
-      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-        <span style="color: #64748b; font-weight: 600;">Approval Line:</span>
-        <span style="font-weight: 700; color: #4338ca; background: #eef2ff; padding: 2px 10px; border-radius: 12px; font-size: 12px;">{{ selectedApproverDetail?.line || 'Parallel' }}</span>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-        <span style="color: #64748b; font-weight: 600;">Status:</span>
-        <span [style.color]="selectedApproverDetail?.status === 'Approved' || selectedApproverDetail?.status === 'approved' ? '#059669' : selectedApproverDetail?.status === 'Rejected' || selectedApproverDetail?.status === 'rejected' ? '#dc2626' : '#2563eb'" style="font-weight: 700;">
-          {{ selectedApproverDetail?.status || 'In-Process' }}
-        </span>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-        <span style="color: #64748b; font-weight: 600;">Email Address:</span>
-        <strong style="color: #0f172a;">{{ selectedApproverDetail?.email || '—' }}</strong>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-        <span style="color: #64748b; font-weight: 600;">Contact Number:</span>
-        <strong style="color: #0f172a;">{{ selectedApproverDetail?.contactNo || '—' }}</strong>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-        <span style="color: #64748b; font-weight: 600;">Organization:</span>
-        <strong style="color: #0f172a;">{{ selectedApproverDetail?.organization || 'Radiant Appliances' }}</strong>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-        <span style="color: #64748b; font-weight: 600;">Date & Time:</span>
-        <span style="color: #64748b;">{{ selectedApproverDetail?.dateTime || '—' }}</span>
-      </div>
-      <div>
-        <span style="color: #64748b; font-weight: 600; display: block; margin-bottom: 6px;">Approver Remarks:</span>
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; color: #1e293b; min-height: 60px; line-height: 1.5;">
-          {{ selectedApproverDetail?.remarks || selectedApproverDetail?.comments || 'No remarks entered yet.' }}
+      <div style="padding: 24px 20px;">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Name</div>
+            <div style="font-size: 14px; font-weight: 600; color: #0f172a;">{{ selectedApproverDetail?.name || selectedApproverDetail?.managerName || '—' }}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Email ID</div>
+            <div style="font-size: 14px; color: #334155;">{{ selectedApproverDetail?.email || 'Not Provided' }}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Contact Details</div>
+            <div style="font-size: 14px; color: #334155;">{{ selectedApproverDetail?.contactNo || selectedApproverDetail?.phone || 'Not Provided' }}</div>
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
-      <button (click)="closeApproverModal()" style="background: #0f172a; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
-        Close Info
-      </button>
+      <div style="padding: 16px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+        <button (click)="closeApproverModal()" style="background: white; border: 1px solid #cbd5e1; padding: 6px 16px; border-radius: 6px; font-weight: 600; color: #475569; cursor: pointer;">Close</button>
+      </div>
     </div>
   </div>
-</div>

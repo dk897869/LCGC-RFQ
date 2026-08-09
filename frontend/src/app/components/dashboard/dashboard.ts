@@ -180,6 +180,83 @@ export class DashboardComponent implements OnInit, OnDestroy {
   userBirthday: string = '';
   birthdayMessage: string = '';
 
+  pendingQueries: any[] = [];
+  selectedQueryToReply: any = null;
+  replyMessage: string = '';
+  replyAttachment: any = null;
+  isSubmittingReply: boolean = false;
+
+  loadPendingQueries() {
+    if (this.userRole === 'Vendor') return;
+    this.authService.getPendingQueries().subscribe({
+      next: (res) => {
+        if (res?.success) {
+          this.pendingQueries = res.data || [];
+        }
+      },
+      error: (err) => console.error('Failed to fetch pending queries', err)
+    });
+  }
+
+  openQueryReplyModal(query: any) {
+    this.selectedQueryToReply = query;
+    this.replyMessage = '';
+    this.replyAttachment = null;
+  }
+
+  closeQueryReplyModal() {
+    this.selectedQueryToReply = null;
+    this.replyMessage = '';
+    this.replyAttachment = null;
+  }
+
+  onReplyAttachmentChange(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        this.showToast('File too large. Maximum size is 10MB.', 'error');
+        event.target.value = '';
+        return;
+      }
+      this.replyAttachment = file;
+    }
+  }
+
+  submitQueryReply() {
+    if (!this.replyMessage.trim()) {
+      this.showToast('Please enter a reply message.', 'error');
+      return;
+    }
+    
+    this.isSubmittingReply = true;
+    let attachmentObj = null;
+    if (this.replyAttachment) {
+      attachmentObj = {
+        name: this.replyAttachment.name,
+        fileSize: (this.replyAttachment.size / 1024).toFixed(2) + ' KB',
+        fileUrl: '' // Handle file upload in a real implementation
+      };
+    }
+
+    this.authService.replyToQuery(
+      this.selectedQueryToReply.requestId, 
+      this.selectedQueryToReply.query._id, 
+      this.replyMessage, 
+      attachmentObj
+    ).subscribe({
+      next: (res) => {
+        this.isSubmittingReply = false;
+        this.showToast('Reply sent successfully!', 'success');
+        this.closeQueryReplyModal();
+        this.loadPendingQueries(); // Refresh list
+      },
+      error: (err) => {
+        this.isSubmittingReply = false;
+        this.showToast('Failed to send reply.', 'error');
+      }
+    });
+  }
+
   // Toast
   toasts: Toast[] = [];
   private toastIdCounter = 0;
@@ -1681,6 +1758,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadUnifiedData();
     this.startPolling();
     this.checkAccessGrantedToast();
+    this.loadPendingQueries();
   }
 
   ngOnDestroy() {

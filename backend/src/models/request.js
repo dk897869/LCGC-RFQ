@@ -26,6 +26,17 @@ const attachmentSchema = new mongoose.Schema({
   fileUrl: { type: String }
 });
 
+const querySchema = new mongoose.Schema({
+  sender: { type: String, required: true },
+  senderName: { type: String },
+  receiver: { type: String, required: true },
+  message: { type: String, required: true },
+  attachment: attachmentSchema,
+  replyMessage: { type: String },
+  replyAttachment: attachmentSchema,
+  status: { type: String, enum: ['Pending', 'Replied', 'Resolved'], default: 'Pending' }
+}, { timestamps: true });
+
 const requestSchema = new mongoose.Schema({
   requester: { type: String, required: true },
   department: { type: String, required: true },
@@ -49,6 +60,7 @@ const requestSchema = new mongoose.Schema({
   },
   stakeholders: [stakeholderSchema],
   attachments: [attachmentSchema],
+  queries: [querySchema],
   ccList: [{ type: String }],
   requestDate: { type: String, default: '' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

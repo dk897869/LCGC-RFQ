@@ -339,6 +339,65 @@
           </div>
         </div>
 
+        <!-- PENDING QUERIES / RECENT ACTIVITY -->
+        <div class="pending-queries-section" *ngIf="pendingQueries && pendingQueries.length > 0" style="margin-top: 24px;">
+          <div class="section-title"><span class="section-title__icon">🔔</span> Recent Activity: Action Required</div>
+          <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">You have incoming queries from Approvers that require your attention or proof submission.</p>
+          
+          <div class="query-cards" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="query-card" *ngFor="let pq of pendingQueries" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #f59e0b; border-left: 4px solid #f59e0b; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                  <h4 style="margin: 0 0 4px; color: #0f172a; font-size: 16px;">{{ pq.requestTitle }}</h4>
+                  <div style="font-size: 13px; color: #64748b;">From: <b>{{ pq.query.senderName || pq.query.sender }}</b></div>
+                </div>
+                <span style="background: #fef3c7; color: #d97706; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;">Awaiting Reply</span>
+              </div>
+              <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #334155;">
+                {{ pq.query.message }}
+                <div *ngIf="pq.query.attachment" style="margin-top: 8px; font-size: 12px;">
+                  <a href="javascript:void(0)" style="color: #2563eb; text-decoration: underline;">📎 {{ pq.query.attachment.name }} ({{ pq.query.attachment.fileSize }})</a>
+                </div>
+              </div>
+              <button (click)="openQueryReplyModal(pq)" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                Reply & Submit Proof
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUERY REPLY MODAL -->
+        <div class="modal-overlay" *ngIf="selectedQueryToReply" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.85); display: flex; justify-content: center; align-items: center; z-index: 99999;">
+          <div class="modal-content" style="background: white; border-radius: 12px; width: 90%; max-width: 500px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="margin: 0; color: #0f172a;">Reply to {{ selectedQueryToReply.query.senderName || selectedQueryToReply.query.sender }}</h3>
+              <button (click)="closeQueryReplyModal()" style="background: none; border: none; font-size: 20px; color: #64748b; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 3px solid #cbd5e1;">
+              <strong style="font-size: 12px; color: #475569;">Their message:</strong>
+              <div style="font-size: 14px; color: #1e293b; margin-top: 4px;">{{ selectedQueryToReply.query.message }}</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px;">Your Reply Message <span style="color: red;">*</span></label>
+              <textarea [(ngModel)]="replyMessage" rows="4" placeholder="Enter your reply and explanation..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-size: 14px; box-sizing: border-box; outline: none;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px;">Attach Document / Proof (Optional)</label>
+              <input type="file" (change)="onReplyAttachmentChange($event)" style="font-size: 13px;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+              <button (click)="closeQueryReplyModal()" style="padding: 10px 16px; border: 1px solid #cbd5e1; background: white; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button (click)="submitQueryReply()" [disabled]="isSubmittingReply" style="padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;" [style.opacity]="isSubmittingReply ? '0.7' : '1'">
+                {{ isSubmittingReply ? 'Sending...' : 'Send Reply' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- SIMPLIFIED USER DASHBOARD -->
         <div *ngIf="userRole === 'User'" class="simple-user-dash" style="margin-top: 24px;">
           <div class="section-title"><span class="section-title__icon">🔒</span> Request Module Permissions</div>

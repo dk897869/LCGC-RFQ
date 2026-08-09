@@ -720,6 +720,113 @@ const getRequestFull = async (req, res) => {
   }
 };
 
+// ====================== QUERY LIFECYCLE ======================
+const sendQuery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { receiver, message, attachment } = req.body;
+    
+    if (!receiver || !message) {
+      return res.status(400).json({ success: false, message: 'Receiver and message are required' });
+    }
+
+    const request = await Request.findById(id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'EP Request not found' });
+    }
+
+    const newQuery = {
+      sender: req.user?.email || 'Unknown',
+      senderName: req.user?.name || 'Unknown',
+      receiver,
+      message,
+      attachment,
+      status: 'Pending'
+    };
+
+    if (!request.queries) request.queries = [];
+    request.queries.push(newQuery);
+
+    await request.save();
+    res.status(200).json({ success: true, message: 'Query sent successfully', data: request.queries[request.queries.length - 1] });
+  } catch (error) {
+    console.error('Error sending query:', error);
+    res.status(500).json({ success: false, message: 'Failed to send query', error: error.message });
+  }
+};
+
+const replyToQuery = async (req, res) => {
+  try {
+    const { id, queryId } = req.params;
+    const { replyMessage, replyAttachment } = req.body;
+
+    if (!replyMessage) {
+      return res.status(400).json({ success: false, message: 'Reply message is required' });
+    }
+
+    const request = await Request.findById(id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'EP Request not found' });
+    }
+
+    const query = request.queries.id(queryId);
+    if (!query) {
+      return res.status(404).json({ success: false, message: 'Query not found' });
+    }
+
+    if (query.receiver !== req.user?.email && req.user?.role !== 'Admin') {
+      return res.status(403).json({ success: false, message: 'You are not authorized to reply to this query' });
+    }
+
+    query.replyMessage = replyMessage;
+    if (replyAttachment) query.replyAttachment = replyAttachment;
+    query.status = 'Replied';
+
+    await request.save();
+    res.status(200).json({ success: true, message: 'Reply sent successfully', data: query });
+  } catch (error) {
+    console.error('Error replying to query:', error);
+    res.status(500).json({ success: false, message: 'Failed to reply to query', error: error.message });
+  }
+};
+
+const getPendingQueriesForUser = async (req, res) => {
+  try {
+    const userEmail = req.user?.email;
+    if (!userEmail) {
+      return res.status(400).json({ success: false, message: 'User email not found in token' });
+    }
+
+    // Find requests that have a pending query where the receiver is the logged-in user
+    const requests = await Request.find({
+      'queries': {
+        $elemMatch: {
+          receiver: userEmail,
+          status: 'Pending'
+        }
+      }
+    });
+
+    const pendingQueries = [];
+    requests.forEach(req => {
+      req.queries.forEach(q => {
+        if (q.receiver === userEmail && q.status === 'Pending') {
+          pendingQueries.push({
+            requestId: req._id,
+            requestTitle: req.title,
+            query: q
+          });
+        }
+      });
+    });
+
+    res.status(200).json({ success: true, data: pendingQueries });
+  } catch (error) {
+    console.error('Error fetching pending queries:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch pending queries', error: error.message });
+  }
+};
+
 // ====================== EXPORTS ======================
 module.exports = {
   createRequest,
@@ -735,5 +842,8 @@ module.exports = {
   getRequestsByDepartment,
   getDepartments,
   getDashboardStats,
-  getRequestStats
+  getRequestStats,
+  sendQuery,
+  replyToQuery,
+  getPendingQueriesForUser
 };

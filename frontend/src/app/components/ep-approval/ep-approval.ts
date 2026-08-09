@@ -1455,6 +1455,20 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     );
   }
 
+  onManagerLookup(approver: any, value: string) {
+    const term = (value || '').trim().toLowerCase();
+    const manager = this.managerOptions.find((m: any) =>
+      (m.name || '').toLowerCase() === term || (m.email || '').toLowerCase() === term
+    );
+    approver.managerName = value;
+    if (manager) {
+      approver.managerName = manager.name;
+      approver.email = manager.email;
+      approver.designation = manager.designation;
+      approver.dateTime = new Date().toLocaleString();
+    }
+  }
+
   selectManager(approver: any, manager: any) {
     approver.managerName = manager.name;
     approver.email = manager.email;

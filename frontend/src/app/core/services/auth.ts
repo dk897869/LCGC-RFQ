@@ -938,6 +938,47 @@ createEPRequest(data: any): Observable<any> {
   // wasn't shared with me. Apply the identical `sendMailNonBlocking` pattern
   // there.
 
+  queryEPRequest(id: string | number, receiver: string, message: string, attachment: any = null): Observable<any> {
+    const user = this.getUser();
+    
+    if (!message || message.trim() === '') {
+      this.showToastMessage('Query message is required.', 'warning');
+      return throwError(() => ({ success: false, message: 'Message required' }));
+    }
+    
+    return this.ensureMinDuration(
+      this.http.patch<any>(`${this.API_URL}/request/${id}/query`, {
+        receiver, message, attachment
+      }, this.getHttpOptions()).pipe(timeout(60000)),
+      2000
+    ).pipe(
+      catchError(this.handleError('Query EP Request'))
+    );
+  }
+
+  replyToQuery(id: string | number, queryId: string, replyMessage: string, replyAttachment: any = null): Observable<any> {
+    if (!replyMessage || replyMessage.trim() === '') {
+      return throwError(() => ({ success: false, message: 'Reply message required' }));
+    }
+    return this.ensureMinDuration(
+      this.http.patch<any>(`${this.API_URL}/request/${id}/query/${queryId}/reply`, {
+        replyMessage, replyAttachment
+      }, this.getHttpOptions()).pipe(timeout(60000)),
+      2000
+    ).pipe(
+      catchError(this.handleError('Reply to Query'))
+    );
+  }
+
+  getPendingQueries(): Observable<any> {
+    return this.ensureMinDuration(
+      this.http.get<any>(`${this.API_URL}/request/queries/pending`, this.getHttpOptions()).pipe(timeout(60000)),
+      1000
+    ).pipe(
+      catchError(this.handleError('Get Pending Queries'))
+    );
+  }
+
   approveEPRequest(id: string | number, comments = ''): Observable<any> {
     const user = this.getUser();
     const userRole = user?.role || '';

@@ -13,6 +13,7 @@ router.get('/departments', requestController.getDepartments);
 
 // User specific
 router.get('/my-pending', requestController.getMyPendingRequests);
+router.get('/queries/pending', requestController.getPendingQueriesForUser);
 
 // Filter routes (place before /:id to avoid conflicts)
 router.get('/status/:status', requestController.getRequestsByStatus);
@@ -29,5 +30,9 @@ router.delete('/:id', requestController.deleteRequest);
 // Approval actions
 router.patch('/:id/approve', requestController.approveRequest);
 router.patch('/:id/reject', requestController.rejectRequest);
+
+// Query actions
+router.patch('/:id/query', requestController.sendQuery);
+router.patch('/:id/query/:queryId/reply', requestController.replyToQuery);
 
 module.exports = router;

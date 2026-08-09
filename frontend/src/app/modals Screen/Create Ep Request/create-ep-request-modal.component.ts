@@ -32,6 +32,7 @@ interface EPRequest {
   id: string;
   requestId: string;
   title: string;
+  description?: string;
   requester: string;
   department: string;
   status: string;
@@ -58,8 +59,8 @@ export class CreateEPRequestModalComponent implements OnInit {
   @Output() save = new EventEmitter<any>();
 
   // View states
-  showListView: boolean = true;
-  showFormView: boolean = false;
+  showListView: boolean = false;
+  showFormView: boolean = true;
   showSuccessView: boolean = false;
   showDetailModal: boolean = false;
   isViewMode: boolean = false;
@@ -138,6 +139,94 @@ export class CreateEPRequestModalComponent implements OnInit {
   ccInput = '';
   ccList: string[] = [];
 
+  // Query Mail State
+  queryMailInput: string = '';
+  queryMailManager: any = null;
+  showQueryMailModal: boolean = false;
+  queryMailMessage: string = '';
+  queryMailAttachment: File | null = null;
+
+  onQueryMailLookup(email: string) {
+    this.queryMailInput = email;
+    const term = (this.queryMailInput || '').trim().toLowerCase();
+    if (!term) {
+      this.queryMailManager = null;
+      return;
+    }
+    const found = this.managerOptions.find(m => m.email.toLowerCase() === term);
+    this.queryMailManager = found || null;
+  }
+
+  openQueryMailModal() {
+    if (!this.queryMailManager) {
+      this.showToastMessage('Please enter a valid email to fetch user data first', 'error');
+      return;
+    }
+    this.showQueryMailModal = true;
+  }
+  
+  closeQueryMailModal() {
+    this.showQueryMailModal = false;
+    this.queryMailMessage = '';
+    this.queryMailAttachment = null;
+  }
+
+  onQueryMailAttachmentChange(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+       this.queryMailAttachment = file;
+    }
+  }
+
+  sendQueryMail() {
+    if (!this.queryMailMessage.trim()) {
+      this.showToastMessage('Please enter a message for the query', 'error');
+      return;
+    }
+    
+    if (!this.selectedRequest || !this.selectedRequest._id) {
+      this.showToastMessage('No valid EP Request found to send query to', 'error');
+      return;
+    }
+    
+    // Simulate attaching file processing if needed
+    let attachmentObj = null;
+    if (this.queryMailAttachment) {
+      attachmentObj = {
+        name: this.queryMailAttachment.name,
+        fileSize: (this.queryMailAttachment.size / 1024).toFixed(2) + ' KB',
+        fileUrl: '' // In real app, upload file and set URL here
+      };
+    }
+    
+    this.authService.queryEPRequest(
+      this.selectedRequest._id, 
+      this.queryMailManager.email, 
+      this.queryMailMessage, 
+      attachmentObj
+    ).subscribe({
+      next: (res) => {
+        this.showToastMessage('Query sent successfully to ' + this.queryMailManager.name, 'success');
+        this.closeQueryMailModal();
+        this.queryMailInput = '';
+        this.queryMailManager = null;
+        
+        // Refresh request to show the new query
+        if (this.selectedRequest?._id) {
+          this.authService.getEPRequestFullDetails(this.selectedRequest._id).subscribe((fullReq: any) => {
+            if (fullReq && fullReq.data) {
+               this.selectedRequest = { ...this.selectedRequest, ...fullReq.data };
+               this.cdr.detectChanges();
+            }
+          });
+        }
+      },
+      error: (err) => {
+        this.showToastMessage('Failed to send query: ' + (err?.message || 'Unknown error'), 'error');
+      }
+    });
+  }
+
   // All Requests
   allRequests: EPRequest[] = [];
 
@@ -180,9 +269,12 @@ export class CreateEPRequestModalComponent implements OnInit {
       return;
     }
     
-    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.fileUrl || attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || '');
+    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.fileUrl || attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || attachmentOrUrl.path || '');
     const name = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || (attachmentOrUrl as any).fileName : '') || 'Attachment Preview';
     
+    // Clean backslashes if any
+    url = url.replace(/\\/g, '/');
+
     if (url && !url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
       if (url.startsWith('/')) {
         url = `https://lcgc-rfq.onrender.com${url}`;
@@ -191,8 +283,8 @@ export class CreateEPRequestModalComponent implements OnInit {
       }
     }
 
-    if (!url || (!url.startsWith('data:') && !url.startsWith('http') && !url.startsWith('blob:'))) {
-      this.showToastMessage('Please upload a valid PDF or image file first to view preview.', 'info');
+    if (!url) {
+      this.showToastMessage('Please upload a valid file first to view preview.', 'info');
       return;
     }
 
@@ -828,7 +920,7 @@ export class CreateEPRequestModalComponent implements OnInit {
             if (stakeholders && Array.isArray(stakeholders)) {
               const pending = stakeholders.filter((s: any) => s.status === 'Pending');
               if (pending.length > 0) {
-                const currentUser = this.authService.getCurrentUser();
+                const currentUser = this.authService.getUser();
                 canApprove = pending[0].email === currentUser?.email || pending[0].name === currentUser?.name;
               }
             }

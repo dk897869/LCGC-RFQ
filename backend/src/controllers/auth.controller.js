@@ -1779,17 +1779,15 @@ exports.getDepartments = async (req, res) => {
 exports.getManagers = async (req, res) => {
   try {
     const managers = await User.find(
-      { role: { $in: ['Admin', 'Manager', 'VP', 'GM', 'Director', 'MD'] } },
-      'name email role department'
+      { role: { $ne: 'Vendor' } },
+      'name email role designation department organization contactNo employeeId'
     ).lean();
 
     const defaultApprovers = [
-      { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager', department: 'Purchase' },
-      { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM', department: 'Operations' },
-      { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP', department: 'Finance' },
-      { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP', department: 'Operations' },
-      { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM', department: 'General' },
-      { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD', department: 'General' }
+      { name: 'Manoj', email: 'parasharvijaydeep@yahoo.com', designation: 'Engineer', department: 'Store', contactNo: '8807900000', organization: 'Radiant', employeeId: '100845' },
+      { name: 'Depak', email: 'parasharvijaydeep@gmail.com', designation: 'Engineer', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100846' },
+      { name: 'Vijay Deep Parashar', email: 'vijay.parashar@radiantappliances.com', designation: 'Head - Purchase', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100847' },
+      { name: 'Rajeev Jha', email: 'contact@vdpnexus.com', designation: 'VP-Operation', department: 'Plant Head', contactNo: '8807900000', organization: 'VDP Nexus' }
     ];
 
     res.json({
@@ -1797,8 +1795,11 @@ exports.getManagers = async (req, res) => {
       managers: managers.length > 0 ? managers.map(m => ({
         name: m.name,
         email: m.email,
-        designation: m.role,
-        department: m.department
+        designation: m.designation || m.role || 'Approver',
+        department: m.department || '',
+        organization: m.organization || '',
+        contactNo: m.contactNo || '',
+        employeeId: m.employeeId || ''
       })) : defaultApprovers,
       defaultApprovers
     });

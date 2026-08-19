@@ -807,12 +807,10 @@ export class AuthService {
       timeout(60000),
       catchError(() => of({
         managers: [
-          { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager', role: 'Manager' },
-          { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM', role: 'A-GM' },
-          { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP', role: 'VP' },
-          { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP', role: 'S-VP' },
-          { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM', role: 'GM' },
-          { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD', role: 'MD' }
+          { name: 'Manoj', email: 'parasharvijaydeep@yahoo.com', designation: 'Engineer', department: 'Store', contactNo: '8807900000', organization: 'Radiant', employeeId: '100845' },
+          { name: 'Depak', email: 'parasharvijaydeep@gmail.com', designation: 'Engineer', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100846' },
+          { name: 'Vijay Deep Parashar', email: 'vijay.parashar@radiantappliances.com', designation: 'Head - Purchase', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100847' },
+          { name: 'Rajeev Jha', email: 'contact@vdpnexus.com', designation: 'VP-Operation', department: 'Plant Head', contactNo: '8807900000', organization: 'VDP Nexus' }
         ]
       }))
     );

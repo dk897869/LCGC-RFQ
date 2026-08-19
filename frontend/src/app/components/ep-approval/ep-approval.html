@@ -164,6 +164,7 @@
                   <th>Priority</th>
                   <th>Status</th>
                   <th>Date</th>
+                  <th>Days Pending</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -176,6 +177,12 @@
                   <td><span class="priority-pill" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
                   <td><span class="status-pill" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
                   <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
+                  <td>
+                    <span *ngIf="req.status === 'Pending'" [style.color]="getDaysPending(req.requestDate) > 3 ? '#dc2626' : '#64748b'" [style.fontWeight]="getDaysPending(req.requestDate) > 3 ? '700' : '500'">
+                      {{ getDaysPending(req.requestDate) }} Days
+                    </span>
+                    <span *ngIf="req.status !== 'Pending'" style="color: #cbd5e1;">-</span>
+                  </td>
                   <td class="actions">
                     <button class="btn-icon view-btn" (click)="viewRequest(req)"><span class="icon">👁️</span> View</button>
                     <button class="btn-icon dots-btn">⋮</button>
@@ -258,6 +265,7 @@
                   <th>Priority</th>
                   <th>Status</th>
                   <th>Date</th>
+                  <th>Days Pending</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -275,6 +283,12 @@
                   <td><span class="priority-pill" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
                   <td><span class="status-pill" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
                   <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
+                  <td>
+                    <span *ngIf="req.status === 'Pending'" [style.color]="getDaysPending(req.requestDate) > 3 ? '#dc2626' : '#64748b'" [style.fontWeight]="getDaysPending(req.requestDate) > 3 ? '700' : '500'">
+                      {{ getDaysPending(req.requestDate) }} Days
+                    </span>
+                    <span *ngIf="req.status !== 'Pending'" style="color: #cbd5e1;">-</span>
+                  </td>
                   <td class="actions">
                     <button class="btn-icon view-btn" (click)="viewRequest(req)"><span class="icon">👁️</span> View</button>
                   </td>
@@ -533,35 +547,41 @@
           <table class="attachments-table">
             <thead>
               <tr>
-                <th>S. No.</th>
-                <th>Attachment *</th>
-                <th>File Size</th>
-                <th>Upload File</th>
-                <th>Preview</th>
+                <th style="width: 50px; text-align: center;">S. No.</th>
+                <th style="width: 200px;">Attachment Name *</th>
+                <th style="width: 100px; text-align: center;">File Size</th>
+                <th style="width: 120px; text-align: center;">Upload File</th>
+                <th style="width: 100px; text-align: center;">Preview</th>
                 <th>Remark</th>
-                <th></th>
+                <th style="width: 45px; text-align: center;"></th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let att of attachments; let i = index">
-                <td>{{ i + 1 }}</td>
-                <td><input type="text" [(ngModel)]="att.name" placeholder="Attachment name" class="attachment-name"></td>
-                <td class="file-size">{{ att.fileSize || '—' }}</td>
-                <td><input type="file" [attr.data-attachment-id]="att.id" (change)="onFileSelected(att, $event)" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></td>
-                <td class="preview-cell">
-                  <div *ngIf="att.preview || att.file" class="file-preview" style="display: flex; align-items: center; gap: 6px;">
-                    <span *ngIf="att.preview && att.preview.startsWith('data:image')">
-                      <img [src]="att.preview" class="preview-image" alt="Preview">
-                    </span>
-                    <span *ngIf="!att.preview || !att.preview.startsWith('data:image')" class="file-icon">{{ $any(att).fileName || att.name || 'File' }}</span>
-                    <button type="button" (click)="openMediaPreview(att)" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
-                      👁️ View
-                    </button>
-                  </div>
-                  <span *ngIf="!att.preview && !att.file" class="no-preview">No preview</span>
-                </td>
-                <td><input type="text" [(ngModel)]="att.remark" placeholder="Remark" class="remark-input"></td>
+                <td style="text-align: center; font-weight: 600;">{{ i + 1 }}</td>
                 <td>
+                  <input type="text" [(ngModel)]="att.name" [title]="att.name" placeholder="Attachment name" class="attachment-name" style="width: 100%; box-sizing: border-box;">
+                </td>
+                <td style="text-align: center; font-size: 12px; color: #64748b;">
+                  {{ att.fileSize || '—' }}
+                </td>
+                <td style="text-align: center;">
+                  <label class="btn-upload" style="cursor: pointer; background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; white-space: nowrap;">
+                    Choose File
+                    <input type="file" [attr.data-attachment-id]="att.id" (change)="onFileSelected(att, $event)" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+                  </label>
+                </td>
+                <td class="preview-cell" style="text-align: center;">
+                  <button *ngIf="att.file || att.preview || att.url"
+                          type="button"
+                          (click)="openMediaPreview(att); $event.stopPropagation()"
+                          style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; width: 100%; box-sizing: border-box;">
+                    👁️ View
+                  </button>
+                  <span *ngIf="!att.file && !att.preview && !att.url" style="color: #94a3b8; font-size: 12px; font-style: italic;">No file</span>
+                </td>
+                <td><input type="text" [(ngModel)]="att.remark" placeholder="Remark" class="remark-input" style="width: 100%; box-sizing: border-box;"></td>
+                <td style="text-align: center;">
                   <button *ngIf="att.file" type="button" class="remove-attach-btn" (click)="removeAttachment(att)">🗑️</button>
                 </td>
               </tr>
@@ -1023,51 +1043,71 @@
 </div>
 
 <!-- ==================== MEDIA PREVIEW ZOOM MODAL ==================== -->
-<div class="modal-overlay" *ngIf="showMediaModal" (click)="closeMediaPreview()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-  <div class="media-zoom-card" (click)="$event.stopPropagation()" style="background: white; border-radius: 16px; width: 92vw; max-width: 1100px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-    <div class="media-zoom-hdr" style="background: #0f172a; color: white; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
-      <div style="display: flex; align-items: center; gap: 8px;">
+<!-- ==================== FULL SCREEN MEDIA PREVIEW ==================== -->
+<div id="epApprovalMediaPreviewModal" class="modal-overlay" *ngIf="showMediaModal" (click)="closeMediaPreview()" style="display: flex !important; align-items: center !important; justify-content: center !important; z-index: 2147483647 !important; background: rgba(15, 23, 42, 0.96) !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; padding: 0 !important; margin: 0 !important;">
+  <div class="media-zoom-card" (click)="$event.stopPropagation()" style="background: #0f172a; border-radius: 0; width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; display: flex; flex-direction: column; overflow: hidden; margin: 0; padding: 0;">
+    
+    <!-- Top Header Bar -->
+    <div class="media-zoom-hdr" style="background: #090d16; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; height: 56px; box-sizing: border-box; flex-shrink: 0;">
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
         <span style="font-size: 20px;">📄</span>
-        <span style="font-weight: 700; font-size: 15px;">{{ mediaPreviewTitle || 'Attachment Preview' }}</span>
+        <span style="font-weight: 700; font-size: 16px; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50vw;">{{ mediaPreviewTitle || 'Document Preview' }}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div *ngIf="isImageMedia" style="display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 2px 6px;">
-          <button (click)="zoomOutMedia()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px 8px;" title="Zoom Out">−</button>
-          <span style="font-size: 12px; font-weight: 700; width: 45px; text-align: center;">{{ Math.round(mediaZoomScale * 100) }}%</span>
-          <button (click)="zoomInMedia()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px 8px;" title="Zoom In">+</button>
-          <button (click)="resetMediaZoom()" style="background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 4px 8px; margin-left: 4px;" title="Reset Zoom">Reset</button>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div *ngIf="isImageMedia" style="display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 2px 8px;">
+          <button type="button" (click)="zoomOutMedia()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 4px 8px;" title="Zoom Out">−</button>
+          <span style="font-size: 13px; font-weight: 700; width: 50px; text-align: center;">{{ Math.round(mediaZoomScale * 100) }}%</span>
+          <button type="button" (click)="zoomInMedia()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 4px 8px;" title="Zoom In">+</button>
+          <button type="button" (click)="resetMediaZoom()" style="background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 4px 8px; margin-left: 4px;" title="Reset Zoom">Reset</button>
         </div>
-        <a [href]="mediaPreviewUrl" download target="_blank" style="background: #2563eb; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+        <a *ngIf="mediaPreviewUrl" [href]="mediaPreviewUrl" download target="_blank" style="background: #2563eb; color: white; text-decoration: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.4);">
           ⬇ Download
         </a>
-        <button (click)="closeMediaPreview()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0 4px; line-height: 1;">×</button>
+        <button type="button" (click)="closeMediaPreview()" style="background: rgba(255,255,255,0.15); border: none; color: white; font-size: 24px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.2s;" title="Close (ESC)">×</button>
       </div>
     </div>
-    <div class="media-zoom-body" style="flex: 1; background: #1e293b; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 12px; position: relative;">
-      <ng-container *ngIf="mediaPreviewUrl">
-        <!-- Image Preview -->
-        <img *ngIf="isImageMedia"
-             [src]="mediaPreviewUrl"
-             [style.transform]="'scale(' + mediaZoomScale + ')'"
-             style="max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; cursor: grab;"
-             alt="Attachment Preview">
 
-        <!-- PDF Document Native Viewer with Full Scrolling -->
-        <object *ngIf="isPdfMedia && sanitizedMediaUrl"
-                [data]="sanitizedMediaUrl"
-                type="application/pdf"
-                style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-          <iframe [src]="sanitizedMediaUrl" style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px;">
-            <p style="color: white; padding: 20px; text-align: center;">PDF Preview unavailable. <a [href]="mediaPreviewUrl" target="_blank" style="color: #60a5fa;">Click here to download PDF</a></p>
-          </iframe>
-        </object>
+    <!-- Main Fullscreen Body -->
+    <div class="media-zoom-body" style="flex: 1; background: #020617; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 0; position: relative; width: 100%; height: calc(100vh - 56px);">
+      
+      <!-- Image Preview -->
+      <img *ngIf="isImageMedia && mediaPreviewUrl"
+           [src]="mediaPreviewUrl"
+           [style.transform]="'scale(' + mediaZoomScale + ')'"
+           style="max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; cursor: grab;"
+           alt="Attachment Preview">
 
-        <!-- Other File Types Fallback -->
-        <iframe *ngIf="!isImageMedia && !isPdfMedia && sanitizedMediaUrl"
-                [src]="sanitizedMediaUrl"
-                style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px;">
-        </iframe>
-      </ng-container>
+      <!-- PDF Document Viewer -->
+      <iframe *ngIf="isPdfMedia && sanitizedMediaUrl"
+              [src]="sanitizedMediaUrl"
+              style="width: 100%; height: 100%; border: none; background: white;">
+      </iframe>
+
+      <!-- Remote Office Online Viewer -->
+      <iframe *ngIf="isOfficeMedia && officeViewerUrl"
+              [src]="officeViewerUrl"
+              style="width: 100%; height: 100%; border: none; background: white;"
+              allowfullscreen>
+      </iframe>
+
+      <!-- Fallback Screen for Excel, Word, CSV & Local Non-PDF files -->
+      <div *ngIf="!isImageMedia && !isPdfMedia && (!isOfficeMedia || !officeViewerUrl)"
+           style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; color: white; padding: 40px; box-sizing: border-box; text-align: center;">
+        <div style="font-size: 96px; margin-bottom: 24px;">📁</div>
+        <h2 style="color: #f8fafc; margin-bottom: 12px; font-size: 26px; font-weight: 700;">{{ mediaPreviewTitle || 'Attached Document' }}</h2>
+        <p style="color: #94a3b8; margin-bottom: 36px; font-size: 15px; max-width: 520px; line-height: 1.6;">
+          This document file format can be downloaded and opened directly on your device.
+        </p>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <a *ngIf="mediaPreviewUrl" [href]="mediaPreviewUrl" download target="_blank" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 16px rgba(37,99,235,0.4); display: inline-flex; align-items: center; gap: 10px;">
+            ⬇️ Download &amp; Open Document
+          </a>
+          <button type="button" (click)="closeMediaPreview()" style="background: #334155; color: #f8fafc; border: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer;">
+            ✖ Close View
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

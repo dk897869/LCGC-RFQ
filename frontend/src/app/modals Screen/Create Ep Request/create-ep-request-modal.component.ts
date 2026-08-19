@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { renderFullScreenDocumentViewer } from '../../utils/full-screen-viewer';
 
 interface Approver {
   id?: number;
@@ -25,6 +26,9 @@ interface Attachment {
   file: File | null;
   preview: string;
   remark: string;
+  url?: string;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 interface EPRequest {
@@ -232,12 +236,10 @@ export class CreateEPRequestModalComponent implements OnInit {
 
   // Manager Options
   managerOptions = [
-    { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
-    { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM' },
-    { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP' },
-    { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP' },
-    { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM' },
-    { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD' }
+    { name: 'Manoj', email: 'parasharvijaydeep@yahoo.com', designation: 'Engineer', department: 'Store', contactNo: '8807900000', organization: 'Radiant', employeeId: '100845' },
+    { name: 'Depak', email: 'parasharvijaydeep@gmail.com', designation: 'Engineer', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100846' },
+    { name: 'Vijay Deep Parashar', email: 'vijay.parashar@radiantappliances.com', designation: 'Head - Purchase', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100847' },
+    { name: 'Rajeev Jha', email: 'contact@vdpnexus.com', designation: 'VP-Operation', department: 'Plant Head', contactNo: '8807900000', organization: 'VDP Nexus' }
   ];
 
   priorityOptions = ['High', 'Medium', 'Low', 'Urgent'];
@@ -261,61 +263,13 @@ export class CreateEPRequestModalComponent implements OnInit {
   mediaZoomScale = 1;
   isPdfMedia = false;
   isImageMedia = false;
+  isOfficeMedia = false;
+  officeViewerUrl: SafeResourceUrl | null = null;
   sanitizedMediaUrl: SafeResourceUrl | null = null;
 
   openMediaPreview(attachmentOrUrl: any, title?: string) {
-    if (!attachmentOrUrl) {
-      this.showToastMessage('Please upload a file first to view preview.', 'info');
-      return;
-    }
-    
-    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.fileUrl || attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || attachmentOrUrl.path || '');
-    const name = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || (attachmentOrUrl as any).fileName : '') || 'Attachment Preview';
-    
-    // Clean backslashes if any
-    url = url.replace(/\\/g, '/');
-
-    if (url && !url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
-      if (url.startsWith('/')) {
-        url = `https://lcgc-rfq.onrender.com${url}`;
-      } else {
-        url = `https://lcgc-rfq.onrender.com/${url}`;
-      }
-    }
-
-    if (!url) {
-      this.showToastMessage('Please upload a valid file first to view preview.', 'info');
-      return;
-    }
-
-    this.mediaPreviewTitle = name;
-    this.mediaZoomScale = 1;
-
-    const lowerUrl = url.toLowerCase();
-    this.isImageMedia = url.startsWith('data:image') || /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(lowerUrl);
-    this.isPdfMedia = url.startsWith('data:application/pdf') || lowerUrl.includes('.pdf') || url.startsWith('blob:');
-
-    if (url.startsWith('data:application/pdf;base64,')) {
-      try {
-        const base64Data = url.split(',')[1];
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
-        url = URL.createObjectURL(blob);
-        this.isPdfMedia = true;
-      } catch (e) {
-        console.error('PDF Blob conversion error', e);
-      }
-    }
-
-    this.mediaPreviewUrl = url;
-    this.sanitizedMediaUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-    this.showMediaModal = true;
-    this.cdr.detectChanges();
+    console.log('👁️ openMediaPreview triggered in create-ep modal:', attachmentOrUrl, title);
+    renderFullScreenDocumentViewer(attachmentOrUrl, title);
   }
 
   closeMediaPreview() {
@@ -324,6 +278,14 @@ export class CreateEPRequestModalComponent implements OnInit {
     this.mediaPreviewTitle = '';
     this.mediaZoomScale = 1;
     this.sanitizedMediaUrl = null;
+    this.officeViewerUrl = null;
+    this.isOfficeMedia = false;
+    const modalEl = document.getElementById('createEpMediaPreviewModal');
+    if (modalEl) {
+      modalEl.remove();
+    }
+    this.cdr.markForCheck();
+    try { this.cdr.detectChanges(); } catch (e) {}
   }
 
   // Approver Detail Modal
@@ -552,18 +514,35 @@ export class CreateEPRequestModalComponent implements OnInit {
         this.showToastMessage('File size exceeds 5MB limit', 'error');
         return;
       }
-      
+
       attachment.file = file;
       (attachment as any).fileName = file.name;
       attachment.fileSize = this.formatFileSize(file.size);
       (attachment as any).fileType = file.type;
-      
+
+      // Auto-fill attachment name preserving full filename with extension
+      if (!attachment.name || /^Attachment\s*\d*$/i.test(attachment.name.trim())) {
+        attachment.name = file.name;
+      }
+
+      // Synchronously create Blob URL for instant preview availability
+      try {
+        const blobUrl = URL.createObjectURL(file);
+        (attachment as any).url = blobUrl;
+        (attachment as any).fileUrl = blobUrl;
+      } catch (e) {}
+
       const reader = new FileReader();
       reader.onload = (e: any) => {
         const dataUrl = e.target.result;
         attachment.preview = dataUrl;
         (attachment as any).url = dataUrl;
         (attachment as any).data = dataUrl;
+        (attachment as any).fileUrl = dataUrl;
+        try {
+          if (file.name) sessionStorage.setItem(`ep_att_${file.name}`, dataUrl);
+          if (attachment.name) sessionStorage.setItem(`ep_att_${attachment.name}`, dataUrl);
+        } catch (err) {}
         this.cdr.detectChanges();
       };
       reader.readAsDataURL(file);
@@ -820,13 +799,21 @@ export class CreateEPRequestModalComponent implements OnInit {
           designation: a.designation || '',
           line: a.line,
           approvalOrder: idx + 1,
-          status: a.status,
           remarks: a.remarks || ''
         })),
       attachments: this.attachments
-        .filter(a => a.file)
-        .map(a => ({ name: a.name, fileSize: a.fileSize, remark: a.remark })),
-      ccList: this.ccList
+        .filter(a => a.file || a.preview || (a as any).url)
+        .map(a => {
+          const prv = a.preview || (a as any).url || (a as any).data || '';
+          return {
+            name: a.name,
+            fileName: (a.file ? a.file.name : '') || (a as any).fileName || a.name,
+            fileSize: a.fileSize,
+            remark: a.remark,
+            preview: (prv && prv.length < 2500000) ? prv : '',
+            fileType: a.file ? a.file.type : ((a as any).fileType || '')
+          };
+        }),
     };
 
     this.authService.createEPRequest(payload).subscribe({
@@ -920,8 +907,10 @@ export class CreateEPRequestModalComponent implements OnInit {
             if (stakeholders && Array.isArray(stakeholders)) {
               const pending = stakeholders.filter((s: any) => s.status === 'Pending');
               if (pending.length > 0) {
+                const firstPendingLine = pending[0].line || 'Parallel';
                 const currentUser = this.authService.getUser();
-                canApprove = pending[0].email === currentUser?.email || pending[0].name === currentUser?.name;
+                const currentAllowedApprovers = pending.filter((s: any) => (s.line || 'Parallel') === firstPendingLine);
+                canApprove = currentAllowedApprovers.some(s => s.email === currentUser?.email || s.name === currentUser?.name);
               }
             }
 
@@ -1099,19 +1088,52 @@ export class CreateEPRequestModalComponent implements OnInit {
 
   approveFromViewModal(req: any) {
     if (!req) return;
-    // Mock approval or wire to actual backend
-    this.showToastMessage('Action recorded: Approved', 'success');
-    // Implement API call here...
+    this.authService.approveEPRequest(req._id || req.id, req.approvalComments || '').subscribe({
+      next: () => {
+        this.showToastMessage('Request approved successfully!', 'success');
+        this.close.emit();
+      },
+      error: (err) => this.showToastMessage(err?.message || 'Approval failed', 'error')
+    });
   }
 
   rejectFromViewModal(req: any) {
     if (!req) return;
-    this.showToastMessage('Action recorded: Rejected', 'error');
+    this.authService.rejectEPRequest(req._id || req.id, req.approvalComments || '').subscribe({
+      next: () => {
+        this.showToastMessage('Request rejected successfully!', 'error');
+        this.close.emit();
+      },
+      error: (err) => this.showToastMessage(err?.message || 'Rejection failed', 'error')
+    });
   }
 
   queryFromViewModal(req: any) {
     if (!req) return;
-    this.showToastMessage('Action recorded: Query sent', 'info');
+    if (!req.approvalComments || req.approvalComments.trim() === '') {
+      this.showToastMessage('Please enter a query message in the remarks field.', 'error');
+      return;
+    }
+    const receiver = req.email; // Send query to the requester
+    if (!receiver) {
+      this.showToastMessage('Requester email not found.', 'error');
+      return;
+    }
+    
+    this.authService.queryEPRequest(req._id || req.id, receiver, req.approvalComments).subscribe({
+      next: () => {
+        this.showToastMessage('Query sent successfully to ' + receiver, 'success');
+        req.approvalComments = '';
+        // Refresh request to show the new query
+        this.authService.getEPRequestFullDetails(req._id || req.id).subscribe((fullReq: any) => {
+          if (fullReq && fullReq.data) {
+             this.selectedRequest = { ...this.selectedRequest, ...fullReq.data };
+             this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => this.showToastMessage(err?.message || 'Failed to send query', 'error')
+    });
   }
 
   getLineRowspan(stakeholders: any[], currentIndex: number): number {

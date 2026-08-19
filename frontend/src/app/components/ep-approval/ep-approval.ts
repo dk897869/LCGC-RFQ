@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { renderFullScreenDocumentViewer } from '../../utils/full-screen-viewer';
 import { CreateEPRequestModalComponent } from "../../modals Screen/Create Ep Request/create-ep-request-modal.component";
 import { forkJoin, of } from 'rxjs';
 import { catchError, timeout } from 'rxjs/operators';
@@ -28,6 +29,9 @@ interface Attachment {
   file: File | null;
   preview: string;
   remark: string;
+  url?: string;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 interface EPRequest {
@@ -171,12 +175,10 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   
   // Manager Options
   managerOptions = [
-    { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
-    { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM' },
-    { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP' },
-    { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP' },
-    { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM' },
-    { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD' }
+    { name: 'Manoj', email: 'parasharvijaydeep@yahoo.com', designation: 'Engineer', department: 'Store', contactNo: '8807900000', organization: 'Radiant', employeeId: '100845' },
+    { name: 'Depak', email: 'parasharvijaydeep@gmail.com', designation: 'Engineer', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100846' },
+    { name: 'Vijay Deep Parashar', email: 'vijay.parashar@radiantappliances.com', designation: 'Head - Purchase', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100847' },
+    { name: 'Rajeev Jha', email: 'contact@vdpnexus.com', designation: 'VP-Operation', department: 'Plant Head', contactNo: '8807900000', organization: 'VDP Nexus' }
   ];
   
   priorityOptions = ['High', 'Medium', 'Low', 'Urgent'];
@@ -192,60 +194,13 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   mediaZoomScale = 1;
   isPdfMedia = false;
   isImageMedia = false;
+  isOfficeMedia = false;
+  officeViewerUrl: SafeResourceUrl | null = null;
   sanitizedMediaUrl: SafeResourceUrl | null = null;
 
   openMediaPreview(attachmentOrUrl: any, title?: string) {
-    if (!attachmentOrUrl) {
-      this.showToast('Please upload a file first to view preview.', 'info');
-      return;
-    }
-    
-    let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : (attachmentOrUrl.fileUrl || attachmentOrUrl.url || attachmentOrUrl.preview || attachmentOrUrl.data || attachmentOrUrl.fileData || '');
-    const name = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || attachmentOrUrl.fileName : '') || 'Attachment Preview';
-    
-    if (url && !url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
-      if (url.startsWith('/')) {
-        url = `https://lcgc-rfq.onrender.com${url}`;
-      } else {
-        url = `https://lcgc-rfq.onrender.com/${url}`;
-      }
-    }
-
-    if (!url || (!url.startsWith('data:') && !url.startsWith('http') && !url.startsWith('blob:'))) {
-      this.showToast('Please upload a valid PDF or image file first to view preview.', 'info');
-      return;
-    }
-
-    this.mediaPreviewTitle = name;
-    this.mediaZoomScale = 1;
-
-    // Check if image or PDF
-    const lowerUrl = url.toLowerCase();
-    this.isImageMedia = url.startsWith('data:image') || /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(lowerUrl);
-    this.isPdfMedia = url.startsWith('data:application/pdf') || lowerUrl.includes('.pdf') || url.startsWith('blob:');
-
-    // If base64 PDF data, convert to Blob URL so Chrome/Edge native PDF viewer renders scrollable PDF
-    if (url.startsWith('data:application/pdf;base64,')) {
-      try {
-        const base64Data = url.split(',')[1];
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
-        url = URL.createObjectURL(blob);
-        this.isPdfMedia = true;
-      } catch (e) {
-        console.error('PDF Blob conversion error', e);
-      }
-    }
-
-    this.mediaPreviewUrl = url;
-    this.sanitizedMediaUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-    this.showMediaModal = true;
-    this.cdr.detectChanges();
+    console.log('👁️ openMediaPreview triggered in ep-approval component:', attachmentOrUrl, title);
+    renderFullScreenDocumentViewer(attachmentOrUrl, title);
   }
 
   closeMediaPreview() {
@@ -253,9 +208,17 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     this.mediaPreviewUrl = '';
     this.mediaPreviewTitle = '';
     this.mediaZoomScale = 1;
+    this.sanitizedMediaUrl = null;
+    this.officeViewerUrl = null;
+    this.isOfficeMedia = false;
     this.isPdfMedia = false;
     this.isImageMedia = false;
-    this.sanitizedMediaUrl = null;
+    const modalEl = document.getElementById('epApprovalMediaPreviewModal');
+    if (modalEl) {
+      modalEl.remove();
+    }
+    this.cdr.markForCheck();
+    try { this.cdr.detectChanges(); } catch (e) {}
   }
 
   zoomInMedia() {
@@ -849,18 +812,35 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
         this.showToast('File size exceeds 5MB limit', 'error');
         return;
       }
-      
+
       attachment.file = file;
       (attachment as any).fileName = file.name;
       attachment.fileSize = this.formatFileSize(file.size);
       (attachment as any).fileType = file.type;
-      
+
+      // Auto-fill attachment name preserving full filename with extension
+      if (!attachment.name || /^Attachment\s*\d*$/i.test(attachment.name.trim())) {
+        attachment.name = file.name;
+      }
+
+      // Synchronously create Blob URL for instant preview availability
+      try {
+        const blobUrl = URL.createObjectURL(file);
+        (attachment as any).url = blobUrl;
+        (attachment as any).fileUrl = blobUrl;
+      } catch (e) {}
+
       const reader = new FileReader();
       reader.onload = (e: any) => {
         const dataUrl = e.target.result;
         attachment.preview = dataUrl;
         (attachment as any).url = dataUrl;
         (attachment as any).data = dataUrl;
+        (attachment as any).fileUrl = dataUrl;
+        try {
+          if (file.name) sessionStorage.setItem(`ep_att_${file.name}`, dataUrl);
+          if (attachment.name) sessionStorage.setItem(`ep_att_${attachment.name}`, dataUrl);
+        } catch (err) {}
         this.cdr.detectChanges();
       };
       reader.readAsDataURL(file);
@@ -1159,12 +1139,19 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
         dateTime: a.dateTime || new Date().toISOString()
       })),
       
-      attachments: this.attachments.filter(a => a.file).map(a => ({
-        name: a.name,
-        fileName: a.file?.name,
-        fileSize: a.fileSize,
-        remark: a.remark
-      })),
+      attachments: this.attachments
+        .filter(a => a.file || a.preview || (a as any).url)
+        .map(a => {
+          const prv = a.preview || (a as any).url || (a as any).data || '';
+          return {
+            name: a.name,
+            fileName: (a.file ? a.file.name : '') || (a as any).fileName || a.name,
+            fileSize: a.fileSize,
+            remark: a.remark,
+            preview: (prv && prv.length < 2500000) ? prv : '',
+            fileType: a.file ? a.file.type : ((a as any).fileType || '')
+          };
+        }),
       
       ccList: validCcList,
       requesterEmail: this.formData.emailId,
@@ -1412,6 +1399,18 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   }
   
   // Utility Methods
+  getDaysPending(dateStr?: string): number {
+    if (!dateStr) return 0;
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    const diffTime = Math.abs(today.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }
+
   formatDate(dateStr?: string): string {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
@@ -1497,12 +1496,10 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
 
   private setDefaultManagers() {
     this.managerOptions = [
-      { name: 'Vijay Parashar', email: 'vijay.parashar@radiant.com', designation: 'Manager' },
-      { name: 'Ravib', email: 'ravib@radiant.com', designation: 'A-GM' },
-      { name: 'Shailendra Chothe', email: 'shailendra.chothe@radiant.com', designation: 'VP' },
-      { name: 'Sanjay Munshi', email: 'sanjay.munshi@radiant.com', designation: 'S-VP' },
-      { name: 'Wang Xianwen', email: 'wang.xianwen@radiant.com', designation: 'GM' },
-      { name: 'Raminder Singh', email: 'raminder.singh@radiant.com', designation: 'MD' }
+      { name: 'Manoj', email: 'parasharvijaydeep@yahoo.com', designation: 'Engineer', department: 'Store', contactNo: '8807900000', organization: 'Radiant', employeeId: '100845' },
+      { name: 'Depak', email: 'parasharvijaydeep@gmail.com', designation: 'Engineer', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100846' },
+      { name: 'Vijay Deep Parashar', email: 'vijay.parashar@radiantappliances.com', designation: 'Head - Purchase', department: 'Purchase', contactNo: '8807900000', organization: 'Radiant', employeeId: '100847' },
+      { name: 'Rajeev Jha', email: 'contact@vdpnexus.com', designation: 'VP-Operation', department: 'Plant Head', contactNo: '8807900000', organization: 'VDP Nexus' }
     ];
   }
 

@@ -40,8 +40,8 @@ const moduleAccessMiddleware = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'No user found' });
   }
 
-  const seniorRoles = ['Admin', 'Manager', 'Senior Manager', 'Vendor', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
-  if (seniorRoles.includes(user.role)) {
+  const seniorRoles = ['Admin', 'Manager', 'Senior Manager', 'Vendor', 'VP', 'VP-Operation', 'GM', 'MD', 'Director', 'AGM', 'Approver', 'Purchase Head', 'Head - Purchase', 'Engineer'];
+  if (seniorRoles.includes(user.role) || seniorRoles.includes(user.designation)) {
     return next();
   }
 
@@ -439,52 +439,42 @@ app.get(['/api/dashboard', '/api/dashboard/stats', '/api/dashboard/full-stats'],
     const Part = require('./models/part');
     const OrderHistory = require('./models/OrderHistory');
 
-    // 1. Basic Counts (100% Dynamic from MongoDB)
-    const [
-      totalUsers,
-      epCount, prCount, nppCount, rfqCount, poCount,
-      epPending, prPending, nppPending, rfqPending, poPending,
-      epApproved, prApproved, nppApproved, rfqApproved, poApproved,
-      epRejected, prRejected, nppRejected, rfqRejected, poRejected,
-      activeVendors, partCount
-    ] = await Promise.all([
-      User.countDocuments().catch(() => 0),
-      EPRequest.countDocuments().catch(() => 0),
-      PRRequest.countDocuments().catch(() => 0),
-      NPPRequest.countDocuments().catch(() => 0),
-      RFQ.countDocuments().catch(() => 0),
-      PORequest.countDocuments().catch(() => 0),
-      EPRequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
-      PRRequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
-      NPPRequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
-      RFQ.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
-      PORequest.countDocuments({ status: { $regex: /^pending$/i } }).catch(() => 0),
-      EPRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
-      PRRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
-      NPPRequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
-      RFQ.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
-      PORequest.countDocuments({ status: { $regex: /^approved$/i } }).catch(() => 0),
-      EPRequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
-      PRRequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
-      NPPRequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
-      RFQ.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
-      PORequest.countDocuments({ status: { $regex: /^rejected$/i } }).catch(() => 0),
-      Vendor.countDocuments().catch(() => 0),
-      Part.countDocuments().catch(() => 0)
+    // 1. Basic Counts (100% Dynamic from MongoDB Collections)
+    const [allEpRequests, allPrRequests, allNppRequests, allRfqs, allPos, allVendors, allParts, totalUsers] = await Promise.all([
+      EPRequest.find().lean().catch(() => []),
+      PRRequest.find().lean().catch(() => []),
+      NPPRequest.find().lean().catch(() => []),
+      RFQ.find().lean().catch(() => []),
+      PORequest.find().lean().catch(() => []),
+      Vendor.find().lean().catch(() => []),
+      Part.find().lean().catch(() => []),
+      User.countDocuments().catch(() => 0)
     ]);
 
-    const totalRequests = epCount + prCount + nppCount + rfqCount + poCount;
-    const totalPending = epPending + prPending + nppPending + rfqPending + poPending;
-    const totalApproved = epApproved + prApproved + nppApproved + rfqApproved + poApproved;
-    const totalRejected = epRejected + prRejected + nppRejected + rfqRejected + poRejected;
+    const allCombinedRequests = [
+      ...allEpRequests,
+      ...allPrRequests,
+      ...allNppRequests,
+      ...allRfqs,
+      ...allPos
+    ];
+
+    const totalRequests = allCombinedRequests.length;
+    const totalPending = allCombinedRequests.filter(r => {
+      const s = (r.status || '').toLowerCase();
+      return s === 'pending' || s === 'in-process' || s === 'in process' || s === 'in progress';
+    }).length;
+
+    const totalApproved = allCombinedRequests.filter(r => (r.status || '').toLowerCase() === 'approved').length;
+    const totalRejected = allCombinedRequests.filter(r => (r.status || '').toLowerCase() === 'rejected').length;
     const totalCompleted = Math.max(0, totalRequests - (totalPending + totalApproved + totalRejected));
 
-    // Spend calculation (Dynamic sum from approved POs & Requests)
-    const approvedPOs = await PORequest.find({ status: { $regex: /^approved$/i } }).select('totalAmount amount').lean().catch(() => []);
-    const poSpend = approvedPOs.reduce((sum, p) => sum + Number(p.totalAmount || p.amount || 0), 0);
-    const approvedEPs = await EPRequest.find({ status: { $regex: /^approved$/i } }).select('amount').lean().catch(() => []);
-    const epSpend = approvedEPs.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-    const totalSpend = poSpend + epSpend;
+    const totalSpend = allCombinedRequests
+      .filter(r => (r.status || '').toLowerCase() === 'approved')
+      .reduce((sum, r) => sum + Number(r.amount || r.totalAmount || r.estimatedAmount || r.estimatedCost || 0), 0);
+
+    const activeVendors = allVendors.length;
+    const partCount = allParts.length;
 
     // 2. Fetch Live Recent RFQs & Requests
     const recentRfqsList = await RFQ.find().sort({ createdAt: -1 }).limit(10).lean().catch(() => []);

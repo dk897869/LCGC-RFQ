@@ -347,8 +347,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
           epList = epData
             .filter((r: any) => {
               const title = String(r.title || r.subject || r.titleOfActivity || '').trim();
-              const requester = String(r.requester || r.requesterName || r.createdBy?.name || '').trim();
-              return title && title.toLowerCase() !== 'nm' && requester;
+              return title && title.toLowerCase() !== 'nm';
             })
             .map((r: any) => ({ ...this.mapRecord(r), type: 'EP' as const }));
         }

@@ -5,11 +5,20 @@ const { sendMail } = require('../services/mail.service');
 const { generatePDFFromRequest } = require('../services/pdf.service');
 const epNotify = require('../services/epNotify.service');
 
-const SENIOR_APPROVER_ROLES = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
-const memoryEpRequests = [];
-const isDbConnected = () => mongoose.connection.readyState === 1;
+const SENIOR_APPROVER_ROLES = [
+  'Admin', 'Purchase Head', 'Head - Purchase', 'Manager', 'Senior Manager', 
+  'VP', 'VP-Operation', 'Engineer', 'GM', 'MD', 'Director', 'AGM', 'Approver', 'User'
+];
 
-const isSeniorApprover = (user = {}) => SENIOR_APPROVER_ROLES.includes(user.role);
+const isSeniorApprover = (user = {}) => {
+  if (!user) return true; // Default allow all authenticated operational users to approve
+  const role = user.role || '';
+  const desig = user.designation || '';
+  return SENIOR_APPROVER_ROLES.some(r => 
+    role.toLowerCase().includes(r.toLowerCase()) || 
+    desig.toLowerCase().includes(r.toLowerCase())
+  );
+};
 
 // ====================== CREATE REQUEST ======================
 const createRequest = async (req, res) => {

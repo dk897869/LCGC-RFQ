@@ -586,32 +586,30 @@
       </div>
 
       <!-- Check Approval Action -->
-      <div class="form-section" *ngIf="(selectedRequest?.status === 'Pending' || selectedRequest?.status === 'In-Process' || selectedRequest?.status === 'In Progress') && selectedRequest?.canApprove" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+      <div class="form-section" *ngIf="(selectedRequest?.status === 'Pending' || selectedRequest?.status === 'In-Process' || selectedRequest?.status === 'In Progress') && selectedRequest?.canApprove && !$any(selectedRequest)?.hasAlreadyActioned" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <div class="section-title" style="font-weight: 700; font-size: 16px; color: #0f172a; margin-bottom: 8px;">Check Approval Action</div>
         <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Take action on this EP Approval Request. Your decision will be recorded with timestamp.</p>
         
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <label style="font-size: 11px; font-weight: 700; color: #475569;">REMARKS / COMMENTS / QUERY MESSAGE</label>
-          <textarea [(ngModel)]="$any(selectedRequest).approvalComments" rows="4" placeholder="Enter your remarks before approving, rejecting, or querying..." style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+          <label style="font-size: 11px; font-weight: 700; color: #475569;">REMARKS / COMMENTS</label>
+          <textarea [(ngModel)]="$any(selectedRequest).approvalComments" rows="4" placeholder="Enter your remarks before approving or rejecting..." style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
         </div>
         
         <div style="display: flex; gap: 12px; margin-top: 16px;">
           <button (click)="approveFromViewModal(selectedRequest)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 10px 30px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;">Approve</button>
           <button (click)="rejectFromViewModal(selectedRequest)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 30px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;">Reject</button>
-          <button (click)="queryFromViewModal(selectedRequest)" style="background: #f59e0b; color: white; border: none; border-radius: 8px; padding: 10px 30px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;">❓ Query</button>
         </div>
       </div>
 
-
       <!-- Already actioned message -->
-      <div class="form-section actioned-notice" *ngIf="selectedRequest?.status === 'Approved' || selectedRequest?.status === 'Rejected'">
+      <div class="form-section actioned-notice" *ngIf="$any(selectedRequest)?.hasAlreadyActioned || $any(selectedRequest)?.userActionStatus || selectedRequest?.status === 'Approved' || selectedRequest?.status === 'Rejected'" style="margin-top: 20px;">
         <div class="section-body">
-          <div class="actioned-msg" [class.actioned-approved]="selectedRequest?.status === 'Approved'" [class.actioned-rejected]="selectedRequest?.status === 'Rejected'">
-            <span class="actioned-icon" *ngIf="selectedRequest?.status === 'Approved'">✅</span>
-            <span class="actioned-icon" *ngIf="selectedRequest?.status === 'Rejected'">❌</span>
+          <div class="actioned-msg" [class.actioned-approved]="$any(selectedRequest)?.userActionStatus === 'Approved' || selectedRequest?.status === 'Approved'" [class.actioned-rejected]="$any(selectedRequest)?.userActionStatus === 'Rejected' || selectedRequest?.status === 'Rejected'">
+            <span class="actioned-icon" *ngIf="$any(selectedRequest)?.userActionStatus === 'Approved' || selectedRequest?.status === 'Approved'">✅</span>
+            <span class="actioned-icon" *ngIf="$any(selectedRequest)?.userActionStatus === 'Rejected' || selectedRequest?.status === 'Rejected'">❌</span>
             <div>
-              <strong>This request has been {{ selectedRequest?.status }}.</strong>
-              <p>No further action can be taken on this request.</p>
+              <strong>Action Recorded: Request is {{ $any(selectedRequest)?.userActionStatus || selectedRequest?.status }}.</strong>
+              <p>Your approval/rejection has been recorded in the workflow chain.</p>
             </div>
           </div>
         </div>

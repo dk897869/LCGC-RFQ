@@ -903,14 +903,39 @@ export class CreateEPRequestModalComponent implements OnInit {
           if (res?.data || res?.request) {
             const full = res.data || res.request;
             let canApprove = false;
+            let hasAlreadyActioned = false;
+            let userActionStatus = '';
+            const currentUser = this.authService.getUser();
             const stakeholders = full.approvalChain || full.stakeholders || (this.selectedRequest as any)?.stakeholders || [];
+            
             if (stakeholders && Array.isArray(stakeholders)) {
-              const pending = stakeholders.filter((s: any) => s.status === 'Pending');
-              if (pending.length > 0) {
-                const firstPendingLine = pending[0].line || 'Parallel';
-                const currentUser = this.authService.getUser();
-                const currentAllowedApprovers = pending.filter((s: any) => (s.line || 'Parallel') === firstPendingLine);
-                canApprove = currentAllowedApprovers.some(s => s.email === currentUser?.email || s.name === currentUser?.name);
+              const userAction = stakeholders.find((s: any) =>
+                (s.email && currentUser?.email && s.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                (s.name && currentUser?.name && s.name.toLowerCase() === currentUser.name.toLowerCase())
+              );
+
+              if (userAction && (userAction.status === 'Approved' || userAction.status === 'approved' || userAction.status === 'Rejected' || userAction.status === 'rejected')) {
+                hasAlreadyActioned = true;
+                userActionStatus = userAction.status.charAt(0).toUpperCase() + userAction.status.slice(1).toLowerCase();
+                canApprove = false;
+              } else if (full.status === 'Approved' || full.status === 'Rejected') {
+                canApprove = false;
+              } else {
+                const pending = stakeholders.filter((s: any) => s.status === 'Pending' || s.status === 'pending');
+                if (pending.length > 0) {
+                  const firstPendingLine = pending[0].line || 'Parallel';
+                  const currentAllowedApprovers = pending.filter((s: any) => (s.line || 'Parallel') === firstPendingLine);
+                  canApprove = currentAllowedApprovers.some(s =>
+                    (s.email && currentUser?.email && s.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                    (s.name && currentUser?.name && s.name.toLowerCase() === currentUser.name.toLowerCase())
+                  ) || ['Admin', 'Purchase Head', 'Head - Purchase', 'VP', 'VP-Operation', 'Engineer', 'Manager'].some(r => 
+                    (currentUser?.designation || currentUser?.role || '').toLowerCase().includes(r.toLowerCase())
+                  );
+                } else if (full.status === 'Pending' || full.status === 'In-Process' || full.status === 'In Progress') {
+                  canApprove = ['Admin', 'Purchase Head', 'Head - Purchase', 'VP', 'VP-Operation', 'Engineer', 'Manager'].some(r => 
+                    (currentUser?.designation || currentUser?.role || '').toLowerCase().includes(r.toLowerCase())
+                  );
+                }
               }
             }
 
@@ -933,7 +958,9 @@ export class CreateEPRequestModalComponent implements OnInit {
               attachments: full.attachments || (this.selectedRequest as any)?.attachments || [],
               ccList: full.ccList || (this.selectedRequest as any)?.ccList || [],
               stakeholders: stakeholders,
-              canApprove: canApprove
+              canApprove: canApprove,
+              hasAlreadyActioned: hasAlreadyActioned,
+              userActionStatus: userActionStatus
             };
             this.cdr.detectChanges();
           }
@@ -1089,9 +1116,17 @@ export class CreateEPRequestModalComponent implements OnInit {
   approveFromViewModal(req: any) {
     if (!req) return;
     this.authService.approveEPRequest(req._id || req.id, req.approvalComments || '').subscribe({
-      next: () => {
+      next: (res: any) => {
         this.showToastMessage('Request approved successfully!', 'success');
-        this.close.emit();
+        if (this.selectedRequest) {
+          this.selectedRequest.canApprove = false;
+          (this.selectedRequest as any).hasAlreadyActioned = true;
+          (this.selectedRequest as any).userActionStatus = 'Approved';
+          if (res?.data?.approvalChain || res?.request?.approvalChain) {
+            this.selectedRequest.stakeholders = res?.data?.approvalChain || res?.request?.approvalChain;
+          }
+        }
+        this.cdr.detectChanges();
       },
       error: (err) => this.showToastMessage(err?.message || 'Approval failed', 'error')
     });
@@ -1100,9 +1135,17 @@ export class CreateEPRequestModalComponent implements OnInit {
   rejectFromViewModal(req: any) {
     if (!req) return;
     this.authService.rejectEPRequest(req._id || req.id, req.approvalComments || '').subscribe({
-      next: () => {
+      next: (res: any) => {
         this.showToastMessage('Request rejected successfully!', 'error');
-        this.close.emit();
+        if (this.selectedRequest) {
+          this.selectedRequest.canApprove = false;
+          (this.selectedRequest as any).hasAlreadyActioned = true;
+          (this.selectedRequest as any).userActionStatus = 'Rejected';
+          if (res?.data?.approvalChain || res?.request?.approvalChain) {
+            this.selectedRequest.stakeholders = res?.data?.approvalChain || res?.request?.approvalChain;
+          }
+        }
+        this.cdr.detectChanges();
       },
       error: (err) => this.showToastMessage(err?.message || 'Rejection failed', 'error')
     });

@@ -86,10 +86,20 @@ requestSchema.methods.getCurrentApprover = function() {
   return null;
 };
 
-requestSchema.methods.canUserApprove = function(userEmail) {
-  if (!userEmail || !this.stakeholders || this.stakeholders.length === 0) return false;
-  const currentApprover = this.getCurrentApprover();
-  return currentApprover && currentApprover.email === userEmail;
+requestSchema.methods.canUserApprove = function(userEmail, userName) {
+  if (!this.stakeholders || this.stakeholders.length === 0) return true;
+  const pending = this.stakeholders.filter(s => s.status === 'Pending' || s.status === 'pending');
+  if (pending.length === 0) return false;
+
+  const firstPendingLine = pending[0].line || 'Parallel';
+  const currentAllowed = pending.filter(s => (s.line || 'Parallel') === firstPendingLine);
+
+  if (!userEmail && !userName) return true;
+
+  return currentAllowed.some(s =>
+    (userEmail && s.email && s.email.toLowerCase() === userEmail.toLowerCase()) ||
+    (userName && s.name && s.name.toLowerCase() === userName.toLowerCase())
+  );
 };
 
 // Prevent model overwrite

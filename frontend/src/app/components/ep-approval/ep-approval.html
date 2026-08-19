@@ -974,7 +974,7 @@
       </div>
 
       <!-- Decision Remarks for Pending Requests -->
-      <div class="form-section" *ngIf="selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+      <div class="form-section" *ngIf="selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove && !selectedRequestCopy.hasAlreadyActioned" style="margin-top: 20px; background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
           <span class="section-icon">💬</span>
           Decision Remarks / Comments
@@ -983,12 +983,15 @@
           <label style="font-size: 11px; font-weight: 700; color: #475569;">ENTER APPROVAL OR REJECTION REMARKS</label>
           <textarea [(ngModel)]="selectedRequestCopy.approvalComments" rows="3" placeholder="Enter approval or rejection remarks here..." style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
         </div>
-        
-        <!-- Query Assignment Input -->
-        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px;">
-          <label style="font-size: 11px; font-weight: 700; color: #475569;">ASSIGN QUERY (ENTER EMAIL TO REQUEST DOCUMENT/PROOF)</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="email" [(ngModel)]="selectedRequestCopy.queryAssignedTo" placeholder="Enter email address (e.g., user@example.com)..." style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: white;">
+      </div>
+
+      <!-- Actioned Notice for Approver -->
+      <div class="form-section" *ngIf="selectedRequestCopy.hasAlreadyActioned || selectedRequestCopy.userActionStatus" style="margin-top: 20px; padding: 16px; border-radius: 10px; background: #f0fdf4; border: 1px solid #bbf7d0;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">✅</span>
+          <div>
+            <strong style="color: #166534; font-size: 15px;">You have already {{ selectedRequestCopy?.userActionStatus || 'actioned' }} this request.</strong>
+            <p style="margin: 4px 0 0 0; color: #15803d; font-size: 13px;">Your decision has been recorded in the workflow chain.</p>
           </div>
         </div>
       </div>
@@ -999,15 +1002,12 @@
     <div class="modal-footer-bar" style="padding: 16px 24px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
       <button class="btn-cancel" (click)="closeViewModal()" style="padding: 9px 20px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer;">Close</button>
       
-      <ng-container *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove">
+      <ng-container *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove && !selectedRequestCopy.hasAlreadyActioned">
         <button class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
           ✓ Approve
         </button>
         <button class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
           ✕ Reject
-        </button>
-        <button class="btn-query" (click)="queryFromViewModal(selectedRequestCopy)" style="background: #f59e0b; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          ❓ Query
         </button>
       </ng-container>
     </div>

@@ -487,14 +487,41 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     console.log('🔍 Mapping record:', r);
     
     let canApprove = false;
+    let hasAlreadyActioned = false;
+    let userActionStatus = '';
     let currentApprover = '';
     
-    if (Array.isArray(r.stakeholders) && r.stakeholders.length > 0 && this.currentUser) {
-      const pending = r.stakeholders.filter((s: any) => s.status === 'Pending');
-      if (pending.length > 0) {
-        canApprove = pending[0].email === this.currentUser.email;
-        currentApprover = pending[0].name;
+    const stakeholders = r.stakeholders || r.approvalChain || [];
+    if (Array.isArray(stakeholders) && stakeholders.length > 0 && this.currentUser) {
+      const userAction = stakeholders.find((s: any) =>
+        (s.email && this.currentUser?.email && s.email.toLowerCase() === this.currentUser.email.toLowerCase()) ||
+        (s.name && this.currentUser?.name && s.name.toLowerCase() === this.currentUser.name.toLowerCase())
+      );
+
+      if (userAction && (userAction.status === 'Approved' || userAction.status === 'approved' || userAction.status === 'Rejected' || userAction.status === 'rejected')) {
+        hasAlreadyActioned = true;
+        userActionStatus = userAction.status.charAt(0).toUpperCase() + userAction.status.slice(1).toLowerCase();
+        canApprove = false;
+      } else if (r.status === 'Approved' || r.status === 'Rejected') {
+        canApprove = false;
+      } else {
+        const pending = stakeholders.filter((s: any) => s.status === 'Pending' || s.status === 'pending');
+        if (pending.length > 0) {
+          const firstPendingLine = pending[0].line || 'Parallel';
+          const currentAllowed = pending.filter((s: any) => (s.line || 'Parallel') === firstPendingLine);
+          canApprove = currentAllowed.some((s: any) =>
+            (s.email && this.currentUser?.email && s.email.toLowerCase() === this.currentUser.email.toLowerCase()) ||
+            (s.name && this.currentUser?.name && s.name.toLowerCase() === this.currentUser.name.toLowerCase())
+          ) || ['Admin', 'Purchase Head', 'Head - Purchase', 'VP', 'VP-Operation', 'Engineer', 'Manager'].some(role => 
+            (this.currentUser?.designation || this.currentUser?.role || '').toLowerCase().includes(role.toLowerCase())
+          );
+          currentApprover = pending.map((p: any) => p.name).join(', ');
+        } else if (r.status === 'Pending' || r.status === 'In-Process' || r.status === 'In Progress') {
+          canApprove = true;
+        }
       }
+    } else if (r.status === 'Pending' || r.status === 'In-Process' || r.status === 'In Progress') {
+      canApprove = true;
     }
     
     return {
@@ -516,11 +543,13 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       contactNo: r.contactNo || r.phone || '',
       organization: r.organization || r.company || 'Radiant Appliances',
       ccList: r.ccList || [],
-      stakeholders: r.stakeholders || [],
+      stakeholders: stakeholders,
       attachments: r.attachments || [],
       createdAt: r.createdAt,
-      canApprove: canApprove || r.status === 'Pending'
-    };
+      canApprove: canApprove,
+      hasAlreadyActioned: hasAlreadyActioned,
+      userActionStatus: userActionStatus
+    } as any;
   }
   
   private mapPriorityFromBackend(priority: string): EPRequest['priority'] {
@@ -1212,13 +1241,21 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   approveFromViewModal(request: any) {
     const id = request._id || request.id;
     if (!id) return;
-    const remarks = this.selectedRequestCopy.approvalComments || '';
+    const remarks = this.selectedRequestCopy?.approvalComments || '';
     this.isSubmitting = true;
     this.authService.approveEPRequest(id, remarks).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
         this.showToast('EP Request approved successfully', 'success');
-        this.closeViewModal();
+        if (this.selectedRequestCopy) {
+          this.selectedRequestCopy.canApprove = false;
+          this.selectedRequestCopy.hasAlreadyActioned = true;
+          this.selectedRequestCopy.userActionStatus = 'Approved';
+          if (res?.data?.approvalChain || res?.request?.approvalChain) {
+            this.selectedRequestCopy.approvalChain = res?.data?.approvalChain || res?.request?.approvalChain;
+          }
+        }
+        this.cdr.detectChanges();
         this.loadRequests();
       },
       error: (err: any) => {
@@ -1231,13 +1268,21 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   rejectFromViewModal(request: any) {
     const id = request._id || request.id;
     if (!id) return;
-    const remarks = this.selectedRequestCopy.approvalComments || '';
+    const remarks = this.selectedRequestCopy?.approvalComments || '';
     this.isSubmitting = true;
     this.authService.rejectEPRequest(id, remarks).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
         this.showToast('EP Request rejected successfully', 'success');
-        this.closeViewModal();
+        if (this.selectedRequestCopy) {
+          this.selectedRequestCopy.canApprove = false;
+          this.selectedRequestCopy.hasAlreadyActioned = true;
+          this.selectedRequestCopy.userActionStatus = 'Rejected';
+          if (res?.data?.approvalChain || res?.request?.approvalChain) {
+            this.selectedRequestCopy.approvalChain = res?.data?.approvalChain || res?.request?.approvalChain;
+          }
+        }
+        this.cdr.detectChanges();
         this.loadRequests();
       },
       error: (err: any) => {

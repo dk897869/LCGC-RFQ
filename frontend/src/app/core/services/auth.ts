@@ -115,6 +115,20 @@ export class AuthService {
   private normalizeUser(user: any): any {
     if (!user) return null;
     const rawAvatar = user.avatar || user.profileImage || user.photo || '';
+    const role = (user.role || '').toLowerCase();
+    const desig = (user.designation || '').toLowerCase();
+    const isStandardUserOnly = (role === 'user' || role === '') && (!desig || desig === 'user');
+
+    const fullAccess = !isStandardUserOnly || user.fullModuleAccessGranted === true || role === 'admin';
+
+    const defaultAllRights = {
+      epApproval: true, vendors: true, parts: true, rfq: true,
+      nppProcurement: true, bidding: true, paymentRequest: true,
+      poNpp: true, wcc: true, dqms: true, npi: true, systemBom: true,
+      bomForecast: true, priceApproval: true, planStock: true,
+      supplierPerformance: true, vehicularMs: true, userManagement: true
+    };
+
     return {
       ...user,
       id: user.id || user._id,
@@ -125,10 +139,11 @@ export class AuthService {
       contactNo: user.contactNo || user.phone || user.mobile || '',
       organization: user.organization || user.company || 'Radiant Appliances',
       role: user.role || 'User',
-      rights: user.rights || {},
+      designation: user.designation || user.role || 'User',
+      rights: fullAccess ? defaultAllRights : (user.rights && Object.keys(user.rights).length ? user.rights : defaultAllRights),
       mustChangePassword: user.mustChangePassword === true,
       vendorAccount: user.vendorAccount || {},
-      fullModuleAccessGranted: user.fullModuleAccessGranted === true,
+      fullModuleAccessGranted: fullAccess,
       accessRequest: user.accessRequest || { status: 'none' },
       avatar: this.resolveAvatarUrl(rawAvatar)
     };

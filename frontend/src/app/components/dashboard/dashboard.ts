@@ -1019,9 +1019,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   hasModuleAccess(moduleId: string): boolean {
-    if (this.isAdminView) return true;
+    const user = this.authService.getUser();
+    const role = (user?.role || '').toLowerCase();
+    const desig = (user?.designation || '').toLowerCase();
+    const isStandardUserOnly = (role === 'user' || role === '') && (!desig || desig === 'user');
+
+    if (!isStandardUserOnly || user?.fullModuleAccessGranted === true || this.isAdminView) {
+      return true;
+    }
+
     const module = this.allMenuItems.find(m => m.id === moduleId);
-    if (!module) return false;
+    if (!module) return true;
     return this.userRights[module.rightKey] === true;
   }
 
@@ -1047,11 +1055,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   loadUserRights() {
+    const user = this.authService.getUser();
+    const role = (user?.role || '').toLowerCase();
+    const desig = (user?.designation || '').toLowerCase();
+    const isStandardUserOnly = (role === 'user' || role === '') && (!desig || desig === 'user');
+
     const rights = this.authService.getUserRights();
     this.userRights = rights && Object.keys(rights).length ? rights : (this.userRights || {});
-    this.menuItems = this.isAdminView
-      ? [...this.allMenuItems]
-      : this.allMenuItems.filter(item => this.userRights[item.rightKey] === true);
+
+    if (!isStandardUserOnly || user?.fullModuleAccessGranted === true || this.isAdminView) {
+      this.allMenuItems.forEach(item => {
+        this.userRights[item.rightKey] = true;
+      });
+      this.menuItems = [...this.allMenuItems];
+    } else {
+      this.menuItems = this.allMenuItems.filter(item => this.userRights[item.rightKey] === true);
+    }
   }
 
   setGreeting() {

@@ -230,8 +230,7 @@ const getRequests = async (req, res) => {
     const combinedQuery = {
       $and: [
         query,
-        { title: { $exists: true, $ne: '', $nin: ['Nm', 'nm', 'NM'] } },
-        { requester: { $exists: true, $ne: '' } }
+        { title: { $exists: true, $ne: '', $nin: ['Nm', 'nm', 'NM'] } }
       ]
     };
 

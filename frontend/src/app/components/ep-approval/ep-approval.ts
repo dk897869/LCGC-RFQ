@@ -418,16 +418,12 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
         }
 
         this.allRequests = [...epList, ...rfqList, ...prList, ...poList];
-        if (this.allRequests.length === 0) {
-          this.loadSampleData();
-        }
         this.applyFilters();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.isLoading = false;
-        this.loadSampleData();
         this.cdr.detectChanges();
       }
     });

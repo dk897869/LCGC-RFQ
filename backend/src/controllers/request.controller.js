@@ -67,42 +67,6 @@ const createRequest = async (req, res) => {
       dateTime: null
     }));
 
-    if (!isDbConnected()) {
-      const now = new Date();
-      const fallbackRequest = {
-        _id: `mem-ep-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        id: `mem-ep-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        requester,
-        department,
-        email,
-        requestDate: requestDate || now.toISOString().split('T')[0],
-        contactNo: contactNo || '',
-        organization: organization || 'Radiant Appliances',
-        title,
-        vendor: vendor || '',
-        amount: Number(amount) || 1,
-        priority: priority || 'Medium',
-        description: description || '',
-        objective: objective || '',
-        stakeholders: processedStakeholders,
-        attachments: attachments || [],
-        ccList: ccList || [],
-        status: status || 'Pending',
-        createdBy: req.user?.id,
-        createdByName: req.user?.name || requester,
-        currentApproverIndex: 0,
-        createdAt: now,
-        updatedAt: now,
-        fromMemoryFallback: true
-      };
-      memoryEpRequests.unshift(fallbackRequest);
-      return res.status(201).json({
-        success: true,
-        message: 'EP Request created successfully',
-        data: fallbackRequest
-      });
-    }
-
     // Create new request
     const newRequest = new Request({
       requester,
@@ -211,22 +175,6 @@ const getRequests = async (req, res) => {
     if (department) query.department = department;
     if (priority) query.priority = priority;
 
-    if (!isDbConnected()) {
-      let requests = [...memoryEpRequests];
-      if (status) requests = requests.filter(r => r.status === status);
-      if (department) requests = requests.filter(r => r.department === department);
-      if (priority) requests = requests.filter(r => r.priority === priority);
-      const paged = requests.slice((page - 1) * limit, page * limit);
-      return res.status(200).json({
-        success: true,
-        count: paged.length,
-        total: requests.length,
-        page: parseInt(page),
-        pages: Math.ceil(requests.length / limit),
-        data: paged
-      });
-    }
-    
     const combinedQuery = {
       $and: [
         query,

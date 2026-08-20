@@ -86,6 +86,7 @@ export class UserManagementComponent implements OnInit {
     { value: 'Purchase Head', label: 'Purchase Head' },
     { value: 'Manager', label: 'Manager' },
     { value: 'Senior Manager', label: 'Senior Manager' },
+    { value: 'Engineer', label: 'Engineer' },
     { value: 'User', label: 'User' },
     { value: 'Vendor', label: 'Vendor' },
     { value: 'Viewer', label: 'Viewer' }

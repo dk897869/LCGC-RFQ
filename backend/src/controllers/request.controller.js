@@ -235,9 +235,11 @@ const getRequests = async (req, res) => {
     };
 
     const requests = await Request.find(combinedQuery)
+      .select('-attachments')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .lean();
     
     const total = await Request.countDocuments(combinedQuery);
     
@@ -581,7 +583,7 @@ const getRequestsByStatus = async (req, res) => {
   try {
     const { status } = req.params;
     
-    const requests = await Request.find({ status }).sort({ createdAt: -1 });
+    const requests = await Request.find({ status }).select('-attachments').sort({ createdAt: -1 }).limit(100).lean();
     
     res.status(200).json({
       success: true,
@@ -605,7 +607,7 @@ const getRequestsByDepartment = async (req, res) => {
     
     const requests = await Request.find({ 
       department: { $regex: new RegExp(department, 'i') } 
-    }).sort({ createdAt: -1 });
+    }).select('-attachments').sort({ createdAt: -1 }).limit(100).lean();
     
     res.status(200).json({
       success: true,
@@ -664,8 +666,10 @@ const getDashboardStats = async (req, res) => {
     
     // Get recent requests
     const recent = await Request.find()
+      .select('-attachments')
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(10)
+      .lean();
     
     res.status(200).json({
       success: true,

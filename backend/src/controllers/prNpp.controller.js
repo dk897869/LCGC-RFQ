@@ -105,7 +105,7 @@ const createPrNpp = async (req, res) => {
 // Get all PR NPP
 const listPrNpp = async (req, res) => {
   try {
-    const rows = await PrNpp.find().sort({ createdAt: -1 });
+    const rows = await PrNpp.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(100);
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

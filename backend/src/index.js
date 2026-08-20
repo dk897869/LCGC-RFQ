@@ -440,14 +440,14 @@ app.get(['/api/dashboard', '/api/dashboard/stats', '/api/dashboard/full-stats'],
     const OrderHistory = require('./models/OrderHistory');
 
     // 1. Basic Counts (100% Dynamic from MongoDB Collections)
-    const [allEpRequests, allPrRequests, allNppRequests, allRfqs, allPos, allVendors, allParts, totalUsers] = await Promise.all([
-      EPRequest.find().lean().catch(() => []),
-      PRRequest.find().lean().catch(() => []),
-      NPPRequest.find().lean().catch(() => []),
-      RFQ.find().lean().catch(() => []),
-      PORequest.find().lean().catch(() => []),
-      Vendor.find().lean().catch(() => []),
-      Part.find().lean().catch(() => []),
+    const [allEpRequests, allPrRequests, allNppRequests, allRfqs, allPos, activeVendors, partCount, totalUsers] = await Promise.all([
+      EPRequest.find().select('_id status amount').lean().catch(() => []),
+      PRRequest.find().select('_id status totalAmount').lean().catch(() => []),
+      NPPRequest.find().select('_id status estimatedCost').lean().catch(() => []),
+      RFQ.find().select('_id status estimatedCost').lean().catch(() => []),
+      PORequest.find().select('_id status totalAmount').lean().catch(() => []),
+      Vendor.countDocuments().catch(() => 0),
+      Part.countDocuments().catch(() => 0),
       User.countDocuments().catch(() => 0)
     ]);
 
@@ -473,11 +473,10 @@ app.get(['/api/dashboard', '/api/dashboard/stats', '/api/dashboard/full-stats'],
       .filter(r => (r.status || '').toLowerCase() === 'approved')
       .reduce((sum, r) => sum + Number(r.amount || r.totalAmount || r.estimatedAmount || r.estimatedCost || 0), 0);
 
-    const activeVendors = allVendors.length;
-    const partCount = allParts.length;
+    // activeVendors and partCount are already fetched via countDocuments
 
     // 2. Fetch Live Recent RFQs & Requests
-    const recentRfqsList = await RFQ.find().sort({ createdAt: -1 }).limit(10).lean().catch(() => []);
+    const recentRfqsList = await RFQ.find().select('_id title department requester rfqNo uniqueSerialNo estimatedCost amount status createdAt responseBy createdBy').sort({ createdAt: -1 }).limit(10).lean().catch(() => []);
 
     // 3. Department Wise Requests (Dynamic Mongo Aggregation)
     const deptAgg = await RFQ.aggregate([

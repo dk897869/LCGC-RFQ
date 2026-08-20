@@ -177,7 +177,7 @@ const createPoNpp = async (req, res) => {
 // Get all PO NPP
 const listPoNpp = async (req, res) => {
   try {
-    const rows = await PoNpp.find().sort({ createdAt: -1 });
+    const rows = await PoNpp.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(100);
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

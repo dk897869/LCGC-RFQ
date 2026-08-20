@@ -62,7 +62,7 @@ const sendRFQCreatedEmail = async (rfqData) => {
 // Get all RFQs
 const getAllRFQs = async (req, res) => {
   try {
-    const rfqs = await RFQ.find().select('-items.picturePreview').sort({ createdAt: -1 });
+    const rfqs = await RFQ.find().select('-items.picturePreview -attachments').sort({ createdAt: -1 }).limit(100);
     res.status(200).json({ 
       success: true, 
       count: rfqs.length,

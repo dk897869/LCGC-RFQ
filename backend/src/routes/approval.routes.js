@@ -44,7 +44,7 @@ const normalizeRequest = (row, type) => {
 const queryModel = async (modelPath, type) => {
   const model = getModel(modelPath);
   if (!model) return [];
-  const rows = await model.find().sort({ createdAt: -1 }).limit(500);
+  const rows = await model.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(200).lean();
   return rows.map(row => normalizeRequest(row, type));
 };
 

@@ -519,8 +519,8 @@ app.get(['/api/dashboard', '/api/dashboard/stats', '/api/dashboard/full-stats'],
         // Full dynamic structure for Admin Dashboard
         kpi: {
           totalUsers,
-          totalRfqs: totalRequests,
-          purchaseRequests: allPrRequests.length,
+          totalRfqs: allRfqs.length,
+          purchaseRequests: allEpRequests.length,
           purchaseOrders: allPos.length,
           totalSpend,
           activeVendors,
@@ -572,11 +572,11 @@ app.get('/api/approvals/unified', async (req, res) => {
     const PORequest = require('./models/PORequest');
 
     const [epList, prList, nppList, rfqList, poList] = await Promise.all([
-      EPRequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
-      PRRequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
-      NPPRequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
-      RFQ.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
-      PORequest.find().sort({ createdAt: -1 }).limit(100).lean().catch(() => [])
+      EPRequest.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      PRRequest.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      NPPRequest.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      RFQ.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(100).lean().catch(() => []),
+      PORequest.find().select('-attachments -items.picturePreview -items.pictureName').sort({ createdAt: -1 }).limit(100).lean().catch(() => [])
     ]);
 
     const items = [];

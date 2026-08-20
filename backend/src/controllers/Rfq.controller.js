@@ -319,6 +319,7 @@ const approveRFQ = async (req, res) => {
     const { id } = req.params;
     const { comments } = req.body;
     const userName = req.user?.name || 'Approver';
+    const userEmail = req.user?.email || '';
     
     const rfq = await RFQ.findById(id);
     
@@ -328,13 +329,48 @@ const approveRFQ = async (req, res) => {
         message: 'RFQ not found' 
       });
     }
-    
-    rfq.status = 'Approved';
-    rfq.approvalDate = new Date();
-    rfq.approvedBy = userName;
-    rfq.currentStage = 'Vendor Request';
-    rfq.vendorRequestCreated = false;
-    rfq.quotationCompleted = false;
+
+    // Find if user is in stakeholders
+    let currentApprover = null;
+    if (rfq.stakeholders && rfq.stakeholders.length > 0) {
+      currentApprover = rfq.stakeholders.find(s => s.status === 'Pending' && s.email === userEmail);
+      if (!currentApprover) {
+        currentApprover = rfq.stakeholders.find(s => s.status === 'Pending');
+      }
+    }
+
+    if (rfq.stakeholders && rfq.stakeholders.length > 0) {
+      const stakeholdersToApprove = currentApprover ? 
+        rfq.stakeholders.filter(s => s.status === 'Pending' && s.email === currentApprover.email) : 
+        [rfq.stakeholders.find(s => s.status === 'Pending')].filter(Boolean);
+      
+      stakeholdersToApprove.forEach(st => {
+        st.status = 'Approved';
+        st.remarks = comments || '';
+        st.dateTime = new Date();
+        st.approvedBy = userName;
+      });
+      
+      const remainingPending = rfq.stakeholders.filter(s => s.status === 'Pending');
+      if (remainingPending.length === 0) {
+        rfq.status = 'Approved';
+        rfq.approvalDate = new Date();
+        rfq.approvedBy = userName;
+        rfq.currentStage = 'Vendor Request';
+        rfq.vendorRequestCreated = false;
+        rfq.quotationCompleted = false;
+      } else {
+        rfq.status = 'In-Process';
+      }
+    } else {
+      // No stakeholders, directly approve
+      rfq.status = 'Approved';
+      rfq.approvalDate = new Date();
+      rfq.approvedBy = userName;
+      rfq.currentStage = 'Vendor Request';
+      rfq.vendorRequestCreated = false;
+      rfq.quotationCompleted = false;
+    }
     
     if (comments) {
       rfq.approvalComments = comments;
@@ -382,6 +418,7 @@ const rejectRFQ = async (req, res) => {
     const { id } = req.params;
     const { comments } = req.body;
     const userName = req.user?.name || 'Rejecter';
+    const userEmail = req.user?.email || '';
     
     const rfq = await RFQ.findById(id);
     
@@ -391,6 +428,18 @@ const rejectRFQ = async (req, res) => {
         message: 'RFQ not found' 
       });
     }
+
+    if (rfq.stakeholders && rfq.stakeholders.length > 0) {
+      let currentApprover = rfq.stakeholders.find(s => s.status === 'Pending' && s.email === userEmail);
+      if (!currentApprover) {
+        currentApprover = rfq.stakeholders.find(s => s.status === 'Pending');
+      }
+      if (currentApprover) {
+        currentApprover.status = 'Rejected';
+        currentApprover.remarks = comments || '';
+        currentApprover.dateTime = new Date();
+      }
+    }
     
     rfq.status = 'Rejected';
     rfq.rejectedBy = userName;
@@ -399,7 +448,7 @@ const rejectRFQ = async (req, res) => {
     rfq.currentStage = 'Rejected';
     
     if (comments) {
-      rfq.rejectionComments = comments;
+      rfq.approvalComments = comments;
     }
     rfq.updatedAt = new Date();
     

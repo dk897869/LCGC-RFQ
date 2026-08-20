@@ -1,8 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth';
+import { Router } from '@angular/router';
 import * as XLSX from 'xlsx';
+import { renderFullScreenDocumentViewer } from '../../utils/full-screen-viewer';
 
 interface RFQItem {
   _id?: string; id?: string;
@@ -922,6 +925,14 @@ export class RfqComponent implements OnInit {
   }
 
   // ====================== HELPER METHODS ======================
+  getPendingDays(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    const diff = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 3600 * 24));
+    return diff === 0 ? 'Today' : `${diff} days ago`;
+  }
+
   getLineRowspan(chain: any[], index: number): number {
     if (index === 0) {
       let count = 1;
@@ -1247,12 +1258,8 @@ export class RfqComponent implements OnInit {
     this.selectedItem = null;
   }
 
-  openMediaPreview(url: string, name: string) {
-    if (url) {
-      window.open(url, '_blank');
-    } else {
-      this.showToast('info', 'No preview available for this file.');
-    }
+  openMediaPreview(attachmentOrUrl: any, title?: string) {
+    renderFullScreenDocumentViewer(attachmentOrUrl, title);
   }
 
   // ====================== APPROVE/REJECT METHODS ======================

@@ -996,9 +996,9 @@ createEPRequest(data: any): Observable<any> {
     const user = this.getUser();
     const userRole = user?.role || '';
     
-    const allowedRoles = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+    const allowedRoles = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Engineer', 'Approver'];
     if (!allowedRoles.includes(userRole)) {
-      this.showToastMessage('You are not authorized to approve this request. Only Admin, Purchase Head, Manager, or Senior Manager can approve.', 'error');
+      this.showToastMessage('You are not authorized to approve this request. Only Admin, Purchase Head, Manager, Senior Manager, or Engineer can approve.', 'error');
       return throwError(() => ({ success: false, message: 'Not authorized' }));
     }
     
@@ -1031,9 +1031,9 @@ createEPRequest(data: any): Observable<any> {
     const user = this.getUser();
     const userRole = user?.role || '';
     
-    const allowedRoles = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Approver'];
+    const allowedRoles = ['Admin', 'Purchase Head', 'Manager', 'Senior Manager', 'VP', 'GM', 'MD', 'Director', 'AGM', 'Engineer', 'Approver'];
     if (!allowedRoles.includes(userRole)) {
-      this.showToastMessage('You are not authorized to reject this request. Only Admin, Purchase Head, Manager, or Senior Manager can reject.', 'error');
+      this.showToastMessage('You are not authorized to reject this request. Only Admin, Purchase Head, Manager, Senior Manager, or Engineer can reject.', 'error');
       return throwError(() => ({ success: false, message: 'Not authorized' }));
     }
     

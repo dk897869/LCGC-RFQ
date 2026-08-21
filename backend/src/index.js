@@ -2084,18 +2084,27 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
       let PrNpp = null;
       try { PrNpp = require('./models/prNpp.model'); } catch (e) {}
       
+      const incoming = req.body || {};
       const prData = {
         type: 'pr-request',
         uniqueSerialNo: String(id),
         prNumber: String(id),
         serialNo: String(id),
-        titleOfActivity: 'Purchase Requisition',
-        requesterName: userName || 'Requester',
-        department: 'Purchase',
-        organization: 'Radiant Appliances',
+        rfqNo: incoming.rfqNo || '',
+        titleOfActivity: incoming.titleOfActivity || incoming.title || 'Purchase Requisition',
+        requesterName: incoming.name || incoming.requesterName || userName || 'Requester',
+        department: incoming.department || 'Purchase',
+        organization: incoming.organization || 'Radiant Appliances',
+        emailId: incoming.emailId || incoming.requesterEmail || '',
+        contactNo: incoming.contactNo || '',
         status: 'Pending',
-        amount: 0,
-        stakeholders: [{
+        amount: incoming.totalValue || incoming.amount || 0,
+        items: incoming.items || incoming.prItems || [],
+        prItems: incoming.items || incoming.prItems || [],
+        bestSupplier: incoming.bestSupplier || incoming.selectedSupplier || '',
+        selectedSupplier: incoming.selectedSupplier || incoming.bestSupplier || '',
+        attachments: incoming.attachments || [],
+        stakeholders: incoming.approvalChain || incoming.stakeholders || [{
           line: 'Parallel',
           stakeholder: userName,
           managerName: userName,
@@ -2105,7 +2114,7 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
           comments: '',
           remarks: ''
         }],
-        approvalChain: [{
+        approvalChain: incoming.approvalChain || incoming.stakeholders || [{
           line: 'Parallel',
           stakeholder: userName,
           managerName: userName,
@@ -2115,12 +2124,7 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
           comments: '',
           remarks: ''
         }],
-        formData: {
-          uniqueSerialNo: String(id),
-          prNumber: String(id),
-          serialNo: String(id),
-          status: 'Pending'
-        }
+        formData: { ...incoming, uniqueSerialNo: String(id), prNumber: String(id), serialNo: String(id) }
       };
 
       if (NPPRequest) {

@@ -368,8 +368,8 @@ export class PrRequest implements OnInit, OnDestroy {
     pr.stakeholders = approvers;
     this.saveToStorage(pr);
 
-    // 2. Call backend API to record approval
-    this.authService.approvePR(prId, remarks).subscribe({
+    // 2. Call backend API to record approval with full PR payload
+    this.authService.approvePR(prId, remarks, pr).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
         const updated = res?.data || res?.pr;
@@ -508,7 +508,7 @@ export class PrRequest implements OnInit, OnDestroy {
     pr.status = 'Rejected';
     this.saveToStorage(pr);
 
-    this.authService.rejectPR(prId, remarks).subscribe({
+    this.authService.rejectPR(prId, remarks, pr).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
         const updated = res?.data || res?.pr;

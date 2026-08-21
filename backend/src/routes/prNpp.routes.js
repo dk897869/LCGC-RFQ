@@ -209,7 +209,39 @@ const handleApprovePr = async (req, res) => {
     }
 
     if (!pr) {
-      return res.status(404).json({ success: false, message: "PR not found" });
+      console.log(`⚠️ PR not found in DB for ID: ${id}, creating dynamic PR record in prNpp router.`);
+      const incoming = req.body || {};
+      const prData = {
+        uniqueSerialNo: cleanId,
+        prNumber: cleanId,
+        serialNo: cleanId,
+        rfqNo: incoming.rfqNo || '',
+        titleOfActivity: incoming.titleOfActivity || incoming.title || 'Purchase Requisition',
+        requesterName: incoming.name || incoming.requesterName || userName || 'Requester',
+        department: incoming.department || 'Purchase',
+        organization: incoming.organization || 'Radiant Appliances',
+        emailId: incoming.emailId || incoming.requesterEmail || '',
+        contactNo: incoming.contactNo || '',
+        status: 'Pending',
+        items: incoming.items || [],
+        approvalChain: incoming.approvalChain || incoming.stakeholders || [{
+          line: 'Parallel',
+          stakeholder: userName,
+          managerName: userName,
+          email: userEmail,
+          status: 'Pending',
+          dateTime: new Date().toLocaleString(),
+          comments: '',
+          remarks: ''
+        }],
+        submittedDate: incoming.submittedDate || new Date().toISOString()
+      };
+      try {
+        pr = new PrNpp(prData);
+        await pr.save();
+      } catch (errCreate) {
+        console.warn('⚠️ Could not save dynamic PrNpp:', errCreate.message);
+      }
     }
 
     let approvers = pr.approvalChain || pr.stakeholders || pr.formData?.approvalChain || [];

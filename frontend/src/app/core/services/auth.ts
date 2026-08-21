@@ -1584,24 +1584,26 @@ createPRFromComparison(data: any): Observable<any> {
   /**
    * Approve PR
    */
-  approvePR(id: string, comments?: string): Observable<any> {
+  approvePR(id: string, comments?: string, prPayload?: any): Observable<any> {
     console.log('✅ Approving PR:', id, comments);
-    return this.http.post(`${this.API_URL}/pr/${id}/approve`, { comments }, { headers: this.getHeaders() }).pipe(
-      catchError(() => this.http.patch(`${this.API_URL}/pr/${id}/approve`, { comments }, { headers: this.getHeaders() })),
-      catchError(() => this.http.post(`${this.API_URL}/pr-npp/${id}/approve`, { comments }, { headers: this.getHeaders() })),
-      catchError(() => this.http.patch(`${this.API_URL}/pr-npp/${id}/approve`, { comments }, { headers: this.getHeaders() }))
+    const body = { comments: comments || '', ...(prPayload || {}) };
+    return this.http.post(`${this.API_URL}/pr/${id}/approve`, body, { headers: this.getHeaders() }).pipe(
+      catchError(() => this.http.patch(`${this.API_URL}/pr/${id}/approve`, body, { headers: this.getHeaders() })),
+      catchError(() => this.http.post(`${this.API_URL}/pr-npp/${id}/approve`, body, { headers: this.getHeaders() })),
+      catchError(() => this.http.patch(`${this.API_URL}/pr-npp/${id}/approve`, body, { headers: this.getHeaders() }))
     );
   }
 
   /**
    * Reject PR
    */
-  rejectPR(id: string, comments?: string): Observable<any> {
+  rejectPR(id: string, comments?: string, prPayload?: any): Observable<any> {
     console.log('❌ Rejecting PR:', id);
-    return this.http.post(`${this.API_URL}/pr/${id}/reject`, { comments }, { headers: this.getHeaders() }).pipe(
-      catchError(() => this.http.patch(`${this.API_URL}/pr/${id}/reject`, { comments }, { headers: this.getHeaders() })),
-      catchError(() => this.http.post(`${this.API_URL}/pr-npp/${id}/reject`, { comments }, { headers: this.getHeaders() })),
-      catchError(() => this.http.patch(`${this.API_URL}/pr-npp/${id}/reject`, { comments }, { headers: this.getHeaders() }))
+    const body = { comments: comments || '', ...(prPayload || {}) };
+    return this.http.post(`${this.API_URL}/pr/${id}/reject`, body, { headers: this.getHeaders() }).pipe(
+      catchError(() => this.http.patch(`${this.API_URL}/pr/${id}/reject`, body, { headers: this.getHeaders() })),
+      catchError(() => this.http.post(`${this.API_URL}/pr-npp/${id}/reject`, body, { headers: this.getHeaders() })),
+      catchError(() => this.http.patch(`${this.API_URL}/pr-npp/${id}/reject`, body, { headers: this.getHeaders() }))
     );
   }
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import * as XLSX from 'xlsx';
+import { renderFullScreenDocumentViewer } from '../../../utils/full-screen-viewer';
 
 interface RFQItem {
   _id?: string; id?: string;
@@ -172,13 +173,9 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
   mediaPreviewTitle = '';
   mediaZoomScale = 1;
 
-  openMediaPreview(url: string, title?: string) {
-    if (!url) return;
-    this.mediaPreviewUrl = url;
-    this.mediaPreviewTitle = title || 'Attachment Preview';
-    this.mediaZoomScale = 1;
-    this.showMediaModal = true;
-    this.cdr.detectChanges();
+  openMediaPreview(attachmentOrUrl: any, title?: string) {
+    if (!attachmentOrUrl) return;
+    renderFullScreenDocumentViewer(attachmentOrUrl, title);
   }
 
   closeMediaPreview() {
@@ -901,9 +898,25 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     if (this.rfqAttachments.length > 1) this.rfqAttachments.splice(index, 1);
   }
 
-  onRfqAttachmentSelected(attachment: RFQAttachment, event: Event) {
-    const input       = event.target as HTMLInputElement;
-    attachment.fileName = input.files?.[0]?.name || '';
+  onRfqAttachmentSelected(attachment: any, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    attachment.fileName = file.name;
+    attachment.file = file;
+    attachment.fileSize = file.size;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      attachment.url = e.target.result;
+      attachment.fileData = e.target.result;
+      attachment.data = e.target.result;
+      attachment.preview = e.target.result;
+      try {
+        sessionStorage.setItem(`ep_att_${file.name}`, e.target.result);
+      } catch (err) {}
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
   }
 
   // ====================== EXCEL ======================
@@ -1324,22 +1337,28 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     
     this.isPrefillLoading = true;
     this.authService.approveRFQ(String(id), this.decisionRemarks).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isPrefillLoading = false;
-        item.status = 'Approved';
+        const updated = res?.data || res?.rfq;
+        if (updated) {
+          item.status = updated.status || item.status;
+          if (updated.stakeholders) item.stakeholders = updated.stakeholders;
+        } else {
+          item.status = 'Approved';
+        }
         item.approvalDate = new Date().toISOString();
         item.approvedBy = this.currentUser?.name || 'Admin';
         item.currentStage = 'Vendor Request';
         item.vendorRequestCreated = false;
         this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
         this.applyFilter();
-        this.showToast('success', `"${item.title}" approved successfully!`);
+        this.showToast('success', res?.message || `"${item.title}" approved successfully!`);
         this.closeViewModal();
         this.loadRFQs();
       },
       error: (err: any) => {
         this.isPrefillLoading = false;
-        this.showToast('error', err?.message || 'Approval failed.');
+        this.showToast('error', err?.error?.message || err?.message || 'Approval failed.');
       }
     });
   }
@@ -1350,18 +1369,24 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     
     this.isPrefillLoading = true;
     this.authService.rejectRFQ(String(id), this.decisionRemarks).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isPrefillLoading = false;
-        item.status = 'Rejected';
+        const updated = res?.data || res?.rfq;
+        if (updated) {
+          item.status = updated.status || 'Rejected';
+          if (updated.stakeholders) item.stakeholders = updated.stakeholders;
+        } else {
+          item.status = 'Rejected';
+        }
         this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
         this.applyFilter();
-        this.showToast('success', `"${item.title}" rejected successfully!`);
+        this.showToast('success', res?.message || `"${item.title}" rejected successfully!`);
         this.closeViewModal();
         this.loadRFQs();
       },
       error: (err: any) => {
         this.isPrefillLoading = false;
-        this.showToast('error', err?.message || 'Rejection failed.');
+        this.showToast('error', err?.error?.message || err?.message || 'Rejection failed.');
       }
     });
   }
@@ -1386,23 +1411,27 @@ export class RfqRequisitionComponent implements OnInit, OnDestroy {
     if (!id) { this.showToast('error', 'Cannot approve: No ID found'); return; }
 
     this.authService.approveRFQ(id).subscribe({
-      next: () => {
-        item.status       = 'Approved';
+      next: (res: any) => {
+        const updated = res?.data || res?.rfq;
+        if (updated) {
+          item.status = updated.status || item.status;
+          if (updated.stakeholders) item.stakeholders = updated.stakeholders;
+        } else {
+          item.status = 'Approved';
+        }
         item.approvalDate = new Date().toISOString();
         item.approvedBy   = this.currentUser?.name || 'Admin';
         item.currentStage = 'Vendor Request';
         item.vendorRequestCreated = false;
-        // Remove from pending list
         this.pendingRequests = this.allRequests.filter(r => r.status === 'Pending');
         this.applyFilter();
-        this.showToast('success', `"${item.title}" approved! RFQ moved to Vendor Request stage.`);
+        this.showToast('success', res?.message || `"${item.title}" approved! RFQ moved to Vendor Request stage.`);
         this.confirmItem = null;
         this.cdr.detectChanges();
-        // Refresh the list
         this.loadRFQs();
       },
       error: (err: any) => {
-        this.showToast('error', err?.message || 'Approval failed.');
+        this.showToast('error', err?.error?.message || err?.message || 'Approval failed.');
         this.confirmItem = null;
       }
     });

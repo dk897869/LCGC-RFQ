@@ -34,9 +34,11 @@ router.get('/:id', authMiddleware, getRFQById);
 router.put('/:id', authMiddleware, updateRFQ);
 router.delete('/:id', authMiddleware, deleteRFQ);
 
-// Approval routes
+// Approval routes (both PATCH and POST supported)
 router.patch('/:id/approve', authMiddleware, approveRFQ);
+router.post('/:id/approve', authMiddleware, approveRFQ);
 router.patch('/:id/reject', authMiddleware, rejectRFQ);
+router.post('/:id/reject', authMiddleware, rejectRFQ);
 
 // Workflow routes
 router.get('/:id/workflow', authMiddleware, getRFQWorkflowStatus);

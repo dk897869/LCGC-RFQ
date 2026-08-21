@@ -10,9 +10,9 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
   // Extract raw filename accurately (file.name > fileName > name > title)
   const rawFileName = (typeof attachmentOrUrl === 'object'
     ? (attachmentOrUrl.file ? attachmentOrUrl.file.name : '') || attachmentOrUrl.fileName || attachmentOrUrl.name
-    : '') || title || 'Attachment';
+    : typeof attachmentOrUrl === 'string' ? attachmentOrUrl : '') || title || 'Attachment';
 
-  const displayTitle = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || attachmentOrUrl.fileName || rawFileName : '') || 'Attachment';
+  const displayTitle = title || (typeof attachmentOrUrl === 'object' ? attachmentOrUrl.name || attachmentOrUrl.fileName || rawFileName : '') || rawFileName || 'Attachment';
 
   let url = typeof attachmentOrUrl === 'string' ? attachmentOrUrl : '';
 
@@ -37,7 +37,11 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
     }
   }
 
-  if (!url && rawFileName && rawFileName.includes('.') && !rawFileName.endsWith('...')) {
+  // If url is just a raw filename like "Invoice (2).pdf" without path
+  const isPlainFileName = url && !url.includes('/') && !url.includes('\\') && !url.startsWith('data:') && !url.startsWith('blob:');
+  if (isPlainFileName) {
+    url = `https://lcgc-rfq.onrender.com/uploads/${url}`;
+  } else if (!url && rawFileName && rawFileName.includes('.') && !rawFileName.endsWith('...')) {
     url = `https://lcgc-rfq.onrender.com/uploads/${rawFileName}`;
   }
 

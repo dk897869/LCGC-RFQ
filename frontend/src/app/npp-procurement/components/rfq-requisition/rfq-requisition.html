@@ -543,7 +543,7 @@
         <input type="text" [(ngModel)]="attachment.name" placeholder="Attachment name">
         <input type="file" (change)="onRfqAttachmentSelected(attachment, $event)">
         <span>{{ attachment.fileName || 'No file selected' }}</span>
-        <button *ngIf="attachment.fileName || $any(attachment).url || $any(attachment).file" type="button" (click)="openMediaPreview($any(attachment).url || attachment.fileName, attachment.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
+        <button *ngIf="attachment.fileName || $any(attachment).url || $any(attachment).file" type="button" (click)="openMediaPreview(attachment, attachment.name || attachment.fileName || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
           👁️ View
         </button>
         <button type="button" class="rfq-remove-row-btn" (click)="removeRfqAttachment(i)" [disabled]="rfqAttachments.length <= 1">×</button>
@@ -775,7 +775,7 @@
               <div style="font-weight: 600; color: #0f172a;">{{ att.name || 'Attachment' }}</div>
               <div style="font-size: 11px; color: #64748b;" *ngIf="att.fileSize">{{ att.fileSize }}</div>
             </div>
-            <button type="button" (click)="openMediaPreview(att.fileName || $any(att).url || $any(att).file, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            <button type="button" (click)="openMediaPreview(att, att.name || att.fileName || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
               👁️ View
             </button>
           </div>

@@ -300,13 +300,13 @@ const deleteRFQ = async (req, res) => {
       });
     }
 
-    res.status(200).json({ 
+    return res.status(200).json({ 
       success: true, 
       message: 'RFQ deleted successfully' 
     });
   } catch (err) {
     console.error("Error in deleteRFQ:", err);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       message: err.message 
     });
@@ -317,11 +317,18 @@ const deleteRFQ = async (req, res) => {
 const approveRFQ = async (req, res) => {
   try {
     const { id } = req.params;
-    const { comments } = req.body;
+    const { comments } = req.body || {};
     const userName = req.user?.name || 'Approver';
-    const userEmail = req.user?.email || '';
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+    const userRole = (req.user?.role || req.user?.designation || '').toLowerCase().trim();
     
-    const rfq = await RFQ.findById(id);
+    let rfq = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      rfq = await RFQ.findById(id);
+    }
+    if (!rfq) {
+      rfq = await RFQ.findOne({ $or: [{ uniqueSerialNo: id }, { rfqNo: id }] });
+    }
     
     if (!rfq) {
       return res.status(404).json({ 
@@ -330,84 +337,80 @@ const approveRFQ = async (req, res) => {
       });
     }
 
-    // Find if user is in stakeholders
-    let currentApprover = null;
-    if (rfq.stakeholders && rfq.stakeholders.length > 0) {
-      currentApprover = rfq.stakeholders.find(s => s.status === 'Pending' && s.email === userEmail);
-      if (!currentApprover) {
-        currentApprover = rfq.stakeholders.find(s => s.status === 'Pending');
+    let approvers = rfq.stakeholders || [];
+    let target = approvers.find(s => 
+      (s.email && s.email.toLowerCase().trim() === userEmail) ||
+      (s.managerName && s.managerName.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.name && s.name.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.stakeholder && s.stakeholder.toLowerCase().trim() === userName.toLowerCase())
+    );
+
+    if (!target || target.status === 'Approved') {
+      const isSenior = ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+      if (isSenior) {
+        target = approvers.find(s => (s.status || 'Pending').toLowerCase() === 'pending');
       }
     }
 
-    if (rfq.stakeholders && rfq.stakeholders.length > 0) {
-      const stakeholdersToApprove = currentApprover ? 
-        rfq.stakeholders.filter(s => s.status === 'Pending' && s.email === currentApprover.email) : 
-        [rfq.stakeholders.find(s => s.status === 'Pending')].filter(Boolean);
-      
-      stakeholdersToApprove.forEach(st => {
-        st.status = 'Approved';
-        st.remarks = comments || '';
-        st.dateTime = new Date();
-        st.approvedBy = userName;
-      });
-      
-      const remainingPending = rfq.stakeholders.filter(s => s.status === 'Pending');
-      if (remainingPending.length === 0) {
-        rfq.status = 'Approved';
-        rfq.approvalDate = new Date();
-        rfq.approvedBy = userName;
-        rfq.currentStage = 'Vendor Request';
-        rfq.vendorRequestCreated = false;
-        rfq.quotationCompleted = false;
-      } else {
-        rfq.status = 'In-Process';
-      }
-    } else {
-      // No stakeholders, directly approve
+    const nowFormatted = new Date().toLocaleString('en-US', { 
+      day: '2-digit', month: 'short', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit', hour12: true 
+    });
+
+    if (target) {
+      target.status = 'Approved';
+      target.dateTime = nowFormatted;
+      target.remarks = comments || target.remarks || 'Approved';
+      target.approvedBy = userName;
+    }
+
+    // Check Parallel vs Sequential logic
+    // If any parallel approver has approved, or if any approved approver is marked 'Parallel':
+    const hasParallelApproval = approvers.some(s => 
+      (s.line || 'Parallel').toLowerCase() === 'parallel' && 
+      (s.status || '').toLowerCase() === 'approved'
+    );
+    const allApproved = approvers.length > 0 && approvers.every(s => (s.status || '').toLowerCase() === 'approved');
+
+    if (hasParallelApproval || allApproved || !approvers.length) {
       rfq.status = 'Approved';
       rfq.approvalDate = new Date();
       rfq.approvedBy = userName;
       rfq.currentStage = 'Vendor Request';
       rfq.vendorRequestCreated = false;
       rfq.quotationCompleted = false;
+    } else {
+      rfq.status = 'In-Process';
     }
-    
+
     if (comments) {
       rfq.approvalComments = comments;
     }
     rfq.updatedAt = new Date();
-    
     await rfq.save();
-    
+
+    console.log(`✅ RFQ ${rfq.uniqueSerialNo} approved by ${userName}. Status: ${rfq.status}`);
+
+    // Create database notification for creator
     try {
-      await sendMail({
-        to: rfq.emailId,
-        cc: rfq.ccTo || [],
-        subject: `✅ RFQ Approved: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
-        html: `
-          <h2>RFQ Approved</h2>
-          <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
-          <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
-          <p><strong>Status:</strong> Approved</p>
-          <p><strong>Approved By:</strong> ${userName}</p>
-          ${comments ? `<p><strong>Comments:</strong> ${comments}</p>` : ''}
-          <p>The RFQ will now be sent to vendors for quotation.</p>
-        `
-      });
-    } catch (emailErr) {
-      console.error('⚠️ Approval email error (non-blocking):', emailErr.message);
-    }
-    
-    res.status(200).json({
-      success: true,
-      message: 'RFQ approved successfully',
-      data: rfq
+      await createNotification(
+        rfq.emailId,
+        `RFQ ${rfq.status}`,
+        `Your RFQ ${rfq.uniqueSerialNo} has been ${rfq.status.toLowerCase()} by ${userName}.`,
+        rfq.status === 'Approved' ? 'approved' : 'pending'
+      );
+    } catch (nErr) {}
+
+    return res.status(200).json({ 
+      success: true, 
+      message: rfq.status === 'Approved' ? 'RFQ approved and moved to Requisition to Vendor!' : `Approved by ${userName}. Status: ${rfq.status}`, 
+      data: rfq 
     });
   } catch (err) {
     console.error("Error in approveRFQ:", err);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
-      message: err.message || 'Failed to approve RFQ'
+      message: err.message 
     });
   }
 };
@@ -416,11 +419,17 @@ const approveRFQ = async (req, res) => {
 const rejectRFQ = async (req, res) => {
   try {
     const { id } = req.params;
-    const { comments } = req.body;
+    const { comments } = req.body || {};
     const userName = req.user?.name || 'Rejecter';
-    const userEmail = req.user?.email || '';
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
     
-    const rfq = await RFQ.findById(id);
+    let rfq = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      rfq = await RFQ.findById(id);
+    }
+    if (!rfq) {
+      rfq = await RFQ.findOne({ $or: [{ uniqueSerialNo: id }, { rfqNo: id }] });
+    }
     
     if (!rfq) {
       return res.status(404).json({ 
@@ -429,21 +438,34 @@ const rejectRFQ = async (req, res) => {
       });
     }
 
-    if (rfq.stakeholders && rfq.stakeholders.length > 0) {
-      let currentApprover = rfq.stakeholders.find(s => s.status === 'Pending' && s.email === userEmail);
-      if (!currentApprover) {
-        currentApprover = rfq.stakeholders.find(s => s.status === 'Pending');
-      }
-      if (currentApprover) {
-        currentApprover.status = 'Rejected';
-        currentApprover.remarks = comments || '';
-        currentApprover.dateTime = new Date();
-      }
+    let approvers = rfq.stakeholders || [];
+    let currentApprover = approvers.find(s => 
+      (s.email && s.email.toLowerCase().trim() === userEmail) ||
+      (s.managerName && s.managerName.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.name && s.name.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.stakeholder && s.stakeholder.toLowerCase().trim() === userName.toLowerCase())
+    );
+
+    if (!currentApprover) {
+      currentApprover = approvers.find(s => (s.status || 'Pending').toLowerCase() === 'pending');
+    }
+
+    const nowFormatted = new Date().toLocaleString('en-US', { 
+      day: '2-digit', month: 'short', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit', hour12: true 
+    });
+
+    if (currentApprover) {
+      currentApprover.status = 'Rejected';
+      currentApprover.dateTime = nowFormatted;
+      currentApprover.remarks = comments || 'Rejected';
+      currentApprover.rejectedBy = userName;
     }
     
     rfq.status = 'Rejected';
     rfq.rejectedBy = userName;
-    rfq.rejectedReason = comments || 'No reason provided';
+    rfq.rejectionReason = comments || 'Rejected';
+    rfq.rejectedReason = comments || 'Rejected';
     rfq.rejectedDate = new Date();
     rfq.currentStage = 'Rejected';
     
@@ -453,33 +475,27 @@ const rejectRFQ = async (req, res) => {
     rfq.updatedAt = new Date();
     
     await rfq.save();
-    
+
+    console.log(`❌ RFQ ${rfq.uniqueSerialNo} rejected by ${userName}.`);
+
+    // Create database notification for creator
     try {
-      await sendMail({
-        to: rfq.emailId,
-        cc: rfq.ccTo || [],
-        subject: `❌ RFQ Rejected: ${rfq.titleOfActivity} (${rfq.uniqueSerialNo})`,
-        html: `
-          <h2>RFQ Rejected</h2>
-          <p><strong>Serial Number:</strong> ${rfq.uniqueSerialNo}</p>
-          <p><strong>Title:</strong> ${rfq.titleOfActivity}</p>
-          <p><strong>Status:</strong> Rejected</p>
-          <p><strong>Rejected By:</strong> ${userName}</p>
-          ${comments ? `<p><strong>Reason:</strong> ${comments}</p>` : ''}
-        `
-      });
-    } catch (emailErr) {
-      console.error('⚠️ Rejection email error (non-blocking):', emailErr.message);
-    }
+      await createNotification(
+        rfq.emailId,
+        'RFQ Rejected',
+        `Your RFQ ${rfq.uniqueSerialNo} has been rejected by ${userName}. Reason: ${comments || 'No reason provided'}`,
+        'rejected'
+      );
+    } catch (nErr) {}
     
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'RFQ rejected successfully',
       data: rfq
     });
   } catch (err) {
     console.error("Error in rejectRFQ:", err);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       message: err.message || 'Failed to reject RFQ'
     });

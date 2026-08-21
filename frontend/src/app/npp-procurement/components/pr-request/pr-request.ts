@@ -379,6 +379,9 @@ export class PrRequest implements OnInit, OnDestroy {
             pr.approvalChain = updated.approvalChain || updated.stakeholders;
           }
         }
+        if (pr.status === 'Approved') {
+          this.autoCreatePOFromPR(pr);
+        }
         this.saveToStorage(pr);
         this.decisionRemarks = '';
         this.showToastMessage(res?.message || (pr.status === 'Approved' ? 'PR fully Approved and moved to PO stage!' : `Approved by ${userName}`), 'success');
@@ -387,6 +390,9 @@ export class PrRequest implements OnInit, OnDestroy {
       },
       error: () => {
         // Fallback: sync full PR payload to backend
+        if (pr.status === 'Approved') {
+          this.autoCreatePOFromPR(pr);
+        }
         this.authService.submitPR(pr).subscribe({
           next: () => {},
           error: () => {}
@@ -399,6 +405,78 @@ export class PrRequest implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  autoCreatePOFromPR(pr: PrRequestData): void {
+    if (!pr || (pr.status !== 'Approved' && (pr as any).status !== 'approved')) return;
+    try {
+      const prRef = pr.prNumber || pr.serialNo || pr.id;
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const poSerialNo = `PO-${year}${month}${day}${hours}${minutes}-${random}`;
+
+      const rawItems = pr.items || [];
+      const poItems = rawItems.map((item: any) => ({
+        partNo: item.partCode || item.itemCode || item.partNo || '',
+        itemDescription: item.partDescription || item.description || '',
+        hsn: item.hsn || '',
+        uom: item.uom || 'Nos',
+        quantity: Number(item.qty || item.quantity || 1),
+        rate: Number(item.unitPrice || 0),
+        discount: 0,
+        gst: 18,
+        deliveryDate: '',
+        remark: item.cndt || item.specification || ''
+      }));
+
+      const newPo = {
+        uniqueSerialNo: poSerialNo,
+        orderNo: poSerialNo,
+        prNo: prRef,
+        rfqNo: pr.rfqNo || '',
+        titleOfActivity: pr.titleOfActivity || 'Purchase Order',
+        requesterName: pr.name || 'Requester',
+        department: pr.department || 'Purchase',
+        emailId: pr.emailId || '',
+        contactNo: pr.contactNo || '',
+        organization: pr.organization || 'Radiant Appliances',
+        amount: pr.totalValue || 0,
+        vendorName: pr.selectedSupplier || pr.bestSupplier || (rawItems[0]?.supplierName) || 'Vendor',
+        status: 'Approved',
+        orderDate: new Date().toISOString().slice(0, 10),
+        requestDate: pr.requestDate || new Date().toISOString().slice(0, 10),
+        createdAt: pr.approvedAt || new Date().toISOString(),
+        items: poItems,
+        stakeholders: pr.approvalChain || pr.stakeholders || [],
+        attachments: pr.attachments || [],
+        ccList: pr.ccList || []
+      };
+
+      // Save into local storage
+      let poList: any[] = [];
+      try {
+        const stored = localStorage.getItem('npp_po_requests');
+        if (stored) poList = JSON.parse(stored);
+      } catch { /* ignore */ }
+
+      if (!poList.some(p => p.prNo === prRef || p.uniqueSerialNo === poSerialNo)) {
+        poList.unshift(newPo);
+        localStorage.setItem('npp_po_requests', JSON.stringify(poList));
+      }
+
+      // Also call API to persist PO
+      this.authService.createNppModuleRequest('po-npp', newPo).subscribe({
+        next: () => console.log('✅ PO created on server for PR:', prRef),
+        error: () => console.log('ℹ️ Saved PO locally for PR:', prRef)
+      });
+    } catch (e) {
+      console.error('Error in autoCreatePOFromPR:', e);
+    }
   }
 
   confirmRejectWithRemarks(pr?: PrRequestData | null) {

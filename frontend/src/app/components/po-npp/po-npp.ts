@@ -233,11 +233,87 @@ export class PoNpp implements OnInit {
     this.isLoadingList = true;
     this.authService.getPoNppRequests?.().subscribe({
       next: (res: any) => {
-        this.allOrders = res?.data || res || [];
+        let apiOrders: any[] = res?.data || res || [];
+        if (!Array.isArray(apiOrders)) apiOrders = [];
+
+        // Also merge local storage POs
+        let localOrders: any[] = [];
+        try {
+          const stored = localStorage.getItem('npp_po_requests');
+          if (stored) localOrders = JSON.parse(stored);
+        } catch { /* ignore */ }
+
+        // Also scan approved PRs and convert to PO if missing
+        let approvedPRs: any[] = [];
+        try {
+          const prStored = localStorage.getItem('pr_requests');
+          if (prStored) {
+            const allPR = JSON.parse(prStored);
+            approvedPRs = allPR.filter((p: any) => p.status === 'Approved' || p.status === 'approved');
+          }
+        } catch { /* ignore */ }
+
+        const allMapped: PoRequest[] = [...apiOrders];
+        localOrders.forEach(lo => {
+          if (!allMapped.some(o => o.uniqueSerialNo === lo.uniqueSerialNo || (lo.prNo && o.prNo === lo.prNo))) {
+            allMapped.unshift(lo);
+          }
+        });
+
+        approvedPRs.forEach((apr: any) => {
+          const prRef = apr.prNumber || apr.serialNo || apr.uniqueSerialNo || apr.id;
+          if (!allMapped.some(o => o.prNo === prRef || o.uniqueSerialNo === `PO-${prRef}`)) {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            const poSerialNo = `PO-${year}${month}${day}${hours}${minutes}-${random}`;
+
+            const rawItems = apr.items || apr.prItems || [];
+            const mappedItems: PoItem[] = rawItems.map((item: any) => ({
+              partNo: item.partCode || item.itemCode || item.partNo || '',
+              itemDescription: item.partDescription || item.description || '',
+              hsn: item.hsn || '',
+              uom: item.uom || 'Nos',
+              quantity: Number(item.qty || item.quantity || 1),
+              rate: Number(item.unitPrice || item.rate || 0),
+              discount: 0,
+              gst: 18,
+              deliveryDate: '',
+              remark: item.remark || item.specification || ''
+            }));
+
+            const autoPo: PoRequest = {
+              uniqueSerialNo: poSerialNo,
+              orderNo: poSerialNo,
+              prNo: prRef,
+              rfqNo: apr.rfqNo || '',
+              vendorName: apr.selectedSupplier || apr.bestSupplier || (rawItems[0]?.supplierName) || 'Vendor',
+              requesterName: apr.name || apr.requesterName || 'Requester',
+              department: apr.department || 'Purchase',
+              amount: apr.totalValue || apr.amount || 0,
+              status: 'Approved',
+              orderDate: new Date().toISOString().slice(0, 10),
+              requestDate: apr.requestDate || new Date().toISOString().slice(0, 10),
+              createdAt: apr.approvedAt || new Date().toISOString(),
+              items: mappedItems,
+              stakeholders: apr.approvalChain || apr.stakeholders || [],
+              attachments: apr.attachments || []
+            };
+            allMapped.unshift(autoPo);
+          }
+        });
+
+        this.allOrders = allMapped;
         this.isLoadingList = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoadingList = false;
+        this.cdr.detectChanges();
       }
     }) ?? (this.isLoadingList = false);
   }

@@ -1437,11 +1437,89 @@ app.post('/api/pr/create-from-comparison', authMiddleware, moduleAccessMiddlewar
     console.error('❌ Error creating PR from comparison:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create PR from comparison',
-      error: error.message
-    });
+      message: 'Fai// Helper to auto-create PO when PR is fully approved
+const autoCreatePOFromApprovedPR = async (pr) => {
+  try {
+    let PoNpp = null;
+    let NPPRequest = null;
+    try { PoNpp = require('./models/poNpp.model'); } catch (e) {}
+    try { NPPRequest = require('./models/nppRequest.model'); } catch (e) {}
+
+    const prSerial = pr.uniqueSerialNo || pr.prNumber || pr.serialNo || String(pr._id);
+
+    if (PoNpp) {
+      const existingPo = await PoNpp.findOne({ $or: [{ prNo: prSerial }, { uniqueSerialNo: `PO-${prSerial}` }] });
+      if (existingPo) {
+        console.log('ℹ️ PO already exists for PR:', prSerial);
+        return existingPo;
+      }
+    }
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const poSerialNo = `PO-${year}${month}${day}${hours}${minutes}-${random}`;
+
+    const rawItems = pr.prItems || pr.items || pr.formData?.items || pr.formData?.prItems || [];
+    const poItems = rawItems.map((item, idx) => ({
+      id: idx + 1,
+      partNo: item.partCode || item.partNo || '',
+      itemDescription: item.partDescription || item.description || '',
+      hsn: item.hsn || '',
+      uom: item.uom || 'Nos',
+      quantity: item.qty || item.quantity || 1,
+      rate: item.unitPrice || item.rate || 0,
+      discount: 0,
+      gst: 18,
+      deliveryDate: '',
+      remark: item.remark || item.specification || item.cndt || ''
+    }));
+
+    const poData = {
+      uniqueSerialNo: poSerialNo,
+      orderNo: poSerialNo,
+      prNo: prSerial,
+      prId: pr._id,
+      rfqNo: pr.rfqNo || pr.formData?.rfqNo || '',
+      titleOfActivity: pr.titleOfActivity || pr.formData?.titleOfActivity || 'Purchase Order',
+      requesterName: pr.requesterName || pr.name || pr.formData?.name || 'Requester',
+      department: pr.department || pr.formData?.department || 'Purchase',
+      emailId: pr.emailId || pr.formData?.emailId || '',
+      contactNo: pr.contactNo || pr.formData?.contactNo || '',
+      organization: pr.organization || pr.formData?.organization || 'Radiant Appliances',
+      amount: pr.amount || pr.totalValue || pr.formData?.totalValue || 0,
+      vendorName: pr.selectedSupplier || pr.formData?.selectedSupplier || pr.formData?.bestSupplier || (rawItems[0]?.supplierName) || 'Vendor',
+      status: 'Approved',
+      items: poItems,
+      stakeholders: pr.stakeholders || pr.approvalChain || pr.formData?.approvalChain || [],
+      attachments: pr.attachments || pr.formData?.attachments || [],
+      ccList: pr.ccList || pr.formData?.ccList || []
+    };
+
+    if (PoNpp) {
+      const newPo = new PoNpp(poData);
+      await newPo.save();
+      console.log('✅ Auto-created PO (PoNpp) from Approved PR:', poSerialNo);
+    }
+
+    if (NPPRequest) {
+      const newNppPo = new NPPRequest({
+        type: 'po-npp',
+        uniqueSerialNo: poSerialNo,
+        ...poData,
+        formData: poData
+      });
+      await newNppPo.save();
+      console.log('✅ Auto-created PO (NPPRequest) from Approved PR:', poSerialNo);
+    }
+  } catch (err) {
+    console.error('⚠️ Error in autoCreatePOFromApprovedPR:', err.message);
   }
-});
+};
 
 // ==================== ✅ NEW: SAVE PR (Draft) ====================
 /**
@@ -1455,6 +1533,10 @@ app.post('/api/pr/save', authMiddleware, moduleAccessMiddleware, async (req, res
     
     const NPPRequest = require('./models/nppRequest.model');
     
+    const approvers = data.approvalChain || data.stakeholders || [];
+    const attachments = data.attachments || [];
+    const ccList = data.ccList || [];
+
     // Check if PR exists
     const existing = await NPPRequest.findOne({
       type: 'pr-request',
@@ -1467,7 +1549,6 @@ app.post('/api/pr/save', authMiddleware, moduleAccessMiddleware, async (req, res
     let savedPR;
     
     if (existing) {
-      // Update existing PR
       existing.requesterName = data.name || data.requester || existing.requesterName;
       existing.department = data.department || existing.department;
       existing.emailId = data.emailId || data.requesterEmail || existing.emailId;
@@ -1476,6 +1557,9 @@ app.post('/api/pr/save', authMiddleware, moduleAccessMiddleware, async (req, res
       existing.titleOfActivity = data.titleOfActivity || data.title || existing.titleOfActivity;
       existing.rfqNo = data.rfqNo || existing.rfqNo;
       existing.status = 'Draft';
+      existing.stakeholders = approvers;
+      existing.attachments = attachments;
+      existing.ccList = ccList;
       existing.prItems = (data.items || []).map(item => ({
         costCenter: data.costCenter || 'Purchase Department',
         supplierName: item.supplierName || '',
@@ -1490,12 +1574,12 @@ app.post('/api/pr/save', authMiddleware, moduleAccessMiddleware, async (req, res
         totalValue: item.value || (item.qty || 1) * (item.unitPrice || 0)
       }));
       existing.amount = data.totalValue || 0;
+      existing.formData = { ...data, approvalChain: approvers, stakeholders: approvers };
       existing.updatedAt = new Date().toISOString();
       
       savedPR = await existing.save();
       console.log('✅ PR draft updated:', savedPR.uniqueSerialNo);
     } else {
-      // Create new PR
       const newPR = new NPPRequest({
         type: 'pr-request',
         uniqueSerialNo: data.uniqueSerialNo || data.prNumber || data.serialNo || `PR-${Date.now()}`,
@@ -1507,6 +1591,9 @@ app.post('/api/pr/save', authMiddleware, moduleAccessMiddleware, async (req, res
         contactNo: data.contactNo || '',
         organization: data.organization || 'Radiant Appliances',
         status: 'Draft',
+        stakeholders: approvers,
+        attachments: attachments,
+        ccList: ccList,
         prItems: (data.items || []).map(item => ({
           costCenter: data.costCenter || 'Purchase Department',
           supplierName: item.supplierName || '',
@@ -1522,6 +1609,7 @@ app.post('/api/pr/save', authMiddleware, moduleAccessMiddleware, async (req, res
         })),
         amount: data.totalValue || 0,
         comparisonId: data.comparisonId || data.rfqId,
+        formData: { ...data, approvalChain: approvers, stakeholders: approvers },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -1558,6 +1646,10 @@ app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, r
     
     const NPPRequest = require('./models/nppRequest.model');
     
+    const approvers = data.approvalChain || data.stakeholders || [];
+    const attachments = data.attachments || [];
+    const ccList = data.ccList || [];
+
     // Check if PR exists
     const existing = await NPPRequest.findOne({
       type: 'pr-request',
@@ -1570,7 +1662,6 @@ app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, r
     let savedPR;
     
     if (existing) {
-      // Update existing PR
       existing.requesterName = data.name || data.requester || existing.requesterName;
       existing.department = data.department || existing.department;
       existing.emailId = data.emailId || data.requesterEmail || existing.emailId;
@@ -1579,6 +1670,9 @@ app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, r
       existing.titleOfActivity = data.titleOfActivity || data.title || existing.titleOfActivity;
       existing.rfqNo = data.rfqNo || existing.rfqNo;
       existing.status = 'Pending';
+      existing.stakeholders = approvers;
+      existing.attachments = attachments;
+      existing.ccList = ccList;
       existing.prItems = (data.items || []).map(item => ({
         costCenter: data.costCenter || 'Purchase Department',
         supplierName: item.supplierName || '',
@@ -1594,12 +1688,12 @@ app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, r
       }));
       existing.amount = data.totalValue || 0;
       existing.submittedDate = new Date().toISOString();
+      existing.formData = { ...data, approvalChain: approvers, stakeholders: approvers };
       existing.updatedAt = new Date().toISOString();
       
       savedPR = await existing.save();
       console.log('✅ PR submitted:', savedPR.uniqueSerialNo);
     } else {
-      // Create new PR
       const newPR = new NPPRequest({
         type: 'pr-request',
         uniqueSerialNo: data.uniqueSerialNo || data.prNumber || data.serialNo || `PR-${Date.now()}`,
@@ -1611,6 +1705,9 @@ app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, r
         contactNo: data.contactNo || '',
         organization: data.organization || 'Radiant Appliances',
         status: 'Pending',
+        stakeholders: approvers,
+        attachments: attachments,
+        ccList: ccList,
         prItems: (data.items || []).map(item => ({
           costCenter: data.costCenter || 'Purchase Department',
           supplierName: item.supplierName || '',
@@ -1627,6 +1724,7 @@ app.post('/api/pr/submit', authMiddleware, moduleAccessMiddleware, async (req, r
         amount: data.totalValue || 0,
         comparisonId: data.comparisonId || data.rfqId,
         submittedDate: new Date().toISOString(),
+        formData: { ...data, approvalChain: approvers, stakeholders: approvers },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -1687,40 +1785,71 @@ app.get('/api/pr/list', authMiddleware, moduleAccessMiddleware, async (req, res)
 
     console.log(`📋 Found ${uniqueDocs.length} unique PRs across models`);
 
-    const formatted = uniqueDocs.map(pr => ({
-      id: pr._id,
-      prNumber: pr.uniqueSerialNo || pr.prNumber || pr.serialNo || pr._id,
-      serialNo: pr.uniqueSerialNo || pr.serialNo || pr.prNumber || pr._id,
-      name: pr.requesterName || pr.name || '',
-      requestDate: pr.requestDate || (pr.createdAt ? String(pr.createdAt).split('T')[0] : new Date().toISOString().split('T')[0]),
-      department: pr.department || 'Purchase',
-      contactNo: pr.contactNo || '',
-      emailId: pr.emailId || '',
-      organization: pr.organization || 'Radiant Appliances',
-      departmentBudget: 1500000,
-      costCenter: 'Purchase Department',
-      rfqNo: pr.rfqNo || '',
-      titleOfActivity: pr.titleOfActivity || 'PR Request',
-      status: pr.status || 'Pending',
-      items: (pr.prItems || pr.items || []).map(item => ({
-        id: 0,
-        rfqNo: item.rfqNo || '',
-        supplierName: item.supplierName || '',
-        partCode: item.partCode || item.itemCode || '',
-        partDescription: item.partDescription || item.description || '',
-        cndt: item.cndt || item.specification || '',
-        uom: item.uom || 'Nos',
-        qty: item.qty || 1,
-        currency: 'INR',
-        unitPrice: item.unitPrice || 0,
-        value: item.totalValue || item.amount || 0
-      })),
-      totalValue: pr.amount || pr.totalValue || 0,
-      submittedDate: pr.submittedDate || pr.updatedAt,
-      comparisonId: pr.comparisonId || '',
-      createdAt: pr.createdAt,
-      updatedAt: pr.updatedAt
-    }));
+    const formatted = uniqueDocs.map(pr => {
+      const fd = pr.formData || {};
+      const chain = pr.approvalChain || pr.stakeholders || fd.approvalChain || fd.stakeholders || [];
+      const normalizedChain = chain.map((a, i) => ({
+        line: a.line || a.lineMode || 'Parallel',
+        stakeholder: a.stakeholder || a.managerName || a.name || `Approver ${i+1}`,
+        comments: a.comments || a.remarks || '',
+        designation: a.designation || a.role || '',
+        status: a.status || 'Pending',
+        dateTime: a.dateTime || a.date || '',
+        email: a.email || '',
+        contactNo: a.contactNo || '',
+        organization: a.organization || ''
+      }));
+
+      return {
+        id: pr._id,
+        prNumber: pr.uniqueSerialNo || pr.prNumber || pr.serialNo || pr._id,
+        serialNo: pr.uniqueSerialNo || pr.serialNo || pr.prNumber || pr._id,
+        name: pr.requesterName || pr.name || fd.name || '',
+        requestDate: pr.requestDate || (pr.createdAt ? String(pr.createdAt).split('T')[0] : new Date().toISOString().split('T')[0]),
+        department: pr.department || fd.department || 'Purchase',
+        contactNo: pr.contactNo || fd.contactNo || '',
+        emailId: pr.emailId || fd.emailId || '',
+        organization: pr.organization || fd.organization || 'Radiant Appliances',
+        departmentBudget: pr.departmentBudget || fd.departmentBudget || 1500000,
+        costCenter: pr.costCenter || fd.costCenter || 'Purchase Department',
+        rfqNo: pr.rfqNo || fd.rfqNo || '',
+        titleOfActivity: pr.titleOfActivity || fd.titleOfActivity || 'PR Request',
+        status: pr.status || 'Pending',
+        items: (pr.prItems || pr.items || fd.items || []).map(item => ({
+          id: 0,
+          rfqNo: item.rfqNo || '',
+          supplierName: item.supplierName || '',
+          partCode: item.partCode || item.itemCode || '',
+          partDescription: item.partDescription || item.description || '',
+          cndt: item.cndt || item.specification || '',
+          uom: item.uom || 'Nos',
+          qty: item.qty || 1,
+          currency: 'INR',
+          unitPrice: item.unitPrice || 0,
+          value: item.totalValue || item.amount || 0
+        })),
+        totalValue: pr.amount || pr.totalValue || fd.totalValue || 0,
+        approvalChain: normalizedChain,
+        stakeholders: normalizedChain,
+        attachments: pr.attachments || fd.attachments || [],
+        ccList: pr.ccList || fd.ccList || [],
+        comparisonItems: pr.comparisonItems || fd.comparisonItems || [],
+        suppliers: pr.suppliers || fd.suppliers || [],
+        termsRows: pr.termsRows || fd.termsRows || [],
+        selectedSupplier: pr.selectedSupplier || fd.selectedSupplier || pr.bestSupplier || fd.bestSupplier || '',
+        bestSupplier: pr.bestSupplier || fd.bestSupplier || '',
+        recommendation: pr.recommendation || fd.recommendation || '',
+        submittedDate: pr.submittedDate || pr.requestDate || pr.createdAt,
+        approvedBy: pr.approvedBy || '',
+        approvedAt: pr.approvedAt || '',
+        rejectionReason: pr.rejectionReason || '',
+        rejectedBy: pr.rejectedBy || '',
+        rejectedAt: pr.rejectedAt || '',
+        comparisonId: pr.comparisonId || '',
+        createdAt: pr.createdAt,
+        updatedAt: pr.updatedAt
+      };
+    });
 
     res.json({
       success: true,
@@ -1809,6 +1938,20 @@ app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) 
         message: 'PR not found'
       });
     }
+
+    const fd = pr.formData || {};
+    const chain = pr.approvalChain || pr.stakeholders || fd.approvalChain || fd.stakeholders || [];
+    const normalizedChain = chain.map((a, i) => ({
+      line: a.line || a.lineMode || 'Parallel',
+      stakeholder: a.stakeholder || a.managerName || a.name || `Approver ${i+1}`,
+      comments: a.comments || a.remarks || '',
+      designation: a.designation || a.role || '',
+      status: a.status || 'Pending',
+      dateTime: a.dateTime || a.date || '',
+      email: a.email || '',
+      contactNo: a.contactNo || '',
+      organization: a.organization || ''
+    }));
     
     res.json({
       success: true,
@@ -1816,18 +1959,18 @@ app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) 
         id: pr._id,
         prNumber: pr.uniqueSerialNo || pr.prNumber || pr._id,
         serialNo: pr.uniqueSerialNo || pr.serialNo || pr._id,
-        name: pr.requesterName || pr.name || '',
+        name: pr.requesterName || pr.name || fd.name || '',
         requestDate: pr.requestDate || (pr.createdAt ? String(pr.createdAt).split('T')[0] : ''),
-        department: pr.department || 'Purchase',
-        contactNo: pr.contactNo || '',
-        emailId: pr.emailId || '',
-        organization: pr.organization || 'Radiant Appliances',
-        departmentBudget: 1500000,
-        costCenter: 'Purchase Department',
-        rfqNo: pr.rfqNo || '',
-        titleOfActivity: pr.titleOfActivity || 'PR Request',
+        department: pr.department || fd.department || 'Purchase',
+        contactNo: pr.contactNo || fd.contactNo || '',
+        emailId: pr.emailId || fd.emailId || '',
+        organization: pr.organization || fd.organization || 'Radiant Appliances',
+        departmentBudget: pr.departmentBudget || fd.departmentBudget || 1500000,
+        costCenter: pr.costCenter || fd.costCenter || 'Purchase Department',
+        rfqNo: pr.rfqNo || fd.rfqNo || '',
+        titleOfActivity: pr.titleOfActivity || fd.titleOfActivity || 'PR Request',
         status: pr.status || 'Pending',
-        items: (pr.prItems || pr.items || []).map(item => ({
+        items: (pr.prItems || pr.items || fd.items || []).map(item => ({
           id: 0,
           rfqNo: item.rfqNo || '',
           supplierName: item.supplierName || '',
@@ -1840,8 +1983,23 @@ app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) 
           unitPrice: item.unitPrice || 0,
           value: item.totalValue || item.amount || 0
         })),
-        totalValue: pr.amount || pr.totalValue || 0,
+        totalValue: pr.amount || pr.totalValue || fd.totalValue || 0,
+        approvalChain: normalizedChain,
+        stakeholders: normalizedChain,
+        attachments: pr.attachments || fd.attachments || [],
+        ccList: pr.ccList || fd.ccList || [],
+        comparisonItems: pr.comparisonItems || fd.comparisonItems || [],
+        suppliers: pr.suppliers || fd.suppliers || [],
+        termsRows: pr.termsRows || fd.termsRows || [],
+        selectedSupplier: pr.selectedSupplier || fd.selectedSupplier || pr.bestSupplier || fd.bestSupplier || '',
+        bestSupplier: pr.bestSupplier || fd.bestSupplier || '',
+        recommendation: pr.recommendation || fd.recommendation || '',
         submittedDate: pr.submittedDate || pr.requestDate,
+        approvedBy: pr.approvedBy || '',
+        approvedAt: pr.approvedAt || '',
+        rejectionReason: pr.rejectionReason || '',
+        rejectedBy: pr.rejectedBy || '',
+        rejectedAt: pr.rejectedAt || '',
         comparisonId: pr.comparisonId || '',
         createdAt: pr.createdAt,
         updatedAt: pr.updatedAt
@@ -1858,7 +2016,7 @@ app.get('/api/pr/:id', authMiddleware, moduleAccessMiddleware, async (req, res) 
   }
 });
 
-// ==================== ✅ NEW: APPROVE PR ====================
+// ==================== ✅ NEW: APPROVE PR (Multi-level Chain + Auto-PO) ====================
 /**
  * POST /api/pr/:id/approve
  * Approve a PR
@@ -1867,52 +2025,109 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
   try {
     const { id } = req.params;
     const { comments } = req.body || {};
-    
+    const userName = req.user?.name || 'Approver';
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+    const userRole = (req.user?.role || req.user?.designation || '').toLowerCase().trim();
+
     let pr = await findAnyPR(id);
-    
+
     if (!pr) {
-      console.log(`⚠️ PR ${id} not in DB. Auto-creating approved entry...`);
-      const PRRequest = require('./models/PRRequest');
-      pr = new PRRequest({
-        uniqueSerialNo: id,
-        requesterName: req.user?.name || 'Deepak Kumar',
-        department: req.user?.department || 'Purchase',
-        emailId: req.user?.email || 'dk897869@gmail.com',
-        requestDate: new Date().toISOString().split('T')[0],
-        titleOfActivity: `PR Request ${id}`,
-        status: 'Approved',
-        source: 'PR-REQUEST-NPP',
-        approvedBy: req.user?.name || req.user?.email || 'Admin',
-        approvedAt: new Date().toISOString()
+      return res.status(404).json({ success: false, message: 'PR not found' });
+    }
+
+    const fd = pr.formData || {};
+    let approvers = pr.approvalChain || pr.stakeholders || fd.approvalChain || fd.stakeholders || [];
+    
+    // Normalize into standard structure
+    approvers = approvers.map((a, i) => ({
+      line: a.line || a.lineMode || 'Parallel',
+      stakeholder: a.stakeholder || a.managerName || a.name || `Approver ${i+1}`,
+      managerName: a.managerName || a.stakeholder || a.name || `Approver ${i+1}`,
+      comments: a.comments || a.remarks || '',
+      remarks: a.remarks || a.comments || '',
+      designation: a.designation || a.role || '',
+      status: a.status || 'Pending',
+      dateTime: a.dateTime || a.date || '',
+      email: a.email || '',
+      contactNo: a.contactNo || '',
+      organization: a.organization || ''
+    }));
+
+    if (!approvers.length) {
+      approvers.push({
+        line: 'Parallel',
+        stakeholder: userName,
+        managerName: userName,
+        email: userEmail,
+        designation: req.user?.designation || req.user?.role || 'Approver',
+        status: 'Pending',
+        comments: '',
+        remarks: ''
       });
-      await pr.save();
-    } else {
+    }
+
+    // Match the current approver
+    let target = approvers.find(s => 
+      (s.email && s.email.toLowerCase().trim() === userEmail) ||
+      (s.stakeholder && s.stakeholder.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.managerName && s.managerName.toLowerCase().trim() === userName.toLowerCase())
+    );
+
+    // Fallback: If senior role (Admin/Purchase Head/Engineer/Manager/VP), act on first pending approver
+    if (!target || target.status === 'Approved' || target.status === 'approved') {
+      const isSenior = ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+      if (isSenior) {
+        target = approvers.find(s => (s.status || 'Pending').toLowerCase() === 'pending');
+      }
+    }
+
+    const nowFormatted = new Date().toLocaleString('en-US', { 
+      day: '2-digit', month: 'short', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit', hour12: true 
+    });
+
+    if (target) {
+      target.status = 'Approved';
+      target.dateTime = nowFormatted;
+      target.remarks = comments || target.remarks || 'Approved';
+      target.comments = comments || target.comments || 'Approved';
+      target.approvedBy = userName;
+    }
+
+    // Check if any approvers in chain are still pending
+    const remainingPending = approvers.filter(s => (s.status || 'Pending').toLowerCase() === 'pending');
+
+    if (remainingPending.length === 0) {
       pr.status = 'Approved';
       pr.approvedAt = new Date().toISOString();
-      pr.approvedBy = req.user?.name || req.user?.email || 'Admin';
-      if (comments) {
-        pr.decisionRemarks = comments;
-        pr.remarks = comments;
-      }
-      if (Array.isArray(pr.stakeholders)) {
-        pr.stakeholders.forEach((s) => {
-          s.status = 'Approved';
-          s.dateTime = new Date().toLocaleString();
-          if (comments) s.remarks = comments;
-        });
-      }
-      pr.updatedAt = new Date().toISOString();
-      await pr.save();
+      pr.approvedBy = userName;
+      if (comments) pr.approvalComments = comments;
+
+      // Auto-create PO in PoNpp and NPPRequest
+      await autoCreatePOFromApprovedPR(pr);
+    } else {
+      pr.status = 'Pending';
     }
-    
-    console.log('✅ PR approved successfully:', pr.uniqueSerialNo || id);
-    
+
+    pr.stakeholders = approvers;
+    pr.approvalChain = approvers;
+    if (pr.formData) {
+      pr.formData.approvalChain = approvers;
+      pr.formData.stakeholders = approvers;
+      pr.formData.status = pr.status;
+      if (pr.markModified) pr.markModified('formData');
+    }
+    pr.updatedAt = new Date().toISOString();
+    await pr.save();
+
+    console.log(`✅ PR approved by ${userName} (${userEmail}). Overall Status: ${pr.status}, Pending count: ${remainingPending.length}`);
+
     return res.json({
       success: true,
-      message: 'PR approved successfully',
+      message: remainingPending.length === 0 ? 'PR fully Approved and moved to PO stage!' : `Approved by ${userName}. Remaining pending approvers: ${remainingPending.length}`,
       data: pr
     });
-    
+
   } catch (error) {
     console.error('❌ Error approving PR:', error);
     return res.status(500).json({
@@ -1932,49 +2147,78 @@ app.post('/api/pr/:id/reject', authMiddleware, moduleAccessMiddleware, async (re
   try {
     const { id } = req.params;
     const { comments } = req.body || {};
-    
+    const userName = req.user?.name || 'Rejecter';
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+
     let pr = await findAnyPR(id);
-    
+
     if (!pr) {
-      console.log(`⚠️ PR ${id} not in DB. Auto-creating rejected entry...`);
-      const PRRequest = require('./models/PRRequest');
-      pr = new PRRequest({
-        uniqueSerialNo: id,
-        requesterName: req.user?.name || 'Deepak Kumar',
-        department: req.user?.department || 'Purchase',
-        emailId: req.user?.email || 'dk897869@gmail.com',
-        requestDate: new Date().toISOString().split('T')[0],
-        titleOfActivity: `PR Request ${id}`,
-        status: 'Rejected',
-        rejectionReason: comments || '',
-        rejectedBy: req.user?.name || req.user?.email || 'Admin',
-        rejectedAt: new Date().toISOString()
-      });
-      await pr.save();
-    } else {
-      pr.status = 'Rejected';
-      pr.rejectionReason = comments || '';
-      pr.rejectedAt = new Date().toISOString();
-      pr.rejectedBy = req.user?.name || req.user?.email || 'Admin';
-      if (Array.isArray(pr.stakeholders)) {
-        pr.stakeholders.forEach((s) => {
-          s.status = 'Rejected';
-          s.dateTime = new Date().toLocaleString();
-          if (comments) s.remarks = comments;
-        });
-      }
-      pr.updatedAt = new Date().toISOString();
-      await pr.save();
+      return res.status(404).json({ success: false, message: 'PR not found' });
     }
+
+    const fd = pr.formData || {};
+    let approvers = pr.approvalChain || pr.stakeholders || fd.approvalChain || fd.stakeholders || [];
     
-    console.log('❌ PR rejected:', pr.uniqueSerialNo || id);
-    
+    approvers = approvers.map((a, i) => ({
+      line: a.line || a.lineMode || 'Parallel',
+      stakeholder: a.stakeholder || a.managerName || a.name || `Approver ${i+1}`,
+      managerName: a.managerName || a.stakeholder || a.name || `Approver ${i+1}`,
+      comments: a.comments || a.remarks || '',
+      remarks: a.remarks || a.comments || '',
+      designation: a.designation || a.role || '',
+      status: a.status || 'Pending',
+      dateTime: a.dateTime || a.date || '',
+      email: a.email || '',
+      contactNo: a.contactNo || '',
+      organization: a.organization || ''
+    }));
+
+    let target = approvers.find(s => 
+      (s.email && s.email.toLowerCase().trim() === userEmail) ||
+      (s.stakeholder && s.stakeholder.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.managerName && s.managerName.toLowerCase().trim() === userName.toLowerCase())
+    );
+
+    if (!target) {
+      target = approvers.find(s => (s.status || 'Pending').toLowerCase() === 'pending');
+    }
+
+    const nowFormatted = new Date().toLocaleString('en-US', { 
+      day: '2-digit', month: 'short', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit', hour12: true 
+    });
+
+    if (target) {
+      target.status = 'Rejected';
+      target.dateTime = nowFormatted;
+      target.remarks = comments || 'Rejected';
+      target.comments = comments || 'Rejected';
+      target.rejectedBy = userName;
+    }
+
+    pr.status = 'Rejected';
+    pr.rejectionReason = comments || 'Rejected';
+    pr.rejectedAt = new Date().toISOString();
+    pr.rejectedBy = userName;
+    pr.stakeholders = approvers;
+    pr.approvalChain = approvers;
+    if (pr.formData) {
+      pr.formData.approvalChain = approvers;
+      pr.formData.stakeholders = approvers;
+      pr.formData.status = 'Rejected';
+      if (pr.markModified) pr.markModified('formData');
+    }
+    pr.updatedAt = new Date().toISOString();
+    await pr.save();
+
+    console.log(`❌ PR rejected by ${userName} (${userEmail}).`);
+
     return res.json({
       success: true,
       message: 'PR rejected successfully',
       data: pr
     });
-    
+
   } catch (error) {
     console.error('❌ Error rejecting PR:', error);
     return res.status(500).json({

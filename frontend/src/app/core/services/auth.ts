@@ -1584,9 +1584,9 @@ createPRFromComparison(data: any): Observable<any> {
   /**
    * Approve PR
    */
-  approvePR(id: string): Observable<any> {
-    console.log('✅ Approving PR:', id);
-    return this.http.post(`${this.API_URL}/pr/${id}/approve`, {}, { headers: this.getHeaders() });
+  approvePR(id: string, comments?: string): Observable<any> {
+    console.log('✅ Approving PR:', id, comments);
+    return this.http.post(`${this.API_URL}/pr/${id}/approve`, { comments }, { headers: this.getHeaders() });
   }
 
   /**

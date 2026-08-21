@@ -925,7 +925,7 @@ export class RfqComponent implements OnInit {
   }
 
   // ====================== HELPER METHODS ======================
-  getPendingDays(dateStr: string): string {
+  getPendingDays(dateStr?: string | null): string {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return '';

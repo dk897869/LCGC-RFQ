@@ -382,12 +382,21 @@
                 <input type="text" [(ngModel)]="a.organization" placeholder="Organization" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
               </td>
               <td style="text-align: center;">
-                <span class="status-badge-small status-pending" style="background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">
-                  {{ a.status || 'pending' }}
+                <span *ngIf="a.status === 'Approved'" style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; display: inline-block;">
+                  Approved ✓
+                </span>
+                <span *ngIf="a.status === 'Rejected'" style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; display: inline-block;">
+                  Rejected ✗
+                </span>
+                <span *ngIf="a.status !== 'Approved' && a.status !== 'Rejected'" style="background: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; display: inline-block;">
+                  Pending ⏳
                 </span>
               </td>
-              <td class="date-time-cell" style="font-size: 12px; color: #64748b; white-space: nowrap;">
-                {{ a.dateTime || '' }}
+              <td class="date-time-cell" style="font-size: 12px; color: #475569; white-space: nowrap; text-align: center;">
+                <div>{{ a.dateTime ? a.dateTime : '—' }}</div>
+                <div *ngIf="a.status === 'Pending' || !a.status" style="font-size: 10.5px; color: #ef4444; margin-top: 3px; font-weight: 600;">
+                  Pending: {{ getPendingDays(activePR.submittedDate || activePR.requestDate) }}
+                </div>
               </td>
               <td style="text-align: center;">
                 <button type="button" class="remove-btn" (click)="removeApprovalRow(i)" style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer;">×</button>
@@ -412,7 +421,7 @@
                     📎 {{ att.fileName || 'Choose file' }}
                     <input type="file" hidden (change)="onAttachmentFileSelected(att, $event)">
                   </label>
-                  <button *ngIf="att.fileName" type="button" (click)="openMediaPreview(att.fileName, att.label || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
+                  <button *ngIf="att.fileName" type="button" (click)="openMediaPreview(att, att.label || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;">👁️ View</button>
                 </div>
               </td>
               <td>{{ att.fileSize || '—' }}</td>
@@ -437,9 +446,37 @@
         </div>
       </div>
 
-      <!-- ===== DECISION REMARKS (for Approvers) ===== -->
-      <div class="section-header-inline" *ngIf="currentPR && currentPR.status === 'Pending'"><span class="section-flag">Decision Remarks / Comments</span></div>
-      <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px;" *ngIf="currentPR && currentPR.status === 'Pending'">
+      <!-- ===== PR APPROVED SUCCESS BANNER ===== -->
+      <div *ngIf="currentPR && currentPR.status === 'Approved'" style="padding: 16px 20px; background: #ecfdf5; border: 1.5px solid #34d399; border-radius: 8px; margin-bottom: 20px; color: #065f46; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">🎉</span>
+          <div>
+            <div style="font-weight: 700; font-size: 14.5px;">PR Approved by All Approvers</div>
+            <div style="font-size: 12.5px; color: #047857; margin-top: 2px;">This Purchase Requisition is fully approved and has automatically moved to the <strong>Purchase Order (PO)</strong> list.</div>
+          </div>
+        </div>
+        <span style="font-size: 12px; font-weight: 700; background: #10b981; color: white; padding: 5px 14px; border-radius: 14px;">Forwarded to PO</span>
+      </div>
+
+      <!-- ===== USER ALREADY ACTIONED BANNER ===== -->
+      <div *ngIf="currentPR && getUserActionInfo(currentPR).hasActioned && currentPR.status !== 'Approved'" style="padding: 16px 20px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-weight: 700; color: #166534; font-size: 14px;">
+            ✅ You ({{ getUserActionInfo(currentPR).approverName }}) have already {{ getUserActionInfo(currentPR).status }} this PR on {{ getUserActionInfo(currentPR).date }}
+          </div>
+          <div *ngIf="getUserActionInfo(currentPR).comments" style="font-size: 12.5px; color: #374151; margin-top: 4px;">
+            <strong>Your Remarks:</strong> {{ getUserActionInfo(currentPR).comments }}
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+            ⏳ Waiting for remaining approvers to complete the approval chain.
+          </div>
+        </div>
+        <span style="font-size: 12px; font-weight: 700; background: #bbf7d0; color: #14532d; padding: 4px 12px; border-radius: 12px;">Action Recorded</span>
+      </div>
+
+      <!-- ===== DECISION REMARKS (for current Pending Approvers only) ===== -->
+      <div class="section-header-inline" *ngIf="currentPR && canCurrentUserApprove(currentPR)"><span class="section-flag">Decision Remarks / Comments</span></div>
+      <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px;" *ngIf="currentPR && canCurrentUserApprove(currentPR)">
         <textarea [(ngModel)]="decisionRemarks" rows="2" placeholder="Enter approval or rejection comments here..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
       </div>
 
@@ -457,8 +494,8 @@
             <span *ngIf="!isSubmitting">📤 Submit for Approval</span>
             <span *ngIf="isSubmitting">Submitting…</span>
           </button>
-          <button *ngIf="currentPR && currentPR.status === 'Pending'" type="button" (click)="confirmApproveWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #059669; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✓ Approve PR</button>
-          <button *ngIf="currentPR && currentPR.status === 'Pending'" type="button" (click)="confirmRejectWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✗ Reject PR</button>
+          <button *ngIf="canCurrentUserApprove(currentPR)" type="button" (click)="confirmApproveWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #059669; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✓ Approve PR</button>
+          <button *ngIf="canCurrentUserApprove(currentPR)" type="button" (click)="confirmRejectWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✗ Reject PR</button>
         </div>
       </div>
 

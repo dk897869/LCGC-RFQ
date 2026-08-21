@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { renderFullScreenDocumentViewer } from '../../../utils/full-screen-viewer';
 
 // ============================================================
 //  INTERFACES
@@ -51,6 +52,10 @@ export interface ApprovalRow {
   contactNo?: string;
   organization?: string;
   showSuggestions?: boolean;
+  remarks?: string;
+  managerName?: string;
+  name?: string;
+  approvedBy?: string;
 }
 
 export interface AttachmentRow {
@@ -178,13 +183,8 @@ export class PrRequest implements OnInit, OnDestroy {
   mediaZoomScale = 1;
   decisionRemarks = '';
 
-  openMediaPreview(url: string, title?: string) {
-    if (!url) return;
-    this.mediaPreviewUrl = url;
-    this.mediaPreviewTitle = title || 'Attachment Preview';
-    this.mediaZoomScale = 1;
-    this.showMediaModal = true;
-    this.cdr.detectChanges();
+  openMediaPreview(attachmentOrUrl: any, title?: string) {
+    renderFullScreenDocumentViewer(attachmentOrUrl, title || 'Attachment Preview');
   }
 
   closeMediaPreview() {
@@ -210,40 +210,149 @@ export class PrRequest implements OnInit, OnDestroy {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url || '');
   }
 
-  confirmApproveWithRemarks(pr: PrRequestData) {
-    if (!pr || (!pr.id && !pr.prNumber)) return;
+  get currentUser(): any {
+    return this.authService.getUser();
+  }
+
+  canCurrentUserApprove(pr?: PrRequestData | null): boolean {
+    if (!pr) return false;
+    const s = (pr.status || '').toLowerCase();
+    if (s === 'approved' || s === 'rejected' || s === 'draft') return false;
+
+    const user = this.currentUser;
+    if (!user) return false;
+
+    const userEmail = (user.email || '').toLowerCase().trim();
+    const userName = (user.name || '').toLowerCase().trim();
+    const userRole = (user.role || user.designation || '').toLowerCase().trim();
+
+    const chain = pr.approvalChain || [];
+    if (!chain.length) {
+      return ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+    }
+
+    // Check if user is in chain
+    const myEntry = chain.find((a: any) =>
+      (a.email && a.email.toLowerCase().trim() === userEmail) ||
+      (a.stakeholder && a.stakeholder.toLowerCase().trim() === userName) ||
+      (a.managerName && a.managerName.toLowerCase().trim() === userName)
+    );
+
+    if (myEntry) {
+      const entryStatus = (myEntry.status || '').toLowerCase();
+      // If already approved or rejected, can NOT approve again
+      if (entryStatus === 'approved' || entryStatus === 'rejected') {
+        return false;
+      }
+      // If Sequential, check if all previous approvers in chain have approved
+      const myIdx = chain.indexOf(myEntry);
+      if (myEntry.line === 'Sequential' && myIdx > 0) {
+        for (let i = 0; i < myIdx; i++) {
+          const prevStatus = (chain[i].status || '').toLowerCase();
+          if (prevStatus !== 'approved') {
+            return false; // waiting on prior approver
+          }
+        }
+      }
+      return true;
+    }
+
+    // If user is not specifically in chain, check if they are senior admin/manager
+    const isSenior = ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+    if (isSenior) {
+      // Allow if there is any pending approver
+      return chain.some(a => (a.status || 'Pending').toLowerCase() === 'pending');
+    }
+
+    return false;
+  }
+
+  getUserActionInfo(pr?: PrRequestData | null): { hasActioned: boolean; status: string; date: string; comments: string; approverName: string } {
+    if (!pr) return { hasActioned: false, status: '', date: '', comments: '', approverName: '' };
+    const user = this.currentUser;
+    if (!user) return { hasActioned: false, status: '', date: '', comments: '', approverName: '' };
+
+    const userEmail = (user.email || '').toLowerCase().trim();
+    const userName = (user.name || '').toLowerCase().trim();
+
+    const chain = pr.approvalChain || [];
+    const myEntry = chain.find((a: any) =>
+      (a.email && a.email.toLowerCase().trim() === userEmail) ||
+      (a.stakeholder && a.stakeholder.toLowerCase().trim() === userName) ||
+      (a.managerName && a.managerName.toLowerCase().trim() === userName)
+    );
+
+    if (myEntry && ((myEntry.status || '').toLowerCase() === 'approved' || (myEntry.status || '').toLowerCase() === 'rejected')) {
+      return {
+        hasActioned: true,
+        status: myEntry.status,
+        date: myEntry.dateTime || '',
+        comments: myEntry.comments || myEntry.remarks || '',
+        approverName: myEntry.stakeholder || myEntry.managerName || user.name
+      };
+    }
+
+    return { hasActioned: false, status: '', date: '', comments: '', approverName: '' };
+  }
+
+  getPendingDays(dateStr?: string | null): string {
+    if (!dateStr) return 'Today';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Today';
+    const diff = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 3600 * 24));
+    return diff === 0 ? 'Today' : `${diff} days ago`;
+  }
+
+  confirmApproveWithRemarks(pr?: PrRequestData | null) {
+    if (!pr || (!pr.id && !pr.prNumber && !pr.serialNo)) return;
     this.isSubmitting = true;
-    const prId = pr.id || pr.prNumber;
-    this.authService.approvePR(prId).subscribe({
+    const prId = pr.id || pr.prNumber || pr.serialNo;
+    const remarks = this.decisionRemarks;
+    this.authService.approvePR(prId, remarks).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
-        pr.status = 'Approved';
-        this.showToastMessage(`PR ${pr.prNumber} Approved successfully and moved to PO stage!`, 'success');
+        const updated = res?.data || res?.pr;
+        if (updated) {
+          pr.status = updated.status || pr.status;
+          if (updated.approvalChain || updated.stakeholders) {
+            pr.approvalChain = updated.approvalChain || updated.stakeholders;
+          }
+        }
+        this.decisionRemarks = '';
+        this.showToastMessage(res?.message || `PR action recorded successfully!`, 'success');
         this.loadAll();
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.isSubmitting = false;
-        this.showToastMessage(err?.message || 'Failed to approve PR', 'error');
+        this.showToastMessage(err?.error?.message || err?.message || 'Failed to approve PR', 'error');
       }
     });
   }
 
-  confirmRejectWithRemarks(pr: PrRequestData) {
-    if (!pr || (!pr.id && !pr.prNumber)) return;
+  confirmRejectWithRemarks(pr?: PrRequestData | null) {
+    if (!pr || (!pr.id && !pr.prNumber && !pr.serialNo)) return;
     this.isSubmitting = true;
-    const prId = pr.id || pr.prNumber;
-    this.authService.rejectPR(prId, this.decisionRemarks).subscribe({
+    const prId = pr.id || pr.prNumber || pr.serialNo;
+    const remarks = this.decisionRemarks;
+    this.authService.rejectPR(prId, remarks).subscribe({
       next: (res: any) => {
         this.isSubmitting = false;
-        pr.status = 'Rejected';
-        this.showToastMessage(`PR ${pr.prNumber} Rejected successfully`, 'error');
+        const updated = res?.data || res?.pr;
+        if (updated) {
+          pr.status = updated.status || 'Rejected';
+          if (updated.approvalChain || updated.stakeholders) {
+            pr.approvalChain = updated.approvalChain || updated.stakeholders;
+          }
+        }
+        this.decisionRemarks = '';
+        this.showToastMessage(`PR ${pr.prNumber || pr.serialNo} Rejected`, 'error');
         this.loadAll();
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.isSubmitting = false;
-        this.showToastMessage(err?.message || 'Failed to reject PR', 'error');
+        this.showToastMessage(err?.error?.message || err?.message || 'Failed to reject PR', 'error');
       }
     });
   }

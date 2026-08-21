@@ -151,81 +151,135 @@ const approvePrNpp = async (req, res) => {
     const { id } = req.params;
     const { comments } = req.body;
     const userName = req.user?.name || 'Approver';
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+    const userRole = (req.user?.role || req.user?.designation || '').toLowerCase().trim();
     
     const pr = await PrNpp.findById(id);
     if (!pr) return res.status(404).json({ success: false, message: "PR NPP not found" });
     
-    pr.status = 'Approved';
-    pr.approvedAt = new Date();
-    pr.approvedBy = userName;
-    pr.approvalComments = comments;
+    let approvers = pr.approvalChain || pr.stakeholders || [];
+    approvers = approvers.map((a, i) => ({
+      line: a.line || 'Parallel',
+      stakeholder: a.stakeholder || a.managerName || a.name || `Approver ${i+1}`,
+      managerName: a.managerName || a.stakeholder || a.name || `Approver ${i+1}`,
+      comments: a.comments || a.remarks || '',
+      remarks: a.remarks || a.comments || '',
+      designation: a.designation || a.role || '',
+      status: a.status || 'Pending',
+      dateTime: a.dateTime || a.date || '',
+      email: a.email || '',
+      contactNo: a.contactNo || '',
+      organization: a.organization || ''
+    }));
+
+    let target = approvers.find(s => 
+      (s.email && s.email.toLowerCase().trim() === userEmail) ||
+      (s.stakeholder && s.stakeholder.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.managerName && s.managerName.toLowerCase().trim() === userName.toLowerCase())
+    );
+
+    if (!target || target.status === 'Approved') {
+      const isSenior = ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+      if (isSenior) {
+        target = approvers.find(s => (s.status || 'Pending').toLowerCase() === 'pending');
+      }
+    }
+
+    const nowFormatted = new Date().toLocaleString('en-US', { 
+      day: '2-digit', month: 'short', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit', hour12: true 
+    });
+
+    if (target) {
+      target.status = 'Approved';
+      target.dateTime = nowFormatted;
+      target.remarks = comments || target.remarks || 'Approved';
+      target.comments = comments || target.comments || 'Approved';
+      target.approvedBy = userName;
+    }
+
+    const remainingPending = approvers.filter(s => (s.status || 'Pending').toLowerCase() === 'pending');
+
+    if (remainingPending.length === 0) {
+      pr.status = 'Approved';
+      pr.approvedAt = new Date();
+      pr.approvedBy = userName;
+      pr.approvalComments = comments;
+
+      // Auto-create Purchase Order (PO) from Approved PR
+      try {
+        const existingPo = await PoNpp.findOne({ prNo: pr.uniqueSerialNo });
+        if (!existingPo) {
+          const date = new Date();
+          const year = date.getFullYear();
+          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+          const day = date.getDate().toString().padStart(2, '0');
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+          const poSerialNo = `PO-${year}${month}${day}${hours}${minutes}-${random}`;
+
+          const newPo = new PoNpp({
+            uniqueSerialNo: poSerialNo,
+            orderNo: poSerialNo,
+            prNo: pr.uniqueSerialNo,
+            prId: pr._id,
+            rfqNo: pr.rfqNo || '',
+            titleOfActivity: pr.titleOfActivity || 'Purchase Order',
+            requesterName: pr.name || pr.requesterName || 'Requester',
+            department: pr.department || 'Purchase',
+            emailId: pr.emailId,
+            contactNo: pr.contactNo || '',
+            organization: pr.organization || '',
+            amount: pr.totalValue || pr.amount || 0,
+            vendorName: pr.selectedSupplier || (pr.items?.[0]?.supplierName) || 'Vendor',
+            status: 'Approved',
+            items: pr.items || [],
+            stakeholders: approvers,
+            ccList: pr.ccList || [],
+            attachments: pr.attachments || []
+          });
+          await newPo.save();
+          console.log('✅ Auto-created PO from Approved PR:', poSerialNo);
+        }
+      } catch (poErr) {
+        console.error('⚠️ Error auto-creating PO from PR:', poErr.message);
+      }
+    } else {
+      pr.status = 'Pending';
+    }
+
+    pr.approvalChain = approvers;
+    pr.stakeholders = approvers;
     await pr.save();
     
-    // Auto-create Purchase Order (PO) from Approved PR
-    try {
-      const existingPo = await PoNpp.findOne({ prNo: pr.uniqueSerialNo });
-      if (!existingPo) {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-        const poSerialNo = `PO-${year}${month}${day}${hours}${minutes}-${random}`;
-
-        const newPo = new PoNpp({
-          uniqueSerialNo: poSerialNo,
-          orderNo: poSerialNo,
-          prNo: pr.uniqueSerialNo,
-          prId: pr._id,
-          rfqNo: pr.rfqNo || '',
-          titleOfActivity: pr.titleOfActivity || 'Purchase Order',
-          requesterName: pr.name || pr.requesterName || 'Requester',
-          department: pr.department || 'Purchase',
-          emailId: pr.emailId,
-          contactNo: pr.contactNo || '',
-          organization: pr.organization || '',
-          amount: pr.totalValue || 0,
-          vendorName: pr.selectedSupplier || (pr.items?.[0]?.supplierName) || 'Vendor',
-          status: 'Approved',
-          items: pr.items || [],
-          stakeholders: pr.stakeholders || [],
-          ccList: pr.ccList || [],
-          attachments: pr.attachments || []
-        });
-        await newPo.save();
-        console.log('✅ Auto-created PO from Approved PR:', poSerialNo);
-      }
-    } catch (poErr) {
-      console.error('⚠️ Error auto-creating PO from PR:', poErr.message);
-    }
-    
     // Send approval email
-    let pdfBuffer = null;
     try {
-      pdfBuffer = await generateBeautifulPDF(pr);
-    } catch (err) { console.error('PDF error:', err.message); }
+      let pdfBuffer = null;
+      try {
+        pdfBuffer = await generateBeautifulPDF(pr);
+      } catch (err) { console.error('PDF error:', err.message); }
+      
+      const attachments_pdf = pdfBuffer ? [{
+        filename: `PR_${pr.uniqueSerialNo}.pdf`,
+        content: pdfBuffer.toString('base64'),
+        contentType: 'application/pdf'
+      }] : [];
+      
+      const allCcEmails = [...new Set([...(pr.ccList || []), ...((approvers || []).map(s => s.email).filter(Boolean))])];
+      
+      await sendMail({
+        to: pr.emailId,
+        cc: allCcEmails,
+        subject: `✅ PR Approved: ${pr.titleOfActivity} (${pr.uniqueSerialNo})`,
+        prRequestData: pr,
+        action: 'approved',
+        actor: { name: userName, remarks: comments },
+        attachments: attachments_pdf
+      });
+    } catch (mailErr) {}
     
-    const attachments_pdf = pdfBuffer ? [{
-      filename: `PR_${pr.uniqueSerialNo}.pdf`,
-      content: pdfBuffer.toString('base64'),
-      contentType: 'application/pdf'
-    }] : [];
-    
-    const allCcEmails = [...new Set([...(pr.ccList || []), ...((pr.stakeholders || []).map(s => s.email).filter(Boolean))])];
-    
-    await sendMail({
-      to: pr.emailId,
-      cc: allCcEmails,
-      subject: `✅ PR Approved: ${pr.titleOfActivity} (${pr.uniqueSerialNo})`,
-      prRequestData: pr,
-      action: 'approved',
-      actor: { name: userName, remarks: comments },
-      attachments: attachments_pdf
-    });
-    
-    res.json({ success: true, message: "PR NPP approved", data: pr });
+    res.json({ success: true, message: remainingPending.length === 0 ? 'PR NPP approved' : `Approved by ${userName}. Remaining pending approvers: ${remainingPending.length}`, data: pr });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -237,14 +291,55 @@ const rejectPrNpp = async (req, res) => {
     const { id } = req.params;
     const { comments } = req.body;
     const userName = req.user?.name || 'Rejecter';
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
     
     const pr = await PrNpp.findById(id);
     if (!pr) return res.status(404).json({ success: false, message: "PR NPP not found" });
     
+    let approvers = pr.approvalChain || pr.stakeholders || [];
+    approvers = approvers.map((a, i) => ({
+      line: a.line || 'Parallel',
+      stakeholder: a.stakeholder || a.managerName || a.name || `Approver ${i+1}`,
+      managerName: a.managerName || a.stakeholder || a.name || `Approver ${i+1}`,
+      comments: a.comments || a.remarks || '',
+      remarks: a.remarks || a.comments || '',
+      designation: a.designation || a.role || '',
+      status: a.status || 'Pending',
+      dateTime: a.dateTime || a.date || '',
+      email: a.email || '',
+      contactNo: a.contactNo || '',
+      organization: a.organization || ''
+    }));
+
+    let target = approvers.find(s => 
+      (s.email && s.email.toLowerCase().trim() === userEmail) ||
+      (s.stakeholder && s.stakeholder.toLowerCase().trim() === userName.toLowerCase()) ||
+      (s.managerName && s.managerName.toLowerCase().trim() === userName.toLowerCase())
+    );
+
+    if (!target) {
+      target = approvers.find(s => (s.status || 'Pending').toLowerCase() === 'pending');
+    }
+
+    const nowFormatted = new Date().toLocaleString('en-US', { 
+      day: '2-digit', month: 'short', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit', hour12: true 
+    });
+
+    if (target) {
+      target.status = 'Rejected';
+      target.dateTime = nowFormatted;
+      target.remarks = comments || 'Rejected';
+      target.comments = comments || 'Rejected';
+      target.rejectedBy = userName;
+    }
+
     pr.status = 'Rejected';
     pr.rejectedAt = new Date();
     pr.rejectedBy = userName;
     pr.rejectionComments = comments;
+    pr.approvalChain = approvers;
+    pr.stakeholders = approvers;
     await pr.save();
     
     // Send rejection email

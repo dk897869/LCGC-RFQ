@@ -100,7 +100,11 @@ export class PoNpp implements OnInit {
   private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   // ---------- Form model ----------
-  form = {
+  form: any = {
+    _id: '',
+    id: '',
+    uniqueSerialNo: '',
+    status: '',
     requesterName: '',
     department: 'Purchase',
     emailId: '',
@@ -330,20 +334,115 @@ export class PoNpp implements OnInit {
     this.activeTab = tab;
   }
 
+  decisionRemarks = '';
+
+  get currentUser(): any {
+    return this.authService.getUser();
+  }
+
+  canCurrentUserApprove(po?: any): boolean {
+    if (!po) return false;
+    const s = (po.status || '').toLowerCase();
+    if (s === 'approved' || s === 'rejected' || s === 'draft') return false;
+
+    const user = this.currentUser;
+    if (!user) return false;
+
+    const userEmail = (user.email || '').toLowerCase().trim();
+    const userName = (user.name || '').toLowerCase().trim();
+    const userRole = (user.role || user.designation || '').toLowerCase().trim();
+
+    const chain = po.stakeholders || po.approvalChain || this.stakeholders || [];
+    if (!chain.length) {
+      return ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+    }
+
+    // Check if user is in chain
+    const myEntry = chain.find((a: any) =>
+      (a.email && a.email.toLowerCase().trim() === userEmail) ||
+      (a.managerName && a.managerName.toLowerCase().trim() === userName) ||
+      (a.stakeholder && a.stakeholder.toLowerCase().trim() === userName) ||
+      (a.name && a.name.toLowerCase().trim() === userName)
+    );
+
+    if (myEntry) {
+      const entryStatus = (myEntry.status || '').toLowerCase();
+      if (entryStatus === 'approved' || entryStatus === 'rejected') {
+        return false;
+      }
+      const myIdx = chain.indexOf(myEntry);
+      const isSequential = (myEntry.line || '').toLowerCase() === 'sequential';
+      if (isSequential && myIdx > 0) {
+        for (let i = 0; i < myIdx; i++) {
+          const prevStatus = (chain[i].status || '').toLowerCase();
+          if (prevStatus !== 'approved') {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    const isSenior = ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+    if (isSenior) {
+      return chain.some((a: any) => (a.status || 'Pending').toLowerCase() === 'pending');
+    }
+
+    return false;
+  }
+
+  getUserActionInfo(po?: any): { hasActioned: boolean; status: string; date: string; comments: string; approverName: string } {
+    if (!po) return { hasActioned: false, status: '', date: '', comments: '', approverName: '' };
+    const user = this.currentUser;
+    if (!user) return { hasActioned: false, status: '', date: '', comments: '', approverName: '' };
+
+    const userEmail = (user.email || '').toLowerCase().trim();
+    const userName = (user.name || '').toLowerCase().trim();
+
+    const chain = po.stakeholders || po.approvalChain || this.stakeholders || [];
+    const myEntry = chain.find((a: any) =>
+      (a.email && a.email.toLowerCase().trim() === userEmail) ||
+      (a.managerName && a.managerName.toLowerCase().trim() === userName) ||
+      (a.stakeholder && a.stakeholder.toLowerCase().trim() === userName) ||
+      (a.name && a.name.toLowerCase().trim() === userName)
+    );
+
+    if (myEntry && ((myEntry.status || '').toLowerCase() === 'approved' || (myEntry.status || '').toLowerCase() === 'rejected')) {
+      return {
+        hasActioned: true,
+        status: myEntry.status,
+        date: myEntry.dateTime || '',
+        comments: myEntry.remarks || myEntry.comments || '',
+        approverName: myEntry.managerName || myEntry.stakeholder || myEntry.name || user.name
+      };
+    }
+
+    return { hasActioned: false, status: '', date: '', comments: '', approverName: '' };
+  }
+
+  getPendingDays(dateStr?: string | null): string {
+    if (!dateStr) return 'Today';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Today';
+    const diff = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 3600 * 24));
+    return diff === 0 ? 'Today' : `${diff} days ago`;
+  }
+
   // ---------- Navigation ----------
   openNewOrder(): void {
     this.resetForm();
+    this.selectedOrder = null;
     this.view = 'form';
   }
 
   openOrder(po: any): void {
+    this.selectedOrder = po;
     this.hydrateFormFromOrder(po);
     this.view = 'form';
   }
 
   viewOrder(po: PoRequest): void {
-    this.selectedOrder = po;
-    this.showDetailModal = true;
+    this.openOrder(po);
   }
 
   closeDetailModal(): void {
@@ -353,43 +452,75 @@ export class PoNpp implements OnInit {
 
   backToList(): void {
     this.view = 'list';
+    this.selectedOrder = null;
+    this.loadOrders();
   }
 
   // ---------- Approve/Reject PO ----------
-  approvePO(po: PoRequest): void {
-    const id = po._id || po.id;
+  approvePO(po?: any): void {
+    const target = po || this.selectedOrder || this.form;
+    const id = target?._id || target?.id || target?.uniqueSerialNo || target?.orderNo;
     if (!id) {
       this.showToast('error', 'Cannot approve: No ID found');
       return;
     }
-    this.authService.approveRequestByType('po', id).subscribe({
-      next: () => {
-        po.status = 'Approved';
-        this.showToast('success', `PO ${po.uniqueSerialNo || po.orderNo} approved!`);
-        if (this.showDetailModal) this.closeDetailModal();
+    this.isSubmitting = true;
+    const remarks = this.decisionRemarks;
+    this.authService.approvePO(id, remarks).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        const updated = res?.data || res?.po;
+        if (updated) {
+          target.status = updated.status || target.status;
+          if (updated.stakeholders || updated.approvalChain) {
+            target.stakeholders = updated.stakeholders || updated.approvalChain;
+            this.stakeholders = target.stakeholders;
+          }
+        } else {
+          target.status = 'Approved';
+        }
+        this.decisionRemarks = '';
+        this.showToast('success', res?.message || `PO approved successfully!`);
         this.loadOrders();
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
-        this.showToast('error', err?.message || 'Approval failed.');
+        this.isSubmitting = false;
+        this.showToast('error', err?.error?.message || err?.message || 'Approval failed.');
       }
     });
   }
 
-  rejectPO(po: PoRequest): void {
-    const id = po._id || po.id;
+  rejectPO(po?: any): void {
+    const target = po || this.selectedOrder || this.form;
+    const id = target?._id || target?.id || target?.uniqueSerialNo || target?.orderNo;
     if (!id) {
       this.showToast('error', 'Cannot reject: No ID found');
       return;
     }
-    this.authService.rejectRequestByType('po', id).subscribe({
-      next: () => {
-        po.status = 'Rejected';
-        this.showToast('info', `PO ${po.uniqueSerialNo || po.orderNo} rejected.`);
-        if (this.showDetailModal) this.closeDetailModal();
+    this.isSubmitting = true;
+    const remarks = this.decisionRemarks;
+    this.authService.rejectPO(id, remarks).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        const updated = res?.data || res?.po;
+        if (updated) {
+          target.status = updated.status || 'Rejected';
+          if (updated.stakeholders || updated.approvalChain) {
+            target.stakeholders = updated.stakeholders || updated.approvalChain;
+            this.stakeholders = target.stakeholders;
+          }
+        } else {
+          target.status = 'Rejected';
+        }
+        this.decisionRemarks = '';
+        this.showToast('info', `PO rejected.`);
         this.loadOrders();
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
-        this.showToast('error', err?.message || 'Rejection failed.');
+        this.isSubmitting = false;
+        this.showToast('error', err?.error?.message || err?.message || 'Rejection failed.');
       }
     });
   }
@@ -570,7 +701,8 @@ export class PoNpp implements OnInit {
   }
 
   termsLines(): string[] {
-    return (this.form.terms || '').split('\n').map(t => t.trim()).filter(Boolean);
+    const raw = Array.isArray(this.form.terms) ? this.form.terms.join('\n') : (this.form.terms || '');
+    return String(raw).split('\n').map((t: string) => t.trim()).filter(Boolean);
   }
 
   // ---------- Submit ----------

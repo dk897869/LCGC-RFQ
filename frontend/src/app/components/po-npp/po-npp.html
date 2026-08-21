@@ -160,8 +160,8 @@
               <td>{{ formatDate(po.orderDate || po.createdAt) }}</td>
               <td class="actions-cell">
                 <button class="action-btn view" (click)="openOrder(po)">👁️ View</button>
-                <button *ngIf="po.status === 'Pending'" class="action-btn approve" (click)="approvePO(po)">✅ Approve</button>
-                <button *ngIf="po.status === 'Pending'" class="action-btn reject" (click)="rejectPO(po)">❌ Reject</button>
+                <button *ngIf="canCurrentUserApprove(po)" class="action-btn approve" (click)="approvePO(po)">✅ Approve</button>
+                <button *ngIf="canCurrentUserApprove(po)" class="action-btn reject" (click)="rejectPO(po)">❌ Reject</button>
                 <button class="action-btn dots-btn">⋮</button>
               </td>
             </tr>
@@ -203,6 +203,34 @@
     <!-- PO Document Card -->
     <div class="po-doc">
       
+      <!-- ===== PO APPROVED SUCCESS BANNER ===== -->
+      <div *ngIf="selectedOrder && selectedOrder.status === 'Approved'" style="padding: 16px 20px; background: #ecfdf5; border: 1.5px solid #34d399; border-radius: 8px; margin-bottom: 20px; color: #065f46; display: flex; align-items: center; justify-content: space-between;" class="no-print">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">🎉</span>
+          <div>
+            <div style="font-weight: 700; font-size: 14.5px;">Purchase Order Approved by All Approvers</div>
+            <div style="font-size: 12.5px; color: #047857; margin-top: 2px;">This PO has been fully approved by all stakeholders in the approval chain.</div>
+          </div>
+        </div>
+        <span style="font-size: 12px; font-weight: 700; background: #10b981; color: white; padding: 5px 14px; border-radius: 14px;">Fully Approved</span>
+      </div>
+
+      <!-- ===== USER ALREADY ACTIONED BANNER ===== -->
+      <div *ngIf="selectedOrder && getUserActionInfo(selectedOrder).hasActioned && selectedOrder.status !== 'Approved'" style="padding: 16px 20px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;" class="no-print">
+        <div>
+          <div style="font-weight: 700; color: #166534; font-size: 14px;">
+            ✅ You ({{ getUserActionInfo(selectedOrder).approverName }}) have already {{ getUserActionInfo(selectedOrder).status }} this PO on {{ getUserActionInfo(selectedOrder).date }}
+          </div>
+          <div *ngIf="getUserActionInfo(selectedOrder).comments" style="font-size: 12.5px; color: #374151; margin-top: 4px;">
+            <strong>Your Remarks:</strong> {{ getUserActionInfo(selectedOrder).comments }}
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+            ⏳ Waiting for remaining approvers to complete the approval chain.
+          </div>
+        </div>
+        <span style="font-size: 12px; font-weight: 700; background: #bbf7d0; color: #14532d; padding: 4px 12px; border-radius: 12px;">Action Recorded</span>
+      </div>
+
       <!-- Document Header -->
       <table class="doc-table header-table">
         <tr>
@@ -218,237 +246,225 @@
           <td class="title-cell" colspan="3">
             <strong>RAGHAVIT APPLIANCES AND ELECTRONICS PVT. LTD.</strong>
             <div>Village Rampur Jattan, Teh. Patiala, Dist. Patiala,</div>
-            <div>Regd. Office: 283/C, Bhagwan Ind., Area, Patiala, Punjab 147001</div>
+            <div>Regd. Office: 203/C, Bhagwan Ind, Area, Patiala, Punjab 147001</div>
           </td>
         </tr>
         <tr>
-          <td class="po-banner" colspan="2" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white;">
-            <strong>📜 PURCHASE ORDER</strong>
+          <td class="doc-badge-cell" colspan="2">
+            <span class="doc-title-badge">📑 PURCHASE ORDER</span>
           </td>
-          <td class="po-no-banner" style="background: #312e81; color: white; text-align: center; font-weight: bold; width: 220px;">
-            PO No. {{ form.orderNo || 'PO/2026/0001' }}
+          <td class="po-number-cell">
+            <strong>PO No. {{ form.orderNo || form.uniqueSerialNo || 'PO 202608210354-3492' }}</strong>
           </td>
         </tr>
       </table>
 
-      <!-- Vendor + Order meta Grid -->
-      <table class="doc-table meta-table">
+      <!-- Vendor & Meta Grid -->
+      <table class="doc-table meta-grid-table">
         <tr>
-          <td class="meta-left" rowspan="7" style="width: 50%;">
-            <div class="meta-header-title">VENDOR DETAILS</div>
-            <label class="meta-label">Vendor Code</label>
-            <input [(ngModel)]="form.vendorCode" name="vendorCode" placeholder="Enter Vendor Code">
-
-            <label class="meta-label strong-label">Vendor Name *</label>
-            <input class="strong-input" [(ngModel)]="form.vendorName" name="vendorName" placeholder="Enter Vendor Name" required>
-
-            <label class="meta-label">Vendor Address</label>
-            <textarea rows="2" [(ngModel)]="form.vendorAddress" name="vendorAddress" placeholder="Enter Address"></textarea>
-
-            <label class="meta-label">GST No.</label>
-            <input [(ngModel)]="form.vendorGst" name="vendorGst" placeholder="03AABCR1212C1ZS">
-
-            <label class="meta-label">Contact No.</label>
-            <input [(ngModel)]="form.vendorContact" name="vendorContact" placeholder="98765 43210">
-
-            <label class="meta-label">E-Mail Id</label>
-            <input type="email" [(ngModel)]="form.vendorEmail" name="vendorEmail" placeholder="vendor@example.com">
+          <td class="meta-col-left" style="width: 50%;">
+            <div class="col-head">VENDOR DETAILS</div>
+            <div class="field-row">
+              <label>VENDOR CODE</label>
+              <input [(ngModel)]="form.vendorCode" placeholder="Enter Vendor Code">
+            </div>
+            <div class="field-row">
+              <label>VENDOR NAME <span class="req">*</span></label>
+              <input [(ngModel)]="form.vendorName" placeholder="Vendor Company Name" required>
+            </div>
+            <div class="field-row">
+              <label>VENDOR ADDRESS</label>
+              <textarea [(ngModel)]="form.vendorAddress" rows="2" placeholder="Full Vendor Address"></textarea>
+            </div>
+            <div class="field-row">
+              <label>GST NO.</label>
+              <input [(ngModel)]="form.vendorGst" placeholder="22AAAAA0000A1Z5">
+            </div>
+            <div class="field-row">
+              <label>CONTACT NO.</label>
+              <input [(ngModel)]="form.vendorContact" placeholder="+91 98765 43210">
+            </div>
+            <div class="field-row">
+              <label>E-MAIL ID</label>
+              <input type="email" [(ngModel)]="form.vendorEmail" placeholder="vendor@domain.com">
+            </div>
+            <div class="field-row">
+              <label>KIND ATTN</label>
+              <input [(ngModel)]="form.vendorKindAttn" placeholder="Contact Person Name">
+            </div>
           </td>
-          <td class="meta-label">Order By</td>
-          <td colspan="2">
-            <span class="auto-approved-badge">Auto approved</span>
-          </td>
-        </tr>
-        <tr>
-          <td class="meta-label">Order Date</td>
-          <td colspan="2"><input type="date" [(ngModel)]="form.orderDate" name="orderDate"></td>
-        </tr>
-        <tr>
-          <td class="meta-label">Approved PR No.</td>
-          <td colspan="2">
-            <select [(ngModel)]="form.prNo" name="prNo" (change)="onPRSelected(form.prNo)" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600; background: #f8fafc;">
-              <option value="">-- Select Approved PR --</option>
-              <option *ngFor="let pr of approvedPRsList" [value]="pr.serialNo || pr.prNumber">
-                {{ pr.serialNo || pr.prNumber }} - {{ pr.titleOfActivity || pr.name }} (₹{{ pr.totalValue || pr.amount }}) [{{ pr.status }}]
-              </option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td class="meta-label">RFQ No.</td>
-          <td colspan="2"><input [(ngModel)]="form.rfqNo" name="rfqNo" placeholder="RFQ/2026/0098"></td>
-        </tr>
-        <tr>
-          <td class="meta-label">PO Date</td>
-          <td colspan="2"><input type="date" [(ngModel)]="form.orderDate" name="poDate"></td>
-        </tr>
-        <tr>
-          <td class="meta-label">Purchaser</td>
-          <td colspan="2">
-            <div class="purchaser-badge">
-              <span class="p-avatar">DK</span>
-              <input [(ngModel)]="form.purchaser" name="purchaser" placeholder="Deepak Kumar" style="font-weight:700;">
+          <td class="meta-col-right" style="width: 50%;">
+            <div class="field-row-horizontal">
+              <label>ORDER BY</label>
+              <span class="auto-app-badge">Auto approved</span>
+            </div>
+            <div class="field-row-horizontal">
+              <label>ORDER DATE</label>
+              <input type="date" [(ngModel)]="form.orderDate">
+            </div>
+            <div class="field-row-horizontal">
+              <label>APPROVED PR NO.</label>
+              <select [(ngModel)]="form.prNo">
+                <option value="">Select Approved PR</option>
+                <option *ngFor="let pr of approvedPRsList" [value]="pr.uniqueSerialNo || pr.prNumber">
+                  {{ pr.uniqueSerialNo || pr.prNumber }} - {{ pr.titleOfActivity || pr.vendorName }}
+                </option>
+                <option *ngIf="form.prNo && !approvedPRsList.length" [value]="form.prNo">{{ form.prNo }}</option>
+              </select>
+            </div>
+            <div class="field-row-horizontal">
+              <label>RFQ NO.</label>
+              <input [(ngModel)]="form.rfqNo" placeholder="RFQ/2026/0098">
+            </div>
+            <div class="field-row-horizontal">
+              <label>PO DATE</label>
+              <input type="date" [(ngModel)]="form.orderDate">
+            </div>
+            <div class="field-row-horizontal">
+              <label>PURCHASER</label>
+              <div class="purchaser-badge">
+                <span class="avatar-circle">DK</span>
+                <span>{{ form.purchaser || form.requesterName || 'Deepak Kumar' }}</span>
+              </div>
+            </div>
+            <div class="field-row-horizontal">
+              <label>PURCHASE SERIES</label>
+              <input [(ngModel)]="form.orderNo" placeholder="PO-202608210354-3492">
             </div>
           </td>
         </tr>
+      </table>
+
+      <!-- Addresses matching Image 4 -->
+      <table class="doc-table address-table">
         <tr>
-          <td class="meta-label">Purchase Series</td>
-          <td colspan="2">
-            <input [(ngModel)]="form.orderNo" name="purchaseSeries" placeholder="PO/2026">
+          <td style="width: 50%;">
+            <div class="addr-head">
+              <span>🏢 BILLING ADDRESS</span>
+              <span class="edit-icon-pencil no-print">✏️</span>
+            </div>
+            <textarea class="addr-box" [(ngModel)]="form.billingAddress" rows="3"></textarea>
+            <div class="gst-row">
+              <label>GST</label>
+              <input [(ngModel)]="form.billingGst">
+            </div>
+          </td>
+          <td style="width: 50%;">
+            <div class="addr-head">
+              <span>🚚 SHIPPING ADDRESS</span>
+              <span class="edit-icon-pencil no-print">✏️</span>
+            </div>
+            <textarea class="addr-box" [(ngModel)]="form.shippingAddress" rows="3"></textarea>
+            <div class="gst-row">
+              <label>GST</label>
+              <input [(ngModel)]="form.shippingGst">
+            </div>
           </td>
         </tr>
       </table>
 
-      <!-- Billing / Shipping Address box matching Image 4 layout -->
-      <div class="billing-shipping-row">
-        <div class="address-box-card">
-          <div class="address-header">
-            <span>🏢 BILLING ADDRESS</span>
-            <span class="edit-icon-pen">✏️</span>
-          </div>
-          <textarea rows="3" [(ngModel)]="form.billingAddress" name="billingAddress"></textarea>
-          <div class="gst-field-row">GST : <input [(ngModel)]="form.billingGst" name="billingGst"></div>
-        </div>
-        <div class="address-box-card">
-          <div class="address-header">
-            <span>🚚 SHIPPING ADDRESS</span>
-            <span class="edit-icon-pen">✏️</span>
-          </div>
-          <textarea rows="3" [(ngModel)]="form.shippingAddress" name="shippingAddress"></textarea>
-          <div class="gst-field-row">GST : <input [(ngModel)]="form.shippingGst" name="shippingGst"></div>
-        </div>
+      <!-- Line Items Table -->
+      <div class="section-head-fidelity">
+        <div class="section-title-fidelity">📦 PURCHASE ORDER ITEMS</div>
+        <button type="button" class="add-item-btn-fidelity no-print" (click)="addItem()">+ Add Item</button>
       </div>
-
-      <div class="salutation-strip">
-        <span class="salut-title">📜 Item Details</span>
-        <p class="salut-desc">We are pleased to place our Purchase Order for the following Material as per the terms &amp; conditions stipulated below.</p>
-      </div>
-
-      <!-- Item Details Table matching Image 4 layout -->
-      <div class="items-wrap">
+      <div class="table-scroll">
         <table class="doc-table items-table-fidelity">
           <thead>
             <tr>
-              <th style="width: 50px;">SR. NO.</th>
-              <th>ITEM DESCRIPTION</th>
-              <th style="width: 100px;">HSN CODE</th>
+              <th style="width: 40px;">#</th>
+              <th style="width: 100px;">PART NO.</th>
+              <th>ITEM DESCRIPTION <span class="req">*</span></th>
+              <th style="width: 90px;">HSN</th>
               <th style="width: 70px;">UOM</th>
               <th style="width: 70px;">QTY</th>
-              <th style="width: 110px;">RATE (₹)</th>
-              <th style="width: 90px;">DISCOUNT (%)</th>
-              <th style="width: 80px;">TAX (%)</th>
-              <th style="width: 110px;">TAX AMT (₹)</th>
-              <th style="width: 110px;">TOTAL (₹)</th>
-              <th style="width: 120px;">DELIVERY DATE</th>
-              <th>REMARKS</th>
-              <th class="no-print" style="width: 50px;"></th>
+              <th style="width: 100px;">RATE (₹)</th>
+              <th style="width: 70px;">DISC %</th>
+              <th style="width: 70px;">GST %</th>
+              <th style="width: 110px;">NET (₹)</th>
+              <th style="width: 100px;">DELIVERY</th>
+              <th class="no-print" style="width: 40px;"></th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of items; let i = index">
-              <td class="center font-bold">{{ i + 1 }}</td>
-              <td><input class="desc-input-fidelity" [(ngModel)]="item.itemDescription" name="itemDescription{{i}}" placeholder="Enter Description" required></td>
-              <td><input [(ngModel)]="item.hsn" name="hsn{{i}}" placeholder="8415" style="text-align: center;"></td>
-              <td><input [(ngModel)]="item.uom" name="uom{{i}}" placeholder="Pcs" style="text-align: center;"></td>
-              <td><input type="number" min="1" [(ngModel)]="item.quantity" name="quantity{{i}}" style="text-align: center;"></td>
-              <td><input type="number" min="0" [(ngModel)]="item.rate" name="rate{{i}}" style="text-align: right; font-weight:700;"></td>
-              <td><input type="number" min="0" [(ngModel)]="item.discount" name="discount{{i}}" style="text-align: center;"></td>
-              <td><input type="number" min="0" [(ngModel)]="item.gst" name="gst{{i}}" style="text-align: center;"></td>
-              <td class="text-right font-bold color-slate">{{ (itemCgst(item) + itemSgst(item)) | number:'1.2-2' }}</td>
-              <td class="text-right font-bold color-blue">{{ itemNetAmount(item) | number:'1.2-2' }}</td>
-              <td><input type="date" [(ngModel)]="item.deliveryDate" name="deliveryDate{{i}}"></td>
-              <td><input [(ngModel)]="item.remark" name="remark{{i}}" placeholder="-"></td>
-              <td class="no-print center">
-                <button type="button" class="remove-item-btn-fidelity" (click)="removeItem(i)">🗑️</button>
+              <td class="center">{{ i + 1 }}</td>
+              <td><input [(ngModel)]="item.partNo" placeholder="Part No"></td>
+              <td><input [(ngModel)]="item.itemDescription" placeholder="Description" required></td>
+              <td><input [(ngModel)]="item.hsn" placeholder="HSN"></td>
+              <td>
+                <select [(ngModel)]="item.uom">
+                  <option value="Pcs">Pcs</option>
+                  <option value="Nos">Nos</option>
+                  <option value="Set">Set</option>
+                  <option value="Kg">Kg</option>
+                  <option value="Mtr">Mtr</option>
+                  <option value="Ltr">Ltr</option>
+                </select>
               </td>
-            </tr>
-            <tr class="total-row-fidelity">
-              <td colspan="9" class="right-align-text font-bold">Grand Total</td>
-              <td class="text-right font-bold total-sum-val">₹ {{ totalAmount | number:'1.2-2' }}</td>
-              <td colspan="3"></td>
+              <td><input type="number" min="1" [(ngModel)]="item.quantity" style="text-align: right;"></td>
+              <td><input type="number" min="0" [(ngModel)]="item.rate" style="text-align: right;"></td>
+              <td><input type="number" min="0" [(ngModel)]="item.discount" style="text-align: right;"></td>
+              <td><input type="number" min="0" [(ngModel)]="item.gst" style="text-align: right;"></td>
+              <td class="right font-bold">{{ itemNetAmount(item) | number:'1.2-2' }}</td>
+              <td><input type="date" [(ngModel)]="item.deliveryDate"></td>
+              <td class="no-print center">
+                <button type="button" class="remove-item-btn-fidelity" (click)="removeItem(i)">×</button>
+              </td>
             </tr>
           </tbody>
         </table>
-        <button type="button" class="add-item-btn-fidelity no-print" (click)="addItem()">+ Add Item</button>
       </div>
 
-      <!-- Terms & Conditions Section matching Image 4 layout -->
-      <div class="terms-conditions-fidelity">
-        <div class="tc-left-col">
-          <div class="tc-title">TERMS &amp; CONDITIONS</div>
-          <table class="tc-table">
-            <thead>
-              <tr>
-                <th style="width: 50px;">S.NO</th>
-                <th>KEY</th>
-                <th>VALUE</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="center">1</td>
-                <td>Payment</td>
-                <td><input value="30 days from the date of invoice."></td>
-              </tr>
-              <tr>
-                <td class="center">2</td>
-                <td>Transportation</td>
-                <td><input value="Vendor scope."></td>
-              </tr>
-              <tr>
-                <td class="center">3</td>
-                <td>GST &amp; Taxes</td>
-                <td><input value="As applicable."></td>
-              </tr>
-              <tr>
-                <td class="center">4</td>
-                <td>Penalties</td>
-                <td><input value="As per company policy."></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="tc-right-col">
-          <div class="tc-title-header">
-            <span>TERMS &amp; CONDITIONS DETAILS</span>
-            <span class="edit-icon-pen">✏️</span>
-          </div>
-          <div class="tc-details-body">
-            <p>Please mention the Purchase Order number on every invoice / packing slip and all correspondence.</p>
-            <p>All invoices must be prepared only in the name of Raghavit Appliances and Electronics Pvt. Ltd., Rampur Jattan-140309, Punjab.</p>
-            <p>All goods supplied must be of the highest quality and latest design.</p>
-            <p>Goods will be inspected at the receiving end and any defect / damage / shortage must be replaced immediately.</p>
-            <p>Vendor shall bear all costs related to replacement and re-delivery.</p>
-            <p>Payment will be made within the agreed credit period after successful delivery and acceptance.</p>
-            <p>This PO is valid for 30 days from the date of issue unless extended in writing.</p>
-          </div>
-        </div>
+      <!-- Financial Totals Block -->
+      <div class="finance-block-fidelity">
+        <table class="finance-totals-table">
+          <tr>
+            <td class="lbl">Total Before Tax:</td>
+            <td class="val">₹ {{ totalBeforeTax | number:'1.2-2' }}</td>
+          </tr>
+          <tr>
+            <td class="lbl">CGST:</td>
+            <td class="val">₹ {{ totalCgst | number:'1.2-2' }}</td>
+          </tr>
+          <tr>
+            <td class="lbl">SGST:</td>
+            <td class="val">₹ {{ totalSgst | number:'1.2-2' }}</td>
+          </tr>
+          <tr class="grand-total-row">
+            <td class="lbl">Grand Total:</td>
+            <td class="val font-bold">₹ {{ totalAmount | number:'1.2-2' }}</td>
+          </tr>
+        </table>
       </div>
 
-      <!-- Salutation signature -->
-      <div class="signature-block no-print">
-        <p>For <strong>RAGHAVIT APPLIANCES AND ELECTRONICS PVT. LTD.</strong></p>
+      <!-- Terms and Conditions matching Image 4 layout -->
+      <div class="terms-section-fidelity">
+        <div class="terms-head-fidelity">TERMS & CONDITIONS</div>
+        <ol class="terms-list-fidelity">
+          <li *ngFor="let term of termsLines()">{{ term }}</li>
+        </ol>
       </div>
 
       <!-- Approval Chain matching Image 4 layout -->
-      <div class="section-head-fidelity" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="section-head-fidelity">
         <div class="section-title-fidelity">👥 APPROVAL CHAIN</div>
         <button type="button" class="add-approver-btn-fidelity no-print" (click)="addApprover()">+ Add Approver</button>
       </div>
-      <div class="approval-table-wrapper" style="overflow-x: auto; margin-top: 10px;">
-        <table class="doc-table approval-table-fidelity approval-table">
+      <div class="table-scroll">
+        <table class="doc-table approval-table-fidelity">
           <thead>
             <tr>
-              <th style="width: 50px; text-align: center;">#</th>
+              <th style="width: 40px; text-align: center;">#</th>
               <th style="width: 100px;">LINE</th>
-              <th style="width: 220px;">NAME</th>
+              <th>NAME</th>
               <th>COMMENTS/REMARKS</th>
-              <th style="width: 150px;">DESIGNATION</th>
-              <th style="width: 220px;">E-MAIL</th>
-              <th style="width: 150px;">CONTACT NO.</th>
-              <th style="width: 160px;">ORGANIZATION</th>
+              <th style="width: 120px;">DESIGNATION</th>
+              <th style="width: 170px;">E-MAIL</th>
+              <th style="width: 120px;">CONTACT NO.</th>
+              <th style="width: 130px;">ORGANIZATION</th>
               <th style="width: 110px; text-align: center;">STATUS</th>
-              <th style="width: 170px;">DATE/TIME</th>
+              <th style="width: 170px; text-align: center;">DATE/TIME</th>
               <th style="width: 50px; text-align: center;" class="no-print"></th>
             </tr>
           </thead>
@@ -492,12 +508,21 @@
                 <input type="text" [(ngModel)]="approver.organization" placeholder="Organization" style="width: 100%; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px;">
               </td>
               <td style="text-align: center;">
-                <span class="status-badge-small status-pending" style="background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 11px;">
-                  {{ approver.status || 'Pending' }}
+                <span *ngIf="approver.status === 'Approved'" style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; display: inline-block;">
+                  Approved ✓
+                </span>
+                <span *ngIf="approver.status === 'Rejected'" style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; display: inline-block;">
+                  Rejected ✗
+                </span>
+                <span *ngIf="approver.status !== 'Approved' && approver.status !== 'Rejected'" style="background: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; display: inline-block;">
+                  Pending ⏳
                 </span>
               </td>
-              <td class="date-time-cell" style="font-size: 12px; color: #64748b; white-space: nowrap;">
-                {{ approver.dateTime || '' }}
+              <td class="date-time-cell" style="font-size: 12px; color: #475569; white-space: nowrap; text-align: center;">
+                <div>{{ approver.dateTime ? approver.dateTime : '—' }}</div>
+                <div *ngIf="approver.status === 'Pending' || !approver.status" style="font-size: 10.5px; color: #ef4444; margin-top: 3px; font-weight: 600;">
+                  Pending: {{ getPendingDays(form.requestDate || form.orderDate) }}
+                </div>
               </td>
               <td style="text-align: center;" class="no-print">
                 <button type="button" class="remove-chain-btn" (click)="removeApprover(i)" style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer;">×</button>
@@ -598,17 +623,39 @@
         </tr>
       </table>
 
+      <!-- Decision Remarks / Comments (when pending for current approver) -->
+      <div class="section-head-fidelity no-print" *ngIf="selectedOrder && canCurrentUserApprove(selectedOrder)">
+        <div class="section-title-fidelity">📝 DECISION REMARKS / COMMENTS</div>
+      </div>
+      <div *ngIf="selectedOrder && canCurrentUserApprove(selectedOrder)" style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px;" class="no-print">
+        <textarea [(ngModel)]="decisionRemarks" rows="2" placeholder="Enter approval or rejection comments for this Purchase Order..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+      </div>
+
       <!-- Bottom Form Actions matching Image 4 layout -->
       <div class="form-actions-fidelity no-print">
         <div class="total-summary-fidelity">
           <span class="ts-lbl">TOTAL AMOUNT</span>
           <span class="ts-val">₹ {{ totalAmount | number:'1.2-2' }}</span>
-          <span class="ts-word">( Fifty Nine Thousand Only )</span>
         </div>
-        <button type="button" class="btn-submit-fidelity" [disabled]="isSubmitting" (click)="submit()">
-          <span *ngIf="isSubmitting" class="spinner"></span>
-          Submit Purchase Order
-        </button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button type="button" class="btn-cancel-fidelity" (click)="backToList()" style="padding: 10px 18px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            ← Back to List
+          </button>
+          
+          <!-- Submit button for new PO -->
+          <button *ngIf="!selectedOrder || !selectedOrder.uniqueSerialNo" type="button" class="btn-submit-fidelity" [disabled]="isSubmitting" (click)="submit()">
+            <span *ngIf="isSubmitting" class="spinner"></span>
+            Submit Purchase Order
+          </button>
+
+          <!-- Approve / Reject buttons when pending for current user -->
+          <button *ngIf="selectedOrder && canCurrentUserApprove(selectedOrder)" type="button" (click)="approvePO()" [disabled]="isSubmitting" style="background: #059669; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13.5px;">
+            ✓ Approve PO
+          </button>
+          <button *ngIf="selectedOrder && canCurrentUserApprove(selectedOrder)" type="button" (click)="rejectPO()" [disabled]="isSubmitting" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13.5px;">
+            ✗ Reject PO
+          </button>
+        </div>
       </div>
 
     </div>

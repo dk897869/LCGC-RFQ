@@ -18,10 +18,12 @@ router.put('/:id', verifyToken, poNppController.updatePoNpp);
 // Delete PO NPP
 router.delete('/:id', verifyToken, poNppController.deletePoNpp);
 
-// Approve PO NPP
+// Approve PO NPP (both PATCH and POST supported)
 router.patch('/:id/approve', verifyToken, poNppController.approvePoNpp);
+router.post('/:id/approve', verifyToken, poNppController.approvePoNpp);
 
-// Reject PO NPP
+// Reject PO NPP (both PATCH and POST supported)
 router.patch('/:id/reject', verifyToken, poNppController.rejectPoNpp);
+router.post('/:id/reject', verifyToken, poNppController.rejectPoNpp);
 
 module.exports = router;

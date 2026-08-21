@@ -1597,6 +1597,28 @@ createPRFromComparison(data: any): Observable<any> {
     return this.http.post(`${this.API_URL}/pr/${id}/reject`, { comments }, { headers: this.getHeaders() });
   }
 
+  /**
+   * Approve PO
+   */
+  approvePO(id: string, comments?: string): Observable<any> {
+    console.log('✅ Approving PO:', id, comments);
+    return this.http.post(`${this.API_URL}/po-npp/${id}/approve`, { comments }, { headers: this.getHeaders() }).pipe(
+      catchError(() => this.http.patch(`${this.API_URL}/po-npp/${id}/approve`, { comments }, { headers: this.getHeaders() })),
+      catchError(() => this.http.post(`${this.API_URL}/po/${id}/approve`, { comments }, { headers: this.getHeaders() }))
+    );
+  }
+
+  /**
+   * Reject PO
+   */
+  rejectPO(id: string, comments?: string): Observable<any> {
+    console.log('❌ Rejecting PO:', id, comments);
+    return this.http.post(`${this.API_URL}/po-npp/${id}/reject`, { comments }, { headers: this.getHeaders() }).pipe(
+      catchError(() => this.http.patch(`${this.API_URL}/po-npp/${id}/reject`, { comments }, { headers: this.getHeaders() })),
+      catchError(() => this.http.post(`${this.API_URL}/po/${id}/reject`, { comments }, { headers: this.getHeaders() }))
+    );
+  }
+
 // Get quotation comparison by RFQ ID
 getQuotationComparisonByRfq(rfqId: string): Observable<any> {
   return this.http.get<any>(`${this.API_URL}/quotation/comparison/rfq/${rfqId}`, this.getHttpOptions()).pipe(

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { renderFullScreenDocumentViewer } from '../../../utils/full-screen-viewer';
 
 type VendorStatus = 'Pending' | 'Approved' | 'Rejected' | 'Accepted' | 'Quoted';
 
@@ -149,9 +150,12 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
     reader.onload = (e: any) => {
       const att = {
         name: file.name,
+        fileName: file.name,
         size: (file.size / 1024).toFixed(1) + ' KB',
+        fileSize: (file.size / 1024).toFixed(1) + ' KB',
         preview: e.target.result,
         url: e.target.result,
+        fileData: e.target.result,
         file: file
       };
       if (vendorNum === 1) this.s1Attachments.push(att);
@@ -161,6 +165,17 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     };
     reader.readAsDataURL(file);
+  }
+
+  removeVendorAttachment(vendorNum: 1 | 2 | 3, index: number) {
+    if (vendorNum === 1 && this.s1Attachments.length > index) {
+      this.s1Attachments.splice(index, 1);
+    } else if (vendorNum === 2 && this.s2Attachments.length > index) {
+      this.s2Attachments.splice(index, 1);
+    } else if (vendorNum === 3 && this.s3Attachments.length > index) {
+      this.s3Attachments.splice(index, 1);
+    }
+    this.cdr.detectChanges();
   }
 
   // ---------------- list search / filter ----------------
@@ -229,13 +244,9 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
   mediaPreviewTitle = '';
   mediaZoomScale = 1;
 
-  openMediaPreview(url: string, title?: string) {
-    if (!url) return;
-    this.mediaPreviewUrl = url;
-    this.mediaPreviewTitle = title || 'Attachment Preview';
-    this.mediaZoomScale = 1;
-    this.showMediaModal = true;
-    this.cdr.detectChanges();
+  openMediaPreview(attachmentOrUrl: any, title?: string) {
+    if (!attachmentOrUrl) return;
+    renderFullScreenDocumentViewer(attachmentOrUrl, title);
   }
 
   closeMediaPreview() {
@@ -506,17 +517,26 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       this.getVendorNameStr(approved[2]?.vendorName || approved[2])
     ];
     const sourceItems = vr.rfq.items?.length ? vr.rfq.items : [{ description: '', uom: 'Nos', qty: 1 } as RFQLineItemView];
-    const items: QuotationItem[] = sourceItems.map((it, i) => ({
-      sNo: i + 1,
-      partCode: '',
-      partDescription: it.description || '',
-      specification: it.altSimilar || '',
-      uom: it.uom || 'Nos',
-      qty: Number(it.qty || 1),
-      supplier1Price: 0, supplier1Amount: 0,
-      supplier2Price: 0, supplier2Amount: 0,
-      supplier3Price: 0, supplier3Amount: 0
-    }));
+    const items: QuotationItem[] = sourceItems.map((it: any, i) => {
+      const s1p = Number((approved[0] as any)?.items?.[i]?.unitPrice || (approved[0] as any)?.items?.[i]?.price || (approved[0] as any)?.price || 0);
+      const s2p = Number((approved[1] as any)?.items?.[i]?.unitPrice || (approved[1] as any)?.items?.[i]?.price || (approved[1] as any)?.price || 0);
+      const s3p = Number((approved[2] as any)?.items?.[i]?.unitPrice || (approved[2] as any)?.items?.[i]?.price || (approved[2] as any)?.price || 0);
+      const q = Number(it.qty || 1);
+      return {
+        sNo: i + 1,
+        partCode: it.partCode || it.partNo || `${i + 1}`,
+        partDescription: it.description || it.partDescription || '',
+        specification: it.specification || it.altSimilar || '',
+        uom: it.uom || 'Nos',
+        qty: q,
+        supplier1Price: s1p,
+        supplier1Amount: s1p * q,
+        supplier2Price: s2p,
+        supplier2Amount: s2p * q,
+        supplier3Price: s3p,
+        supplier3Amount: s3p * q
+      };
+    });
     return {
       id: vr.rfqId,
       rfqId: vr.rfqId,
@@ -643,6 +663,18 @@ export class QuotationComparisonComponent implements OnInit, OnDestroy {
       return;
     }
     this.current = JSON.parse(JSON.stringify(request));
+    this.s1Attachments = [];
+    this.s2Attachments = [];
+    this.s3Attachments = [];
+    if (this.current?.attachment1) {
+      this.s1Attachments.push({ name: this.current.attachment1, url: this.current.attachment1, preview: this.current.attachment1, fileData: this.current.attachment1 });
+    }
+    if (this.current?.attachment2) {
+      this.s2Attachments.push({ name: this.current.attachment2, url: this.current.attachment2, preview: this.current.attachment2, fileData: this.current.attachment2 });
+    }
+    if (this.current?.attachment3) {
+      this.s3Attachments.push({ name: this.current.attachment3, url: this.current.attachment3, preview: this.current.attachment3, fileData: this.current.attachment3 });
+    }
     this.comparisonMode = 'auto';
     this.showListView = false;
     this.showFormView = true;

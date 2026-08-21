@@ -110,9 +110,9 @@
           <span></span><span></span><span></span>
         </button>
         <nav class="breadcrumb" aria-label="Breadcrumb">
-          <span class="bc-item bc-root">NON BOM</span>
+          <span class="bc-item bc-root" style="cursor: pointer;" (click)="setActiveTab('rfq-npp-form', 'rfq-request')">NON BOM</span>
           <span class="bc-sep">›</span>
-          <span class="bc-item bc-root">{{ getActiveGroupLabel() }}</span>
+          <span class="bc-item bc-root" style="cursor: pointer;" (click)="toggleGroup(activeGroupId)">{{ getActiveGroupLabel() }}</span>
           <span class="bc-sep">›</span>
           <span class="bc-item bc-active">{{ getActiveWorkflowLabel() }}</span>
         </nav>
@@ -127,6 +127,37 @@
           <span class="tb-btn-label">{{ isLoading ? 'Loading…' : 'Refresh' }}</span>
         </button>
       </div>
+    </div>
+
+    <!-- ══ Quick Direct Stage Nav Bar (RFQ ➔ Requisition to Vendor ➔ Quotation Status ➔ Cost Comparison ➔ PR Process ➔ PO Approval) ══ -->
+    <div class="stage-nav-strip no-print" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 8px 20px; display: flex; align-items: center; gap: 8px; overflow-x: auto; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <button type="button" (click)="setActiveTab('rfq-npp-form', 'rfq-request')" [style.background]="activeTab === 'rfq-npp-form' || activeTab === 'rfq-requisition' ? '#0f172a' : '#f1f5f9'" [style.color]="activeTab === 'rfq-npp-form' || activeTab === 'rfq-requisition' ? '#ffffff' : '#334155'" style="border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <span>1. 📋 RFQ Request</span>
+      </button>
+      <span style="color: #94a3b8; font-weight: 700; font-size: 14px;">➔</span>
+      <button type="button" (click)="setActiveTab('rfq-vendor-requisition', 'rfq-request')" [style.background]="activeTab === 'rfq-vendor-requisition' ? '#0f172a' : '#f1f5f9'" [style.color]="activeTab === 'rfq-vendor-requisition' ? '#ffffff' : '#334155'" style="border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <span>2. 📤 Requisition To Vendor</span>
+      </button>
+      <span style="color: #94a3b8; font-weight: 700; font-size: 14px;">➔</span>
+      <button type="button" (click)="setActiveTab('quotation-status', 'rfq-request')" [style.background]="activeTab === 'quotation-status' ? '#0f172a' : '#f1f5f9'" [style.color]="activeTab === 'quotation-status' ? '#ffffff' : '#334155'" style="border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <span>3. 📊 Quotation Status</span>
+      </button>
+      <span style="color: #94a3b8; font-weight: 700; font-size: 14px;">➔</span>
+      <button type="button" (click)="setActiveTab('quotation-comparison', 'rfq-request')" [style.background]="activeTab === 'quotation-comparison' ? '#0f172a' : '#f1f5f9'" [style.color]="activeTab === 'quotation-comparison' ? '#ffffff' : '#334155'" style="border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <span>4. ⚖️ Cost Comparison</span>
+      </button>
+      <span style="color: #94a3b8; font-weight: 700; font-size: 14px;">➔</span>
+      <button type="button" (click)="setActiveTab('pr-request', 'pr-process')" [style.background]="activeTab === 'pr-request' ? '#0f172a' : '#f1f5f9'" [style.color]="activeTab === 'pr-request' ? '#ffffff' : '#334155'" style="border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <span>5. 📑 PR Process</span>
+      </button>
+      <span style="color: #94a3b8; font-weight: 700; font-size: 14px;">➔</span>
+      <button type="button" (click)="setActiveTab('po-npp', 'pr-process')" [style.background]="activeTab === 'po-npp' ? '#0f172a' : '#f1f5f9'" [style.color]="activeTab === 'po-npp' ? '#ffffff' : '#334155'" style="border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <span>6. 📜 PO Approval</span>
+      </button>
+      <span style="color: #94a3b8; font-weight: 700; font-size: 14px; margin: 0 4px;">|</span>
+      <button type="button" (click)="setActiveTab('ep-request', 'approvals')" [style.background]="activeTab === 'ep-request' || activeTab === 'ep-approvals' ? '#0f172a' : '#f1f5f9'" [style.color]="activeTab === 'ep-request' || activeTab === 'ep-approvals' ? '#ffffff' : '#334155'" style="border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <span>⚡ EP Approval</span>
+      </button>
     </div>
 
     <!-- Context Strip (hidden on full-page forms) -->

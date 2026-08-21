@@ -1874,13 +1874,13 @@ app.get('/api/pr/list', authMiddleware, moduleAccessMiddleware, async (req, res)
   }
 });
 
-// Helper to search PR across all 3 Mongoose models (PRRequest, NPPRequest, PrNpp)
+// Helper to search PR across all 4 Mongoose models (PRRequest, NPPRequest, PrNpp, Request)
 const findAnyPR = async (id) => {
   const mongoose = require('mongoose');
   const cleanId = String(id || '').trim();
   if (!cleanId) return null;
 
-  const isObjectId = mongoose.Types.ObjectId.isValid(cleanId);
+  const isObjectId = mongoose.Types.ObjectId.isValid(cleanId) && cleanId.length === 24;
   const escapeRegex = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
   const exactRegex = new RegExp('^' + escapeRegex(cleanId) + '$', 'i');
   
@@ -1894,16 +1894,22 @@ const findAnyPR = async (id) => {
     { requestId: cleanId },
     { requestId: exactRegex },
     { rfqNo: cleanId },
-    { rfqNo: exactRegex }
+    { rfqNo: exactRegex },
+    { 'formData.uniqueSerialNo': cleanId },
+    { 'formData.prNumber': cleanId },
+    { 'formData.serialNo': cleanId },
+    { 'formData.rfqNo': cleanId }
   ];
   if (isObjectId) {
+    try { orConditions.unshift({ _id: new mongoose.Types.ObjectId(cleanId) }); } catch (e) {}
     orConditions.unshift({ _id: cleanId });
   }
 
   const models = [];
-  try { models.push(require('./models/PRRequest')); } catch (e) {}
   try { models.push(require('./models/nppRequest.model')); } catch (e) {}
+  try { models.push(require('./models/PRRequest')); } catch (e) {}
   try { models.push(require('./models/prNpp.model')); } catch (e) {}
+  try { models.push(require('./models/request')); } catch (e) {}
 
   for (const model of models) {
     try {
@@ -1919,7 +1925,9 @@ const findAnyPR = async (id) => {
         $or: [
           { uniqueSerialNo: { $regex: escapeRegex(cleanId), $options: 'i' } },
           { prNumber: { $regex: escapeRegex(cleanId), $options: 'i' } },
-          { serialNo: { $regex: escapeRegex(cleanId), $options: 'i' } }
+          { serialNo: { $regex: escapeRegex(cleanId), $options: 'i' } },
+          { 'formData.uniqueSerialNo': { $regex: escapeRegex(cleanId), $options: 'i' } },
+          { 'formData.prNumber': { $regex: escapeRegex(cleanId), $options: 'i' } }
         ]
       });
       if (doc) return doc;

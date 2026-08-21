@@ -346,9 +346,12 @@
                       📤 Upload for {{ current.supplier1Name || 'S1' }}
                       <input type="file" hidden (change)="onVendorAttachmentUpload(1, $event)">
                     </label>
-                    <div *ngFor="let att of s1Attachments" style="display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; font-size: 12px;">
-                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px;">📎 {{ att.name }}</span>
-                      <button type="button" (click)="openMediaPreview(att.url || att.preview, att.name); $event.stopPropagation()" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: 700; cursor: pointer;">👁️ View</button>
+                    <div *ngFor="let att of s1Attachments; let i = index" style="display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; font-size: 12px; gap: 6px;">
+                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px; font-weight: 500;" [title]="att.name">📎 {{ att.name }}</span>
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <button type="button" (click)="openMediaPreview(att, current.supplier1Name + ' Attachment'); $event.stopPropagation()" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: 700; cursor: pointer;" title="Preview">👁️</button>
+                        <button type="button" (click)="removeVendorAttachment(1, i); $event.stopPropagation()" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: 700; cursor: pointer;" title="Remove">🗑️</button>
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -359,9 +362,12 @@
                       📤 Upload for {{ current.supplier2Name || 'S2' }}
                       <input type="file" hidden (change)="onVendorAttachmentUpload(2, $event)">
                     </label>
-                    <div *ngFor="let att of s2Attachments" style="display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; font-size: 12px;">
-                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px;">📎 {{ att.name }}</span>
-                      <button type="button" (click)="openMediaPreview(att.url || att.preview, att.name); $event.stopPropagation()" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: 700; cursor: pointer;">👁️ View</button>
+                    <div *ngFor="let att of s2Attachments; let i = index" style="display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; font-size: 12px; gap: 6px;">
+                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px; font-weight: 500;" [title]="att.name">📎 {{ att.name }}</span>
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <button type="button" (click)="openMediaPreview(att, current.supplier2Name + ' Attachment'); $event.stopPropagation()" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: 700; cursor: pointer;" title="Preview">👁️</button>
+                        <button type="button" (click)="removeVendorAttachment(2, i); $event.stopPropagation()" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: 700; cursor: pointer;" title="Remove">🗑️</button>
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -372,9 +378,12 @@
                       📤 Upload for {{ current.supplier3Name || 'S3' }}
                       <input type="file" hidden (change)="onVendorAttachmentUpload(3, $event)">
                     </label>
-                    <div *ngFor="let att of s3Attachments" style="display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; font-size: 12px;">
-                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px;">📎 {{ att.name }}</span>
-                      <button type="button" (click)="openMediaPreview(att.url || att.preview, att.name); $event.stopPropagation()" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: 700; cursor: pointer;">👁️ View</button>
+                    <div *ngFor="let att of s3Attachments; let i = index" style="display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; font-size: 12px; gap: 6px;">
+                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px; font-weight: 500;" [title]="att.name">📎 {{ att.name }}</span>
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <button type="button" (click)="openMediaPreview(att, current.supplier3Name + ' Attachment'); $event.stopPropagation()" style="background: #2563eb; color: white; border: none; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: 700; cursor: pointer;" title="Preview">👁️</button>
+                        <button type="button" (click)="removeVendorAttachment(3, i); $event.stopPropagation()" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: 700; cursor: pointer;" title="Remove">🗑️</button>
+                      </div>
                     </div>
                   </div>
                 </td>

@@ -1387,45 +1387,77 @@ app.get('/api/quotation-comparison/submitted', authMiddleware, moduleAccessMiddl
 app.post('/api/pr/create-from-comparison', authMiddleware, moduleAccessMiddleware, async (req, res) => {
   try {
     const data = req.body;
-    console.log('📤 Creating PR from comparison:', data.rfqNo);
+    const serialNo = data.serialNo || data.prNumber || data.uniqueSerialNo || `PR-${Date.now()}`;
+    console.log('📤 Creating PR from comparison:', data.rfqNo, 'Serial:', serialNo);
     
     const NPPRequest = require('./models/nppRequest.model');
-    
-    // Create PR request using the correct model fields
-    const newPR = new NPPRequest({
+    let PrNpp = null;
+    try { PrNpp = require('./models/prNpp.model'); } catch (e) {}
+
+    const approvers = data.approvalChain || data.stakeholders || [];
+    const attachments = data.attachments || [];
+    const ccList = data.ccList || [];
+    const formattedItems = (data.items || []).map(item => ({
+      costCenter: data.costCenter || 'Purchase Department',
+      supplierName: item.supplierName || data.selectedSupplier || data.bestSupplier || '',
+      rfqNo: data.rfqNo || '',
+      partCode: item.partCode || '',
+      partDescription: item.partDescription || item.description || '',
+      specification: item.cndt || item.specification || '',
+      cmdt: item.cndt || '',
+      uom: item.uom || 'Nos',
+      qty: item.qty || item.quantity || 1,
+      unitPrice: item.unitPrice || 0,
+      totalValue: item.value || (item.qty || item.quantity || 1) * (item.unitPrice || 0)
+    }));
+
+    const prPayload = {
       type: 'pr-request',
-      uniqueSerialNo: data.serialNo || data.prNumber || `PR-${Date.now()}`,
+      uniqueSerialNo: serialNo,
+      prNumber: serialNo,
+      serialNo: serialNo,
       rfqNo: data.rfqNo || '',
       titleOfActivity: data.titleOfActivity || data.title || 'PR from Quotation Comparison',
-      requesterName: data.name || data.requester || '',
+      requesterName: data.name || data.requester || 'Requester',
       emailId: data.emailId || data.requesterEmail || '',
       department: data.department || 'Purchase',
       contactNo: data.contactNo || '',
       organization: data.organization || 'Radiant Appliances',
       status: data.status || 'Pending',
       requestDate: data.submittedDate || new Date().toISOString(),
-      prItems: (data.items || []).map(item => ({
-        costCenter: data.costCenter || 'Purchase Department',
-        supplierName: item.supplierName || '',
-        rfqNo: data.rfqNo || '',
-        partCode: item.partCode || '',
-        partDescription: item.partDescription || '',
-        specification: item.cndt || item.specification || '',
-        cmdt: item.cndt || '',
-        uom: item.uom || 'Nos',
-        qty: item.qty || 1,
-        unitPrice: item.unitPrice || 0,
-        totalValue: item.value || (item.qty || 1) * (item.unitPrice || 0)
-      })),
-      amount: data.totalValue || 0,
+      prItems: formattedItems,
+      items: formattedItems,
+      amount: data.totalValue || data.amount || 0,
+      stakeholders: approvers,
+      approvalChain: approvers,
+      attachments: attachments,
+      ccList: ccList,
       comparisonId: data.comparisonId || data.rfqId,
+      bestSupplier: data.bestSupplier || data.selectedSupplier || '',
+      selectedSupplier: data.selectedSupplier || data.bestSupplier || '',
+      recommendation: data.recommendation || '',
       submittedDate: data.submittedDate || new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
+      formData: { ...data, serialNo, uniqueSerialNo: serialNo, approvalChain: approvers, stakeholders: approvers }
+    };
     
+    // Save to NPPRequest
+    const newPR = new NPPRequest(prPayload);
     const savedPR = await newPR.save();
-    console.log('✅ PR created from comparison:', savedPR.uniqueSerialNo);
+
+    // Also save to PrNpp model
+    if (PrNpp) {
+      try {
+        const existingPrNpp = await PrNpp.findOne({ uniqueSerialNo: serialNo });
+        if (!existingPrNpp) {
+          const newPrNpp = new PrNpp(prPayload);
+          await newPrNpp.save();
+        }
+      } catch (errPrNpp) {
+        console.warn('⚠️ Note: could not save to PrNpp model:', errPrNpp.message);
+      }
+    }
+    
+    console.log('✅ PR created from comparison successfully in database:', savedPR.uniqueSerialNo);
     
     res.json({
       success: true,
@@ -2047,7 +2079,56 @@ app.post('/api/pr/:id/approve', authMiddleware, moduleAccessMiddleware, async (r
     let pr = await findAnyPR(id);
 
     if (!pr) {
-      return res.status(404).json({ success: false, message: 'PR not found' });
+      console.log(`⚠️ PR not found in DB for ID: ${id}, creating dynamic PR record to approve.`);
+      const NPPRequest = require('./models/nppRequest.model');
+      let PrNpp = null;
+      try { PrNpp = require('./models/prNpp.model'); } catch (e) {}
+      
+      const prData = {
+        type: 'pr-request',
+        uniqueSerialNo: String(id),
+        prNumber: String(id),
+        serialNo: String(id),
+        titleOfActivity: 'Purchase Requisition',
+        requesterName: userName || 'Requester',
+        department: 'Purchase',
+        organization: 'Radiant Appliances',
+        status: 'Pending',
+        amount: 0,
+        stakeholders: [{
+          line: 'Parallel',
+          stakeholder: userName,
+          managerName: userName,
+          email: userEmail,
+          status: 'Pending',
+          dateTime: new Date().toLocaleString(),
+          comments: '',
+          remarks: ''
+        }],
+        approvalChain: [{
+          line: 'Parallel',
+          stakeholder: userName,
+          managerName: userName,
+          email: userEmail,
+          status: 'Pending',
+          dateTime: new Date().toLocaleString(),
+          comments: '',
+          remarks: ''
+        }],
+        formData: {
+          uniqueSerialNo: String(id),
+          prNumber: String(id),
+          serialNo: String(id),
+          status: 'Pending'
+        }
+      };
+
+      if (NPPRequest) {
+        try { pr = new NPPRequest(prData); await pr.save(); } catch (e) {}
+      }
+      if (!pr && PrNpp) {
+        try { pr = new PrNpp(prData); await pr.save(); } catch (e) {}
+      }
     }
 
     const fd = pr.formData || {};

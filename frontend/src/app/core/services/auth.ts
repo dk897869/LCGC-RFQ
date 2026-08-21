@@ -1586,7 +1586,11 @@ createPRFromComparison(data: any): Observable<any> {
    */
   approvePR(id: string, comments?: string): Observable<any> {
     console.log('✅ Approving PR:', id, comments);
-    return this.http.post(`${this.API_URL}/pr/${id}/approve`, { comments }, { headers: this.getHeaders() });
+    return this.http.post(`${this.API_URL}/pr/${id}/approve`, { comments }, { headers: this.getHeaders() }).pipe(
+      catchError(() => this.http.patch(`${this.API_URL}/pr/${id}/approve`, { comments }, { headers: this.getHeaders() })),
+      catchError(() => this.http.post(`${this.API_URL}/pr-npp/${id}/approve`, { comments }, { headers: this.getHeaders() })),
+      catchError(() => this.http.patch(`${this.API_URL}/pr-npp/${id}/approve`, { comments }, { headers: this.getHeaders() }))
+    );
   }
 
   /**
@@ -1594,7 +1598,11 @@ createPRFromComparison(data: any): Observable<any> {
    */
   rejectPR(id: string, comments?: string): Observable<any> {
     console.log('❌ Rejecting PR:', id);
-    return this.http.post(`${this.API_URL}/pr/${id}/reject`, { comments }, { headers: this.getHeaders() });
+    return this.http.post(`${this.API_URL}/pr/${id}/reject`, { comments }, { headers: this.getHeaders() }).pipe(
+      catchError(() => this.http.patch(`${this.API_URL}/pr/${id}/reject`, { comments }, { headers: this.getHeaders() })),
+      catchError(() => this.http.post(`${this.API_URL}/pr-npp/${id}/reject`, { comments }, { headers: this.getHeaders() })),
+      catchError(() => this.http.patch(`${this.API_URL}/pr-npp/${id}/reject`, { comments }, { headers: this.getHeaders() }))
+    );
   }
 
   /**

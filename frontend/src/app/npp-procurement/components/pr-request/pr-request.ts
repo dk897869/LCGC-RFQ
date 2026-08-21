@@ -357,6 +357,10 @@ export class PrRequest implements OnInit, OnDestroy {
     });
   }
 
+  goToPO() {
+    window.dispatchEvent(new CustomEvent('npp-navigate-tab', { detail: 'po-npp' }));
+  }
+
   // ============================================================
   //  LIFECYCLE
   // ============================================================

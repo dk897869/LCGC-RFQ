@@ -488,14 +488,22 @@
           <span class="status-date" *ngIf="currentPR.submittedDate">Submitted: {{ currentPR.submittedDate | date:'dd MMM yyyy, hh:mm a' }}</span>
         </div>
         <div class="action-right" style="display: flex; gap: 10px; align-items: center;">
-          <button class="action-btn secondary" (click)="saveDraft()">💾 Save</button>
-          <button class="action-btn primary" (click)="submitForApproval()" [disabled]="isSubmitting">
+          <!-- Save / Submit only for Draft state -->
+          <button class="action-btn secondary" *ngIf="currentPR && currentPR.status === 'Draft'" (click)="saveDraft()">💾 Save</button>
+          <button class="action-btn primary" *ngIf="currentPR && currentPR.status === 'Draft'" (click)="submitForApproval()" [disabled]="isSubmitting">
             <span class="btn-spinner" *ngIf="isSubmitting">⟳</span>
             <span *ngIf="!isSubmitting">📤 Submit for Approval</span>
             <span *ngIf="isSubmitting">Submitting…</span>
           </button>
+          
+          <!-- Approver actions -->
           <button *ngIf="canCurrentUserApprove(currentPR)" type="button" (click)="confirmApproveWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #059669; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✓ Approve PR</button>
           <button *ngIf="canCurrentUserApprove(currentPR)" type="button" (click)="confirmRejectWithRemarks(currentPR)" [disabled]="isSubmitting" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13.5px;">✗ Reject PR</button>
+
+          <!-- Direct PO Navigation when fully approved -->
+          <button *ngIf="currentPR && (currentPR.status === 'Approved' || currentPR.status === 'approved')" type="button" (click)="goToPO()" style="background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15,23,42,0.25);">
+            <span>📜 View in Purchase Order (PO) ➔</span>
+          </button>
         </div>
       </div>
 

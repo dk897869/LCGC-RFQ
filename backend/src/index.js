@@ -1437,7 +1437,13 @@ app.post('/api/pr/create-from-comparison', authMiddleware, moduleAccessMiddlewar
     console.error('❌ Error creating PR from comparison:', error);
     res.status(500).json({
       success: false,
-      message: 'Fai// Helper to auto-create PO when PR is fully approved
+      message: 'Failed to create PR from comparison',
+      error: error.message
+    });
+  }
+});
+
+// Helper to auto-create PO when PR is fully approved
 const autoCreatePOFromApprovedPR = async (pr) => {
   try {
     let PoNpp = null;

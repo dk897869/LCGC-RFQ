@@ -45,7 +45,7 @@ export interface ApprovalRow {
   line: 'Parallel' | 'Sequential';
   stakeholder: string;
   comments: string;
-  designation: string;
+  designation?: string;
   status: 'Approved' | 'Rejected' | 'In-Process' | 'Pending';
   dateTime?: string;
   email?: string;
@@ -104,13 +104,20 @@ export interface PrRequestData {
   recommendation?: string;
 
   approvalChain: ApprovalRow[];
+  stakeholders?: ApprovalRow[];
   attachments: AttachmentRow[];
   ccList: string[];
 
   submittedDate?: string;
   approvedBy?: string;
+  approvedAt?: string;
   approvalDate?: string;
+  approvalComments?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
   comparisonId?: string;
+  formData?: any;
 }
 
 @Component({

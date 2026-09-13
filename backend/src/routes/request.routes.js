@@ -30,6 +30,7 @@ router.delete('/:id', requestController.deleteRequest);
 // Approval actions
 router.patch('/:id/approve', requestController.approveRequest);
 router.patch('/:id/reject', requestController.rejectRequest);
+router.post('/:id/share-email', requestController.shareRequestEmail);
 
 // Query actions
 router.patch('/:id/query', requestController.sendQuery);

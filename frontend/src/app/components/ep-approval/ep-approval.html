@@ -125,30 +125,33 @@
     <ng-container *ngIf="!isLoading && activeTab === 'requests' && !showInlineCreateForm">
       <!-- Mini status metrics grid -->
       <div class="ep-stats-metrics-grid">
-        <div class="ep-mini-card">
-          <div class="lbl">Total Requests</div>
-          <div class="val">{{ allRequests.length }}</div>
+        <div class="ep-mini-card" [class.active]="activeFilter === 'All'" (click)="setFilter('All')" style="cursor: pointer;">
+          <div class="lbl">Pending / In-Process</div>
+          <div class="val">{{ countByStatus('Pending') + countByStatus('In Process') }}</div>
         </div>
-        <div class="ep-mini-card pending">
+        <div class="ep-mini-card pending" [class.active]="activeFilter === 'Pending'" (click)="setFilter('Pending')" style="cursor: pointer;">
           <div class="lbl">Pending</div>
           <div class="val">{{ countByStatus('Pending') }}</div>
         </div>
-        <div class="ep-mini-card approved">
-          <div class="lbl">Approved</div>
-          <div class="val">{{ countByStatus('Approved') }}</div>
+        <div class="ep-mini-card in-process" [class.active]="activeFilter === 'In Process'" (click)="setFilter('In Process')" style="cursor: pointer;">
+          <div class="lbl">In Process</div>
+          <div class="val">{{ countByStatus('In Process') }}</div>
         </div>
-        <div class="ep-mini-card rejected">
-          <div class="lbl">Rejected</div>
-          <div class="val">{{ countByStatus('Rejected') }}</div>
+        <div class="ep-mini-card approved" (click)="setTab('status')" style="cursor: pointer;" title="Click to view Approved records in Status tab">
+          <div class="lbl">Approved (Status Tab) ↗</div>
+          <div class="val">{{ countByStatus('Approved') }}</div>
         </div>
       </div>
 
       <div class="table-container">
         <div class="table-header-row">
-          <h3>All EP Requests</h3>
+          <div>
+            <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;">Active EP Requests (Pending / In-Process)</h3>
+            <span style="font-size: 12px; color: #64748b;">Approved records move directly to the Status tab</span>
+          </div>
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span class="stat-badge">Total: {{ filteredRequests.length }}</span>
-            <button class="btn-export">📥 Export</button>
+            <span class="stat-badge">Active Pending: {{ filteredRequests.length }}</span>
+            <button class="btn-export" (click)="exportRequestsCSV()" type="button">📥 Export</button>
           </div>
         </div>
         
@@ -178,10 +181,12 @@
                   <td><span class="status-pill" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
                   <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
                   <td>
-                    <span *ngIf="req.status === 'Pending'" [style.color]="getDaysPending(req.requestDate) > 3 ? '#dc2626' : '#64748b'" [style.fontWeight]="getDaysPending(req.requestDate) > 3 ? '700' : '500'">
-                      {{ getDaysPending(req.requestDate) }} Days
+                    <span *ngIf="req.status === 'Pending' || req.status === 'In Process'" 
+                          [style.color]="getDaysPending(req.requestDate) > 3 ? '#dc2626' : '#2563eb'" 
+                          style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 2px 8px; border-radius: 6px;">
+                      ⏳ {{ getDaysPending(req.requestDate) }} Days
                     </span>
-                    <span *ngIf="req.status !== 'Pending'" style="color: #cbd5e1;">-</span>
+                    <span *ngIf="req.status !== 'Pending' && req.status !== 'In Process'" style="color: #cbd5e1;">-</span>
                   </td>
                   <td class="actions">
                     <button class="btn-icon view-btn" (click)="viewRequest(req)"><span class="icon">👁️</span> View</button>
@@ -472,6 +477,96 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- Status Records Table (Approved, Rejected, Completed) -->
+      <div class="table-container" style="margin-top: 24px;">
+        <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;">Approved &amp; Rejected EP Records</h3>
+            <span style="font-size: 12px; color: #64748b;">Complete records of all approved and rejected requests</span>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Status Filter Tabs -->
+            <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 8px;">
+              <button type="button" (click)="statusTabFilter = 'All'; applyStatusFilters()" 
+                      [style.background]="statusTabFilter === 'All' ? '#2563eb' : 'transparent'" 
+                      [style.color]="statusTabFilter === 'All' ? '#ffffff' : '#475569'" 
+                      style="border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                All Status
+              </button>
+              <button type="button" (click)="statusTabFilter = 'Approved'; applyStatusFilters()" 
+                      [style.background]="statusTabFilter === 'Approved' ? '#059669' : 'transparent'" 
+                      [style.color]="statusTabFilter === 'Approved' ? '#ffffff' : '#475569'" 
+                      style="border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                ✅ Approved ({{ countByStatus('Approved') }})
+              </button>
+              <button type="button" (click)="statusTabFilter = 'Rejected'; applyStatusFilters()" 
+                      [style.background]="statusTabFilter === 'Rejected' ? '#dc2626' : 'transparent'" 
+                      [style.color]="statusTabFilter === 'Rejected' ? '#ffffff' : '#475569'" 
+                      style="border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                ❌ Rejected ({{ countByStatus('Rejected') }})
+              </button>
+            </div>
+            
+            <input type="text" [(ngModel)]="statusSearchQuery" (ngModelChange)="applyStatusFilters()" placeholder="Search approved/rejected..." style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; width: 220px;">
+            <span class="stat-badge">Total: {{ filteredStatusList.length }}</span>
+          </div>
+        </div>
+
+        <ng-container *ngIf="filteredStatusList.length > 0; else noStatusData">
+          <div class="table-responsive">
+            <table class="ep-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Title</th>
+                  <th>Requester</th>
+                  <th>Department</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Approver Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let req of filteredStatusList; trackBy: trackById">
+                  <td><span class="mono">{{ req.requestId || req._id || req.id || '—' }}</span></td>
+                  <td class="title-cell" [title]="req.title">{{ req.title }}</td>
+                  <td>{{ req.requester }}<br><span class="sub-text">{{ req.email }}</span></td>
+                  <td>{{ req.department }}</td>
+                  <td><span class="priority-pill" [ngClass]="getPriorityClass(req.priority)">{{ req.priority }}</span></td>
+                  <td><span class="status-pill" [ngClass]="getStatusClass(req.status)">{{ req.status }}</span></td>
+                  <td class="date-cell">{{ formatDate(req.requestDate) }}</td>
+                  <td>
+                    <span *ngIf="req.status === 'Approved'" style="color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                      ✓ All Approvers Signed
+                    </span>
+                    <span *ngIf="req.status === 'Rejected'" style="color: #dc2626; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                      ✗ Rejected
+                    </span>
+                    <span *ngIf="req.status !== 'Approved' && req.status !== 'Rejected'">
+                      {{ req.currentApprover || '—' }}
+                    </span>
+                  </td>
+                  <td class="actions">
+                    <button class="btn-icon view-btn" (click)="viewRequest(req)"><span class="icon">👁️</span> View</button>
+                    <button class="btn-icon" (click)="previewEPPdf(req)" title="Preview PDF" style="background: #e0e7ff; color: #3730a3; border: none; border-radius: 6px; padding: 5px 9px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">PDF</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+        <ng-template #noStatusData>
+          <div class="no-data" style="padding: 40px; text-align: center; color: #64748b;">
+            <div style="font-size: 36px; margin-bottom: 8px;">📋</div>
+            <h3>No records found matching status filters</h3>
+            <p style="font-size: 13px;">Approved and rejected EP requests will be displayed here.</p>
+          </div>
+        </ng-template>
       </div>
 
       <!-- Bottom footer showing last updated / status -->
@@ -795,15 +890,24 @@
   <div class="ep-modal-window" (click)="$event.stopPropagation()" style="width: 95vw; max-width: 1100px; max-height: 90vh; background: #ffffff; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; overflow: hidden; animation: modalPop 0.25s ease-out;">
     
     <!-- Modal Header Bar -->
-    <div class="modal-header-bar" style="padding: 18px 24px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
+    <div class="modal-header-bar" style="padding: 16px 24px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 22px;">📄</span>
         <div>
           <h2 style="font-size: 18px; font-weight: 700; margin: 0; color: #f8fafc;">EP Approval Request ({{ selectedRequestCopy.requestId }})</h2>
-          <span style="font-size: 12px; color: #94a3b8;">Detailed Request Record & Approval Chain</span>
+          <span style="font-size: 12px; color: #94a3b8;">Detailed Request Record &amp; Approval Chain</span>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button type="button" (click)="previewEPPdf(selectedRequestCopy)" style="background: rgba(255,255,255,0.15); color: #ffffff; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          👁️ Preview PDF
+        </button>
+        <button type="button" (click)="downloadEPPdf(selectedRequestCopy)" style="background: #2563eb; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          📥 Download PDF
+        </button>
+        <button type="button" (click)="printEPRequest(selectedRequestCopy)" style="background: rgba(255,255,255,0.15); color: #ffffff; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          🖨️ Print
+        </button>
         <span class="status-badge" [ngClass]="getStatusClass(selectedRequestCopy.status)" style="font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px;">{{ selectedRequestCopy.status }}</span>
         <button (click)="closeViewModal()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" title="Close Modal">✕</button>
       </div>
@@ -996,20 +1100,64 @@
         </div>
       </div>
 
+      <!-- Direct Email Share Feature (Image 2 User Requirement) -->
+      <div class="form-section" style="background: #ffffff; border-radius: 12px; padding: 20px; margin-top: 20px; border: 1px solid #c7d2fe; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #1e40af; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-icon">📧</span>
+            Share Approved EP Request Data via Email
+          </div>
+          <span style="font-size: 11px; background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 12px; font-weight: 700;">Fast Direct Send</span>
+        </div>
+        <p style="font-size: 13px; color: #475569; margin: 0 0 16px 0;">
+          Enter any email address to instantly send the complete approved request details, workflow approval history, and attached official PDF.
+        </p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+          <div style="flex: 1.2; min-width: 260px;">
+            <label style="display: block; font-size: 11.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">RECIPIENT EMAIL ADDRESS *</label>
+            <input type="email" [(ngModel)]="shareEmailAddress" placeholder="e.g. director@radiantappliances.com" style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box;">
+          </div>
+          <div style="flex: 1.5; min-width: 260px;">
+            <label style="display: block; font-size: 11.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">OPTIONAL REMARKS / NOTE</label>
+            <input type="text" [(ngModel)]="shareEmailRemarks" placeholder="e.g. Approved EP details for review and processing." style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box;">
+          </div>
+          <div>
+            <button type="button" (click)="sendApprovedDataEmail(selectedRequestCopy)" [disabled]="isSharingEmail || !shareEmailAddress" style="padding: 11px 22px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.4);" [style.opacity]="(!shareEmailAddress || isSharingEmail) ? '0.6' : '1'">
+              <span *ngIf="isSharingEmail">⏳ Sending Email...</span>
+              <span *ngIf="!isSharingEmail">🚀 Send Approved Data</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
     
     <!-- Modal Footer -->
-    <div class="modal-footer-bar" style="padding: 16px 24px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
-      <button class="btn-cancel" (click)="closeViewModal()" style="padding: 9px 20px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer;">Close</button>
-      
-      <ng-container *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove && !selectedRequestCopy.hasAlreadyActioned">
-        <button class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          ✓ Approve
+    <div class="modal-footer-bar" style="padding: 16px 24px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button type="button" class="btn-pdf-preview" (click)="previewEPPdf(selectedRequestCopy)" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          👁️ Preview PDF
         </button>
-        <button class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          ✕ Reject
+        <button type="button" class="btn-pdf-download" (click)="downloadEPPdf(selectedRequestCopy)" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #93c5fd; background: #eff6ff; color: #1d4ed8; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          📥 Download PDF
         </button>
-      </ng-container>
+        <button type="button" class="btn-print" (click)="printEPRequest(selectedRequestCopy)" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          🖨️ Print
+        </button>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button class="btn-cancel" (click)="closeViewModal()" style="padding: 9px 20px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer;">Close</button>
+        
+        <ng-container *ngIf="selectedRequestCopy && selectedRequestCopy.status === 'Pending' && selectedRequestCopy.canApprove && !selectedRequestCopy.hasAlreadyActioned">
+          <button class="btn-approve" (click)="approveFromViewModal(selectedRequestCopy)" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            ✓ Approve
+          </button>
+          <button class="btn-reject" (click)="rejectFromViewModal(selectedRequestCopy)" style="background: #dc2626; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            ✕ Reject
+          </button>
+        </ng-container>
+      </div>
     </div>
     
   </div>

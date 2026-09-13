@@ -1,3 +1,5 @@
+import * as XLSX from 'xlsx';
+
 export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: string) {
   // Remove existing viewer if open
   const existing = document.getElementById('globalFullScreenDocumentOverlay');
@@ -67,23 +69,24 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
     mime = ((attachmentOrUrl as any).fileType || '').toLowerCase();
   }
 
-  // Robust detection for Images
-  const isImage = /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(lowerName) ||
-                  /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(lowerUrl) ||
-                  mime.startsWith('image/');
-
-  // Robust detection for PDFs
-  const isPdf = /\.pdf($|\?)/i.test(lowerName) ||
-                lowerUrl.includes('.pdf') ||
-                mime === 'application/pdf' ||
-                (url && url.startsWith('data:application/pdf')) ||
-                (!isImage && /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(rawFileName));
-
   // Robust detection for Excel, Word, PPT, CSV
   const isExcel = /\.(xlsx|xls)($|\?)/i.test(lowerName) || /\.(xlsx|xls)($|\?)/i.test(lowerUrl) || mime.includes('excel') || mime.includes('spreadsheet') || mime.includes('officedocument.spreadsheetml');
   const isWord = /\.(docx|doc)($|\?)/i.test(lowerName) || /\.(docx|doc)($|\?)/i.test(lowerUrl) || mime.includes('word') || mime.includes('officedocument.wordprocessingml');
   const isPpt = /\.(pptx|ppt)($|\?)/i.test(lowerName) || /\.(pptx|ppt)($|\?)/i.test(lowerUrl) || mime.includes('powerpoint') || mime.includes('presentation');
   const isCsv = /\.csv($|\?)/i.test(lowerName) || lowerUrl.includes('.csv') || mime.includes('csv');
+
+  // Robust detection for Images
+  const isImage = /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(lowerName) ||
+                  /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(lowerUrl) ||
+                  mime.startsWith('image/');
+
+  // Robust detection for PDFs (MUST NOT match excel/office/csv)
+  const isPdf = !isExcel && !isWord && !isPpt && !isCsv && !isImage && (
+                /\.pdf($|\?)/i.test(lowerName) ||
+                lowerUrl.includes('.pdf') ||
+                mime === 'application/pdf' ||
+                (url && url.startsWith('data:application/pdf'))
+  );
 
   let pdfViewerUrl = url;
   if (isPdf && url.startsWith('data:')) {
@@ -123,7 +126,7 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
     background: #ffffff !important;
     border-radius: 16px !important;
     width: 90vw !important;
-    max-width: 980px !important;
+    max-width: 1040px !important;
     height: 85vh !important;
     display: flex !important;
     flex-direction: column !important;
@@ -147,7 +150,18 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
         <iframe src="${escapeHtml(pdfViewerUrl)}" style="width: 100%; height: 100%; border: none; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></iframe>
       </div>
     `;
-  } else if ((isExcel || isWord || isPpt) && url && url.startsWith('http')) {
+  } else if (isExcel) {
+    bodyHtml = `
+      <div id="excelViewerContainer" style="flex: 1; background: #f8fafc; width: 100%; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box;">
+        <div id="excelLoadingIndicator" style="padding: 30px; text-align: center; color: #475569; font-size: 14px;">
+          <div style="font-size: 32px; margin-bottom: 8px; animation: spin 1s infinite linear;">⌛</div>
+          Rendering Excel Spreadsheet Preview...
+        </div>
+        <div id="excelSheetTabs" style="display: none; background: #e2e8f0; padding: 6px 12px; border-bottom: 1px solid #cbd5e1; gap: 8px; overflow-x: auto; flex-shrink: 0;"></div>
+        <div id="excelTableWrapper" style="flex: 1; overflow: auto; padding: 16px; background: white;"></div>
+      </div>
+    `;
+  } else if ((isWord || isPpt) && url && url.startsWith('http')) {
     const officeEmbedUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
     bodyHtml = `
       <div style="flex: 1; background: #f8fafc; width: 100%; height: calc(100% - 56px);">
@@ -184,8 +198,6 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
     } else {
       bodyHtml = renderOfficeCardHtml(safeTitle, safeUrl, '📊 CSV Spreadsheet');
     }
-  } else if (isExcel) {
-    bodyHtml = renderOfficeCardHtml(safeTitle, safeUrl, '📊 Excel Spreadsheet (.xlsx / .xls)', '#059669', '🟢');
   } else if (isWord) {
     bodyHtml = renderOfficeCardHtml(safeTitle, safeUrl, '📝 Word Document (.docx / .doc)', '#2563eb', '🔵');
   } else if (isPpt) {
@@ -210,6 +222,131 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
 
   overlay.appendChild(card);
   document.body.appendChild(overlay);
+
+  if (isExcel) {
+    const renderWorkbook = (workbook: XLSX.WorkBook) => {
+      const loading = document.getElementById('excelLoadingIndicator');
+      const tabs = document.getElementById('excelSheetTabs');
+      const wrapper = document.getElementById('excelTableWrapper');
+      if (!wrapper || !tabs) return;
+
+      if (loading) loading.style.display = 'none';
+      tabs.style.display = 'flex';
+
+      const sheetNames = workbook.SheetNames || [];
+      if (!sheetNames.length) {
+        wrapper.innerHTML = `<div style="padding: 30px; text-align: center; color: #64748b;">Empty Excel workbook</div>`;
+        return;
+      }
+
+      tabs.innerHTML = '';
+      sheetNames.forEach((name, idx) => {
+        const tabBtn = document.createElement('button');
+        tabBtn.type = 'button';
+        tabBtn.innerText = name;
+        tabBtn.style.cssText = `
+          border: 1px solid #cbd5e1;
+          background: ${idx === 0 ? '#2563eb' : '#ffffff'};
+          color: ${idx === 0 ? '#ffffff' : '#334155'};
+          padding: 6px 14px;
+          border-radius: 6px;
+          font-size: 12.5px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+        `;
+        tabBtn.onclick = () => {
+          Array.from(tabs.children).forEach((c: any) => {
+            c.style.background = '#ffffff';
+            c.style.color = '#334155';
+          });
+          tabBtn.style.background = '#2563eb';
+          tabBtn.style.color = '#ffffff';
+          renderSheet(name);
+        };
+        tabs.appendChild(tabBtn);
+      });
+
+      const renderSheet = (sheetName: string) => {
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) {
+          wrapper.innerHTML = `<div style="padding: 20px; color: #64748b;">No data in sheet "${escapeHtml(sheetName)}"</div>`;
+          return;
+        }
+        const html = XLSX.utils.sheet_to_html(sheet, { id: 'excelTable' });
+        wrapper.innerHTML = `
+          <div style="margin-bottom: 12px; font-size: 13px; color: #475569; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+            <span>📊 Sheet: <strong>${escapeHtml(sheetName)}</strong></span>
+            <span style="font-size: 11.5px; color: #94a3b8;">Interactive Excel Preview</span>
+          </div>
+          <div class="excel-rendered-table-scroll" style="overflow: auto; max-height: calc(85vh - 170px); border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            ${html}
+          </div>
+        `;
+        const tbl = wrapper.querySelector('table');
+        if (tbl) {
+          tbl.style.cssText = `
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            font-family: inherit;
+            background: #ffffff;
+          `;
+          tbl.querySelectorAll('tr').forEach((tr, rIdx) => {
+            tr.style.borderBottom = '1px solid #e2e8f0';
+            if (rIdx === 0) {
+              tr.style.background = '#1e293b';
+              tr.style.color = '#ffffff';
+              tr.style.fontWeight = '700';
+              tr.style.position = 'sticky';
+              tr.style.top = '0';
+              tr.style.zIndex = '2';
+            } else {
+              tr.style.background = rIdx % 2 === 0 ? '#f8fafc' : '#ffffff';
+            }
+          });
+          tbl.querySelectorAll('td, th').forEach((td: any) => {
+            td.style.padding = '8px 12px';
+            td.style.border = '1px solid #cbd5e1';
+            td.style.whiteSpace = 'nowrap';
+          });
+        }
+      };
+
+      renderSheet(sheetNames[0]);
+    };
+
+    const loadExcelData = async () => {
+      try {
+        if (attachmentOrUrl && attachmentOrUrl.file instanceof File) {
+          const buffer = await attachmentOrUrl.file.arrayBuffer();
+          const wb = XLSX.read(buffer, { type: 'array' });
+          renderWorkbook(wb);
+        } else if (url && url.startsWith('data:')) {
+          const base64 = url.split(',')[1];
+          const wb = XLSX.read(base64, { type: 'base64' });
+          renderWorkbook(wb);
+        } else if (url) {
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+          const buf = await resp.arrayBuffer();
+          const wb = XLSX.read(buf, { type: 'array' });
+          renderWorkbook(wb);
+        } else {
+          throw new Error('No valid URL or file found');
+        }
+      } catch (err: any) {
+        console.warn('⚠️ Client XLSX parse fallback:', err.message);
+        const container = document.getElementById('excelViewerContainer');
+        if (container) {
+          container.innerHTML = renderOfficeCardHtml(safeTitle, safeUrl, '📊 Excel Spreadsheet (.xlsx / .xls)', '#059669', '🟢');
+        }
+      }
+    };
+
+    loadExcelData();
+  }
 
   const closeViewer = () => {
     overlay.remove();

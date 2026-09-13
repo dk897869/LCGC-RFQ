@@ -787,6 +787,71 @@ const getPendingQueriesForUser = async (req, res) => {
   }
 };
 
+// ====================== SHARE REQUEST VIA EMAIL ======================
+const shareRequestEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email, remarks, requestData } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Recipient email is required' });
+    }
+    const mongoose = require('mongoose');
+    let request = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      request = await Request.findById(id);
+    }
+    if (!request) {
+      request = await Request.findOne({ requestId: id });
+    }
+    if (!request && requestData) {
+      request = requestData;
+    }
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'EP Request not found' });
+    }
+    const userName = req.user?.name || 'User';
+    const subject = `📋 Approved EP Request: ${request.title || 'EP Request'} (${request.requestId || request._id || id})`;
+
+    let pdfBuffer = null;
+    try {
+      const { generateBeautifulPDF } = require('../services/pdf.service');
+      pdfBuffer = await generateBeautifulPDF(request);
+    } catch (pdfErr) {
+      console.error('PDF generation error in shareRequestEmail:', pdfErr.message);
+    }
+
+    const { sendMail, getEPEmailHTML } = require('../services/mail.service');
+    const htmlContent = getEPEmailHTML ? getEPEmailHTML(request) : `
+      <h2>EP Request Details</h2>
+      <p><strong>Title:</strong> ${request.title}</p>
+      <p><strong>Requester:</strong> ${request.requester || request.requesterName}</p>
+      <p><strong>Department:</strong> ${request.department}</p>
+      <p><strong>Amount:</strong> ₹${request.amount || 0}</p>
+      <p><strong>Status:</strong> ${request.status}</p>
+      ${remarks ? `<p><strong>Remarks:</strong> ${remarks}</p>` : ''}
+    `;
+
+    await sendMail({
+      to: email,
+      subject: subject,
+      html: htmlContent,
+      attachments: pdfBuffer ? [{
+        filename: `EP_Request_${request.requestId || request._id}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }] : []
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `EP Request successfully sent to ${email}`
+    });
+  } catch (err) {
+    console.error('Error in shareRequestEmail:', err);
+    res.status(500).json({ success: false, message: err.message || 'Failed to send email' });
+  }
+};
+
 // ====================== EXPORTS ======================
 module.exports = {
   createRequest,
@@ -805,5 +870,6 @@ module.exports = {
   getRequestStats,
   sendQuery,
   replyToQuery,
-  getPendingQueriesForUser
+  getPendingQueriesForUser,
+  shareRequestEmail
 };

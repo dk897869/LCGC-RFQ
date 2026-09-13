@@ -106,6 +106,11 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   statusFilterStatus = '';
   statusFilterDepartment = '';
   statusFilterSearch = '';
+  statusTabFilter: 'All' | 'Approved' | 'Rejected' = 'All';
+  statusSearchQuery = '';
+  shareEmailAddress = '';
+  shareEmailRemarks = '';
+  isSharingEmail = false;
   filteredStatusList: EPRequest[] = [];
 
   // Create Form Data
@@ -518,6 +523,22 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     } else if (r.status === 'Pending' || r.status === 'In-Process' || r.status === 'In Progress') {
       canApprove = true;
     }
+
+    let computedStatus = this.normalizeStatus(r.status);
+    if (Array.isArray(stakeholders) && stakeholders.length > 0) {
+      const anyRejected = stakeholders.some((s: any) => (s.status || '').toLowerCase() === 'rejected');
+      const allApproved = stakeholders.every((s: any) => (s.status || '').toLowerCase() === 'approved');
+      const anyApproved = stakeholders.some((s: any) => (s.status || '').toLowerCase() === 'approved');
+
+      if (anyRejected) {
+        computedStatus = 'Rejected';
+      } else if (allApproved) {
+        computedStatus = 'Approved';
+      } else {
+        // Unless everyone approves, status is In Process or Pending
+        computedStatus = anyApproved ? 'In Process' : 'Pending';
+      }
+    }
     
     return {
       _id: r._id || r.id,
@@ -530,7 +551,7 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
       vendor: r.vendor || r.vendorName || '',
       amount: Number(r.amount ?? r.estimatedAmount ?? r.totalAmount ?? 0),
       priority: this.mapPriorityFromBackend(r.priority),
-      status: this.normalizeStatus(r.status),
+      status: computedStatus,
       description: r.description || r.remarks || '',
       objective: r.objective || r.purposeAndObjective || '',
       requestDate: r.requestDate || r.date || (r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
@@ -623,10 +644,28 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   }
   
   applyFilters() {
-    // For requests tab
+    // For requests tab: User requirement: approved & rejected move out of here into status tab!
     let list = [...this.allRequests];
-    if (this.activeFilter !== 'All') {
+    if (this.activeFilter === 'All') {
+      // Show pending and in-process requests
+      list = list.filter(r => r.status === 'Pending' || r.status === 'In Process');
+    } else {
       list = list.filter(r => r.status === this.activeFilter);
+    }
+    if (this.filterPriority) {
+      list = list.filter(r => r.priority === this.filterPriority);
+    }
+    if (this.filterStatus) {
+      list = list.filter(r => r.status === this.filterStatus);
+    }
+    if (this.filterDepartment) {
+      list = list.filter(r => r.department === this.filterDepartment);
+    }
+    if (this.filterDate) {
+      list = list.filter(r => r.requestDate?.startsWith(this.filterDate));
+    }
+    if (this.filterVendor) {
+      list = list.filter(r => r.vendor?.toLowerCase().includes(this.filterVendor.toLowerCase()));
     }
     if (this.searchTerm.trim()) {
       const q = this.searchTerm.toLowerCase();
@@ -668,11 +707,14 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
 
   applyStatusFilters(): void {
     let list = [...this.allRequests];
+    if (this.statusTabFilter && this.statusTabFilter !== 'All') {
+      list = list.filter(r => r.status === this.statusTabFilter);
+    } else {
+      // By default in Status tab, show Approved and Rejected records
+      list = list.filter(r => r.status === 'Approved' || r.status === 'Rejected');
+    }
     if (this.filterPriority) {
       list = list.filter(r => r.priority === this.filterPriority);
-    }
-    if (this.filterStatus) {
-      list = list.filter(r => r.status === this.filterStatus);
     }
     if (this.filterDepartment) {
       list = list.filter(r => r.department === this.filterDepartment);
@@ -682,6 +724,16 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     }
     if (this.filterVendor) {
       list = list.filter(r => r.vendor?.toLowerCase().includes(this.filterVendor.toLowerCase()));
+    }
+    if (this.statusSearchQuery.trim()) {
+      const q = this.statusSearchQuery.toLowerCase();
+      list = list.filter(r =>
+        r.title?.toLowerCase().includes(q) ||
+        r.requester?.toLowerCase().includes(q) ||
+        r.department?.toLowerCase().includes(q) ||
+        r.vendor?.toLowerCase().includes(q) ||
+        r.requestId?.toLowerCase().includes(q)
+      );
     }
     this.filteredStatusList = list;
   }
@@ -1557,6 +1609,379 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
     if (this.toastTimer) clearTimeout(this.toastTimer);
   }
   
+  async generateEPPdfBlob(req?: any): Promise<{ blob: Blob; filename: string }> {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const r = req || this.selectedRequestCopy || this.selectedRequest;
+    if (!r) throw new Error('No request provided');
+    const reqId = r.requestId || r._id || r.id || 'EP-REQUEST';
+    const filename = `EP_Request_${reqId}.pdf`;
+
+    // Header Background
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, 210, 32, 'F');
+
+    // Header Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(255, 255, 255);
+    doc.text('RADIANT APPLIANCES & ELECTRONICS', 14, 13);
+
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184);
+    doc.text('LCGC RFQ PORTAL - EP APPROVAL RECORD', 14, 20);
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(`ID: ${reqId}`, 196, 13, { align: 'right' });
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(203, 213, 225);
+    doc.text(`Date: ${r.requestDate || new Date().toISOString().split('T')[0]}`, 196, 20, { align: 'right' });
+
+    // Status Banner
+    const isApproved = (r.status || '').toLowerCase() === 'approved';
+    const isRejected = (r.status || '').toLowerCase() === 'rejected';
+    doc.setFillColor(isApproved ? 240 : (isRejected ? 254 : 241), isApproved ? 253 : (isRejected ? 242 : 245), isApproved ? 244 : (isRejected ? 242 : 249));
+    doc.rect(14, 38, 182, 12, 'F');
+    doc.setDrawColor(isApproved ? 187 : (isRejected ? 254 : 203), isApproved ? 247 : (isRejected ? 202 : 213), isApproved ? 208 : (isRejected ? 202 : 225));
+    doc.rect(14, 38, 182, 12, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(isApproved ? 22 : (isRejected ? 220 : 37), isApproved ? 101 : (isRejected ? 38 : 99), isApproved ? 52 : (isRejected ? 38 : 235));
+    doc.text(`STATUS: ${(r.status || 'Pending').toUpperCase()}`, 20, 46);
+
+    if (r.priority) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Priority: ${r.priority}`, 190, 46, { align: 'right' });
+    }
+
+    // Section 1: Request Overview
+    let y = 58;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text('1. REQUEST DETAILS', 14, y);
+    doc.setDrawColor(203, 213, 225);
+    doc.line(14, y + 2, 196, y + 2);
+
+    y += 8;
+    doc.setFontSize(9);
+
+    const leftCol = [
+      ['Title of Activity:', r.title || '—'],
+      ['Requester Name:', r.requester || '—'],
+      ['Department:', r.department || '—'],
+      ['Requester Email:', r.email || '—'],
+      ['Contact No:', r.contactNo || '—']
+    ];
+
+    const rightCol = [
+      ['Vendor:', r.vendor || '—'],
+      ['Estimated Amount:', `INR ${Number(r.amount || 0).toLocaleString('en-IN')}`],
+      ['Organization:', r.organization || 'Radiant Appliances'],
+      ['Request Date:', r.requestDate || '—'],
+      ['Current Approver:', r.currentApprover || '—']
+    ];
+
+    for (let i = 0; i < Math.max(leftCol.length, rightCol.length); i++) {
+      if (leftCol[i]) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 116, 139);
+        doc.text(leftCol[i][0], 14, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(15, 23, 42);
+        doc.text(String(leftCol[i][1]), 48, y);
+      }
+      if (rightCol[i]) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 116, 139);
+        doc.text(rightCol[i][0], 115, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(15, 23, 42);
+        doc.text(String(rightCol[i][1]), 155, y);
+      }
+      y += 6;
+    }
+
+    // Objective & Description
+    if (r.objective || r.description) {
+      y += 2;
+      if (r.objective) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 116, 139);
+        doc.text('Objective:', 14, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(15, 23, 42);
+        const objLines = doc.splitTextToSize(r.objective, 150);
+        doc.text(objLines, 38, y);
+        y += (objLines.length * 5) + 2;
+      }
+      if (r.description) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 116, 139);
+        doc.text('Description:', 14, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(15, 23, 42);
+        const descLines = doc.splitTextToSize(r.description, 150);
+        doc.text(descLines, 38, y);
+        y += (descLines.length * 5) + 2;
+      }
+    }
+
+    // Section 2: Approval Chain
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text('2. APPROVAL WORKFLOW CHAIN', 14, y);
+    doc.setDrawColor(203, 213, 225);
+    doc.line(14, y + 2, 196, y + 2);
+
+    y += 8;
+    const stakeholders = r.stakeholders || r.approvalChain || [];
+    if (stakeholders.length > 0) {
+      // Table Header
+      doc.setFillColor(241, 245, 249);
+      doc.rect(14, y, 182, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text('Line', 16, y + 5);
+      doc.text('Approver / Stakeholder', 38, y + 5);
+      doc.text('Designation', 85, y + 5);
+      doc.text('Status', 125, y + 5);
+      doc.text('Date/Time', 148, y + 5);
+      doc.text('Approved By', 172, y + 5);
+
+      y += 8;
+      doc.setFontSize(8);
+      stakeholders.forEach((st: any) => {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+        const stStatus = st.status || 'Pending';
+        const isStApproved = stStatus.toLowerCase() === 'approved';
+        const isStRejected = stStatus.toLowerCase() === 'rejected';
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        doc.text(st.line || 'Parallel', 16, y);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42);
+        doc.text(st.name || st.managerName || '—', 38, y);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(st.designation || 'Approver', 85, y);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(isStApproved ? 22 : (isStRejected ? 220 : 37), isStApproved ? 101 : (isStRejected ? 38 : 99), isStApproved ? 52 : (isStRejected ? 38 : 235));
+        doc.text(stStatus, 125, y);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        const dtStr = st.dateTime ? new Date(st.dateTime).toLocaleDateString() : '—';
+        doc.text(dtStr, 148, y);
+        doc.text(st.approvedBy || '—', 172, y);
+
+        y += 6;
+      });
+    }
+
+    // Footer
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text('This is an electronically verified document generated by LCGC RFQ & EP Management System.', 105, 288, { align: 'center' });
+
+    const blob = doc.output('blob');
+    return { blob, filename };
+  }
+
+  async downloadEPPdf(req?: any): Promise<void> {
+    try {
+      const { blob, filename } = await this.generateEPPdfBlob(req);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      this.showToast('EP PDF downloaded successfully!', 'success');
+    } catch (e: any) {
+      console.error('Download PDF error:', e);
+      this.showToast('Failed to generate PDF download.', 'error');
+    }
+  }
+
+  async previewEPPdf(req?: any): Promise<void> {
+    try {
+      const { blob, filename } = await this.generateEPPdfBlob(req);
+      const blobUrl = URL.createObjectURL(blob);
+      renderFullScreenDocumentViewer(blobUrl, filename);
+    } catch (e: any) {
+      console.error('Preview PDF error:', e);
+      this.showToast('Failed to preview PDF.', 'error');
+    }
+  }
+
+  printEPRequest(req?: any): void {
+    const r = req || this.selectedRequestCopy || this.selectedRequest;
+    if (!r) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+    const stakeholders = r.stakeholders || r.approvalChain || [];
+    const rows = stakeholders.map((st: any) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #cbd5e1;">${st.line || 'Parallel'}</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">${st.name || st.managerName || '—'}</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1;">${st.designation || 'Approver'}</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; color: ${st.status === 'Approved' ? '#059669' : (st.status === 'Rejected' ? '#dc2626' : '#2563eb')}">${st.status || 'Pending'}</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1;">${st.dateTime ? new Date(st.dateTime).toLocaleString() : '—'}</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1;">${st.approvedBy || '—'}</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1;">${st.remarks || '—'}</td>
+      </tr>
+    `).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>EP Request - ${r.requestId || r._id}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+            .header { border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+            .header h1 { margin: 0; font-size: 20px; color: #0f172a; }
+            .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; font-size: 13px; }
+            .meta-row { display: flex; gap: 8px; }
+            .meta-lbl { font-weight: bold; color: #64748b; width: 140px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12px; }
+            th { background: #f1f5f9; padding: 8px; border: 1px solid #cbd5e1; text-align: left; }
+            .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1>RADIANT APPLIANCES & ELECTRONICS</h1>
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">EP Approval Request Record (${r.requestId || r._id})</p>
+            </div>
+            <div style="text-align: right;">
+              <span class="status-badge" style="background: ${r.status === 'Approved' ? '#dcfce7' : '#fee2e2'}; color: ${r.status === 'Approved' ? '#166534' : '#991b1b'};">Status: ${r.status}</span>
+            </div>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-row"><span class="meta-lbl">Title:</span><span>${r.title}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Vendor:</span><span>${r.vendor || '—'}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Requester:</span><span>${r.requester} (${r.email || ''})</span></div>
+            <div class="meta-row"><span class="meta-lbl">Amount:</span><span>INR ${Number(r.amount || 0).toLocaleString('en-IN')}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Department:</span><span>${r.department}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Date:</span><span>${r.requestDate}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Priority:</span><span>${r.priority}</span></div>
+            <div class="meta-row"><span class="meta-lbl">Organization:</span><span>${r.organization || 'Radiant Appliances'}</span></div>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <p><strong>Objective:</strong> ${r.objective || '—'}</p>
+            <p><strong>Description:</strong> ${r.description || '—'}</p>
+          </div>
+          <h3>Approval Workflow Chain</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Line</th>
+                <th>Stakeholder</th>
+                <th>Designation</th>
+                <th>Status</th>
+                <th>Date/Time</th>
+                <th>Approved By</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <p style="margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: center;">Electronically generated from LCGC RFQ & EP Management Portal.</p>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 400);
+  }
+
+  sendApprovedDataEmail(req?: any): void {
+    const r = req || this.selectedRequestCopy || this.selectedRequest;
+    if (!r) return;
+    if (!this.shareEmailAddress || !this.shareEmailAddress.includes('@')) {
+      this.showToast('Please enter a valid email address.', 'error');
+      return;
+    }
+    this.isSharingEmail = true;
+    this.authService.shareEPRequestByEmail(r.id || r._id, this.shareEmailAddress, this.shareEmailRemarks, r).subscribe({
+      next: () => {
+        this.isSharingEmail = false;
+        this.showToast(`Approved request data successfully sent to ${this.shareEmailAddress}!`, 'success');
+        this.shareEmailAddress = '';
+        this.shareEmailRemarks = '';
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSharingEmail = false;
+        this.showToast(err?.message || 'Failed to send email.', 'error');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  exportRequestsCSV(): void {
+    const list = this.filteredRequests;
+    if (!list || list.length === 0) {
+      this.showToast('No requests to export', 'info');
+      return;
+    }
+    const headers = ['Request ID', 'Title', 'Requester', 'Email', 'Department', 'Vendor', 'Amount', 'Priority', 'Status', 'Date', 'Days Pending'];
+    const csvRows = [headers.join(',')];
+    list.forEach(r => {
+      const row = [
+        `"${r.requestId || r._id || ''}"`,
+        `"${(r.title || '').replace(/"/g, '""')}"`,
+        `"${(r.requester || '').replace(/"/g, '""')}"`,
+        `"${(r.email || '').replace(/"/g, '""')}"`,
+        `"${(r.department || '').replace(/"/g, '""')}"`,
+        `"${(r.vendor || '').replace(/"/g, '""')}"`,
+        r.amount || 0,
+        `"${r.priority || ''}"`,
+        `"${r.status || ''}"`,
+        `"${r.requestDate || ''}"`,
+        this.getDaysPending(r.requestDate)
+      ];
+      csvRows.push(row.join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `EP_Requests_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    this.showToast('Requests exported as CSV', 'success');
+  }
+
   trackById(index: number, item: EPRequest) {
     return item._id || item.id || item.requestId || index;
   }

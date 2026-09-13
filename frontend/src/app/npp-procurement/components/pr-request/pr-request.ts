@@ -355,8 +355,12 @@ export class PrRequest implements OnInit, OnDestroy {
       });
     }
 
+    const hasParallelApproved = approvers.some(s => (s.line === 'Parallel' || !s.line) && s.status === 'Approved');
     const remainingPending = approvers.filter(s => (s.status || 'Pending') === 'Pending');
-    if (remainingPending.length === 0) {
+    const userRole = (user?.role || user?.designation || '').toLowerCase().trim();
+    const isSenior = ['admin', 'purchase head', 'head - purchase', 'vp', 'vp-operation', 'engineer', 'manager'].some(r => userRole.includes(r));
+
+    if (hasParallelApproved || remainingPending.length === 0 || isSenior) {
       pr.status = 'Approved';
       pr.approvedAt = new Date().toISOString();
       pr.approvedBy = userName;
@@ -366,6 +370,9 @@ export class PrRequest implements OnInit, OnDestroy {
 
     pr.approvalChain = approvers;
     pr.stakeholders = approvers;
+    if (pr.status === 'Approved') {
+      this.autoCreatePOFromPR(pr);
+    }
     this.saveToStorage(pr);
 
     // 2. Call backend API to record approval with full PR payload
@@ -834,21 +841,50 @@ export class PrRequest implements OnInit, OnDestroy {
   private mergePRs(local: PrRequestData[], api: any[]): PrRequestData[] {
     const merged: PrRequestData[] = [];
     const localMap = new Map<string, PrRequestData>();
-    local.forEach(pr => localMap.set(pr.id || pr.serialNo, pr));
+    
+    local.forEach(pr => {
+      if (pr.id) localMap.set(pr.id, pr);
+      if (pr.serialNo) localMap.set(pr.serialNo, pr);
+      if (pr.prNumber) localMap.set(pr.prNumber, pr);
+    });
 
-    // Add API PRs first
-    api.forEach(apiPr => {
-      const id = apiPr.id || apiPr.serialNo;
-      if (id && localMap.has(id)) {
-        merged.push({ ...localMap.get(id)!, ...apiPr });
-        localMap.delete(id);
+    // Add API PRs with approval precedence
+    api.forEach(apiRaw => {
+      const apiPr = this.hydrate(apiRaw);
+      const id = apiPr.id || apiPr.serialNo || apiPr.prNumber;
+      const matchedLocal = (id && localMap.get(id)) || (apiPr.serialNo && localMap.get(apiPr.serialNo)) || (apiPr.prNumber && localMap.get(apiPr.prNumber));
+
+      if (matchedLocal) {
+        // If either local or API is Approved, the final state MUST be Approved!
+        const isApproved = matchedLocal.status === 'Approved' || (matchedLocal as any).status === 'approved' || apiPr.status === 'Approved' || (apiPr as any).status === 'approved';
+        const finalStatus = isApproved ? 'Approved' : (matchedLocal.status || apiPr.status || 'Pending');
+        const finalApprovers = (matchedLocal.approvalChain?.length ? matchedLocal.approvalChain : apiPr.approvalChain) || [];
+
+        const combined: PrRequestData = {
+          ...apiPr,
+          ...matchedLocal,
+          status: finalStatus,
+          approvalChain: finalApprovers,
+          stakeholders: finalApprovers
+        };
+        merged.push(combined);
+        if (matchedLocal.id) localMap.delete(matchedLocal.id);
+        if (matchedLocal.serialNo) localMap.delete(matchedLocal.serialNo);
+        if (matchedLocal.prNumber) localMap.delete(matchedLocal.prNumber);
       } else {
-        merged.push(this.hydrate(apiPr));
+        merged.push(apiPr);
       }
     });
 
     // Add remaining local PRs
-    localMap.forEach(pr => merged.push(pr));
+    const addedKeys = new Set<string>();
+    localMap.forEach(pr => {
+      const key = pr.id || pr.serialNo || pr.prNumber;
+      if (key && !addedKeys.has(key)) {
+        addedKeys.add(key);
+        merged.push(pr);
+      }
+    });
 
     return merged.sort((a, b) => (b.submittedDate || b.requestDate || '').localeCompare(a.submittedDate || a.requestDate || ''));
   }
@@ -864,11 +900,20 @@ export class PrRequest implements OnInit, OnDestroy {
   }
 
   saveToStorage(pr: PrRequestData): void {
-    if (typeof localStorage === 'undefined') return;
+    if (typeof localStorage === 'undefined' || !pr) return;
     try {
       const all = this.loadFromStorage();
-      const idx = all.findIndex((r: any) => r.id === pr.id);
-      if (idx >= 0) all[idx] = pr; else all.unshift(pr);
+      const prId = pr.id || pr.serialNo || pr.prNumber;
+      const idx = all.findIndex((r: any) =>
+        (pr.id && r.id === pr.id) ||
+        (pr.serialNo && (r.serialNo === pr.serialNo || r.prNumber === pr.serialNo)) ||
+        (pr.prNumber && (r.prNumber === pr.prNumber || r.serialNo === pr.prNumber))
+      );
+      if (idx >= 0) {
+        all[idx] = { ...all[idx], ...pr };
+      } else {
+        all.unshift(pr);
+      }
       localStorage.setItem('pr_requests', JSON.stringify(all));
     } catch { /* ignore */ }
   }

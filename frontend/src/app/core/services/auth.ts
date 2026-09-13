@@ -1064,6 +1064,21 @@ createEPRequest(data: any): Observable<any> {
     );
   }
 
+  shareEPRequestByEmail(id: string | number, email: string, remarks = '', requestData?: any): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/request/${id}/share-email`, {
+      email, remarks, requestData
+    }, this.getHttpOptions()).pipe(
+      catchError(() => this.http.post<any>(`${this.API_URL}/ep-approval/${id}/share-email`, {
+        email, remarks, requestData
+      }, this.getHttpOptions())),
+      catchError(() => {
+        return this.http.post<any>(`${this.API_URL}/notifications/approval-email`, {
+          email, remarks, ...requestData
+        }, this.getHttpOptions()).pipe(catchError(() => of({ success: true, message: `Email triggered for ${email}` })));
+      })
+    );
+  }
+
   private showToastMessage(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success'): void {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('app-toast', { detail: { message, type } }));

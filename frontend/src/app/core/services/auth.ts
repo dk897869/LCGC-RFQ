@@ -813,7 +813,14 @@ export class AuthService {
   getDepartments(): Observable<any> {
     return this.http.get<any>(`${this.API_URL}/auth/departments`, this.getHttpOptions()).pipe(
       timeout(60000),
-      catchError(() => of({ success: true, departments: ['Purchase', 'IT', 'HR', 'Finance', 'R&D', 'Operations', 'Sales'] }))
+      catchError(() => of({
+        success: true,
+        departments: [
+          'Sourcing', 'Purchase', 'SCM', 'QA', 'PPC', 'IT', 'Production',
+          'PE / Facilities', 'Account / Finance', 'RM - Store', 'FG', 'HR',
+          'Admin', 'Security', 'Supplier'
+        ]
+      }))
     );
   }
 

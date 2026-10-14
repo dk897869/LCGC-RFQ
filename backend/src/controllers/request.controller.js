@@ -67,8 +67,40 @@ const createRequest = async (req, res) => {
       dateTime: null
     }));
 
+    // Generate standard sequential EP Request ID: EP-YYYYMMDD-XXXX
+    let generatedRequestId = req.body.requestId;
+    if (!generatedRequestId || !generatedRequestId.startsWith('EP-')) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const prefix = `EP-${yyyy}${mm}${dd}-`;
+
+      const lastRecord = await Request.findOne({
+        requestId: new RegExp(`^${prefix}`)
+      }).sort({ requestId: -1 }).select('requestId');
+
+      let nextNum = 1;
+      if (lastRecord && lastRecord.requestId) {
+        const parts = lastRecord.requestId.split('-');
+        const lastNum = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(lastNum)) {
+          nextNum = lastNum + 1;
+        }
+      } else {
+        const todayCount = await Request.countDocuments({
+          createdAt: {
+            $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          }
+        });
+        nextNum = Math.max(1, todayCount + 1);
+      }
+      generatedRequestId = `${prefix}${String(nextNum).padStart(4, '0')}`;
+    }
+
     // Create new request
     const newRequest = new Request({
+      requestId: generatedRequestId,
       requester,
       department,
       email,
@@ -91,7 +123,7 @@ const createRequest = async (req, res) => {
     });
 
     const savedRequest = await newRequest.save();
-    console.log("✅ EP Request saved successfully:", savedRequest._id);
+    console.log("✅ EP Request saved successfully:", savedRequest.requestId, savedRequest._id);
 
     // Create database Notification record
     try {
@@ -212,7 +244,13 @@ const getRequests = async (req, res) => {
 // ====================== GET SINGLE REQUEST ======================
 const getRequestById = async (req, res) => {
   try {
-    const request = await Request.findById(req.params.id);
+    let request = null;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      request = await Request.findById(req.params.id);
+    }
+    if (!request) {
+      request = await Request.findOne({ requestId: req.params.id });
+    }
     
     if (!request) {
       return res.status(404).json({
@@ -238,11 +276,21 @@ const getRequestById = async (req, res) => {
 // ====================== UPDATE REQUEST ======================
 const updateRequest = async (req, res) => {
   try {
-    const request = await Request.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    let request = null;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      request = await Request.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true, runValidators: true }
+      );
+    }
+    if (!request) {
+      request = await Request.findOneAndUpdate(
+        { requestId: req.params.id },
+        req.body,
+        { new: true, runValidators: true }
+      );
+    }
     
     if (!request) {
       return res.status(404).json({
@@ -575,11 +623,17 @@ const getRequestsByDepartment = async (req, res) => {
 // ====================== GET DEPARTMENTS ======================
 const getDepartments = async (req, res) => {
   try {
+    const STANDARD_DEPARTMENTS = [
+      'Sourcing', 'Purchase', 'SCM', 'QA', 'PPC', 'IT', 'Production',
+      'PE / Facilities', 'Account / Finance', 'RM - Store', 'FG', 'HR',
+      'Admin', 'Security', 'Supplier'
+    ];
     const departments = await Request.distinct('department');
+    const allDepartments = Array.from(new Set([...STANDARD_DEPARTMENTS, ...(departments.filter(Boolean))])).sort();
     
     res.status(200).json({
       success: true,
-      departments: departments.filter(d => d)
+      departments: allDepartments
     });
   } catch (err) {
     console.error("Error in getDepartments:", err);

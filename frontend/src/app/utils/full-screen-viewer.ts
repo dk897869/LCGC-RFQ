@@ -207,17 +207,30 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
   }
 
   card.innerHTML = `
-    <div style="background: #0f172a; color: white; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; height: 56px; box-sizing: border-box; flex-shrink: 0; width: 100%;">
+    <div style="background: #0f172a; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; height: 56px; box-sizing: border-box; flex-shrink: 0; width: 100%;">
       <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
         <span style="font-size: 20px;">📄</span>
-        <span style="font-weight: 700; font-size: 15px; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50vw;">${safeTitle}</span>
+        <span style="font-weight: 700; font-size: 15px; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw;">${safeTitle}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 14px;">
-        ${url ? `<a href="${safeUrl}" download target="_blank" style="background: #2563eb; color: white; text-decoration: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.4);">⬇ Download</a>` : ''}
-        <button id="btnModalCloseHeader" style="background: rgba(255,255,255,0.15); border: none; color: white; font-size: 24px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.2s;" title="Close (ESC)">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- Zoom Controls -->
+        <div style="display: flex; align-items: center; background: rgba(255,255,255,0.12); border-radius: 6px; padding: 2px 6px;">
+          <button id="btnViewerZoomOut" type="button" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 2px 8px; line-height: 1;" title="Zoom Out">−</button>
+          <span id="txtViewerZoomLevel" style="font-size: 12px; font-weight: 700; width: 44px; text-align: center; color: #f8fafc;">100%</span>
+          <button id="btnViewerZoomIn" type="button" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 2px 8px; line-height: 1;" title="Zoom In">+</button>
+          <button id="btnViewerZoomReset" type="button" style="background: none; border: none; color: #94a3b8; font-size: 11px; cursor: pointer; padding: 2px 6px;" title="Reset Zoom">Reset</button>
+        </div>
+        <!-- Fullscreen Toggle -->
+        <button id="btnViewerFullscreenToggle" type="button" style="background: rgba(255,255,255,0.12); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Toggle Fullscreen">
+          ⛶ Fullscreen
+        </button>
+        ${url ? `<a href="${safeUrl}" download target="_blank" style="background: #2563eb; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.4);">⬇ Download</a>` : ''}
+        <button id="btnModalCloseHeader" type="button" style="background: rgba(255,255,255,0.15); border: none; color: white; font-size: 22px; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.2s;" title="Close (ESC)">✕</button>
       </div>
     </div>
-    ${bodyHtml}
+    <div id="viewerContentArea" style="flex: 1; display: flex; overflow: hidden; width: 100%; height: calc(100% - 56px); position: relative;">
+      ${bodyHtml}
+    </div>
   `;
 
   overlay.appendChild(card);
@@ -346,6 +359,57 @@ export function renderFullScreenDocumentViewer(attachmentOrUrl: any, title?: str
     };
 
     loadExcelData();
+  }
+
+  // Zoom state & logic
+  let currentZoom = 1;
+  const txtZoom = document.getElementById('txtViewerZoomLevel');
+  const btnZoomIn = document.getElementById('btnViewerZoomIn');
+  const btnZoomOut = document.getElementById('btnViewerZoomOut');
+  const btnZoomReset = document.getElementById('btnViewerZoomReset');
+  const btnFullscreen = document.getElementById('btnViewerFullscreenToggle');
+
+  const applyZoom = (zoom: number) => {
+    currentZoom = Math.min(3, Math.max(0.4, +(zoom).toFixed(2)));
+    if (txtZoom) txtZoom.innerText = `${Math.round(currentZoom * 100)}%`;
+    const imgEl = document.getElementById('modalPreviewImg');
+    const tableWrap = document.getElementById('excelTableWrapper');
+    if (imgEl) {
+      imgEl.style.transform = `scale(${currentZoom})`;
+      imgEl.style.transformOrigin = 'center center';
+      imgEl.style.transition = 'transform 0.15s ease-out';
+    } else if (tableWrap) {
+      tableWrap.style.transform = `scale(${currentZoom})`;
+      tableWrap.style.transformOrigin = 'top left';
+      tableWrap.style.transition = 'transform 0.15s ease-out';
+    }
+  };
+
+  if (btnZoomIn) btnZoomIn.onclick = () => applyZoom(currentZoom + 0.2);
+  if (btnZoomOut) btnZoomOut.onclick = () => applyZoom(currentZoom - 0.2);
+  if (btnZoomReset) btnZoomReset.onclick = () => applyZoom(1);
+
+  // Fullscreen toggle logic
+  let isFullscreen = false;
+  if (btnFullscreen) {
+    btnFullscreen.onclick = () => {
+      isFullscreen = !isFullscreen;
+      if (isFullscreen) {
+        card.style.width = '100vw';
+        card.style.maxWidth = '100vw';
+        card.style.height = '100vh';
+        card.style.borderRadius = '0';
+        overlay.style.padding = '0';
+        btnFullscreen.innerText = '🗗 Windowed';
+      } else {
+        card.style.width = '90vw';
+        card.style.maxWidth = '1040px';
+        card.style.height = '85vh';
+        card.style.borderRadius = '16px';
+        overlay.style.padding = '20px';
+        btnFullscreen.innerText = '⛶ Fullscreen';
+      }
+    };
   }
 
   const closeViewer = () => {

@@ -38,6 +38,7 @@ const querySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const requestSchema = new mongoose.Schema({
+  requestId: { type: String, unique: true, sparse: true, index: true },
   requester: { type: String, required: true },
   department: { type: String, required: true },
   email: { type: String, required: true, lowercase: true },

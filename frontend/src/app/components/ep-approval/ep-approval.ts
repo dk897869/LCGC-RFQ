@@ -846,9 +846,303 @@ export class EPApprovalComponent implements OnInit, OnDestroy, OnChanges {
   removeApprover(index: number) {
     if (this.approvers.length > 1) {
       this.approvers.splice(index, 1);
+      this.cdr.detectChanges();
     }
   }
-  
+
+  moveApproverUp(index: number) {
+    if (index > 0 && index < this.approvers.length) {
+      const temp = this.approvers[index];
+      this.approvers[index] = this.approvers[index - 1];
+      this.approvers[index - 1] = temp;
+      this.cdr.detectChanges();
+    }
+  }
+
+  moveApproverDown(index: number) {
+    if (index >= 0 && index < this.approvers.length - 1) {
+      const temp = this.approvers[index];
+      this.approvers[index] = this.approvers[index + 1];
+      this.approvers[index + 1] = temp;
+      this.cdr.detectChanges();
+    }
+  }
+
+  moveApproverInViewUp(index: number) {
+    if (!this.selectedRequestCopy?.stakeholders) return;
+    if (index > 0 && index < this.selectedRequestCopy.stakeholders.length) {
+      const temp = this.selectedRequestCopy.stakeholders[index];
+      this.selectedRequestCopy.stakeholders[index] = this.selectedRequestCopy.stakeholders[index - 1];
+      this.selectedRequestCopy.stakeholders[index - 1] = temp;
+      this.cdr.detectChanges();
+    }
+  }
+
+  moveApproverInViewDown(index: number) {
+    if (!this.selectedRequestCopy?.stakeholders) return;
+    if (index >= 0 && index < this.selectedRequestCopy.stakeholders.length - 1) {
+      const temp = this.selectedRequestCopy.stakeholders[index];
+      this.selectedRequestCopy.stakeholders[index] = this.selectedRequestCopy.stakeholders[index + 1];
+      this.selectedRequestCopy.stakeholders[index + 1] = temp;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // Dynamic Attachments
+  addAttachmentRow() {
+    const newId = Math.max(...this.attachments.map(a => a.id || 0), 0) + 1;
+    this.attachments.push({
+      id: newId,
+      name: `Attachment ${newId}`,
+      fileSize: '',
+      file: null,
+      preview: '',
+      remark: ''
+    });
+    this.cdr.detectChanges();
+  }
+
+  deleteAttachmentRow(index: number) {
+    if (this.attachments.length > 1) {
+      this.attachments.splice(index, 1);
+      this.cdr.detectChanges();
+    }
+  }
+
+  addAttachmentInView() {
+    if (!this.selectedRequestCopy) return;
+    if (!this.selectedRequestCopy.attachments) this.selectedRequestCopy.attachments = [];
+    const count = this.selectedRequestCopy.attachments.length + 1;
+    this.selectedRequestCopy.attachments.push({
+      name: `Attachment ${count}`,
+      fileSize: '',
+      fileUrl: '',
+      preview: '',
+      remark: ''
+    });
+    this.cdr.detectChanges();
+  }
+
+  deleteAttachmentInView(index: number) {
+    if (!this.selectedRequestCopy?.attachments) return;
+    this.selectedRequestCopy.attachments.splice(index, 1);
+    this.cdr.detectChanges();
+  }
+
+  onViewAttachmentUpload(index: number, event: any) {
+    const file = event.target.files[0];
+    if (file && this.selectedRequestCopy?.attachments?.[index]) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const dataUrl = e.target.result;
+        this.selectedRequestCopy.attachments[index].name = file.name;
+        this.selectedRequestCopy.attachments[index].fileName = file.name;
+        this.selectedRequestCopy.attachments[index].fileSize = this.formatFileSize(file.size);
+        this.selectedRequestCopy.attachments[index].fileUrl = dataUrl;
+        this.selectedRequestCopy.attachments[index].preview = dataUrl;
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Group Approval Chain Display: Parallel Group 1, Sequential Group 2, etc.
+  getGroupInfo(stakeholders: any[], index: number): { name: string; rowspan: number; isStart: boolean } {
+    if (!stakeholders || index < 0 || index >= stakeholders.length) {
+      return { name: '', rowspan: 0, isStart: false };
+    }
+    let groupIndex = 1;
+    let currentGroupStart = 0;
+    let currentGroupType = (stakeholders[0].line || 'Parallel').trim();
+
+    for (let i = 0; i < stakeholders.length; i++) {
+      const lineType = (stakeholders[i].line || 'Parallel').trim();
+      if (i > 0 && lineType !== (stakeholders[i - 1].line || 'Parallel').trim()) {
+        groupIndex++;
+        currentGroupStart = i;
+        currentGroupType = lineType;
+      }
+      if (i === index) {
+        const isStart = (i === currentGroupStart);
+        let rowspan = 0;
+        if (isStart) {
+          rowspan = 1;
+          for (let j = i + 1; j < stakeholders.length; j++) {
+            if ((stakeholders[j].line || 'Parallel').trim() === currentGroupType) {
+              rowspan++;
+            } else {
+              break;
+            }
+          }
+        }
+        return {
+          name: `${currentGroupType} Group ${groupIndex}`,
+          rowspan,
+          isStart
+        };
+      }
+    }
+    return { name: '', rowspan: 0, isStart: false };
+  }
+
+  // Comment Preview Modal (Task 9)
+  showCommentModal = false;
+  selectedCommentTitle = '';
+  selectedCommentText = '';
+  selectedCommentAuthor = '';
+  selectedCommentDate = '';
+
+  openCommentModal(title: string, text: string, author = '', date = '') {
+    this.selectedCommentTitle = title || 'Comment / Remarks Preview';
+    this.selectedCommentText = text || 'No comments entered.';
+    this.selectedCommentAuthor = author;
+    this.selectedCommentDate = date;
+    this.showCommentModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeCommentModal() {
+    this.showCommentModal = false;
+    this.selectedCommentText = '';
+  }
+
+  // Query & Communication Thread State (Task 12)
+  newQueryReceiver = '';
+  newQueryMessage = '';
+  newQueryAttachment: any = null;
+  newQueryAttachmentName = '';
+  isSendingQuery = false;
+
+  replyQueryId = '';
+  replyQueryMessage = '';
+  replyQueryAttachment: any = null;
+  replyQueryAttachmentName = '';
+  isReplyingQuery = false;
+
+  onQueryFileSelected(event: any, isReply: boolean = false) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const attObj = {
+          name: file.name,
+          fileName: file.name,
+          fileSize: this.formatFileSize(file.size),
+          fileUrl: e.target.result,
+          preview: e.target.result
+        };
+        if (isReply) {
+          this.replyQueryAttachment = attObj;
+          this.replyQueryAttachmentName = file.name;
+        } else {
+          this.newQueryAttachment = attObj;
+          this.newQueryAttachmentName = file.name;
+        }
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeQueryAttachment(isReply: boolean = false) {
+    if (isReply) {
+      this.replyQueryAttachment = null;
+      this.replyQueryAttachmentName = '';
+    } else {
+      this.newQueryAttachment = null;
+      this.newQueryAttachmentName = '';
+    }
+    this.cdr.detectChanges();
+  }
+
+  sendQueryFromModal(req: any) {
+    const id = req?._id || req?.id;
+    if (!id) return;
+    if (!this.newQueryReceiver) {
+      this.showToast('Please select a recipient for the query.', 'error');
+      return;
+    }
+    if (!this.newQueryMessage || !this.newQueryMessage.trim()) {
+      this.showToast('Please enter your query message.', 'error');
+      return;
+    }
+
+    this.isSendingQuery = true;
+    this.authService.queryEPRequest(
+      id,
+      this.newQueryReceiver,
+      this.newQueryMessage.trim(),
+      this.newQueryAttachment
+    ).subscribe({
+      next: (res: any) => {
+        this.isSendingQuery = false;
+        this.showToast('Query sent successfully!', 'success');
+        if (!req.queries) req.queries = [];
+        if (res.data) {
+          req.queries.push(res.data);
+        } else {
+          req.queries.push({
+            sender: this.currentUser?.email || 'User',
+            senderName: this.currentUser?.name || 'Requester',
+            receiver: this.newQueryReceiver,
+            message: this.newQueryMessage.trim(),
+            attachment: this.newQueryAttachment,
+            status: 'Pending',
+            createdAt: new Date().toISOString()
+          });
+        }
+        this.newQueryMessage = '';
+        this.newQueryReceiver = '';
+        this.newQueryAttachment = null;
+        this.newQueryAttachmentName = '';
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSendingQuery = false;
+        this.showToast(err?.message || 'Failed to send query', 'error');
+      }
+    });
+  }
+
+  submitQueryReply(req: any, queryId: string) {
+    const id = req?._id || req?.id;
+    if (!id || !queryId) return;
+    if (!this.replyQueryMessage || !this.replyQueryMessage.trim()) {
+      this.showToast('Please enter your reply message.', 'error');
+      return;
+    }
+
+    this.isReplyingQuery = true;
+    this.authService.replyToQuery(
+      id,
+      queryId,
+      this.replyQueryMessage.trim(),
+      this.replyQueryAttachment
+    ).subscribe({
+      next: (res: any) => {
+        this.isReplyingQuery = false;
+        this.showToast('Reply sent successfully!', 'success');
+        if (req.queries) {
+          const q = req.queries.find((item: any) => (item._id || item.id) === queryId);
+          if (q) {
+            q.replyMessage = this.replyQueryMessage.trim();
+            if (this.replyQueryAttachment) q.replyAttachment = this.replyQueryAttachment;
+            q.status = 'Replied';
+          }
+        }
+        this.replyQueryId = '';
+        this.replyQueryMessage = '';
+        this.replyQueryAttachment = null;
+        this.replyQueryAttachmentName = '';
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isReplyingQuery = false;
+        this.showToast(err?.message || 'Failed to send reply', 'error');
+      }
+    });
+  }
+
   onManagerChange(approver: Approver, managerName: string) {
     const manager = this.managerOptions.find(m => m.name === managerName);
     if (manager) {

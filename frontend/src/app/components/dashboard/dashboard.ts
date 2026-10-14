@@ -142,14 +142,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ];
 
   nonBomDropdownItems: DropdownItem[] = [
-    { id: 'rfq-request', label: 'RFQ Request', icon: '📄', action: 'nonbom-rfq-request' },
+    { id: 'ep-approval', label: 'EP Approval', icon: '📝', action: 'approvals-request' },
+    { id: 'rfq-request', label: 'NPP Procurement (RFQ)', icon: '📄', action: 'nonbom-rfq-request' },
     { id: 'pr-process', label: 'PR Process', icon: '📋', action: 'nonbom-pr-process' },
-    { id: 'material-management', label: 'Material Management', icon: '📦', action: 'nonbom-material-management' },
-    { id: 'report', label: 'Report', icon: '📊', action: 'nonbom-report' },
-    { id: 'work-completion-certificate', label: 'Work Completion Certificate', icon: '📜', action: 'nonbom-wcc' },
     { id: 'scrap-material-bidding', label: 'Scrap Material Bidding', icon: '🏷️', action: 'nonbom-scrap-bidding' },
+    { id: 'material-management', label: 'Material Inventory Management', icon: '📦', action: 'nonbom-material-management' },
+    { id: 'payment-request', label: 'Payment Request', icon: '💳', action: 'payment-non-bom' },
+    { id: 'budget-approval', label: 'Budget Approval & Uses', icon: '💰', action: 'budget-request' },
+    { id: 'work-completion-certificate', label: 'Work Completion Certificate', icon: '📜', action: 'nonbom-wcc' },
     { id: 'item-master-list', label: 'Item Master List', icon: '🔧', action: 'nonbom-item-master' },
-    { id: 'vendor-details', label: 'Vendor Details', icon: '🏢', action: 'nonbom-vendor-details' },
+    { id: 'vendor-details', label: 'Vendor Master', icon: '🏢', action: 'nonbom-vendor-details' },
+    { id: 'report', label: 'Reports & Analytics', icon: '📊', action: 'nonbom-report' },
     { id: 'approval-status', label: 'Approval Status', icon: '✅', action: 'nonbom-approval-status' }
   ];
 

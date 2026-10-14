@@ -634,9 +634,14 @@
       
       <!-- Attachments -->
       <div class="form-section">
-        <div class="section-title">
-          <span class="section-icon">📎</span>
-          Attachments (Documents / Images)
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-icon">📎</span>
+            Attachments (Documents / Images)
+          </div>
+          <button type="button" class="btn-add-approver" (click)="addAttachmentRow()" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            + Add Attachment Row
+          </button>
         </div>
         <div class="attachments-table-wrapper">
           <table class="attachments-table">
@@ -648,7 +653,7 @@
                 <th style="width: 120px; text-align: center;">Upload File</th>
                 <th style="width: 100px; text-align: center;">Preview</th>
                 <th>Remark</th>
-                <th style="width: 45px; text-align: center;"></th>
+                <th style="width: 65px; text-align: center;">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -676,8 +681,9 @@
                   <span *ngIf="!att.file && !att.preview && !att.url" style="color: #94a3b8; font-size: 12px; font-style: italic;">No file</span>
                 </td>
                 <td><input type="text" [(ngModel)]="att.remark" placeholder="Remark" class="remark-input" style="width: 100%; box-sizing: border-box;"></td>
-                <td style="text-align: center;">
-                  <button *ngIf="att.file" type="button" class="remove-attach-btn" (click)="removeAttachment(att)">🗑️</button>
+                <td style="text-align: center; white-space: nowrap;">
+                  <button *ngIf="att.file" type="button" class="remove-attach-btn" (click)="removeAttachment(att)" title="Clear File" style="margin-right: 4px;">🗑️</button>
+                  <button *ngIf="attachments.length > 1" type="button" (click)="deleteAttachmentRow(i)" style="background: #fee2e2; color: #dc2626; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer;" title="Delete Attachment Row">✕</button>
                 </td>
               </tr>
             </tbody>
@@ -828,16 +834,35 @@
 
           </td>
 
-          <td>
-
-            <button
-              class="delete-btn"
-              *ngIf="approvers.length>1"
-              (click)="removeApprover(i)"
-            >
-              ×
-            </button>
-
+          <td style="white-space: nowrap; text-align: center;">
+            <div style="display: inline-flex; align-items: center; gap: 4px;">
+              <button
+                type="button"
+                style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer; color: #475569;"
+                [disabled]="i === 0"
+                (click)="moveApproverUp(i)"
+                title="Move Line Up"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer; color: #475569;"
+                [disabled]="i === approvers.length - 1"
+                (click)="moveApproverDown(i)"
+                title="Move Line Down"
+              >
+                ▼
+              </button>
+              <button
+                class="delete-btn"
+                *ngIf="approvers.length > 1"
+                (click)="removeApprover(i)"
+                title="Remove Approver Line"
+              >
+                ×
+              </button>
+            </div>
           </td>
 
         </tr>
@@ -954,23 +979,42 @@
         </div>
       </div>
 
-      <!-- Attached Documents Section -->
-      <div class="form-section" *ngIf="selectedRequestCopy.attachments?.length" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-          <span class="section-icon">📎</span>
-          Attached Documents / Images
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-          <div *ngFor="let att of selectedRequestCopy.attachments" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
-            <span style="font-size: 20px;">📄</span>
-            <div>
-              <div style="font-weight: 600; color: #0f172a;">{{ att.name || 'Attachment' }}</div>
-              <div style="font-size: 11px; color: #64748b;" *ngIf="att.fileSize">{{ att.fileSize }}</div>
-            </div>
-            <button type="button" (click)="openMediaPreview(att, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
-              👁️ View
-            </button>
+      <!-- Attached Documents Section (Image 2 Row 5 & 6) -->
+      <div class="form-section" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-icon">📎</span>
+            Attached Documents / Images
           </div>
+          <button *ngIf="selectedRequestCopy.status === 'Pending'" type="button" (click)="addAttachmentInView()" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            + Add Attachment
+          </button>
+        </div>
+        <div *ngIf="selectedRequestCopy.attachments?.length" style="display: flex; flex-direction: column; gap: 10px;">
+          <div *ngFor="let att of selectedRequestCopy.attachments; let attIdx = index" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <span style="font-size: 20px;">📄</span>
+              <div style="min-width: 0;">
+                <div style="font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">{{ att.name || 'Attachment ' + (attIdx + 1) }}</div>
+                <div style="font-size: 11px; color: #64748b;" *ngIf="att.fileSize">{{ att.fileSize }}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <label *ngIf="selectedRequestCopy.status === 'Pending' && !att.fileUrl && !att.preview" style="cursor: pointer; background: #3b82f6; color: white; padding: 5px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600;">
+                Upload File
+                <input type="file" (change)="onViewAttachmentUpload(attIdx, $event)" hidden>
+              </label>
+              <button type="button" (click)="openMediaPreview(att, att.name || 'Attachment')" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                👁️ View
+              </button>
+              <button *ngIf="selectedRequestCopy.status === 'Pending'" type="button" (click)="deleteAttachmentInView(attIdx)" style="background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Delete Attachment">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!selectedRequestCopy.attachments?.length" style="padding: 12px; color: #64748b; font-size: 12.5px; font-style: italic;">
+          No attachments uploaded for this request.
         </div>
       </div>
 
@@ -1019,11 +1063,15 @@
                   Approval
                 </td>
 
-                <!-- Merged Line (Parallel / Sequential) Cell -->
-                <td *ngIf="getLineRowspan(selectedRequestCopy.stakeholders, idx) > 0"
-                    [attr.rowspan]="getLineRowspan(selectedRequestCopy.stakeholders, idx)"
-                    style="text-align: center; vertical-align: middle; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1; color: #334155;">
-                  {{ st.line || 'Parallel' }}
+                <!-- Merged Group Approval Chain Cell (Image 2 Row 8: Parallel Group 1, Sequential Group 2, etc.) -->
+                <td *ngIf="getGroupInfo(selectedRequestCopy.stakeholders, idx).isStart"
+                    [attr.rowspan]="getGroupInfo(selectedRequestCopy.stakeholders, idx).rowspan"
+                    style="text-align: center; vertical-align: middle; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1; padding: 10px 8px;">
+                  <span style="display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; white-space: nowrap;"
+                        [style.background]="(st.line || 'Parallel').toLowerCase() === 'parallel' ? '#e0e7ff' : '#fef3c7'"
+                        [style.color]="(st.line || 'Parallel').toLowerCase() === 'parallel' ? '#3730a3' : '#92400e'">
+                    {{ getGroupInfo(selectedRequestCopy.stakeholders, idx).name }}
+                  </span>
                 </td>
 
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">
@@ -1049,7 +1097,12 @@
                   </ng-container>
                 </td>
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #475569;">
-                  <ng-container *ngIf="!st.isNew">{{ st.remarks || '—' }}</ng-container>
+                  <ng-container *ngIf="!st.isNew">
+                    <span style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">{{ st.remarks || '—' }}</span>
+                    <button *ngIf="st.remarks" type="button" (click)="openCommentModal('Approver Remarks', st.remarks, st.name || st.managerName, st.dateTime)" style="background: none; border: none; color: #2563eb; font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; margin-top: 2px;">
+                      💬 Preview Remarks
+                    </button>
+                  </ng-container>
                   <input *ngIf="st.isNew" type="text" [(ngModel)]="st.remarks" placeholder="Remarks" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
                 </td>
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1;">
@@ -1063,17 +1116,124 @@
                 <td style="padding: 10px 12px; border-right: 1px solid #cbd5e1; color: #64748b; font-size: 12px;">
                   {{ st.dateTime ? (st.dateTime | date:'M-d-yy h:mm a') : '—' }}
                 </td>
-                <td style="padding: 8px 12px; text-align: center; display: flex; justify-content: center; gap: 6px;">
-                  <button type="button" (click)="openApproverDetail(st)" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                    👁️ View Info
+                <td style="padding: 8px 12px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 4px; flex-wrap: nowrap;">
+                  <button *ngIf="selectedRequestCopy.status === 'Pending'" type="button" [disabled]="idx === 0" (click)="moveApproverInViewUp(idx)" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 6px; font-size: 10px; cursor: pointer; color: #475569;" title="Move Line Up">
+                    ▲
                   </button>
-                  <button *ngIf="selectedRequestCopy.status === 'Pending'" type="button" (click)="deleteApproverInView(idx)" style="background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;" title="Delete Approver">
+                  <button *ngIf="selectedRequestCopy.status === 'Pending'" type="button" [disabled]="idx === selectedRequestCopy.stakeholders.length - 1" (click)="moveApproverInViewDown(idx)" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 6px; font-size: 10px; cursor: pointer; color: #475569;" title="Move Line Down">
+                    ▼
+                  </button>
+                  <button type="button" (click)="openApproverDetail(st)" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
+                    👁️ Info
+                  </button>
+                  <button *ngIf="selectedRequestCopy.status === 'Pending'" type="button" (click)="deleteApproverInView(idx)" style="background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; padding: 4px 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.2s;" title="Delete Approver">
                     🗑️
                   </button>
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Query & Communication Thread (Image 2 Row 12) -->
+      <div class="form-section" style="background: #ffffff; border-radius: 12px; padding: 20px; margin-top: 20px; border: 1px solid #e0e7ff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+        <div class="section-title" style="font-weight: 700; font-size: 15px; color: #1e3a8a; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-icon">💬</span>
+            Query &amp; Clarification Thread (Send &amp; Receive with Attachments)
+          </div>
+          <span style="font-size: 11px; background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
+            {{ (selectedRequestCopy.queries?.length || 0) }} Message(s)
+          </span>
+        </div>
+
+        <!-- Queries Conversation List -->
+        <div *ngIf="selectedRequestCopy.queries?.length" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; max-height: 280px; overflow-y: auto; padding-right: 6px;">
+          <div *ngFor="let q of selectedRequestCopy.queries; let qIdx = index" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 700; color: #0f172a; font-size: 13px;">{{ q.senderName || q.sender }}</span>
+                <span style="font-size: 11px; color: #64748b;">➔ To: {{ q.receiver }}</span>
+              </div>
+              <span [style.color]="q.status === 'Replied' ? '#059669' : '#d97706'" style="font-weight: 700; font-size: 11px; background: white; padding: 2px 8px; border-radius: 10px; border: 1px solid #cbd5e1;">
+                {{ q.status || 'Pending' }}
+              </span>
+            </div>
+            <p style="margin: 0 0 8px 0; color: #334155; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">{{ q.message }}</p>
+            <div *ngIf="q.attachment" style="display: inline-flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; margin-bottom: 8px;">
+              <span>📎</span>
+              <strong style="color: #2563eb;">{{ q.attachment.name || 'Attached file' }}</strong>
+              <button type="button" (click)="openMediaPreview(q.attachment, q.attachment.name)" style="background: #2563eb; color: white; border: none; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer;">
+                View
+              </button>
+            </div>
+            <div *ngIf="q.replyMessage" style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 6px;">
+              <div style="font-weight: 700; color: #166534; font-size: 11.5px; margin-bottom: 4px;">Reply:</div>
+              <p style="margin: 0 0 4px 0; color: #15803d; font-size: 12.5px; line-height: 1.4;">{{ q.replyMessage }}</p>
+              <div *ngIf="q.replyAttachment" style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px;">
+                <span>📎</span>
+                <strong>{{ q.replyAttachment.name }}</strong>
+                <button type="button" (click)="openMediaPreview(q.replyAttachment, q.replyAttachment.name)" style="background: #16a34a; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer;">View</button>
+              </div>
+            </div>
+            <div *ngIf="!q.replyMessage && replyQueryId !== (q._id || q.id)" style="margin-top: 8px; text-align: right;">
+              <button type="button" (click)="replyQueryId = (q._id || q.id); replyQueryMessage = ''" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+                ↩ Reply to this query
+              </button>
+            </div>
+            <div *ngIf="replyQueryId === (q._id || q.id)" style="margin-top: 10px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+              <textarea [(ngModel)]="replyQueryMessage" rows="2" placeholder="Write your clarification / reply..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box;"></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <label style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                    📎 Attach file
+                    <input type="file" (change)="onQueryFileSelected($event, true)" hidden>
+                  </label>
+                  <span *ngIf="replyQueryAttachmentName" style="font-size: 11px; color: #475569;">{{ replyQueryAttachmentName }}</span>
+                  <button *ngIf="replyQueryAttachmentName" type="button" (click)="removeQueryAttachment(true)" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 11px;">✕</button>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" (click)="replyQueryId = ''" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">Cancel</button>
+                  <button type="button" (click)="submitQueryReply(selectedRequestCopy, q._id || q.id)" [disabled]="isReplyingQuery || !replyQueryMessage" style="background: #16a34a; color: white; border: none; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                    {{ isReplyingQuery ? 'Sending...' : 'Send Reply' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!selectedRequestCopy.queries?.length" style="padding: 10px 0; color: #64748b; font-size: 12.5px; font-style: italic; margin-bottom: 12px;">
+          No queries sent yet for this request.
+        </div>
+
+        <!-- Post New Query Form -->
+        <div style="background: #f1f5f9; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
+          <div style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 8px;">➕ Send New Query / Clarification</div>
+          <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 220px;">
+              <select [(ngModel)]="newQueryReceiver" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: white;">
+                <option value="">Select Recipient (Approver or Requester)...</option>
+                <option *ngIf="selectedRequestCopy.email" [value]="selectedRequestCopy.email">{{ selectedRequestCopy.requester }} (Requester - {{ selectedRequestCopy.email }})</option>
+                <option *ngFor="let m of selectedRequestCopy.stakeholders" [value]="m.email">{{ m.name || m.managerName }} ({{ m.designation || 'Approver' }} - {{ m.email }})</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="background: white; border: 1px solid #cbd5e1; padding: 7px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                📎 Attach Document
+                <input type="file" (change)="onQueryFileSelected($event, false)" hidden>
+              </label>
+              <span *ngIf="newQueryAttachmentName" style="font-size: 11px; color: #334155; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ newQueryAttachmentName }}</span>
+              <button *ngIf="newQueryAttachmentName" type="button" (click)="removeQueryAttachment(false)" style="background: none; border: none; color: #dc2626; cursor: pointer;">✕</button>
+            </div>
+          </div>
+          <textarea [(ngModel)]="newQueryMessage" rows="2" placeholder="Type your query or clarification question here..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; box-sizing: border-box; resize: vertical;"></textarea>
+          <div style="text-align: right; margin-top: 8px;">
+            <button type="button" (click)="sendQueryFromModal(selectedRequestCopy)" [disabled]="isSendingQuery || !newQueryMessage || !newQueryReceiver" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 7px 18px; font-size: 12px; font-weight: 700; cursor: pointer;" [style.opacity]="(!newQueryMessage || !newQueryReceiver || isSendingQuery) ? '0.6' : '1'">
+              {{ isSendingQuery ? 'Sending...' : '🚀 Send Query &amp; Attachment' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1314,6 +1474,32 @@
     <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
       <button (click)="closeApproverDetail()" style="background: #0f172a; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">
         Close Info
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== COMMENT PREVIEW MODAL (Task 9) ==================== -->
+<div class="modal-overlay" *ngIf="showCommentModal" (click)="closeCommentModal()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px); z-index: 9999999; display: flex; align-items: center; justify-content: center; padding: 20px;">
+  <div class="modal-card" (click)="$event.stopPropagation()" style="background: white; border-radius: 16px; width: 90vw; max-width: 540px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); overflow: hidden; animation: modalPop 0.2s ease-out;">
+    <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 20px;">💬</span>
+        <div>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700;">{{ selectedCommentTitle }}</h3>
+          <span *ngIf="selectedCommentAuthor" style="font-size: 11.5px; color: #94a3b8;">By {{ selectedCommentAuthor }} {{ selectedCommentDate ? '• ' + (selectedCommentDate | date:'medium') : '' }}</span>
+        </div>
+      </div>
+      <button (click)="closeCommentModal()" style="background: none; border: none; color: white; font-size: 22px; cursor: pointer;">✕</button>
+    </div>
+    <div style="padding: 24px; font-size: 14px; color: #334155; line-height: 1.6;">
+      <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; min-height: 120px; white-space: pre-wrap; word-break: break-word;">
+        {{ selectedCommentText }}
+      </div>
+    </div>
+    <div style="padding: 12px 22px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+      <button (click)="closeCommentModal()" style="background: #0f172a; color: white; border: none; padding: 8px 22px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+        Close Preview
       </button>
     </div>
   </div>

@@ -1756,9 +1756,9 @@ exports.refreshUserSession = async (req, res) => {
 exports.getDepartments = async (req, res) => {
   try {
     const departments = [
-      'Purchase', 'IT', 'Finance', 'HR', 'Operations', 'Production',
-      'Quality', 'Logistics', 'Sales', 'Marketing', 'R&D', 'Admin',
-      'Legal', 'Supply Chain', 'Engineering'
+      'Sourcing', 'Purchase', 'SCM', 'QA', 'PPC', 'IT', 'Production',
+      'PE / Facilities', 'Account / Finance', 'RM - Store', 'FG', 'HR',
+      'Admin', 'Security', 'Supplier'
     ];
 
     const userDepts = await User.distinct('department');
